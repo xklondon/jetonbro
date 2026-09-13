@@ -1,0 +1,11 @@
+# Install root deps, then Vite-build web/dist before any copy/start step.
+# Not an npm workspace — one package.json at the repo root.
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+dependsOn = ["install"]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm run start"

@@ -62,6 +62,16 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | Bank assign/top-up credits the game wallet via `EscrowService.creditGame` | v4 setup phase assigns jetons to the game wallet. That write stays in `src/escrow/`. |
 | 2026-09-13 | Lock + applyAction share one table snapshot (`stack` + `pot.amount`) | UI piles CSS-transition those fields. No separate animation state. |
 
+## Infrastructure
+
+Not a requirements build-order step. Friends-only Railway deploy.
+
+| Date | Change | Why |
+| --- | --- | --- |
+| 2026-09-13 | `railway.json` + `nixpacks.toml`: `npm ci && npm run build`, then `npm run start` | Auto-detect was copying `web/dist` before Vite created it. This is one root package (not workspaces); `npm run build` is `vite build` and writes `web/dist`. |
+| 2026-09-13 | Single Railway service: Express serves `/api` and `web/dist` | `createApp` already static-serves `web/dist` when present. One origin, no CORS, one deploy. Two services would be extra moving parts for a v1 friends table. |
+| 2026-09-13 | `DATABASE_URL` is optional; in-memory escrow if unset | Railway can attach Postgres later. The process must still boot without a DB while the store is in-memory. |
+
 ## Blocked
 
 None.
