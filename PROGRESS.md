@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-Build-order step 2 (protocol configs + turn-order) is done and waiting for review. **Do not start step 3 until this is approved.**
+Build-order step 3 (personal ledger / Standings) is done and waiting for review. **Do not start step 4 until this is approved.**
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -20,7 +20,7 @@ From `jetonbro-requirements-v4.md` § Build order. One step at a time; stop afte
 | --- | --- | --- | --- | --- |
 | 1 | Wallet + escrow engine, unit-testable, no UI | done | 2026-09-13 | In-memory master/game wallets + CONFIRMED→LOCKED→RESOLVED→RELEASED in `src/escrow/`. Local commit (no remote PR). |
 | 2 | Protocol configs + turn-order, wired to escrow | done | 2026-09-13 | Three data-only protocol configs + shared handler/turn-order in `src/protocol/`. `canResolveForTable` is what `EscrowService` consumes. Local commit (no remote PR). |
-| 3 | Personal ledger read-model (Save / Clear) | not started | | |
+| 3 | Personal ledger read-model (Save / Clear) | done | 2026-09-13 | `src/ledger/` derives pair transfers from RELEASE via an `EscrowStore` wrapper. Save snapshots; Clear writes `MANUAL_SETTLEMENT`. Local commit (no remote PR). |
 | 4 | Auth / invite (magic-link, WhatsApp, QR, Mates) | not started | | |
 | 5 | Core UI (stack/pot, phase actions, Simple, Standings) | not started | | |
 | 6 | Remaining skins + chip-visual mode | not started | | |
@@ -46,6 +46,11 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | Even-split leftover chips go to the first listed winner | Integer chips; pot may not divide evenly. Plan is editable before release. |
 | 2026-09-13 | Multiplier payouts use `counterpartyUserId` for pot shortfall or extra | Needed so win (payout > pot) and lose (payout < pot) can move chips without protocol-specific branches. |
 | 2026-09-13 | `ensureMasterWallet(userId, openingBalance)` sets chips only on first create | Step 1 has no auth/account-creation flow; tests need a way to provision the master wallet. |
+| 2026-09-13 | Personal ledger listens by wrapping `EscrowStore.insertLedger`, not by patching `EscrowService` | One-directional: escrow does not import `src/ledger`. Callers compose `createEscrowService(listenForReleases(store, ledger))`. |
+| 2026-09-13 | RELEASE rows become pairwise transfers from pot contribute/receive nets | A RELEASE escrow row has no from/to. Deriving A→B from (credits − contribution), including counterparty extra/shortfall, is the chip movement the standing should reflect. |
+| 2026-09-13 | Clear writes `MANUAL_SETTLEMENT` from the debtor to the creditor; net treats settlement A→B as cancelling A's debt to B | Same-direction as a RELEASE transfer would deepen the debt. Settlement is an offset, not another game transfer. |
+| 2026-09-13 | Clear on an already-settled pair is a no-op (no row) | Requirements do not say to write a zero-amount settlement. |
+| 2026-09-13 | **Blackjack box ownership (step 2 open question):** display-only turn should **not** let a player act on someone else's box. v4 says the player confirms into **their** box and that boxes act independently (no wait-your-turn between players). Step 2's handler currently only checks "seated player" for `bet`/`double`/`split`. Box-owner enforcement is missing and should be added when boxes exist as table state — not a turn-pointer job. | Answer recorded in step 3 as requested. |
 
 ## Blocked
 
