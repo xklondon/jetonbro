@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-All seven build-order steps from `jetonbro-requirements-v4.md` are implemented. Step 7 (Fun nav) is waiting for review.
+All seven build-order steps from `jetonbro-requirements-v4.md` are on `origin/main`. Feature commit `117e668`.
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -23,8 +23,8 @@ From `jetonbro-requirements-v4.md` § Build order. One step at a time; stop afte
 | 3 | Personal ledger read-model (Save / Clear) | done | 2026-09-13 | `src/ledger/` derives pair transfers from RELEASE via an `EscrowStore` wrapper. Save snapshots; Clear writes `MANUAL_SETTLEMENT`. Local commit (no remote PR). |
 | 4 | Auth / invite (magic-link, WhatsApp, QR, Mates) | done | 2026-09-13 | `src/auth/` + first REST routes in `src/http/registerRoutes.ts`. One magic-link path; WhatsApp is a share intent. Guest upgrade calls `reownMasterWallet`. Route guard exercised (duplicate throwaway failed, then removed). |
 | 5 | Core UI (stack/pot, phase actions, Simple, Standings) | done | 2026-09-13 | Blackjack boxes + ownership gate. GET verify is peek-only; POST completes T&Cs. Simple skin is a token object. Standings wired to the personal ledger. |
-| 6 | Remaining skins + chip-visual mode | done | 2026-09-13 | Casino/Bank/Fun are token objects on the existing `SkinTokens` keys. Chip-visual is a greedy 100/25/10/5/1 breakdown of the same stack/pot/wallet integer. |
-| 7 | Fun nav (Yellow card, Red card, Magic 8-ball) | done | 2026-09-13 | Static Fun hub + yellow/red referee cards + client-side 8-ball. Zero backend imports. |
+| 6 | Remaining skins + chip-visual mode | done | 2026-09-13 | Casino/Bank/Fun token objects + chip-visual denoms. `117e668`. |
+| 7 | Fun nav (Yellow card, Red card, Magic 8-ball) | done | 2026-09-13 | Static Fun hub + cards + 8-ball. `117e668`. |
 
 ## Decisions log
 
@@ -170,12 +170,12 @@ Not fixed in this change set (waiting on the owner's call). The new Add player U
 | 3 | Personal ledger | `dc44165` | |
 | 4 | Auth / invite | `be20d0b` | |
 | 5 | Core UI (Simple, Standings) | `5732b3e` | |
-| 6 | Skins + chip-visual | *uncommitted* | In the working tree with later live-test follow-ups. |
-| 7 | Fun nav | *uncommitted* | This step. |
+| 6 | Skins + chip-visual | `117e668` | Same commit as step 7 and the live-test follow-ups. |
+| 7 | Fun nav | `117e668` | Same commit. |
 
-Infra (not a requirements step), already on `main`: `af3a91f` Railway build, `82a879c` Node 20, `e08f466` npm cache. HEAD is `e08f466`.
+Infra (not a requirements step), already on `main`: `af3a91f` Railway build, `82a879c` Node 20, `e08f466` npm cache.
 
-Work **after** `5732b3e` that is still only in the working tree (not a commit): multi-player invite roster, T&Cs dropped for friends-only, Resend mailer, owner setup + Bank assignment + per-box resolution, Casino/Bank/Fun skins, chip-visual, Fun screens.
+Live-test follow-ups (invite roster, T&Cs dropped for friends-only, Resend mailer, owner setup + Bank assignment + per-box resolution) shipped in `117e668` together with steps 6 and 7. Pushed to `origin/main`.
 
 ### Known limitations (whole build)
 
