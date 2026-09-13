@@ -1,5 +1,14 @@
 # Install root deps, then Vite-build web/dist before any copy/start step.
 # Not an npm workspace — one package.json at the repo root.
+# Nixpacks defaults to Node 18; jsdom's deps need >=20.
+providers = ["node"]
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"
+
+[phases.setup]
+nixPkgs = ["...", "nodejs_20"]
+
 [phases.install]
 cmds = ["npm ci"]
 

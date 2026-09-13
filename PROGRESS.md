@@ -71,6 +71,7 @@ Not a requirements build-order step. Friends-only Railway deploy.
 | 2026-09-13 | `railway.json` + `nixpacks.toml`: `npm ci && npm run build`, then `npm run start` | Auto-detect was copying `web/dist` before Vite created it. This is one root package (not workspaces); `npm run build` is `vite build` and writes `web/dist`. |
 | 2026-09-13 | Single Railway service: Express serves `/api` and `web/dist` | `createApp` already static-serves `web/dist` when present. One origin, no CORS, one deploy. Two services would be extra moving parts for a v1 friends table. |
 | 2026-09-13 | `DATABASE_URL` is optional; in-memory escrow if unset | Railway can attach Postgres later. The process must still boot without a DB while the store is in-memory. |
+| 2026-09-13 | Pin Node 20: `engines.node` `>=20`, Nixpacks `nodejs_20` + `NIXPACKS_NODE_VERSION=20` | Railway was building on Node 18.20.5; webidl-conversions / whatwg-url require >=20. |
 
 ## Blocked
 
