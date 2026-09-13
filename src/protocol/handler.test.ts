@@ -296,6 +296,39 @@ describe('blackjack box ownership', () => {
   });
 });
 
+describe('setup bank assignment', () => {
+  it('lets the table owner assign standing bank, one at a time', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-assign',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      tableOwnerUserId: P1,
+      standingAuthorityUserId: null,
+    });
+    expect(codeOf(() => applyAction(table, P2, 'assign-bank', { targetUserId: P2 }))).toBe('UNAUTHORIZED');
+    table = applyAction(table, P1, 'assign-bank', { targetUserId: P2 });
+    expect(getAuthorityUserId(table)).toBe(P2);
+    table = applyAction(table, P1, 'assign-bank', { targetUserId: P1 });
+    expect(getAuthorityUserId(table)).toBe(P1);
+  });
+
+  it('hides start-betting until Bank is set and another player has joined', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-start',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1],
+      tableOwnerUserId: P1,
+      standingAuthorityUserId: null,
+    });
+    expect(codeOf(() => applyAction(table, P1, 'open-betting'))).toBe('UNAUTHORIZED');
+    table = applyAction(table, P1, 'assign-bank', { targetUserId: P1 });
+    expect(codeOf(() => applyAction(table, P1, 'open-betting'))).toBe('PLAYERS_REQUIRED');
+    table = { ...table, playerIds: [P1, P2] };
+    expect(() => applyAction(table, P1, 'open-betting')).not.toThrow();
+    expect(codeOf(() => applyAction(table, P2, 'open-betting'))).toBe('UNAUTHORIZED');
+  });
+});
+
 function toNewRound(table: ReturnType<typeof createProtocolTable>, bankId: string) {
   let next = applyAction(table, bankId, 'open-betting');
   next = applyAction(next, bankId, 'close-betting');

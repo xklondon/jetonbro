@@ -1,6 +1,6 @@
 import type { AuthService } from '../auth/service.js';
 import type { EscrowService } from '../escrow/service.js';
-import type { Escrow, Wallet } from '../escrow/types.js';
+import type { Escrow } from '../escrow/types.js';
 import type { PersonalLedger } from '../ledger/service.js';
 import {
   applyAction,
@@ -12,9 +12,10 @@ import {
   getCurrentTurnUserId,
   getProtocol,
   listAllowedActions,
+  peekAuthorityUserId,
 } from '../protocol/index.js';
 import { fail } from '../auth/errors.js';
-import type { ActionInput, ProtocolAction, ProtocolTableState } from '../protocol/types.js';
+import type { ActionInput, Box, ProtocolAction, ProtocolTableState } from '../protocol/types.js';
 
 export interface HandDisplay {
   userId: string;
@@ -26,6 +27,7 @@ export interface TableActInput extends ActionInput {
   actionId: string;
   outcome?: string;
   winners?: string[];
+  payoutAmount?: number;
 }
 
 interface Runtime {
@@ -49,6 +51,7 @@ export class TableService {
     this.assertMember(tableId, viewer.id);
     const runtime = this.ensureRuntime(tableId);
     this.syncPlayers(runtime, tableId);
+    this.applyOpeningCredits(tableId, table.ownerUserId);
     return this.view(tableId, viewer.id, runtime, table.ownerUserId);
   }
 
@@ -70,16 +73,6 @@ export class TableService {
 
     const applied = getAction(getProtocol(runtime.protocol.protocolId), input.actionId);
     assertActionAllowed(runtime.protocol, viewer.id, input.actionId, input);
-
-    if (applied.creditsGame) {
-      const amount = input.amount;
-      const targetUserId = input.targetUserId;
-      if (!amount || amount <= 0 || !targetUserId) {
-        fail('AMOUNT_INVALID', 'Assign/top-up needs a target player and a positive amount');
-      }
-      this.escrow.ensureMasterWallet(targetUserId);
-      this.escrow.creditGame({ userId: targetUserId, tableId, amount, actorId: viewer.id });
-    }
 
     let lockedId: string | undefined;
     if (applied.locksChips) {
@@ -108,6 +101,12 @@ export class TableService {
     }
     if (applied.resolvesPot) {
       this.resolveTargets(runtime, tableId, viewer.id, input, applied);
+    }
+    if (input.payoutAmount != null) {
+      this.adjustTargets(runtime, tableId, viewer.id, input);
+    }
+    if (applied.releasesBox) {
+      this.releaseTargets(runtime, tableId, viewer.id, input);
     }
     if (applied.releasesPot) {
       this.releaseResolved(runtime, tableId, viewer.id);
@@ -170,9 +169,10 @@ export class TableService {
       protocolId: runtime.protocol.protocolId,
       phase: runtime.protocol.phase,
       flags: runtime.protocol.flags,
-      boxes: runtime.protocol.boxes,
+      boxes: runtime.protocol.boxes.map((box) => this.boxView(runtime, tableId, box)),
       pot: { amount: potAmount },
-      authorityUserId: getAuthorityUserId(runtime.protocol),
+      authorityUserId: peekAuthorityUserId(runtime.protocol),
+      multipliers: protocol.multipliers ?? null,
       currentTurnUserId: getCurrentTurnUserId(runtime.protocol),
       settingsAccess: viewerId === ownerUserId,
       viewer: {
@@ -186,8 +186,8 @@ export class TableService {
           label: actionLabel(action),
           locksChips: Boolean(action.locksChips),
           requiresBox: Boolean(action.requiresBox || action.requiresOwnedBox),
-          creditsGame: Boolean(action.creditsGame),
           resolvesPot: Boolean(action.resolvesPot),
+          releasesBox: Boolean(action.releasesBox),
         })),
         handDisplay: runtime.handDisplays.get(viewerId) ?? { userId: viewerId, text: '', photo: '' },
       },
@@ -198,7 +198,36 @@ export class TableService {
         handDisplay: runtime.handDisplays.get(userId) ?? { userId, text: '', photo: '' },
       })),
       payoutRule: protocol.payoutRule,
+      invites: this.auth.listInvites(tableId).map((invite) => ({
+        id: invite.id,
+        channel: invite.channel,
+        label: invite.invitedEmail ?? invite.invitedPhone ?? `${invite.channel} invite`,
+        openingChips: invite.openingChips,
+        status: invite.claimedByUserId ? 'joined' : 'pending',
+        claimedByUserId: invite.claimedByUserId,
+        joinPath: viewerId === ownerUserId ? invite.joinPath : null,
+        shareUrl:
+          viewerId === ownerUserId && invite.channel === 'whatsapp'
+            ? `https://wa.me/?text=${encodeURIComponent(`Join the table: ${invite.joinPath}`)}`
+            : null,
+      })),
     };
+  }
+
+  private applyOpeningCredits(tableId: string, ownerUserId: string): void {
+    for (const invite of this.auth.listInvites(tableId)) {
+      if (!invite.claimedByUserId || invite.openingCredited || invite.openingChips <= 0) {
+        continue;
+      }
+      this.escrow.ensureMasterWallet(invite.claimedByUserId);
+      this.escrow.creditGame({
+        userId: invite.claimedByUserId,
+        tableId,
+        amount: invite.openingChips,
+        actorId: ownerUserId,
+      });
+      this.auth.markOpeningCredited(invite.id);
+    }
   }
 
   private ensureRuntime(tableId: string): Runtime {
@@ -216,7 +245,7 @@ export class TableService {
         protocol,
         playerIds,
         tableOwnerUserId: table.ownerUserId,
-        standingAuthorityUserId: table.ownerUserId,
+        standingAuthorityUserId: null,
       }),
       handDisplays: new Map(),
       boxEscrowIds: new Map(),
@@ -298,6 +327,62 @@ export class TableService {
     void action;
   }
 
+  private adjustTargets(runtime: Runtime, tableId: string, actorId: string, input: TableActInput): void {
+    const amount = input.payoutAmount;
+    if (amount == null || !Number.isInteger(amount) || amount < 0) {
+      fail('AMOUNT_INVALID', 'Edited payout must be a non-negative integer');
+    }
+    const protocol = getProtocol(runtime.protocol.protocolId);
+    const canResolve = canResolveForTable(runtime.protocol);
+    for (const row of this.targetEscrows(runtime, tableId, input)) {
+      if (row.state !== 'RESOLVED' || !row.payout) {
+        continue;
+      }
+      this.escrow.setResolvedPayout({
+        escrowId: row.id,
+        actorId,
+        protocolConfig: protocol,
+        canResolve,
+        credits: [{ userId: row.userId, amount }],
+        counterpartyUserId: peekAuthorityUserId(runtime.protocol) ?? undefined,
+      });
+    }
+  }
+
+  private releaseTargets(runtime: Runtime, tableId: string, actorId: string, input: TableActInput): void {
+    const protocol = getProtocol(runtime.protocol.protocolId);
+    const canResolve = canResolveForTable(runtime.protocol);
+    for (const row of this.targetEscrows(runtime, tableId, input)) {
+      const current = this.escrow.listEscrowsForTable(tableId).find((item) => item.id === row.id);
+      if (current?.state !== 'RESOLVED') {
+        continue;
+      }
+      this.escrow.release({
+        escrowId: current.id,
+        actorId,
+        protocolConfig: protocol,
+        canResolve,
+      });
+    }
+  }
+
+  private boxView(runtime: Runtime, tableId: string, box: Box) {
+    const ids = new Set(runtime.boxEscrowIds.get(box.id) ?? []);
+    const attached = this.escrow.listEscrowsForTable(tableId).filter((row) => ids.has(row.id));
+    const primary = attached[0];
+    const credit = primary?.payout?.credits.find((item) => item.userId === box.ownerUserId);
+    return {
+      id: box.id,
+      ownerUserId: box.ownerUserId,
+      ownerLabel: this.label(box.ownerUserId),
+      stake: box.stake,
+      status: box.status,
+      escrowState: primary?.state ?? null,
+      outcome: primary?.payout?.outcome ?? null,
+      suggestedPayout: credit?.amount ?? null,
+    };
+  }
+
   private releaseResolved(runtime: Runtime, tableId: string, actorId: string): void {
     const protocol = getProtocol(runtime.protocol.protocolId);
     const canResolve = canResolveForTable(runtime.protocol);
@@ -345,7 +430,7 @@ function viewerRoles(
   if (viewerId === ownerUserId) {
     roles.push('table-owner');
   }
-  if (viewerId === getAuthorityUserId(state)) {
+  if (viewerId === peekAuthorityUserId(state)) {
     roles.push(getProtocol(state.protocolId).authorityRole);
   }
   if (state.playerIds.includes(viewerId)) {
@@ -358,6 +443,9 @@ function viewerRoles(
 }
 
 function actionLabel(action: ProtocolAction): string {
+  if (action.label) {
+    return action.label;
+  }
   return action.id
     .split('-')
     .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))

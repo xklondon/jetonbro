@@ -6,11 +6,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 afterEach(cleanup);
 import { MemoryRouter } from 'react-router-dom';
 import { ActionBar } from './components/ActionBar.js';
+import { ResolutionBoard } from './components/ResolutionBoard.js';
+import { SetupPanel } from './components/SetupPanel.js';
 import { HandDisplayField } from './components/HandDisplayField.js';
 import { StackAndPot } from './components/StackAndPot.js';
+import { HomePage } from './pages/HomePage.js';
 import { StandingsPage } from './pages/StandingsPage.js';
 import { ThemeProvider } from './theme/ThemeProvider.js';
-import { applySkinTokens, SIMPLE_SKIN, type SkinTokens } from './theme/tokens.js';
+import { ChipPile } from './components/StackAndPot.js';
+import { applySkinTokens, CASINO_SKIN } from './theme/tokens.js';
 import type { TableSnapshot } from './api.js';
 
 const snapshot = (over: Partial<TableSnapshot> = {}): TableSnapshot => ({
@@ -21,6 +25,7 @@ const snapshot = (over: Partial<TableSnapshot> = {}): TableSnapshot => ({
   boxes: [],
   pot: { amount: 0 },
   authorityUserId: 'bank',
+  multipliers: { win: 2, blackjack: 2.5, push: 1, lose: 0 },
   currentTurnUserId: 'p1',
   settingsAccess: true,
   payoutRule: 'multiplier',
@@ -30,10 +35,11 @@ const snapshot = (over: Partial<TableSnapshot> = {}): TableSnapshot => ({
     roles: ['player'],
     stack: 40,
     masterBalance: 0,
-    allowedActions: [{ id: 'bet', label: 'Bet', locksChips: true, requiresBox: false, creditsGame: false, resolvesPot: false }],
+    allowedActions: [{ id: 'bet', label: 'Bet', locksChips: true, requiresBox: false, resolvesPot: false }],
     handDisplay: { userId: 'p1', text: '', photo: '' },
   },
   players: [],
+  invites: [],
   ...over,
 });
 
@@ -61,7 +67,7 @@ describe('core UI', () => {
     render(
       <ActionBar
         actions={[
-          { id: 'close-betting', label: 'Close betting', locksChips: false, requiresBox: false, creditsGame: false, resolvesPot: false },
+          { id: 'close-betting', label: 'Close betting', locksChips: false, requiresBox: false, resolvesPot: false },
         ]}
         onAction={onAction}
       />,
@@ -105,17 +111,159 @@ describe('core UI', () => {
     expect(api.clearStandings).toHaveBeenCalledWith('bob');
   });
 
-  it('does not hardcode Simple colors — extra skins restyle the same piles', () => {
-    const casino: SkinTokens = { ...SIMPLE_SKIN, id: 'casino', name: 'Casino', icon: '♠', pot: '#ff0', stack: '#0f0' };
-    const root = document.createElement('div');
-    applySkinTokens(root, casino);
-    expect(root.style.getPropertyValue('--skin-pot')).toBe('#ff0');
-    expect(root.style.getPropertyValue('--skin-stack')).toBe('#0f0');
+  it('stays on home and asks to check email when the magic link was mailed', async () => {
+    const api = {
+      requestMagicLink: vi.fn().mockResolvedValue({ emailed: true }),
+    };
     render(
-      <ThemeProvider tokens={casino}>
+      <MemoryRouter>
+        <HomePage api={api as never} hasSession={false} />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText('Email'), 'host@t.test');
+    await userEvent.click(screen.getByRole('button', { name: 'Send magic link' }));
+    expect(await screen.findByText('Check your email for the sign-in link.')).toBeTruthy();
+  });
+
+  it('lets the owner add a player and lists them as pending', async () => {
+    const created = {
+      tableId: 't1',
+      invites: [
+        {
+          id: 'inv1',
+          channel: 'email',
+          label: 'ada@t.test',
+          openingChips: 40,
+          status: 'pending' as const,
+          claimedByUserId: null,
+          joinPath: '/verify?token=abc',
+          shareUrl: null,
+        },
+      ],
+    };
+    const api = {
+      createInvite: vi.fn().mockResolvedValue({ token: 'inv', magicToken: 'abc', joinPath: '/verify?token=abc', shareUrl: null }),
+      snapshot: vi.fn().mockResolvedValue(snapshot(created)),
+    };
+    render(
+      <SetupPanel
+        api={api as never}
+        snapshot={snapshot({ settingsAccess: true, phase: 'setup' })}
+        onSnapshot={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Add player' })).toBeTruthy();
+    expect(screen.queryByText('Top up existing player')).toBeNull();
+    expect(screen.queryByText('Assign chips')).toBeNull();
+    expect(screen.queryByText('Credit player')).toBeNull();
+    await userEvent.type(screen.getByLabelText('Email'), 'ada@t.test');
+    await userEvent.clear(screen.getByLabelText('Starting chips'));
+    await userEvent.type(screen.getByLabelText('Starting chips'), '40');
+    await userEvent.click(screen.getByRole('button', { name: 'Add player' }));
+    expect(api.createInvite).toHaveBeenCalledWith('t1', {
+      channel: 'email',
+      email: 'ada@t.test',
+      openingChips: 40,
+    });
+  });
+
+  it('lets the owner mark one joined player Bank (radio)', async () => {
+    const api = { act: vi.fn().mockResolvedValue(snapshot()), snapshot: vi.fn() };
+    render(
+      <SetupPanel
+        api={api as never}
+        snapshot={snapshot({
+          phase: 'setup',
+          settingsAccess: true,
+          authorityUserId: null,
+          viewer: {
+            ...snapshot().viewer,
+            allowedActions: [{ id: 'assign-bank', label: 'Assign bank', locksChips: false, requiresBox: false, resolvesPot: false }],
+          },
+          players: [{ id: 'p2', label: 'ada@t.test', stack: 40, handDisplay: { userId: 'p2', text: '', photo: '' } }],
+          invites: [
+            {
+              id: 'inv1',
+              channel: 'email',
+              label: 'ada@t.test',
+              openingChips: 40,
+              status: 'joined',
+              claimedByUserId: 'p2',
+              joinPath: null,
+              shareUrl: null,
+            },
+          ],
+        })}
+        onSnapshot={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getAllByLabelText('Bank')[0]!);
+    expect(api.act).toHaveBeenCalledWith('t1', { actionId: 'assign-bank', targetUserId: 'p2' });
+    expect(screen.queryByRole('button', { name: 'Start betting' })).toBeNull();
+  });
+
+  it('shows every locked box to Bank with a suggested payout', async () => {
+    const api = { act: vi.fn().mockResolvedValue(snapshot()) };
+    render(
+      <ResolutionBoard
+        api={api as never}
+        snapshot={snapshot({
+          phase: 'resolution',
+          boxes: [
+            {
+              id: 'b1',
+              ownerUserId: 'p2',
+              ownerLabel: 'ada@t.test',
+              stake: 10,
+              status: 'locked',
+              escrowState: 'LOCKED',
+              outcome: null,
+              suggestedPayout: null,
+            },
+          ],
+        })}
+        onSnapshot={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/ada@t.test · 10 locked/)).toBeTruthy();
+    await userEvent.click(screen.getByLabelText('Lose'));
+    expect(screen.getByText('Suggested 0 (editable before release)')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm release' }));
+    expect(api.act).toHaveBeenCalledWith('t1', {
+      actionId: 'declare-outcome',
+      boxId: 'b1',
+      outcome: 'lose',
+      payoutAmount: 0,
+    });
+  });
+
+  it('does not hardcode Simple colors — extra skins restyle the same piles', () => {
+    const root = document.createElement('div');
+    applySkinTokens(root, CASINO_SKIN);
+    expect(root.style.getPropertyValue('--skin-pot')).toBe(CASINO_SKIN.pot);
+    expect(root.style.getPropertyValue('--skin-stack')).toBe(CASINO_SKIN.stack);
+    render(
+      <ThemeProvider tokens={CASINO_SKIN}>
         <StackAndPot snapshot={snapshot({ pot: { amount: 7 } })} />
       </ThemeProvider>,
     );
     expect(screen.getByTestId('pot-pile').getAttribute('data-amount')).toBe('7');
+  });
+
+  it('chip-visual mode draws denoms from the same pile integer, not a second pot', () => {
+    render(<ChipPile testId="pot-pile" label="Pot" amount={40} kind="pot" chipVisual />);
+    expect(screen.getByTestId('pot-pile').getAttribute('data-amount')).toBe('40');
+    expect(screen.getByTestId('pot-pile').querySelector('[data-denom="25"]')?.getAttribute('data-count')).toBe(
+      '1',
+    );
+    expect(screen.getByTestId('pot-pile').querySelector('[data-denom="10"]')?.getAttribute('data-count')).toBe(
+      '1',
+    );
+    expect(screen.getByTestId('pot-pile').querySelector('[data-denom="5"]')?.getAttribute('data-count')).toBe(
+      '1',
+    );
   });
 });

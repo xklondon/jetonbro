@@ -10,8 +10,10 @@ export interface AuthStore {
   insertTable(table: TableRecord): void;
   getTable(id: string): TableRecord | undefined;
   insertInvite(invite: Invite): void;
+  updateInvite(invite: Invite): void;
   getInviteByToken(token: string): Invite | undefined;
   getInvite(id: string): Invite | undefined;
+  listInvitesForTable(tableId: string): Invite[];
   insertMagicLink(link: MagicLink): void;
   getMagicLink(token: string): MagicLink | undefined;
   consumeMagicLink(token: string): MagicLink | undefined;
@@ -82,6 +84,14 @@ export function createMemoryAuthStore(): AuthStore {
       const copy = { ...invite };
       invites.set(invite.token, copy);
       invitesById.set(invite.id, copy);
+    },
+    updateInvite(invite) {
+      const copy = { ...invite };
+      invites.set(invite.token, copy);
+      invitesById.set(invite.id, copy);
+    },
+    listInvitesForTable(tableId) {
+      return [...invitesById.values()].filter((invite) => invite.tableId === tableId).map((invite) => ({ ...invite }));
     },
     getInviteByToken(token) {
       const row = invites.get(token);

@@ -3,15 +3,17 @@ import { Link, useParams } from 'react-router-dom';
 import type { AllowedAction, Api, TableSnapshot } from '../api.js';
 import { ActionBar } from '../components/ActionBar.js';
 import { HandDisplayField } from '../components/HandDisplayField.js';
+import { ResolutionBoard } from '../components/ResolutionBoard.js';
+import { SetupPanel, StartBettingButton } from '../components/SetupPanel.js';
 import { StackAndPot } from '../components/StackAndPot.js';
+
+const HIDDEN_ACTIONS = new Set(['assign-bank', 'open-betting', 'declare-outcome']);
 
 export function TablePage({ api, onTable }: { api: Api; onTable?: (id: string) => void }) {
   const { tableId = '' } = useParams();
   const [snapshot, setSnapshot] = useState<TableSnapshot | null>(null);
   const [amount, setAmount] = useState('10');
   const [boxId, setBoxId] = useState('');
-  const [targetUserId, setTargetUserId] = useState('');
-  const [outcome, setOutcome] = useState('win');
   const [error, setError] = useState('');
 
   async function refresh() {
@@ -21,24 +23,21 @@ export function TablePage({ api, onTable }: { api: Api; onTable?: (id: string) =
   useEffect(() => {
     onTable?.(tableId);
     refresh().catch((err: Error) => setError(err.message));
+    const tick = window.setInterval(() => {
+      refresh().catch(() => undefined);
+    }, 3000);
+    return () => window.clearInterval(tick);
   }, [tableId]);
 
   async function run(action: AllowedAction) {
     setError('');
     try {
       const body: Record<string, unknown> = { actionId: action.id };
-      if (action.locksChips || action.creditsGame) {
+      if (action.locksChips) {
         body.amount = Number(amount);
       }
       if (action.requiresBox && (boxId || snapshot?.boxes[0]?.id)) {
         body.boxId = boxId || snapshot?.boxes[0]?.id;
-      }
-      if (action.creditsGame) {
-        body.targetUserId = targetUserId || snapshot?.players[0]?.id;
-      }
-      if (action.resolvesPot) {
-        body.outcome = outcome;
-        body.winners = [snapshot?.viewer.id];
       }
       setSnapshot(await api.act(tableId, body));
     } catch (err) {
@@ -55,6 +54,12 @@ export function TablePage({ api, onTable }: { api: Api; onTable?: (id: string) =
     snapshot.phase === 'showdown' ||
     snapshot.viewer.allowedActions.some((action) => action.id === 'attach-hand-display');
   const canEditHand = snapshot.viewer.allowedActions.some((action) => action.id === 'attach-hand-display');
+  const visibleActions = snapshot.viewer.allowedActions.filter((action) => !HIDDEN_ACTIONS.has(action.id));
+  const needsAmount = visibleActions.some((action) => action.locksChips);
+  const canStart = snapshot.viewer.allowedActions.some((action) => action.id === 'open-betting');
+  const showResolutionBoard =
+    snapshot.payoutRule === 'multiplier' &&
+    snapshot.viewer.allowedActions.some((action) => action.id === 'declare-outcome');
 
   return (
     <main>
@@ -63,51 +68,50 @@ export function TablePage({ api, onTable }: { api: Api; onTable?: (id: string) =
           {snapshot.protocolId} · {snapshot.phase}
         </p>
         <h1>Table</h1>
-        {snapshot.settingsAccess ? <p className="muted">Settings available (owner)</p> : null}
         <p className="muted">You: {snapshot.viewer.roles.join(', ') || 'viewer'}</p>
       </header>
+      {snapshot.phase === 'setup' && snapshot.settingsAccess ? (
+        <SetupPanel api={api} snapshot={snapshot} onSnapshot={setSnapshot} onError={setError} />
+      ) : null}
+      {snapshot.phase === 'setup' && !snapshot.settingsAccess && canStart ? (
+        <StartBettingButton
+          onStart={() => {
+            void run({
+              id: 'open-betting',
+              label: 'Start betting',
+              locksChips: false,
+              requiresBox: false,
+              resolvesPot: false,
+            });
+          }}
+        />
+      ) : null}
       <StackAndPot snapshot={snapshot} />
-      <label>
-        Amount
-        <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" />
-      </label>
-      {snapshot.boxes.length > 1 ? (
+      {needsAmount ? (
+        <label>
+          Amount
+          <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" />
+        </label>
+      ) : null}
+      {snapshot.boxes.length > 1 && visibleActions.some((action) => action.requiresBox) ? (
         <label>
           Box
           <select value={boxId} onChange={(event) => setBoxId(event.target.value)}>
             <option value="">Your box</option>
             {snapshot.boxes.map((box) => (
               <option key={box.id} value={box.id}>
-                {box.ownerUserId === snapshot.viewer.id ? 'Yours' : box.ownerUserId} · {box.stake}
+                {box.ownerUserId === snapshot.viewer.id ? 'Yours' : box.ownerLabel} · {box.stake}
               </option>
             ))}
           </select>
         </label>
       ) : null}
-      {snapshot.viewer.allowedActions.some((action) => action.creditsGame) ? (
-        <label>
-          Credit player
-          <select value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)}>
-            {snapshot.players.map((player) => (
-              <option key={player.id} value={player.id}>
-                {player.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      {showResolutionBoard ? (
+        <ResolutionBoard api={api} snapshot={snapshot} onSnapshot={setSnapshot} onError={setError} />
       ) : null}
-      {snapshot.viewer.allowedActions.some((action) => action.resolvesPot) ? (
-        <label>
-          Outcome
-          <select value={outcome} onChange={(event) => setOutcome(event.target.value)}>
-            <option value="win">Win</option>
-            <option value="blackjack">Blackjack</option>
-            <option value="push">Push</option>
-            <option value="lose">Lose</option>
-          </select>
-        </label>
+      {visibleActions.length > 0 || snapshot.phase !== 'setup' ? (
+        <ActionBar actions={visibleActions} onAction={(action) => void run(action)} />
       ) : null}
-      <ActionBar actions={snapshot.viewer.allowedActions} onAction={(action) => void run(action)} />
       {error ? <p className="error">{error}</p> : null}
       {showHand
         ? snapshot.players.map((player) => (

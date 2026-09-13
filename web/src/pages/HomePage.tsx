@@ -17,7 +17,13 @@ export function HomePage({ api, hasSession }: { api: Api; hasSession: boolean })
             event.preventDefault();
             api
               .requestMagicLink(email)
-              .then((result) => navigate(`/verify?token=${encodeURIComponent(result.token)}`))
+              .then((result) => {
+                if (result.emailed || !result.token) {
+                  setMessage('Check your email for the sign-in link.');
+                  return;
+                }
+                navigate(`/verify?token=${encodeURIComponent(result.token)}`);
+              })
               .catch((err: Error) => setMessage(err.message));
           }}
         >

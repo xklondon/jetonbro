@@ -24,6 +24,11 @@ export interface Invite {
   channel: InviteChannel;
   invitedEmail: string | null;
   invitedPhone: string | null;
+  openingChips: number;
+  claimedByUserId: string | null;
+  openingCredited: boolean;
+  magicToken: string | null;
+  joinPath: string;
 }
 
 export interface MagicLink {

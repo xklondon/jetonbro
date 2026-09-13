@@ -4,6 +4,8 @@ import { guestUserId } from './service.js';
 import { createApp } from '../http/app.js';
 import type { EscrowService } from '../escrow/service.js';
 
+delete process.env.RESEND_API_KEY;
+
 async function ownerWithTable() {
   const { app, escrow } = createApp();
   const agent = request(app);
@@ -43,6 +45,7 @@ async function createInvite(
     magicToken: string | null;
     verifyUrl: string | null;
     previewUrl: string;
+    joinPath: string;
   };
 }
 
@@ -51,7 +54,7 @@ function masterWalletsFor(escrow: EscrowService, userId: string) {
 }
 
 describe('invite / identity paths', () => {
-  it('email invite: magic-link + T&Cs creates one wallet and joins the table', async () => {
+  it('email invite: magic-link creates one wallet and joins the table', async () => {
     const { agent, escrow, ownerToken, ownerId, tableId } = await ownerWithTable();
     const invite = await createInvite(agent, ownerToken, tableId, {
       channel: 'email',
@@ -67,7 +70,6 @@ describe('invite / identity paths', () => {
 
     expect(session.body.user.email).toBe('ada@t.test');
     expect(session.body.user.isGuest).toBe(false);
-    expect(session.body.user.acceptedTermsAt).toBeTruthy();
 
     const me = await agent
       .get('/api/auth/me')
@@ -88,15 +90,12 @@ describe('invite / identity paths', () => {
       email: 'wa@t.test',
     });
     expect(invite.shareUrl).toMatch(/^https:\/\/wa\.me\/\?text=/);
-    expect(invite.shareUrl).toContain(encodeURIComponent(invite.verifyUrl ?? ''));
+    expect(invite.shareUrl).toContain(encodeURIComponent(invite.joinPath ?? ''));
     expect(invite.magicToken).toBeTruthy();
-
-    const denied = await agent.post('/api/auth/verify').send({ token: invite.magicToken }).expect(400);
-    expect(denied.body.error).toBe('TERMS_REQUIRED');
 
     const session = await agent
       .post('/api/auth/verify')
-      .send({ token: invite.magicToken, acceptedTerms: true })
+      .send({ token: invite.magicToken })
       .expect(200);
 
     expect(session.body.user.email).toBe('wa@t.test');
@@ -111,7 +110,7 @@ describe('invite / identity paths', () => {
 
     const preview = await agent.get('/api/invites/preview').query({ token: invite.token }).expect(200);
     expect(preview.body.requiresContact).toBe(true);
-    expect(preview.body.requiresTerms).toBe(true);
+    expect(preview.body.requiresTerms).toBe(false);
 
     const link = await agent
       .post('/api/auth/request-magic-link')
@@ -124,7 +123,6 @@ describe('invite / identity paths', () => {
       .expect(200);
 
     expect(session.body.user.phone).toBe('+447700900123');
-    expect(session.body.user.acceptedTermsAt).toBeTruthy();
     expect(masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
     expect(escrow.listMasterWallets()).toHaveLength(2);
   });
@@ -175,25 +173,17 @@ describe('invite / identity paths', () => {
       .send({ email: 'upgraded@t.test', deviceId: 'device-upgrade' })
       .expect(201);
 
-    const denied = await agent.post('/api/auth/verify').send({ token: link.body.token }).expect(400);
-    expect(denied.body.error).toBe('TERMS_REQUIRED');
     expect(escrow.getMasterWallet(guestId)?.id).toBe(original!.id);
-
-    const stillGuestLink = await agent
-      .post('/api/auth/request-magic-link')
-      .send({ email: 'upgraded@t.test', deviceId: 'device-upgrade' })
-      .expect(201);
 
     const upgraded = await agent
       .post('/api/auth/verify')
-      .send({ token: stillGuestLink.body.token, acceptedTerms: true })
+      .send({ token: link.body.token })
       .expect(200);
 
     expect(upgraded.body.user.id).not.toBe(guestId);
     expect(upgraded.body.user.email).toBe('upgraded@t.test');
     expect(upgraded.body.user.isGuest).toBe(false);
     expect(upgraded.body.user.upgradedFromUserId).toBe(guestId);
-    expect(upgraded.body.user.acceptedTermsAt).toBeTruthy();
 
     expect(escrow.getMasterWallet(guestId)).toBeUndefined();
     const moved = escrow.getMasterWallet(upgraded.body.user.id);
@@ -210,30 +200,30 @@ describe('invite / identity paths', () => {
     expect(me.body.tableIds).toEqual([tableId]);
   });
 
-  it('T&Cs are required on the three non-mates paths and skipped on Mates mode', async () => {
+  it('T&Cs are skipped on every invite path for v1 friends-only testing', async () => {
     const { agent, ownerToken, tableId } = await ownerWithTable();
 
     const emailInvite = await createInvite(agent, ownerToken, tableId, {
       channel: 'email',
       email: 'terms-email@t.test',
     });
-    const emailDenied = await agent.post('/api/auth/verify').send({ token: emailInvite.magicToken }).expect(400);
-    expect(emailDenied.body.error).toBe('TERMS_REQUIRED');
+    const emailOk = await agent.post('/api/auth/verify').send({ token: emailInvite.magicToken }).expect(200);
+    expect(emailOk.body.user.acceptedTermsAt).toBeNull();
 
     const qrInvite = await createInvite(agent, ownerToken, tableId, { channel: 'qr' });
     const qrLink = await agent
       .post('/api/auth/request-magic-link')
       .send({ email: 'terms-qr@t.test', inviteToken: qrInvite.token })
       .expect(201);
-    const qrDenied = await agent.post('/api/auth/verify').send({ token: qrLink.body.token }).expect(400);
-    expect(qrDenied.body.error).toBe('TERMS_REQUIRED');
+    const qrOk = await agent.post('/api/auth/verify').send({ token: qrLink.body.token }).expect(200);
+    expect(qrOk.body.user.acceptedTermsAt).toBeNull();
 
     const waInvite = await createInvite(agent, ownerToken, tableId, {
       channel: 'whatsapp',
       phone: '07700900456',
     });
-    const waDenied = await agent.post('/api/auth/verify').send({ token: waInvite.magicToken }).expect(400);
-    expect(waDenied.body.error).toBe('TERMS_REQUIRED');
+    const waOk = await agent.post('/api/auth/verify').send({ token: waInvite.magicToken }).expect(200);
+    expect(waOk.body.user.acceptedTermsAt).toBeNull();
 
     const matesInvite = await createInvite(agent, ownerToken, tableId, { channel: 'mates' });
     const mates = await agent
@@ -254,7 +244,7 @@ describe('invite / identity paths', () => {
       .query({ token: link.body.token, acceptedTerms: '1' })
       .expect(200);
 
-    expect(peeked.body.requiresTerms).toBe(true);
+    expect(peeked.body.requiresTerms).toBe(false);
     expect(peeked.body.email).toBe('scanner@t.test');
     expect(peeked.body.sessionToken).toBeUndefined();
     expect(peeked.body.user).toBeUndefined();
@@ -263,7 +253,7 @@ describe('invite / identity paths', () => {
     expect(escrow.listMasterWallets().some((wallet) => wallet.userId.includes('scanner'))).toBe(false);
 
     const again = await agent.get('/api/auth/verify').query({ token: link.body.token }).expect(200);
-    expect(again.body.requiresTerms).toBe(true);
+    expect(again.body.requiresTerms).toBe(false);
 
     const created = await agent
       .post('/api/auth/verify')

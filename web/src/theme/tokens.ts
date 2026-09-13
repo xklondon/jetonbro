@@ -43,11 +43,56 @@ export const SIMPLE_SKIN: SkinTokens = {
   stack: '#2f5d50',
 };
 
-export const SKINS: Record<SkinTokens['id'], SkinTokens | undefined> = {
+export const CASINO_SKIN: SkinTokens = {
+  id: 'casino',
+  name: 'Casino',
+  icon: '♠',
+  background: '#0d3b2e',
+  surface: '#14533f',
+  accent: '#d4af37',
+  button: '#8b1e3f',
+  buttonText: '#fff8e7',
+  text: '#f4efe4',
+  muted: '#9bb8aa',
+  pot: '#d4af37',
+  stack: '#c9a227',
+};
+
+export const BANK_SKIN: SkinTokens = {
+  id: 'bank',
+  name: 'Bank',
+  icon: '£',
+  background: '#1b2430',
+  surface: '#243044',
+  accent: '#c4a35a',
+  button: '#c4a35a',
+  buttonText: '#1b2430',
+  text: '#e8e4db',
+  muted: '#8c93a0',
+  pot: '#c4a35a',
+  stack: '#7f9bb3',
+};
+
+export const FUN_SKIN: SkinTokens = {
+  id: 'fun',
+  name: 'Fun',
+  icon: '★',
+  background: '#fff3bf',
+  surface: '#ffffff',
+  accent: '#5f3dc4',
+  button: '#f76707',
+  buttonText: '#ffffff',
+  text: '#212529',
+  muted: '#845ef7',
+  pot: '#f03e3e',
+  stack: '#37b24d',
+};
+
+export const SKINS: Record<SkinTokens['id'], SkinTokens> = {
   simple: SIMPLE_SKIN,
-  casino: undefined,
-  bank: undefined,
-  fun: undefined,
+  casino: CASINO_SKIN,
+  bank: BANK_SKIN,
+  fun: FUN_SKIN,
 };
 
 export function applySkinTokens(root: HTMLElement, tokens: SkinTokens): void {

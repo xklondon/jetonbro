@@ -40,7 +40,7 @@ Bank role: **standing** by default, table setting for **rotating** (passes each 
 
 | Phase | Bank/dealer can | Player can |
 |---|---|---|
-| **Setup** | Assign/top-up jetons (credit) to each player's game wallet | See own stack; wait |
+| **Setup** | Start betting, only after the table owner has assigned Bank and at least one other Player has joined. (Table owner — who may or may not be Bank — assigns the standing Bank role, one person at a time, and assigns starting chips when inviting each player. Owner and Bank are different roles.) | See own stack; wait |
 | **Betting open** | Open the betting round | Bet — type an amount or tap denominations from their stack — confirm (locks into their box) |
 | **Betting closed** | Close betting (locks all boxes); signal "cards dealt" (offline deal happens now) | — |
 | **Post-deal actions** | Optionally open an "insurance window" (toggle) | Double (locks matching amount), Split (locks matching amount, creates second box), Insurance — only if bank has opened that window |

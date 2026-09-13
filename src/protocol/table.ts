@@ -9,7 +9,7 @@ export interface CreateProtocolTableInput {
   tableOwnerUserId?: string;
   /** Blackjack table setting. Ignored unless the protocol allows an override. */
   authorityMode?: AuthorityMode;
-  standingAuthorityUserId?: string;
+  standingAuthorityUserId?: string | null;
 }
 
 export function createProtocolTable(input: CreateProtocolTableInput): ProtocolTableState {
@@ -32,7 +32,9 @@ export function createProtocolTable(input: CreateProtocolTableInput): ProtocolTa
 
   const standingAuthorityUserId =
     authorityMode === 'standing'
-      ? (input.standingAuthorityUserId ?? input.playerIds[0]!)
+      ? (input.standingAuthorityUserId !== undefined
+          ? input.standingAuthorityUserId
+          : input.playerIds[0]!)
       : null;
 
   return {
@@ -51,14 +53,19 @@ export function createProtocolTable(input: CreateProtocolTableInput): ProtocolTa
   };
 }
 
-export function getAuthorityUserId(state: ProtocolTableState): string {
+export function peekAuthorityUserId(state: ProtocolTableState): string | null {
   if (state.authorityMode === 'standing') {
-    if (!state.standingAuthorityUserId) {
-      fail('TABLE_INVALID', 'Standing authority is not set');
-    }
     return state.standingAuthorityUserId;
   }
-  return state.playerIds[state.authorityIndex]!;
+  return state.playerIds[state.authorityIndex] ?? null;
+}
+
+export function getAuthorityUserId(state: ProtocolTableState): string {
+  const authorityId = peekAuthorityUserId(state);
+  if (!authorityId) {
+    fail('TABLE_INVALID', 'Standing authority is not set');
+  }
+  return authorityId;
 }
 
 export function getCurrentTurnUserId(state: ProtocolTableState): string {

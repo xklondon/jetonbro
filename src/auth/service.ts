@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { EscrowService } from '../escrow/service.js';
 import { fail } from './errors.js';
+import type { MagicLinkMailer } from './mailer.js';
 import { createMemoryAuthStore, type AuthStore } from './store.js';
 import type { Invite, InviteChannel, MagicLink, TableRecord, User } from './types.js';
 
@@ -19,7 +20,7 @@ export interface RequestMagicLinkInput {
 
 export interface VerifyInput {
   token: string;
-  acceptedTerms: boolean;
+  acceptedTerms?: boolean;
 }
 
 export interface JoinMatesInput {
@@ -31,6 +32,7 @@ export interface CreateInviteInput {
   channel: InviteChannel;
   email?: string;
   phone?: string;
+  openingChips?: number;
 }
 
 export interface EmailOutboxItem {
@@ -42,6 +44,30 @@ export interface EmailOutboxItem {
 export interface SessionView {
   sessionToken: string;
   user: User;
+  tableId: string | null;
+}
+
+export interface AuthServiceOptions {
+  mailer?: MagicLinkMailer | null;
+  appOrigin?: string;
+}
+
+export interface MagicLinkResult {
+  token: string;
+  verifyUrl: string;
+  pageUrl: string;
+  emailed: boolean;
+}
+
+export interface CreatedInvite {
+  token: string;
+  channel: InviteChannel;
+  shareUrl: string | null;
+  magicToken: string | null;
+  verifyUrl: string | null;
+  previewUrl: string;
+  joinPath: string;
+  openingChips: number;
 }
 
 const VERIFY_PATH = '/api/auth/verify';
@@ -53,9 +79,10 @@ export class AuthService {
   constructor(
     private readonly escrow: EscrowService,
     private readonly store: AuthStore = createMemoryAuthStore(),
+    private readonly options: AuthServiceOptions = {},
   ) {}
 
-  requestMagicLink(input: RequestMagicLinkInput): { token: string; verifyUrl: string } {
+  async requestMagicLink(input: RequestMagicLinkInput): Promise<MagicLinkResult> {
     const email = normalizeEmail(input.email);
     const phone = normalizePhone(input.phone);
     if (!email && !phone) {
@@ -91,10 +118,20 @@ export class AuthService {
     });
 
     const verifyUrl = `${VERIFY_PATH}?token=${encodeURIComponent(token)}`;
+    const pageUrl = this.pageVerifyUrl(token);
     if (email) {
       this.emailOutbox.push({ to: email, magicToken: token, verifyUrl });
     }
-    return { token, verifyUrl };
+
+    const shouldEmail = Boolean(email && this.options.mailer && isEmailDeliveryChannel(invite));
+    if (shouldEmail && email && this.options.mailer) {
+      if (!this.options.appOrigin) {
+        fail('MAIL_ORIGIN_MISSING', 'APP_ORIGIN is required to email a magic link');
+      }
+      await this.options.mailer.send({ to: email, verifyPageUrl: pageUrl });
+    }
+
+    return { token, verifyUrl, pageUrl, emailed: shouldEmail };
   }
 
   /**
@@ -114,13 +151,11 @@ export class AuthService {
       fail('MAGIC_LINK_INVALID', 'Magic link is invalid or already used', 401);
     }
     const invite = link.inviteId ? this.store.getInvite(link.inviteId) : undefined;
-    const existing = this.findUserByContact(link.email, link.phone);
     const isUpgrade = Boolean(link.guestDeviceId);
-    const requiresTerms = isUpgrade || !existing?.acceptedTermsAt;
     return {
       email: link.email,
       phone: link.phone,
-      requiresTerms,
+      requiresTerms: false,
       isUpgrade,
       inviteChannel: invite?.channel ?? null,
       tableId: invite?.tableId ?? null,
@@ -138,17 +173,16 @@ export class AuthService {
       fail('INVITE_NOT_FOUND', 'Invite is no longer valid', 404);
     }
 
-    const user = link.guestDeviceId
-      ? this.upgradeGuest(link, input.acceptedTerms)
-      : this.verifyIdentifiedUser(link, input.acceptedTerms);
+    const user = link.guestDeviceId ? this.upgradeGuest(link) : this.verifyIdentifiedUser(link);
 
     this.store.consumeMagicLink(input.token);
 
     if (invite) {
       this.addMember(invite.tableId, user.id);
+      this.claimInvite(invite, user.id);
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, invite?.tableId ?? null);
   }
 
   joinMates(input: JoinMatesInput): SessionView {
@@ -160,7 +194,8 @@ export class AuthService {
     const existing = this.store.getUserByDeviceId(deviceId);
     const user = existing ?? this.createGuest(deviceId);
     this.addMember(invite.tableId, user.id);
-    return this.issueSession(user);
+    this.claimInvite(invite, user.id);
+    return this.issueSession(user, invite.tableId);
   }
 
   createTable(
@@ -168,8 +203,8 @@ export class AuthService {
     input: { protocolId?: TableRecord['protocolId'] } = {},
   ): TableRecord {
     const user = this.requireSessionUser(sessionToken);
-    if (user.isGuest || !user.acceptedTermsAt) {
-      fail('TERMS_REQUIRED', 'Creating a table requires a verified account that has accepted the T&Cs', 403);
+    if (user.isGuest) {
+      fail('FORBIDDEN', 'Creating a table requires a verified account', 403);
     }
     const protocolId = input.protocolId ?? 'blackjack';
     if (protocolId !== 'blackjack' && protocolId !== 'poker' && protocolId !== 'zilch') {
@@ -193,21 +228,26 @@ export class AuthService {
     return this.store.getUser(userId);
   }
 
-  createInvite(sessionToken: string, tableId: string, input: CreateInviteInput): {
-    token: string;
-    channel: InviteChannel;
-    shareUrl: string | null;
-    magicToken: string | null;
-    verifyUrl: string | null;
-    previewUrl: string;
-  } {
+  listInvites(tableId: string): Invite[] {
+    return this.store.listInvitesForTable(tableId);
+  }
+
+  markOpeningCredited(inviteId: string): void {
+    const invite = this.store.getInvite(inviteId);
+    if (!invite) {
+      return;
+    }
+    this.store.updateInvite({ ...invite, openingCredited: true });
+  }
+
+  async createInvite(sessionToken: string, tableId: string, input: CreateInviteInput): Promise<CreatedInvite> {
     const actor = this.requireSessionUser(sessionToken);
     const table = this.store.getTable(tableId);
     if (!table) {
       fail('TABLE_NOT_FOUND', 'Table not found', 404);
     }
-    if (table.ownerUserId !== actor.id && !this.store.isMember(tableId, actor.id)) {
-      fail('FORBIDDEN', 'Only a table member can create an invite', 403);
+    if (table.ownerUserId !== actor.id) {
+      fail('FORBIDDEN', 'Only the table owner can add a player', 403);
     }
 
     const channel = input.channel;
@@ -217,6 +257,10 @@ export class AuthService {
 
     const email = normalizeEmail(input.email);
     const phone = normalizePhone(input.phone);
+    const openingChips = input.openingChips ?? 0;
+    if (!Number.isInteger(openingChips) || openingChips < 0) {
+      fail('AMOUNT_INVALID', 'openingChips must be a non-negative integer');
+    }
     if (channel === 'email' && !email) {
       fail('CONTACT_REQUIRED', 'Email invites require an email address');
     }
@@ -224,13 +268,19 @@ export class AuthService {
       fail('CONTACT_NOT_ALLOWED', `${channel} invites do not capture contact details`);
     }
 
+    const inviteToken = randomUUID();
     const invite: Invite = {
       id: randomUUID(),
       tableId,
-      token: randomUUID(),
+      token: inviteToken,
       channel,
       invitedEmail: email,
       invitedPhone: phone,
+      openingChips,
+      claimedByUserId: null,
+      openingCredited: false,
+      magicToken: null,
+      joinPath: `/invite/${inviteToken}`,
     };
     this.store.insertInvite(invite);
 
@@ -239,18 +289,21 @@ export class AuthService {
     let verifyUrl: string | null = null;
 
     if (channel === 'email' || (channel === 'whatsapp' && (email || phone))) {
-      const issued = this.requestMagicLink({
+      const issued = await this.requestMagicLink({
         email: email ?? undefined,
         phone: phone ?? undefined,
         inviteToken: invite.token,
       });
       magicToken = issued.token;
       verifyUrl = issued.verifyUrl;
+      invite.magicToken = magicToken;
+      invite.joinPath = `/verify?token=${encodeURIComponent(magicToken)}`;
+      this.store.updateInvite(invite);
     }
 
     let shareUrl: string | null = null;
     if (channel === 'whatsapp') {
-      const target = verifyUrl ?? previewUrl;
+      const target = invite.joinPath;
       shareUrl = `https://wa.me/?text=${encodeURIComponent(`Join the table: ${target}`)}`;
     }
 
@@ -261,6 +314,8 @@ export class AuthService {
       magicToken,
       verifyUrl,
       previewUrl,
+      joinPath: invite.joinPath,
+      openingChips,
     };
   }
 
@@ -275,7 +330,7 @@ export class AuthService {
     return {
       tableId: invite.tableId,
       channel: invite.channel,
-      requiresTerms: !mates,
+      requiresTerms: false,
       requiresContact: !mates,
     };
   }
@@ -315,25 +370,13 @@ export class AuthService {
     return user;
   }
 
-  private verifyIdentifiedUser(link: MagicLink, acceptedTerms: boolean): User {
+  private verifyIdentifiedUser(link: MagicLink): User {
     const existing = this.findUserByContact(link.email, link.phone);
     if (existing) {
       if (existing.isGuest) {
         fail('CONTACT_CONFLICT', 'This contact is attached to a guest identity');
       }
-      if (!existing.acceptedTermsAt && !acceptedTerms) {
-        fail('TERMS_REQUIRED', 'T&Cs must be accepted to create an account');
-      }
-      if (!existing.acceptedTermsAt && acceptedTerms) {
-        const stamped = { ...existing, acceptedTermsAt: nowIso() };
-        this.store.updateUser(stamped);
-        return stamped;
-      }
       return existing;
-    }
-
-    if (!acceptedTerms) {
-      fail('TERMS_REQUIRED', 'T&Cs must be accepted to create an account');
     }
     return this.createVerifiedUser({
       email: link.email,
@@ -343,10 +386,7 @@ export class AuthService {
     });
   }
 
-  private upgradeGuest(link: MagicLink, acceptedTerms: boolean): User {
-    if (!acceptedTerms) {
-      fail('TERMS_REQUIRED', 'T&Cs must be accepted to upgrade a guest account');
-    }
+  private upgradeGuest(link: MagicLink): User {
     const deviceId = link.guestDeviceId;
     if (!deviceId) {
       fail('GUEST_NOT_FOUND', 'No Mates-mode guest exists for this device');
@@ -367,7 +407,7 @@ export class AuthService {
       phone: link.phone,
       deviceId,
       isGuest: false,
-      acceptedTermsAt: nowIso(),
+      acceptedTermsAt: null,
       createdAt: nowIso(),
       upgradedFromUserId: guest.id,
     };
@@ -397,7 +437,7 @@ export class AuthService {
       phone: input.phone,
       deviceId: input.deviceId,
       isGuest: false,
-      acceptedTermsAt: nowIso(),
+      acceptedTermsAt: null,
       createdAt: nowIso(),
       upgradedFromUserId: input.upgradedFromUserId,
     };
@@ -461,15 +501,36 @@ export class AuthService {
     }
   }
 
-  private issueSession(user: User): SessionView {
+  private claimInvite(invite: Invite, userId: string): void {
+    if (invite.claimedByUserId) {
+      return;
+    }
+    this.store.updateInvite({ ...invite, claimedByUserId: userId });
+  }
+
+  private issueSession(user: User, tableId: string | null = null): SessionView {
     const sessionToken = randomUUID();
     this.store.insertSession({ token: sessionToken, userId: user.id });
-    return { sessionToken, user };
+    return { sessionToken, user, tableId };
+  }
+
+  private pageVerifyUrl(token: string): string {
+    const origin = (this.options.appOrigin ?? '').replace(/\/$/, '');
+    const path = `/verify?token=${encodeURIComponent(token)}`;
+    return origin ? `${origin}${path}` : path;
   }
 }
 
-export function createAuthService(escrow: EscrowService, store?: AuthStore): AuthService {
-  return new AuthService(escrow, store ?? createMemoryAuthStore());
+export function createAuthService(
+  escrow: EscrowService,
+  store?: AuthStore,
+  options?: AuthServiceOptions,
+): AuthService {
+  return new AuthService(escrow, store ?? createMemoryAuthStore(), options ?? {});
+}
+
+function isEmailDeliveryChannel(invite: Invite | undefined): boolean {
+  return !invite || invite.channel === 'email';
 }
 
 function nowIso(): string {

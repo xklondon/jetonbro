@@ -13,18 +13,22 @@ export function registerRoutes(app: Express, deps: RouteDeps): void {
   const { auth, tables } = deps;
 
   app.post('/api/auth/request-magic-link', (req, res, next) => {
-    try {
-      const body = req.body as { email?: string; phone?: string; inviteToken?: string; deviceId?: string };
-      const result = auth.requestMagicLink({
+    const body = req.body as { email?: string; phone?: string; inviteToken?: string; deviceId?: string };
+    void auth
+      .requestMagicLink({
         email: body.email,
         phone: body.phone,
         inviteToken: body.inviteToken,
         deviceId: body.deviceId,
-      });
-      res.status(201).json(result);
-    } catch (error) {
-      next(error);
-    }
+      })
+      .then((result) => {
+        if (result.emailed) {
+          res.status(201).json({ emailed: true });
+          return;
+        }
+        res.status(201).json({ token: result.token, verifyUrl: result.verifyUrl });
+      })
+      .catch(next);
   });
 
   app.get('/api/auth/verify', (req, res, next) => {
@@ -79,18 +83,19 @@ export function registerRoutes(app: Express, deps: RouteDeps): void {
   });
 
   app.post('/api/tables/:tableId/invites', (req, res, next) => {
-    try {
-      const body = req.body as CreateInviteInput;
-      const tableId = req.params.tableId ?? '';
-      const result = auth.createInvite(bearerToken(req), tableId, {
+    const body = req.body as CreateInviteInput;
+    const tableId = req.params.tableId ?? '';
+    void auth
+      .createInvite(bearerToken(req), tableId, {
         channel: body.channel as InviteChannel,
         email: body.email,
         phone: body.phone,
-      });
-      res.status(201).json(result);
-    } catch (error) {
-      next(error);
-    }
+        openingChips: body.openingChips,
+      })
+      .then((result) => {
+        res.status(201).json(result);
+      })
+      .catch(next);
   });
 
   app.post('/api/tables/:tableId/actions', (req, res, next) => {
@@ -102,6 +107,7 @@ export function registerRoutes(app: Express, deps: RouteDeps): void {
         targetUserId?: string;
         outcome?: string;
         winners?: string[];
+        payoutAmount?: number;
       };
       res.json(
         tables.act(bearerToken(req), req.params.tableId ?? '', {
@@ -111,6 +117,7 @@ export function registerRoutes(app: Express, deps: RouteDeps): void {
           targetUserId: body.targetUserId,
           outcome: body.outcome,
           winners: body.winners,
+          payoutAmount: body.payoutAmount,
         }),
       );
     } catch (error) {

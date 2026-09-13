@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { useSkin } from '../theme/ThemeProvider.js';
+import { useAppearance, useSkin } from '../theme/ThemeProvider.js';
+import { SKINS, type SkinTokens } from '../theme/tokens.js';
 
 export function Shell({ tableId, children }: { tableId?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const skin = useSkin();
+  const appearance = useAppearance();
   return (
     <div className="phone">
       <header className="topbar">
@@ -29,6 +31,27 @@ export function Shell({ tableId, children }: { tableId?: string; children: React
           <Link to="/fun" onClick={() => setOpen(false)}>
             Fun
           </Link>
+          <label>
+            Skin
+            <select
+              value={appearance.skinId}
+              onChange={(event) => appearance.setSkinId(event.target.value as SkinTokens['id'])}
+            >
+              {Object.values(SKINS).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.icon} {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="chip-visual-toggle">
+            <input
+              type="checkbox"
+              checked={appearance.chipVisual}
+              onChange={(event) => appearance.setChipVisual(event.target.checked)}
+            />
+            Chip stacks
+          </label>
         </nav>
       ) : null}
       {children}

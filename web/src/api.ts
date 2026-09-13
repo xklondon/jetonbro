@@ -3,8 +3,19 @@ export interface AllowedAction {
   label: string;
   locksChips: boolean;
   requiresBox: boolean;
-  creditsGame: boolean;
   resolvesPot: boolean;
+  releasesBox?: boolean;
+}
+
+export interface TableBox {
+  id: string;
+  ownerUserId: string;
+  ownerLabel: string;
+  stake: number;
+  status: string;
+  escrowState: string | null;
+  outcome: string | null;
+  suggestedPayout: number | null;
 }
 
 export interface TableSnapshot {
@@ -12,9 +23,10 @@ export interface TableSnapshot {
   protocolId: string;
   phase: string;
   flags: Record<string, boolean>;
-  boxes: { id: string; ownerUserId: string; stake: number; status: string }[];
+  boxes: TableBox[];
   pot: { amount: number };
-  authorityUserId: string;
+  authorityUserId: string | null;
+  multipliers: Record<string, number> | null;
   currentTurnUserId: string;
   settingsAccess: boolean;
   payoutRule: string;
@@ -33,6 +45,18 @@ export interface TableSnapshot {
     stack: number;
     handDisplay: { userId: string; text: string; photo: string };
   }[];
+  invites: TableInvite[];
+}
+
+export interface TableInvite {
+  id: string;
+  channel: string;
+  label: string;
+  openingChips: number;
+  status: 'pending' | 'joined';
+  claimedByUserId: string | null;
+  joinPath: string | null;
+  shareUrl: string | null;
 }
 
 export interface StandingRow {
@@ -63,24 +87,36 @@ export function createApi(base = '', getToken: () => string | null = () => null)
   }
 
   return {
-    requestMagicLink: (email: string) =>
-      request<{ token: string; verifyUrl: string }>('/api/auth/request-magic-link', {
+    requestMagicLink: (email: string, inviteToken?: string) =>
+      request<{ token?: string; verifyUrl?: string; emailed?: boolean }>('/api/auth/request-magic-link', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, inviteToken }),
       }),
     inspectVerify: (token: string) =>
-      request<{ email: string | null; requiresTerms: boolean; isUpgrade: boolean }>(
+      request<{ email: string | null; requiresTerms: boolean; isUpgrade: boolean; tableId: string | null }>(
         `/api/auth/verify?token=${encodeURIComponent(token)}`,
       ),
-    completeVerify: (token: string, acceptedTerms: boolean) =>
-      request<{ sessionToken: string; user: { id: string } }>('/api/auth/verify', {
+    completeVerify: (token: string) =>
+      request<{ sessionToken: string; user: { id: string }; tableId: string | null }>('/api/auth/verify', {
         method: 'POST',
-        body: JSON.stringify({ token, acceptedTerms }),
+        body: JSON.stringify({ token }),
       }),
     me: () => request<{ user: { id: string; email: string | null }; wallet: { balance: number } | null; tableIds: string[] }>('/api/auth/me'),
     createTable: (protocolId: string) =>
       request<{ id: string }>('/api/tables', { method: 'POST', body: JSON.stringify({ protocolId }) }),
     snapshot: (tableId: string) => request<TableSnapshot>(`/api/tables/${tableId}`),
+    createInvite: (
+      tableId: string,
+      body: { channel: string; email?: string; phone?: string; openingChips?: number },
+    ) =>
+      request<{ token: string; magicToken: string | null; joinPath: string; shareUrl: string | null }>(
+        `/api/tables/${tableId}/invites`,
+        { method: 'POST', body: JSON.stringify(body) },
+      ),
+    previewInvite: (token: string) =>
+      request<{ tableId: string; channel: string; requiresTerms: boolean; requiresContact: boolean }>(
+        `/api/invites/preview?token=${encodeURIComponent(token)}`,
+      ),
     act: (tableId: string, body: Record<string, unknown>) =>
       request<TableSnapshot>(`/api/tables/${tableId}/actions`, { method: 'POST', body: JSON.stringify(body) }),
     buyIn: (tableId: string, amount: number) =>

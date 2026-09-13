@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-Build-order step 5 (core UI) is done and waiting for review. **Do not start step 6 until this is approved.** Step 4 is committed (`fea4fd2`).
+All seven build-order steps from `jetonbro-requirements-v4.md` are implemented. Step 7 (Fun nav) is waiting for review.
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -23,8 +23,8 @@ From `jetonbro-requirements-v4.md` § Build order. One step at a time; stop afte
 | 3 | Personal ledger read-model (Save / Clear) | done | 2026-09-13 | `src/ledger/` derives pair transfers from RELEASE via an `EscrowStore` wrapper. Save snapshots; Clear writes `MANUAL_SETTLEMENT`. Local commit (no remote PR). |
 | 4 | Auth / invite (magic-link, WhatsApp, QR, Mates) | done | 2026-09-13 | `src/auth/` + first REST routes in `src/http/registerRoutes.ts`. One magic-link path; WhatsApp is a share intent. Guest upgrade calls `reownMasterWallet`. Route guard exercised (duplicate throwaway failed, then removed). |
 | 5 | Core UI (stack/pot, phase actions, Simple, Standings) | done | 2026-09-13 | Blackjack boxes + ownership gate. GET verify is peek-only; POST completes T&Cs. Simple skin is a token object. Standings wired to the personal ledger. |
-| 6 | Remaining skins + chip-visual mode | not started | | |
-| 7 | Fun nav (Yellow card, Red card, Magic 8-ball) | not started | | |
+| 6 | Remaining skins + chip-visual mode | done | 2026-09-13 | Casino/Bank/Fun are token objects on the existing `SkinTokens` keys. Chip-visual is a greedy 100/25/10/5/1 breakdown of the same stack/pot/wallet integer. |
+| 7 | Fun nav (Yellow card, Red card, Magic 8-ball) | done | 2026-09-13 | Static Fun hub + yellow/red referee cards + client-side 8-ball. Zero backend imports. |
 
 ## Decisions log
 
@@ -61,6 +61,15 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | Simple is `SIMPLE_SKIN` (`SkinTokens`); Casino/Bank/Fun are reserved ids on the same type | One component tree reads CSS variables. Step 6 adds token objects, not new table/standings components. |
 | 2026-09-13 | Bank assign/top-up credits the game wallet via `EscrowService.creditGame` | v4 setup phase assigns jetons to the game wallet. That write stays in `src/escrow/`. |
 | 2026-09-13 | Lock + applyAction share one table snapshot (`stack` + `pot.amount`) | UI piles CSS-transition those fields. No separate animation state. |
+| 2026-09-13 | **T&Cs were deliberately dropped for v1 friends-only testing.** `requiresTerms` is always false; verify/join no longer gates on `acceptedTerms`. Revisit and restore a terms gate before any wider / non-friends rollout. This is not a decision that the app never needs terms of use. | Live Railway testing: the checkbox blocked friends from joining while there is still no real email verification. Scoped removal, not a product-forever call. |
+| 2026-09-13 | **No mailer in this deploy.** Typed email is an identity label, not a verified inbox. `requestMagicLink` writes an in-memory `emailOutbox` and returns the token in the JSON body; the home/invite UI navigates to `/verify?token=…` in the same browser. No SMTP/SendGrid/Resend/MAIL_* env or provider is configured. | Explains live "asks for email but not authing." Do not add a provider until the owner decides. Superseded the same day: see Resend row. |
+| 2026-09-13 | **Resend over HTTPS for email-channel magic links.** `RESEND_API_KEY` + `APP_ORIGIN` send the frontend `/verify` URL. No key: `emailOutbox` + token in the JSON body (local/CI unchanged). WhatsApp and QR never call Resend. GET `/api/auth/verify` stays peek-only. | Simplest free-tier API (no SMTP). Same-tab round-trip is the bug live testing hit; hide the token in the HTTP response once mail actually goes out. |
+| 2026-09-13 | **Setup chips come only from Add player.** `assign-chips` / `top-up` removed from the blackjack config and the table UI. | The old Credit player dropdown duplicated invite starting chips and confused the owner setup screen. |
+| 2026-09-13 | **Standing Bank starts unset.** Table runtime passes `standingAuthorityUserId: null` until the owner `assign-bank`s. Protocol unit tests that omit the field still default to `playerIds[0]`. | Owner and Bank are different roles; the owner is not auto-Bank. |
+| 2026-09-13 | **`open-betting` keeps its action id**; UI label is Start betting. Gated by `requiresNonAuthorityPlayer`. | Extends the existing action instead of a second start-betting identity. |
+| 2026-09-13 | Setup/resolution UI is action- and payout-rule-gated, not `protocolId === blackjack`. Dead `creditsGame` / assign-chips / top-up paths removed. All protocol action ids listed in the manifest. | `.cursorrules`: no per-game branches; no dead code; every action type registered. |
+| 2026-09-13 | Chip denoms are `100, 25, 10, 5, 1` — one greedy breakdown for any integer | Not a blackjack box/multiplier table. Poker pots and zilch stakes use the same function. No 500 denom so a large pile stays a short column. |
+| 2026-09-13 | Skin + chip-visual are local appearance prefs (`localStorage`), not table or protocol state | Presentational only. Switching skin does not write a wallet or ledger row. |
 
 ## Infrastructure
 
@@ -94,3 +103,89 @@ None.
 4. **Card / dice / hand-eval?** No. Hand-entry/photo is stored and shown as-is.
 5. **Per-game branches?** No. Box/chip/credit behaviour is action flags. Authority role name is `protocol.authorityRole`.
 6. **Do Simple tokens accommodate three more skins without restructuring components?** Yes, checked explicitly. `SkinTokens` already unions `simple | casino | bank | fun`. Components use `--skin-*` variables and `ThemeProvider tokens={…}` only. `SKINS` has reserved slots. A test applies dummy Casino/Bank/Fun objects through `applySkinTokens` + `StackAndPot` with no extra props. Step 6 is more token objects (plus chip-visual as a presentational layer on the same piles), not a new component tree.
+
+## Auth diagnostic (live Railway, 2026-09-13)
+
+Question: when a table owner types an email to invite/credit a player, does a real magic-link email go out and require a click, or does any typed email become an identity?
+
+**No real email is sent. There is no email-sending provider on this deploy.**
+
+Evidence:
+
+- `.env.example` has only `PORT` and optional `DATABASE_URL`. No `SMTP_*`, `SENDGRID_*`, `RESEND_*`, `MAIL_*`, or API keys.
+- Repo-wide search: no nodemailer / SendGrid / Resend / Postmark / Mailgun / transporter.
+- `AuthService.requestMagicLink` appends `{ to, magicToken, verifyUrl }` to an in-memory `emailOutbox` and **returns the token in the HTTP response**.
+- `HomePage` immediately navigates to `/verify?token=…` in the **same browser**. Tapping Continue on verify creates the session. Any typed address becomes that browser's identity — no inbox click.
+- Until this follow-up, the live table screen had **no invite-by-email control**. The only player picker was **Credit player** (`assign-chips` / `creditsGame`) over people already at the table — top-up, not invite/auth.
+- So "asks for email but not authing" is the owner bootstrap (home → same-tab token), not a mailed verify link. Credit-player never authed anyone.
+
+Not fixed in this change set (waiting on the owner's call). The new Add player UI copies a join link and says no email is sent.
+
+## Live-test follow-up PR questions
+
+1. **Extend or new?** Extends `src/auth/` (invite `openingChips` / claim / `joinPath`), `src/table/` (invite roster on snapshot; opening chips via `creditGame`), and the existing table-owner setup screen. New UI only: `InvitePanel`, `InviteLandingPage`. Not a new backend module.
+2. **Route / event / action?** No new REST identities. Extended notes on `POST /api/tables/:tableId/invites` (`openingChips`), `GET /api/tables/:tableId` (invite roster), verify/preview (T&Cs off). Frontend `/invite/:token` is SPA, not a REST identity. `scripts/check-routes.sh` run against this change.
+3. **Wallet / ledger writes?** Only `EscrowService.creditGame` when a claimed invite has `openingChips` and has not yet been credited. Auth still does not write wallet rows.
+4. **Card / dice / hand-eval?** No.
+5. **Per-game branches?** No. Invite channel and opening chips are data on the invite record. Same snapshot/credit path for every protocol.
+
+## Resend magic-link PR questions
+
+1. **Extend or new?** Extends `src/auth/` (`requestMagicLink` + `src/auth/mailer.ts`). Home page stops same-tab navigation when `{ emailed: true }`. Not a new backend module.
+2. **Route / event / action?** No new REST identities. Extended notes on `POST /api/auth/request-magic-link`. `GET /api/auth/verify` unchanged (peek-only). `scripts/check-routes.sh` run against this change.
+3. **Wallet / ledger writes?** None. Mailer does not touch wallets.
+4. **Card / dice / hand-eval?** No.
+5. **Per-game branches?** No. Send vs outbox is keyed on invite channel (`email` vs WhatsApp/QR), not protocol.
+
+## Setup-screen redesign PR questions
+
+1. **Extend or new?** Extends `src/protocol/` (action flags: `assignsAuthority`, `requiresNonAuthorityPlayer`, `releasesBox`, `label`) and `src/table/` snapshot/act. New UI: `SetupPanel`, `ResolutionBoard`. Replaces `InvitePanel`. Not a new backend module.
+2. **Route / event / action?** No new REST identities. New action id `assign-bank` (table-owner setup). `open-betting` kept, labeled Start betting. Manifest ACTION rows added. `scripts/check-routes.sh` run against this change.
+3. **Wallet / ledger writes?** Opening chips still `EscrowService.creditGame`. Per-box confirm uses existing resolve / `setResolvedPayout` / release. No new wallet types or escrow states.
+4. **Card / dice / hand-eval?** No. Resolution is Bank-declared outcome + multiplier suggestion.
+5. **Per-game branches?** No. Flags live on action rows. Poker/zilch omit `assign-bank` / `releasesBox`.
+
+## Step 6 PR questions
+
+1. **Extend or new?** Extends `web/src/theme/tokens.ts` (Casino/Bank/Fun objects) and existing `ChipPile` / `ThemeProvider` / `Shell`. New helper only: `web/src/theme/chips.ts` (`denominationBreakdown`). No new table/standings/wallet component tree.
+2. **Route / event / action?** No. No new REST identities, sockets, or protocol actions. Manifest unchanged for routes.
+3. **Wallet / ledger writes?** None. Appearance is `localStorage`. Piles still read `snapshot.viewer.stack` / `snapshot.pot.amount` / master balance.
+4. **Card / dice / hand-eval?** No.
+5. **Per-game branches?** No. Denoms are not a protocol table. No `protocolId` check. Boxes render chips only when `snapshot.boxes.length > 0` (empty for poker/zilch). Outcome/multiplier code is not in this layer.
+
+## Step 7 PR questions
+
+1. **Extend or new?** Extends the existing Fun nav stub (`web/src/pages/FunPage.tsx` + `/fun` route). New static screens only under `web/src/pages/fun/`. No overlap with table/wallet/standings.
+2. **Route / event / action?** No REST, sockets, or protocol actions. SPA paths `/fun/yellow`, `/fun/red`, `/fun/eight-ball` only. Manifest unchanged.
+3. **Wallet / ledger writes?** None. Fun files do not import escrow, protocol, ledger, or auth.
+4. **Card / dice / hand-eval?** No. Referee cards are generic coloured rectangles. 8-ball picks from a fixed string list with `Math.random`.
+5. **Per-game branches?** No.
+
+## Closing summary — all seven steps
+
+| Step | Name | Commit on `main` | Notes |
+| --- | --- | --- | --- |
+| 1 | Wallet + escrow | `952faf2` | Guardrails `fc56454` first. |
+| 2 | Protocol configs + turn-order | `37020ee` | |
+| 3 | Personal ledger | `dc44165` | |
+| 4 | Auth / invite | `be20d0b` | |
+| 5 | Core UI (Simple, Standings) | `5732b3e` | |
+| 6 | Skins + chip-visual | *uncommitted* | In the working tree with later live-test follow-ups. |
+| 7 | Fun nav | *uncommitted* | This step. |
+
+Infra (not a requirements step), already on `main`: `af3a91f` Railway build, `82a879c` Node 20, `e08f466` npm cache. HEAD is `e08f466`.
+
+Work **after** `5732b3e` that is still only in the working tree (not a commit): multi-player invite roster, T&Cs dropped for friends-only, Resend mailer, owner setup + Bank assignment + per-box resolution, Casino/Bank/Fun skins, chip-visual, Fun screens.
+
+### Known limitations (whole build)
+
+- **Store is in-memory.** Escrow, auth, tables, sessions, and invites reset on process restart. `DATABASE_URL` is accepted but unused — no Postgres adapter yet.
+- **Poker side-pots** are out of scope (v4). Single pot only.
+- **No card/dice simulation or hand evaluation.** Hand photo/text is display-only.
+- **No real-money rails** or payment integrations.
+- **T&Cs are off** for v1 friends-only. Restore before any wider rollout.
+- **Email:** Resend is wired (`RESEND_API_KEY` + `APP_ORIGIN`). Without those Railway vars, magic links still round-trip in the same tab via `emailOutbox`. Even with a key, Resend’s test sender only delivers to the account email until a domain is verified.
+- **Table owner starting chips:** Add player credits invitees only. The owner has no starting-chip control (old assign/top-up was removed).
+- **Auth identities and wallets die with the process** on Railway until a persisted store exists.
+- **Appearance** (skin, chip-visual) is `localStorage` only.
+- **Fun** is fully client-side; 8-ball is not seeded and not fair-audited (doesn’t need to be).

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import express from 'express';
+import { mailerFromEnv } from '../auth/mailer.js';
 import { createAuthService, type AuthService } from '../auth/service.js';
 import { createEscrowService, type EscrowService } from '../escrow/service.js';
 import { createMemoryStore } from '../escrow/store.js';
@@ -22,7 +23,12 @@ export function createApp(options?: {
 } {
   const ledger = options?.ledger ?? createPersonalLedger();
   const escrow = options?.escrow ?? createEscrowService(listenForReleases(createMemoryStore(), ledger));
-  const auth = options?.auth ?? createAuthService(escrow);
+  const auth =
+    options?.auth ??
+    createAuthService(escrow, undefined, {
+      mailer: mailerFromEnv(),
+      appOrigin: process.env.APP_ORIGIN,
+    });
   const tables = options?.tables ?? createTableService(escrow, auth, ledger);
   const app = express();
   app.use(express.json({ limit: '5mb' }));

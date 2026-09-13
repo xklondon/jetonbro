@@ -13,8 +13,7 @@ export function VerifyPage({
   const token = params.get('token') ?? '';
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [requiresTerms, setRequiresTerms] = useState(true);
-  const [accepted, setAccepted] = useState(false);
+  const [tableId, setTableId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -25,7 +24,7 @@ export function VerifyPage({
       .inspectVerify(token)
       .then((peek) => {
         setEmail(peek.email ?? '');
-        setRequiresTerms(peek.requiresTerms);
+        setTableId(peek.tableId);
       })
       .catch((err: Error) => setError(err.message));
   }, [token, api]);
@@ -34,25 +33,14 @@ export function VerifyPage({
     <main>
       <h1>Join JetonBro</h1>
       <p>{email ? `Continue as ${email}` : 'Confirm this invite'}</p>
-      {requiresTerms ? (
-        <label>
-          <input
-            type="checkbox"
-            checked={accepted}
-            onChange={(event) => setAccepted(event.target.checked)}
-          />
-          I accept the terms
-        </label>
-      ) : null}
       <button
         type="button"
-        disabled={requiresTerms && !accepted}
         onClick={() => {
           api
-            .completeVerify(token, accepted || !requiresTerms)
+            .completeVerify(token)
             .then((result) => {
               onSession(result.sessionToken);
-              navigate('/');
+              navigate(result.tableId ? `/table/${result.tableId}` : tableId ? `/table/${tableId}` : '/');
             })
             .catch((err: Error) => setError(err.message));
         }}

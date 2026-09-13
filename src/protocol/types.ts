@@ -54,8 +54,14 @@ export interface ProtocolAction {
   resolvesPot?: boolean;
   /** Table runtime: release resolved escrow. */
   releasesPot?: boolean;
-  /** Table runtime: bank credits a player's game wallet (setup assign/top-up). */
-  creditsGame?: boolean;
+  /** Table-owner setup: set standing authority from `targetUserId` (clear if omitted). */
+  assignsAuthority?: boolean;
+  /** Hide until a seated player exists who is not the current authority. */
+  requiresNonAuthorityPlayer?: boolean;
+  /** Table runtime: release only the targeted box's resolved escrow. */
+  releasesBox?: boolean;
+  /** Button copy. Defaults to a title-cased action id. */
+  label?: string;
 }
 
 export interface ProtocolConfig {

@@ -1,29 +1,23 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it } from 'vitest';
-import { applySkinTokens, SIMPLE_SKIN, SKIN_COLOR_KEYS, SKINS, type SkinTokens } from './tokens.js';
-
-function extraSkin(id: SkinTokens['id'], name: string, icon: string): SkinTokens {
-  return {
-    ...SIMPLE_SKIN,
-    id,
-    name,
-    icon,
-    background: '#111',
-    accent: '#c00',
-    button: '#c00',
-    pot: '#fc0',
-    stack: '#0c0',
-  };
-}
+import {
+  applySkinTokens,
+  BANK_SKIN,
+  CASINO_SKIN,
+  FUN_SKIN,
+  SIMPLE_SKIN,
+  SKIN_COLOR_KEYS,
+  SKINS,
+} from './tokens.js';
 
 describe('skin token structure', () => {
-  it('lets Casino, Bank, and Fun register as token objects without new component keys', () => {
-    const extras: SkinTokens[] = [
-      extraSkin('casino', 'Casino', '♠'),
-      extraSkin('bank', 'Bank', '£'),
-      extraSkin('fun', 'Fun', '★'),
-    ];
-    for (const skin of extras) {
+  it('registers Casino, Bank, and Fun as token objects on the same keys', () => {
+    expect(Object.keys(SKINS)).toEqual(['simple', 'casino', 'bank', 'fun']);
+    expect(SKINS.simple).toEqual(SIMPLE_SKIN);
+    expect(SKINS.casino).toEqual(CASINO_SKIN);
+    expect(SKINS.bank).toEqual(BANK_SKIN);
+    expect(SKINS.fun).toEqual(FUN_SKIN);
+    for (const skin of [CASINO_SKIN, BANK_SKIN, FUN_SKIN]) {
       expect(skin.id).not.toBe('simple');
       for (const key of SKIN_COLOR_KEYS) {
         expect(typeof skin[key]).toBe('string');
@@ -37,10 +31,5 @@ describe('skin token structure', () => {
       expect(root.style.getPropertyValue('--skin-button')).toBe(skin.button);
       expect(root.style.getPropertyValue('--skin-pot')).toBe(skin.pot);
     }
-    expect(Object.keys(SKINS)).toEqual(['simple', 'casino', 'bank', 'fun']);
-    expect(SKINS.simple).toEqual(SIMPLE_SKIN);
-    expect(SKINS.casino).toBeUndefined();
-    expect(SKINS.bank).toBeUndefined();
-    expect(SKINS.fun).toBeUndefined();
   });
 });

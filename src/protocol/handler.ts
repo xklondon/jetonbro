@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { fail } from './errors.js';
 import { getProtocol } from './configs.js';
-import { getAuthorityUserId, getCurrentTurnUserId } from './table.js';
+import { getAuthorityUserId, getCurrentTurnUserId, peekAuthorityUserId } from './table.js';
 import type {
   ActionInput,
   Box,
@@ -33,6 +33,15 @@ export function assertPhaseRole(
     fail('ACTION_FLAG', `Action "${actionId}" requires ${action.requiresFlag}`);
   }
   assertRole(state, protocol, actorId, action);
+  if (action.requiresNonAuthorityPlayer) {
+    const authorityId = peekAuthorityUserId(state);
+    if (!authorityId) {
+      fail('AUTHORITY_REQUIRED', 'Assign Bank before starting');
+    }
+    if (!state.playerIds.some((id) => id !== authorityId)) {
+      fail('PLAYERS_REQUIRED', 'Need at least one player besides Bank');
+    }
+  }
   return action;
 }
 
@@ -90,6 +99,18 @@ export function applyAction(
   if (action.rotateAuthority && next.authorityMode === 'rotating') {
     next.authorityIndex = (next.authorityIndex + 1) % next.playerIds.length;
     applyAfterRotateTurn(next, action.afterRotateTurn);
+  }
+
+  if (action.assignsAuthority) {
+    const target = input.targetUserId;
+    if (target) {
+      if (!next.playerIds.includes(target)) {
+        fail('TARGET_NOT_SEATED', 'Bank must be a player who has already joined');
+      }
+      next.standingAuthorityUserId = target;
+    } else {
+      next.standingAuthorityUserId = null;
+    }
   }
 
   applyBoxEffects(next, actorId, action, input);
@@ -198,7 +219,8 @@ function assertRole(
     return;
   }
   if (isAuthorityRole(role)) {
-    if (actorId !== getAuthorityUserId(state)) {
+    const authorityId = peekAuthorityUserId(state);
+    if (!authorityId || actorId !== authorityId) {
       fail('UNAUTHORIZED', `Only the current ${role} may perform "${action.id}"`);
     }
     return;
