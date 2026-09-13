@@ -1,0 +1,15 @@
+{
+  "name": "jetonbro",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "check:routes": "bash scripts/check-routes.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "~5.8.3",
+    "vitest": "^4.1.7"
+  }
+}
