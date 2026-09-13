@@ -79,6 +79,35 @@ export class EscrowService {
     return this.store.getMasterWallet(userId);
   }
 
+  listMasterWallets(): Wallet[] {
+    return this.store.listWallets().filter((wallet) => wallet.type === 'master');
+  }
+
+  /**
+   * Move a master wallet from one user id to another. Fails if the target
+   * already has a different master wallet — upgrade must not duplicate.
+   */
+  reownMasterWallet(fromUserId: string, toUserId: string): Wallet {
+    if (fromUserId === toUserId) {
+      const same = this.store.getMasterWallet(fromUserId);
+      if (!same) {
+        fail('WALLET_NOT_FOUND', 'Master wallet not found');
+      }
+      return same;
+    }
+    const source = this.store.getMasterWallet(fromUserId);
+    if (!source) {
+      fail('WALLET_NOT_FOUND', 'Guest master wallet not found');
+    }
+    const target = this.store.getMasterWallet(toUserId);
+    if (target && target.id !== source.id) {
+      fail('DUPLICATE_WALLET', 'Verified identity already has a master wallet');
+    }
+    const next = { ...source, userId: toUserId };
+    this.store.updateWallet(next);
+    return next;
+  }
+
   getGameWallet(userId: string, tableId: string): Wallet | undefined {
     return this.store.getGameWallet(userId, tableId);
   }

@@ -12,6 +12,7 @@ export function listenForReleases(store: EscrowStore, ledger: PersonalLedger): E
     getWalletById: (id) => store.getWalletById(id),
     getMasterWallet: (userId) => store.getMasterWallet(userId),
     getGameWallet: (userId, tableId) => store.getGameWallet(userId, tableId),
+    listWallets: () => store.listWallets(),
     insertEscrow: (escrow) => store.insertEscrow(escrow),
     updateEscrow: (escrow) => store.updateEscrow(escrow),
     getEscrow: (id) => store.getEscrow(id),

@@ -248,4 +248,17 @@ describe('EscrowService', () => {
     expect(rows[2]?.declaredBy).toBe(BANK);
     expect(rows.every((row) => row.at && row.actorId && typeof row.amount === 'number')).toBe(true);
   });
+
+  it('reowns a master wallet onto a new user id without creating a second wallet', () => {
+    const service = createEscrowService();
+    const original = service.ensureMasterWallet('guest:device', 25);
+    const moved = service.reownMasterWallet('guest:device', 'user-verified');
+    expect(moved.id).toBe(original.id);
+    expect(moved.userId).toBe('user-verified');
+    expect(moved.balance).toBe(25);
+    expect(service.getMasterWallet('guest:device')).toBeUndefined();
+    expect(service.listMasterWallets()).toHaveLength(1);
+    service.ensureMasterWallet('user-verified');
+    expect(service.listMasterWallets()).toHaveLength(1);
+  });
 });

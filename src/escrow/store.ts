@@ -6,6 +6,7 @@ export interface EscrowStore {
   getWalletById(id: string): Wallet | undefined;
   getMasterWallet(userId: string): Wallet | undefined;
   getGameWallet(userId: string, tableId: string): Wallet | undefined;
+  listWallets(): Wallet[];
   insertEscrow(escrow: Escrow): void;
   updateEscrow(escrow: Escrow): void;
   getEscrow(id: string): Escrow | undefined;
@@ -44,6 +45,9 @@ export function createMemoryStore(): EscrowStore {
         }
       }
       return undefined;
+    },
+    listWallets() {
+      return [...wallets.values()].map((wallet) => ({ ...wallet }));
     },
     insertEscrow(escrow) {
       escrows.set(escrow.id, cloneEscrow(escrow));

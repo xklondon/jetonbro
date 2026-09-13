@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-Build-order step 3 (personal ledger / Standings) is done and waiting for review. **Do not start step 4 until this is approved.**
+Build-order step 4 (auth / invite) is done and waiting for review. **Do not start step 5 until this is approved.**
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -21,7 +21,7 @@ From `jetonbro-requirements-v4.md` § Build order. One step at a time; stop afte
 | 1 | Wallet + escrow engine, unit-testable, no UI | done | 2026-09-13 | In-memory master/game wallets + CONFIRMED→LOCKED→RESOLVED→RELEASED in `src/escrow/`. Local commit (no remote PR). |
 | 2 | Protocol configs + turn-order, wired to escrow | done | 2026-09-13 | Three data-only protocol configs + shared handler/turn-order in `src/protocol/`. `canResolveForTable` is what `EscrowService` consumes. Local commit (no remote PR). |
 | 3 | Personal ledger read-model (Save / Clear) | done | 2026-09-13 | `src/ledger/` derives pair transfers from RELEASE via an `EscrowStore` wrapper. Save snapshots; Clear writes `MANUAL_SETTLEMENT`. Local commit (no remote PR). |
-| 4 | Auth / invite (magic-link, WhatsApp, QR, Mates) | not started | | |
+| 4 | Auth / invite (magic-link, WhatsApp, QR, Mates) | done | 2026-09-13 | `src/auth/` + first REST routes in `src/http/registerRoutes.ts`. One magic-link path; WhatsApp is a share intent. Guest upgrade calls `reownMasterWallet`. Route guard exercised (duplicate throwaway failed, then removed). |
 | 5 | Core UI (stack/pot, phase actions, Simple, Standings) | not started | | |
 | 6 | Remaining skins + chip-visual mode | not started | | |
 | 7 | Fun nav (Yellow card, Red card, Magic 8-ball) | not started | | |
@@ -51,7 +51,20 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | Clear writes `MANUAL_SETTLEMENT` from the debtor to the creditor; net treats settlement A→B as cancelling A's debt to B | Same-direction as a RELEASE transfer would deepen the debt. Settlement is an offset, not another game transfer. |
 | 2026-09-13 | Clear on an already-settled pair is a no-op (no row) | Requirements do not say to write a zero-amount settlement. |
 | 2026-09-13 | **Blackjack box ownership (step 2 open question):** display-only turn should **not** let a player act on someone else's box. v4 says the player confirms into **their** box and that boxes act independently (no wait-your-turn between players). Step 2's handler currently only checks "seated player" for `bet`/`double`/`split`. Box-owner enforcement is missing and should be added when boxes exist as table state — not a turn-pointer job. | Answer recorded in step 3 as requested. |
+| 2026-09-13 | **Blackjack box-ownership enforcement is still open.** Step 4 did not resolve it. Address it in step 5 when box entities are introduced — not via the turn pointer. | Flagged again so it is not forgotten between invite work and core UI. |
+| 2026-09-13 | WhatsApp invite is the same magic-link/verify pair as email; the only extra is a `wa.me/?text=` share URL | Requirements: different channel, not a second auth path. |
+| 2026-09-13 | Mates guest user id is `guest:${deviceId}`; upgrade calls `EscrowService.reownMasterWallet` and never `ensureMasterWallet` on the verified id first | Wallet writes stay in `src/escrow/`. Creating the verified wallet first would hide a duplicate-wallet bug. |
+| 2026-09-13 | Failed T&Cs on `GET /api/auth/verify` does not consume the magic link | Otherwise a share tap without the checkbox would burn the invite. |
+| 2026-09-13 | REST identities are registered only in `src/http/registerRoutes.ts` with full paths on `app` | `scripts/check-routes.sh` extracts `app\|router.(get\|post\|…)` and matches the Identity column. First real exercise: clean pass → throwaway duplicate `POST /api/auth/request-magic-link` failed as designed → throwaway removed → pass. |
 
 ## Blocked
 
 None.
+
+## Step 4 PR questions
+
+1. **Extend or new?** Extends `src/escrow/` with `listWallets` / `listMasterWallets` / `reownMasterWallet`. New: `src/auth/` (identity, invites, sessions) and `src/http/` (Express app + the single route registry).
+2. **Route / event / action?** Yes — eight REST identities, all added to `docs/ROUTE_MANIFEST.md` in this step. Registered only in `src/http/registerRoutes.ts`. No socket events.
+3. **Wallet / ledger writes?** Only through `EscrowService` (`ensureMasterWallet` on create, `reownMasterWallet` on guest upgrade). Auth never writes wallet rows.
+4. **Card / dice / hand-eval?** No.
+5. **Per-game branches?** No. Invite channels are config on the invite record, not protocol code.
