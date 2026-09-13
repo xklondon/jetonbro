@@ -88,6 +88,7 @@ mapfile -t WRITE_HITS < <(
     | grep -v "^${MANIFEST}:" \
     | grep -v '^scripts/check-routes.sh:' \
     | grep -v '^docs/' \
+    | grep -v '^migrations/' \
     | grep -v "^\.cursorrules:" \
     | grep -v '^PROGRESS.md:' \
     | grep -v '^jetonbro-requirements-v4.md:' \
@@ -97,8 +98,16 @@ mapfile -t WRITE_HITS < <(
 for hit in "${WRITE_HITS[@]+"${WRITE_HITS[@]}"}"; do
   [[ -z "$hit" ]] && continue
   file="${hit%%:*}"
+  file="${file#./}"
   case "$file" in
     "$ESCROW_MODULE"/*) continue ;;
+    src/ledger/*)
+      if [[ "$hit" == *personal_ledger* ]]; then
+        continue
+      fi
+      echo "FAIL: wallet/ledger write outside $ESCROW_MODULE/: $hit"
+      FAIL=1
+      ;;
     *)
       echo "FAIL: wallet/ledger write outside $ESCROW_MODULE/: $hit"
       FAIL=1

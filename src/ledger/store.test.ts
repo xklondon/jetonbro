@@ -63,6 +63,6 @@ describe('PersonalLedgerStore', () => {
         writers.push(name);
       }
     }
-    expect(writers.sort()).toEqual(['service.ts', 'store.ts']);
+    expect(writers.sort()).toEqual(['pg.ts', 'service.ts', 'store.ts']);
   });
 });

@@ -1,2 +1,2 @@
-export { createApp } from './app.js';
+export { createApp, createPersistentApp } from './app.js';
 export { registerRoutes } from './registerRoutes.js';

@@ -2,6 +2,7 @@ export { AuthError } from './errors.js';
 export { createAuthService, AuthService, guestUserId, GUEST_ID_PREFIX } from './service.js';
 export { createResendMailer, mailerFromEnv } from './mailer.js';
 export { createMemoryAuthStore, type AuthStore } from './store.js';
+export { createPgAuthStore } from './pg.js';
 export type {
   Invite,
   InviteChannel,

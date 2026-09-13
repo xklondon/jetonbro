@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-Persistence PR A (async store interfaces) is ready for review. No Postgres yet — stop here before PR B. Feature HEAD on `main` remains `76b5a52`.
+Persistence PR B (Postgres adapters) is ready for review. Do not attach Railway Postgres until this PR is merged. `main` includes PR A at `dfb1d75`.
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -73,6 +73,9 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | **Store methods are async.** `EscrowStore`, `AuthStore`, `PersonalLedgerStore`, and `TableRuntimeStore` return `Promise`. Memory impls wrap the previous sync maps. Services/routes `await`. Signature change only — same operations, same writers. | `pg` is async. Keeping a sync interface would force write-behind or a fake blocking client. |
 | 2026-09-13 | **`PersonalLedgerStore` extracted.** `recordRelease` / `clear` / `save` remain the only writers. Reads go through `listEntries` / `listSnapshots`. | Same extraction `EscrowStore` already had. Needed before a Postgres adapter. |
 | 2026-09-13 | **`TableRuntimeStore` holds protocol + `boxEscrowIds` only.** `ensureRuntime` loads a stored record; a true miss still fabricates setup and `put`s it. Hand photos stay on `TableService` in memory. | Approved persist set. Photos are display-only and up to 4MB. |
+| 2026-09-13 | **Postgres via `pg` + ordered `.sql` migrations. No ORM.** Four store adapters implement the existing interfaces. `createApp()` stays in-memory; `createPersistentApp(url)` is what `server.ts` uses when `DATABASE_URL` is set. | Minimal backend. Tests and local `npm test` without a URL stay on memory. |
+| 2026-09-13 | ISO timestamps stored as TEXT; protocol/`boxEscrowIds`/payout/standings as JSONB. | Memory stores used ISO strings. `pg` Date objects would change equality in tests and APIs. |
+| 2026-09-13 | `check-routes.sh` ignores `migrations/` and allows `personal_ledger*` writes in `src/ledger/`. | Schema DDL is not a second write API. Personal-ledger rows are not escrow wallet rows. |
 
 ## Infrastructure
 
@@ -82,7 +85,8 @@ Not a requirements build-order step. Friends-only Railway deploy.
 | --- | --- | --- |
 | 2026-09-13 | `railway.json` + `nixpacks.toml`: `npm ci && npm run build`, then `npm run start` | Auto-detect was copying `web/dist` before Vite created it. This is one root package (not workspaces); `npm run build` is `vite build` and writes `web/dist`. |
 | 2026-09-13 | Single Railway service: Express serves `/api` and `web/dist` | `createApp` already static-serves `web/dist` when present. One origin, no CORS, one deploy. Two services would be extra moving parts for a v1 friends table. |
-| 2026-09-13 | `DATABASE_URL` is optional; in-memory escrow if unset | Railway can attach Postgres later. The process must still boot without a DB while the store is in-memory. |
+| 2026-09-13 | `DATABASE_URL` is optional; in-memory stores if unset | Still true. When set, startup runs migrations and uses Postgres adapters. |
+| 2026-09-13 | CI runs `npm test` against a Postgres 16 service (`DATABASE_URL`). Local suite skips those tests without a URL. | Same interface contract, two backends. |
 | 2026-09-13 | Pin Node 20: `engines.node` `>=20`, Nixpacks `nodejs_20` + `NIXPACKS_NODE_VERSION=20` | Railway was building on Node 18.20.5; webidl-conversions / whatwg-url require >=20. |
 | 2026-09-13 | **EBUSY `rmdir node_modules/.cache` during `npm ci`:** option 1 — `.npmrc` + `NPM_CONFIG_CACHE=/tmp/.npm-cache`. Also dropped the extra `npm ci` from `railway.json` `buildCommand` (install phase already runs it). Did not use option 2 (`--no-cache`) or option 3 (`npm install`). | Nixpacks mounts a cache at `node_modules/.cache`. A second `npm ci` in the build command tries to delete that mount. `npm ci` stays the install command. |
 
@@ -172,6 +176,14 @@ Not fixed in this change set (waiting on the owner's call). The new Add player U
 4. **Card / dice / hand-eval?** No. Hand photos still display-only and still not on the runtime store.
 5. **Per-game branches?** No.
 
+## Persistence PR B questions
+
+1. **Extend or new?** Extends the four store interfaces with `src/*/pg.ts` adapters. New: `src/db/` (pool, migrations, test harness), `migrations/001_init.sql`. No new feature module and no ORM.
+2. **Route / event / action?** No new REST identities, sockets, or protocol actions. Manifest unchanged. `scripts/check-routes.sh` ok.
+3. **Wallet / ledger writes?** Still only `EscrowService` for wallets/escrow ledger (`src/escrow/pg.ts` is the store behind that). Personal ledger writes stay `recordRelease` / `clear` / `save` via `src/ledger/pg.ts`.
+4. **Card / dice / hand-eval?** No. Hand photos still not in Postgres.
+5. **Per-game branches?** No.
+
 ## Closing summary — all seven steps
 
 | Step | Name | Commit on `main` | Notes |
@@ -184,19 +196,20 @@ Not fixed in this change set (waiting on the owner's call). The new Add player U
 | 6 | Skins + chip-visual | `117e668` | Same commit as step 7 and the live-test follow-ups. |
 | 7 | Fun nav | `117e668` | Same commit. |
 
-Infra (not a requirements step), already on `main`: `af3a91f` Railway build, `82a879c` Node 20, `e08f466` npm cache.
+Infra (not a requirements step), already on `main`: `af3a91f` Railway build, `82a879c` Node 20, `e08f466` npm cache. Persistence PR A: `dfb1d75`.
 
 Live-test follow-ups (invite roster, T&Cs dropped for friends-only, Resend mailer, owner setup + Bank assignment + per-box resolution) shipped in `117e668` together with steps 6 and 7. Pushed to `origin/main`.
 
 ### Known limitations (whole build)
 
-- **Store is still in-memory.** All four store interfaces are async and swappable. `DATABASE_URL` is still unused — Postgres adapters are PR B.
+- **Persistence is optional.** No `DATABASE_URL`: memory (local today). With `DATABASE_URL`: Postgres for escrow, auth, personal ledger, and table runtime. Hand photos / emailOutbox / Fun / appearance stay in-memory or `localStorage`.
+- **Railway Postgres is not attached yet.** After this PR merges: add PostgreSQL, then set `DATABASE_URL=${{Postgres.DATABASE_URL}}` on the app service (name must match the DB service). Migrations run on boot — do not run SQL by hand.
 - **Poker side-pots** are out of scope (v4). Single pot only.
 - **No card/dice simulation or hand evaluation.** Hand photo/text is display-only.
 - **No real-money rails** or payment integrations.
 - **T&Cs are off** for v1 friends-only. Restore before any wider rollout.
 - **Email:** Resend is wired (`RESEND_API_KEY` + `APP_ORIGIN`). Without those Railway vars, magic links still round-trip in the same tab via `emailOutbox`. Even with a key, Resend’s test sender only delivers to the account email until a domain is verified.
 - **Table owner starting chips:** Add player credits invitees only. The owner has no starting-chip control (old assign/top-up was removed).
-- **Auth identities and wallets die with the process** on Railway until a persisted store exists.
+- **Auth identities and wallets die with the process** until Railway has `DATABASE_URL` pointed at Postgres. After that they survive redeploys. Hand photos still do not.
 - **Appearance** (skin, chip-visual) is `localStorage` only.
 - **Fun** is fully client-side; 8-ball is not seeded and not fair-audited (doesn’t need to be).
