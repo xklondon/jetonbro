@@ -22,21 +22,24 @@ const allow = () => true;
 function wired() {
   const ledger = createPersonalLedger();
   const escrow = createEscrowService(listenForReleases(createMemoryStore(), ledger));
-  escrow.ensureMasterWallet(A, 500);
-  escrow.ensureMasterWallet(B, 500);
   return { ledger, escrow };
 }
 
-function buyInBoth(
+async function fund(escrow: ReturnType<typeof createEscrowService>) {
+  await escrow.ensureMasterWallet(A, 500);
+  await escrow.ensureMasterWallet(B, 500);
+}
+
+async function buyInBoth(
   escrow: ReturnType<typeof createEscrowService>,
   tableId: string,
   amount = 100,
 ) {
-  escrow.buyIn({ userId: A, tableId, amount, actorId: A });
-  escrow.buyIn({ userId: B, tableId, amount, actorId: B });
+  await escrow.buyIn({ userId: A, tableId, amount, actorId: A });
+  await escrow.buyIn({ userId: B, tableId, amount, actorId: B });
 }
 
-function releaseBet(
+async function releaseBet(
   escrow: ReturnType<typeof createEscrowService>,
   tableId: string,
   bettor: string,
@@ -44,11 +47,12 @@ function releaseBet(
   outcome: 'win' | 'lose' | 'push',
   counterparty: string,
 ) {
-  const locked = escrow.lock({
-    escrowId: escrow.confirm({ userId: bettor, tableId, amount, actorId: bettor }).id,
+  const confirmed = await escrow.confirm({ userId: bettor, tableId, amount, actorId: bettor });
+  const locked = await escrow.lock({
+    escrowId: confirmed.id,
     actorId: bettor,
   });
-  const resolved = escrow.resolve({
+  const resolved = await escrow.resolve({
     escrowId: locked.id,
     actorId: counterparty,
     protocolConfig: payout,
@@ -65,58 +69,61 @@ function releaseBet(
 }
 
 describe('personal ledger', () => {
-  it('nets RELEASE transfers across multiple tables between the same two users', () => {
+  it('nets RELEASE transfers across multiple tables between the same two users', async () => {
     const { ledger, escrow } = wired();
-    buyInBoth(escrow, TABLE_1);
-    buyInBoth(escrow, TABLE_2);
-    releaseBet(escrow, TABLE_1, A, 10, 'lose', B);
-    releaseBet(escrow, TABLE_2, A, 15, 'lose', B);
-    expect(ledger.standing(A, B)).toEqual({ status: 'owes', owes: A, amount: 25 });
-    expect(ledger.listHistory(A, B).filter((row) => row.kind === 'RELEASE')).toHaveLength(2);
-    expect(ledger.listHistory(A, B).map((row) => row.tableId).sort()).toEqual([TABLE_1, TABLE_2]);
+    await fund(escrow);
+    await buyInBoth(escrow, TABLE_1);
+    await buyInBoth(escrow, TABLE_2);
+    await releaseBet(escrow, TABLE_1, A, 10, 'lose', B);
+    await releaseBet(escrow, TABLE_2, A, 15, 'lose', B);
+    expect(await ledger.standing(A, B)).toEqual({ status: 'owes', owes: A, amount: 25 });
+    expect((await ledger.listHistory(A, B)).filter((row) => row.kind === 'RELEASE')).toHaveLength(2);
+    expect((await ledger.listHistory(A, B)).map((row) => row.tableId).sort()).toEqual([TABLE_1, TABLE_2]);
   });
 
-  it('Clear zeros the net going forward without dropping RELEASE history', () => {
+  it('Clear zeros the net going forward without dropping RELEASE history', async () => {
     const { ledger, escrow } = wired();
-    buyInBoth(escrow, TABLE_1);
-    releaseBet(escrow, TABLE_1, A, 20, 'lose', B);
-    const before = ledger.listHistory(A, B);
+    await fund(escrow);
+    await buyInBoth(escrow, TABLE_1);
+    await releaseBet(escrow, TABLE_1, A, 20, 'lose', B);
+    const before = await ledger.listHistory(A, B);
     expect(before).toHaveLength(1);
     expect(before[0]?.kind).toBe('RELEASE');
-    expect(ledger.standing(A, B)).toEqual({ status: 'owes', owes: A, amount: 20 });
+    expect(await ledger.standing(A, B)).toEqual({ status: 'owes', owes: A, amount: 20 });
 
-    const cleared = ledger.clear(A, B, A);
+    const cleared = await ledger.clear(A, B, A);
     expect(cleared?.kind).toBe('MANUAL_SETTLEMENT');
-    expect(ledger.standing(A, B)).toEqual({ status: 'settled' });
+    expect(await ledger.standing(A, B)).toEqual({ status: 'settled' });
 
-    const history = ledger.listHistory(A, B);
+    const history = await ledger.listHistory(A, B);
     expect(history.filter((row) => row.kind === 'RELEASE')).toEqual(before);
     expect(history.some((row) => row.kind === 'MANUAL_SETTLEMENT')).toBe(true);
 
-    releaseBet(escrow, TABLE_1, A, 5, 'lose', B);
-    expect(ledger.standing(A, B)).toEqual({ status: 'owes', owes: A, amount: 5 });
+    await releaseBet(escrow, TABLE_1, A, 5, 'lose', B);
+    expect(await ledger.standing(A, B)).toEqual({ status: 'owes', owes: A, amount: 5 });
   });
 
-  it('Save snapshots standing without changing a later net calculation', () => {
+  it('Save snapshots standing without changing a later net calculation', async () => {
     const { ledger, escrow } = wired();
-    buyInBoth(escrow, TABLE_1);
-    releaseBet(escrow, TABLE_1, B, 12, 'lose', A);
-    expect(ledger.standing(A, B)).toEqual({ status: 'owes', owes: B, amount: 12 });
+    await fund(escrow);
+    await buyInBoth(escrow, TABLE_1);
+    await releaseBet(escrow, TABLE_1, B, 12, 'lose', A);
+    expect(await ledger.standing(A, B)).toEqual({ status: 'owes', owes: B, amount: 12 });
 
-    const snapshot = ledger.save(A, B);
+    const snapshot = await ledger.save(A, B);
     expect(snapshot.standings[0]?.standing).toEqual({ status: 'owes', owes: B, amount: 12 });
-    expect(ledger.standing(A, B)).toEqual({ status: 'owes', owes: B, amount: 12 });
+    expect(await ledger.standing(A, B)).toEqual({ status: 'owes', owes: B, amount: 12 });
 
-    releaseBet(escrow, TABLE_1, B, 8, 'lose', A);
-    expect(ledger.standing(A, B)).toEqual({ status: 'owes', owes: B, amount: 20 });
-    expect(ledger.listSnapshots(A)[0]?.standings[0]?.standing).toEqual({
+    await releaseBet(escrow, TABLE_1, B, 8, 'lose', A);
+    expect(await ledger.standing(A, B)).toEqual({ status: 'owes', owes: B, amount: 20 });
+    expect((await ledger.listSnapshots(A))[0]?.standings[0]?.standing).toEqual({
       status: 'owes',
       owes: B,
       amount: 12,
     });
   });
 
-  it('never calls EscrowService write methods from the ledger module', () => {
+  it('never calls EscrowService write methods from the ledger module', async () => {
     const dir = dirname(fileURLToPath(import.meta.url));
     const writePath = [
       'createEscrowService',
@@ -147,9 +154,9 @@ describe('personal ledger', () => {
         counterpartyUserId: B,
       },
     };
-    ledger.recordRelease(synthetic, '2026-09-13T00:00:00.000Z');
-    ledger.save(A);
-    ledger.clear(A, B, A);
-    expect(ledger.standing(A, B)).toEqual({ status: 'settled' });
+    await ledger.recordRelease(synthetic, '2026-09-13T00:00:00.000Z');
+    await ledger.save(A);
+    await ledger.clear(A, B, A);
+    expect(await ledger.standing(A, B)).toEqual({ status: 'settled' });
   });
 });

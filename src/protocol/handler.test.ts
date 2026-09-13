@@ -198,23 +198,24 @@ describe('canResolve wired to escrow', () => {
     expect(canResolveForTable(table)(P2, POKER_PROTOCOL)).toBe(true);
   });
 
-  it('is the canResolve callback EscrowService uses for resolve and release', () => {
+  it('is the canResolve callback EscrowService uses for resolve and release', async () => {
     const escrow = createEscrowService();
-    escrow.ensureMasterWallet(P1, 100);
-    escrow.ensureMasterWallet(P2, 100);
-    escrow.buyIn({ userId: P1, tableId: 'wired', amount: 40, actorId: P1 });
-    escrow.buyIn({ userId: P2, tableId: 'wired', amount: 40, actorId: P2 });
-    const locked = escrow.lock({
-      escrowId: escrow.confirm({ userId: P1, tableId: 'wired', amount: 10, actorId: P1 }).id,
+    await escrow.ensureMasterWallet(P1, 100);
+    await escrow.ensureMasterWallet(P2, 100);
+    await escrow.buyIn({ userId: P1, tableId: 'wired', amount: 40, actorId: P1 });
+    await escrow.buyIn({ userId: P2, tableId: 'wired', amount: 40, actorId: P2 });
+    const confirmed = await escrow.confirm({ userId: P1, tableId: 'wired', amount: 10, actorId: P1 });
+    const locked = await escrow.lock({
+      escrowId: confirmed.id,
       actorId: P1,
     });
 
-    let table = createProtocolTable({
+    const table = createProtocolTable({
       tableId: 'wired',
       protocol: POKER_PROTOCOL,
       playerIds: [P1, P2],
     });
-    expect(() =>
+    await expect(
       escrow.resolve({
         escrowId: locked.id,
         actorId: P2,
@@ -222,22 +223,22 @@ describe('canResolve wired to escrow', () => {
         canResolve: canResolveForTable(table),
         winners: [P1],
       }),
-    ).toThrow(/not allowed/);
+    ).rejects.toThrow(/not allowed/);
 
-    const resolved = escrow.resolve({
+    const resolved = await escrow.resolve({
       escrowId: locked.id,
       actorId: P1,
       protocolConfig: POKER_PROTOCOL,
       canResolve: canResolveForTable(table),
       winners: [P1],
     });
-    escrow.release({
+    await escrow.release({
       escrowId: resolved.id,
       actorId: P1,
       protocolConfig: POKER_PROTOCOL,
       canResolve: canResolveForTable(table),
     });
-    expect(escrow.getEscrow(resolved.id)?.state).toBe('RELEASED');
+    expect((await escrow.getEscrow(resolved.id))?.state).toBe('RELEASED');
   });
 });
 

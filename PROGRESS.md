@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-All seven build-order steps from `jetonbro-requirements-v4.md` are on `origin/main`. Feature commit `117e668`.
+Persistence PR A (async store interfaces) is ready for review. No Postgres yet — stop here before PR B. Feature HEAD on `main` remains `76b5a52`.
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -70,6 +70,9 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | Setup/resolution UI is action- and payout-rule-gated, not `protocolId === blackjack`. Dead `creditsGame` / assign-chips / top-up paths removed. All protocol action ids listed in the manifest. | `.cursorrules`: no per-game branches; no dead code; every action type registered. |
 | 2026-09-13 | Chip denoms are `100, 25, 10, 5, 1` — one greedy breakdown for any integer | Not a blackjack box/multiplier table. Poker pots and zilch stakes use the same function. No 500 denom so a large pile stays a short column. |
 | 2026-09-13 | Skin + chip-visual are local appearance prefs (`localStorage`), not table or protocol state | Presentational only. Switching skin does not write a wallet or ledger row. |
+| 2026-09-13 | **Store methods are async.** `EscrowStore`, `AuthStore`, `PersonalLedgerStore`, and `TableRuntimeStore` return `Promise`. Memory impls wrap the previous sync maps. Services/routes `await`. Signature change only — same operations, same writers. | `pg` is async. Keeping a sync interface would force write-behind or a fake blocking client. |
+| 2026-09-13 | **`PersonalLedgerStore` extracted.** `recordRelease` / `clear` / `save` remain the only writers. Reads go through `listEntries` / `listSnapshots`. | Same extraction `EscrowStore` already had. Needed before a Postgres adapter. |
+| 2026-09-13 | **`TableRuntimeStore` holds protocol + `boxEscrowIds` only.** `ensureRuntime` loads a stored record; a true miss still fabricates setup and `put`s it. Hand photos stay on `TableService` in memory. | Approved persist set. Photos are display-only and up to 4MB. |
 
 ## Infrastructure
 
@@ -161,6 +164,14 @@ Not fixed in this change set (waiting on the owner's call). The new Add player U
 4. **Card / dice / hand-eval?** No. Referee cards are generic coloured rectangles. 8-ball picks from a fixed string list with `Math.random`.
 5. **Per-game branches?** No.
 
+## Persistence PR A questions
+
+1. **Extend or new?** Extends existing `EscrowStore` / `AuthStore` (async signatures). New interfaces only: `PersonalLedgerStore` (`src/ledger/store.ts`) and `TableRuntimeStore` (`src/table/store.ts`). No Postgres, no new feature module.
+2. **Route / event / action?** No new REST identities, sockets, or protocol actions. Existing routes now `await` the same handlers. Manifest unchanged. `scripts/check-routes.sh` ok.
+3. **Wallet / ledger writes?** Same writers, same modules. Escrow still only through `EscrowService`. Personal ledger still only `recordRelease` / `clear` / `save`. No second write path.
+4. **Card / dice / hand-eval?** No. Hand photos still display-only and still not on the runtime store.
+5. **Per-game branches?** No.
+
 ## Closing summary — all seven steps
 
 | Step | Name | Commit on `main` | Notes |
@@ -179,7 +190,7 @@ Live-test follow-ups (invite roster, T&Cs dropped for friends-only, Resend maile
 
 ### Known limitations (whole build)
 
-- **Store is in-memory.** Escrow, auth, tables, sessions, and invites reset on process restart. `DATABASE_URL` is accepted but unused — no Postgres adapter yet.
+- **Store is still in-memory.** All four store interfaces are async and swappable. `DATABASE_URL` is still unused — Postgres adapters are PR B.
 - **Poker side-pots** are out of scope (v4). Single pot only.
 - **No card/dice simulation or hand evaluation.** Hand photo/text is display-only.
 - **No real-money rails** or payment integrations.

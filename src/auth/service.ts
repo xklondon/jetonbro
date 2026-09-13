@@ -91,7 +91,7 @@ export class AuthService {
 
     let invite: Invite | undefined;
     if (input.inviteToken) {
-      invite = this.requireInvite(input.inviteToken);
+      invite = await this.requireInvite(input.inviteToken);
       if (invite.channel === 'mates') {
         fail('MATES_NO_MAGIC_LINK', 'Mates invites join immediately; they do not use a magic link');
       }
@@ -101,7 +101,7 @@ export class AuthService {
     let guestDeviceId: string | null = null;
     if (input.deviceId) {
       const deviceId = requireDeviceId(input.deviceId);
-      const guest = this.findGuestByDevice(deviceId);
+      const guest = await this.findGuestByDevice(deviceId);
       if (!guest) {
         fail('GUEST_NOT_FOUND', 'No Mates-mode guest exists for this device');
       }
@@ -109,7 +109,7 @@ export class AuthService {
     }
 
     const token = randomUUID();
-    this.store.insertMagicLink({
+    await this.store.insertMagicLink({
       token,
       email,
       phone,
@@ -138,19 +138,19 @@ export class AuthService {
    * Validate a magic-link token only. Does not consume the link, accept
    * T&Cs, create an account, or provision a wallet.
    */
-  inspectMagicLink(token: string): {
+  async inspectMagicLink(token: string): Promise<{
     email: string | null;
     phone: string | null;
     requiresTerms: boolean;
     isUpgrade: boolean;
     inviteChannel: InviteChannel | null;
     tableId: string | null;
-  } {
-    const link = this.store.getMagicLink(token);
+  }> {
+    const link = await this.store.getMagicLink(token);
     if (!link) {
       fail('MAGIC_LINK_INVALID', 'Magic link is invalid or already used', 401);
     }
-    const invite = link.inviteId ? this.store.getInvite(link.inviteId) : undefined;
+    const invite = link.inviteId ? await this.store.getInvite(link.inviteId) : undefined;
     const isUpgrade = Boolean(link.guestDeviceId);
     return {
       email: link.email,
@@ -162,47 +162,47 @@ export class AuthService {
     };
   }
 
-  verify(input: VerifyInput): SessionView {
-    const link = this.store.getMagicLink(input.token);
+  async verify(input: VerifyInput): Promise<SessionView> {
+    const link = await this.store.getMagicLink(input.token);
     if (!link) {
       fail('MAGIC_LINK_INVALID', 'Magic link is invalid or already used', 401);
     }
 
-    const invite = link.inviteId ? this.store.getInvite(link.inviteId) : undefined;
+    const invite = link.inviteId ? await this.store.getInvite(link.inviteId) : undefined;
     if (link.inviteId && !invite) {
       fail('INVITE_NOT_FOUND', 'Invite is no longer valid', 404);
     }
 
-    const user = link.guestDeviceId ? this.upgradeGuest(link) : this.verifyIdentifiedUser(link);
+    const user = link.guestDeviceId ? await this.upgradeGuest(link) : await this.verifyIdentifiedUser(link);
 
-    this.store.consumeMagicLink(input.token);
+    await this.store.consumeMagicLink(input.token);
 
     if (invite) {
-      this.addMember(invite.tableId, user.id);
-      this.claimInvite(invite, user.id);
+      await this.addMember(invite.tableId, user.id);
+      await this.claimInvite(invite, user.id);
     }
 
     return this.issueSession(user, invite?.tableId ?? null);
   }
 
-  joinMates(input: JoinMatesInput): SessionView {
-    const invite = this.requireInvite(input.token);
+  async joinMates(input: JoinMatesInput): Promise<SessionView> {
+    const invite = await this.requireInvite(input.token);
     if (invite.channel !== 'mates') {
       fail('NOT_MATES_INVITE', 'This invite is not a Mates-mode guest join');
     }
     const deviceId = requireDeviceId(input.deviceId);
-    const existing = this.store.getUserByDeviceId(deviceId);
-    const user = existing ?? this.createGuest(deviceId);
-    this.addMember(invite.tableId, user.id);
-    this.claimInvite(invite, user.id);
+    const existing = await this.store.getUserByDeviceId(deviceId);
+    const user = existing ?? (await this.createGuest(deviceId));
+    await this.addMember(invite.tableId, user.id);
+    await this.claimInvite(invite, user.id);
     return this.issueSession(user, invite.tableId);
   }
 
-  createTable(
+  async createTable(
     sessionToken: string,
     input: { protocolId?: TableRecord['protocolId'] } = {},
-  ): TableRecord {
-    const user = this.requireSessionUser(sessionToken);
+  ): Promise<TableRecord> {
+    const user = await this.requireSessionUser(sessionToken);
     if (user.isGuest) {
       fail('FORBIDDEN', 'Creating a table requires a verified account', 403);
     }
@@ -211,38 +211,38 @@ export class AuthService {
       fail('PROTOCOL_INVALID', 'protocolId must be blackjack, poker, or zilch');
     }
     const table: TableRecord = { id: randomUUID(), ownerUserId: user.id, protocolId };
-    this.store.insertTable(table);
-    this.addMember(table.id, user.id);
+    await this.store.insertTable(table);
+    await this.addMember(table.id, user.id);
     return table;
   }
 
-  getTable(tableId: string): TableRecord | undefined {
+  async getTable(tableId: string): Promise<TableRecord | undefined> {
     return this.store.getTable(tableId);
   }
 
-  listMemberIds(tableId: string): string[] {
+  async listMemberIds(tableId: string): Promise<string[]> {
     return this.store.listMembers(tableId);
   }
 
-  getUser(userId: string): User | undefined {
+  async getUser(userId: string): Promise<User | undefined> {
     return this.store.getUser(userId);
   }
 
-  listInvites(tableId: string): Invite[] {
+  async listInvites(tableId: string): Promise<Invite[]> {
     return this.store.listInvitesForTable(tableId);
   }
 
-  markOpeningCredited(inviteId: string): void {
-    const invite = this.store.getInvite(inviteId);
+  async markOpeningCredited(inviteId: string): Promise<void> {
+    const invite = await this.store.getInvite(inviteId);
     if (!invite) {
       return;
     }
-    this.store.updateInvite({ ...invite, openingCredited: true });
+    await this.store.updateInvite({ ...invite, openingCredited: true });
   }
 
   async createInvite(sessionToken: string, tableId: string, input: CreateInviteInput): Promise<CreatedInvite> {
-    const actor = this.requireSessionUser(sessionToken);
-    const table = this.store.getTable(tableId);
+    const actor = await this.requireSessionUser(sessionToken);
+    const table = await this.store.getTable(tableId);
     if (!table) {
       fail('TABLE_NOT_FOUND', 'Table not found', 404);
     }
@@ -282,7 +282,7 @@ export class AuthService {
       magicToken: null,
       joinPath: `/invite/${inviteToken}`,
     };
-    this.store.insertInvite(invite);
+    await this.store.insertInvite(invite);
 
     const previewUrl = `${PREVIEW_PATH}?token=${encodeURIComponent(invite.token)}`;
     let magicToken: string | null = null;
@@ -298,7 +298,7 @@ export class AuthService {
       verifyUrl = issued.verifyUrl;
       invite.magicToken = magicToken;
       invite.joinPath = `/verify?token=${encodeURIComponent(magicToken)}`;
-      this.store.updateInvite(invite);
+      await this.store.updateInvite(invite);
     }
 
     let shareUrl: string | null = null;
@@ -319,13 +319,13 @@ export class AuthService {
     };
   }
 
-  previewInvite(token: string): {
+  async previewInvite(token: string): Promise<{
     tableId: string;
     channel: InviteChannel;
     requiresTerms: boolean;
     requiresContact: boolean;
-  } {
-    const invite = this.requireInvite(token);
+  }> {
+    const invite = await this.requireInvite(token);
     const mates = invite.channel === 'mates';
     return {
       tableId: invite.tableId,
@@ -335,43 +335,43 @@ export class AuthService {
     };
   }
 
-  me(sessionToken: string): {
+  async me(sessionToken: string): Promise<{
     user: User;
     wallet: { id: string; userId: string; balance: number } | null;
     tableIds: string[];
-  } {
-    const user = this.requireSessionUser(sessionToken);
-    const wallet = this.escrow.getMasterWallet(user.id);
+  }> {
+    const user = await this.requireSessionUser(sessionToken);
+    const wallet = await this.escrow.getMasterWallet(user.id);
     return {
       user,
       wallet: wallet
         ? { id: wallet.id, userId: wallet.userId, balance: wallet.balance }
         : null,
-      tableIds: this.store.listMembershipsForUser(user.id).map((row) => row.tableId),
+      tableIds: (await this.store.listMembershipsForUser(user.id)).map((row) => row.tableId),
     };
   }
 
-  logout(sessionToken: string): void {
-    this.store.deleteSession(sessionToken);
+  async logout(sessionToken: string): Promise<void> {
+    await this.store.deleteSession(sessionToken);
   }
 
-  requireSessionUser(sessionToken: string): User {
+  async requireSessionUser(sessionToken: string): Promise<User> {
     if (!sessionToken) {
       fail('UNAUTHENTICATED', 'Sign in required', 401);
     }
-    const session = this.store.getSession(sessionToken);
+    const session = await this.store.getSession(sessionToken);
     if (!session) {
       fail('UNAUTHENTICATED', 'Sign in required', 401);
     }
-    const user = this.store.getUser(session.userId);
+    const user = await this.store.getUser(session.userId);
     if (!user) {
       fail('UNAUTHENTICATED', 'Sign in required', 401);
     }
     return user;
   }
 
-  private verifyIdentifiedUser(link: MagicLink): User {
-    const existing = this.findUserByContact(link.email, link.phone);
+  private async verifyIdentifiedUser(link: MagicLink): Promise<User> {
+    const existing = await this.findUserByContact(link.email, link.phone);
     if (existing) {
       if (existing.isGuest) {
         fail('CONTACT_CONFLICT', 'This contact is attached to a guest identity');
@@ -386,17 +386,17 @@ export class AuthService {
     });
   }
 
-  private upgradeGuest(link: MagicLink): User {
+  private async upgradeGuest(link: MagicLink): Promise<User> {
     const deviceId = link.guestDeviceId;
     if (!deviceId) {
       fail('GUEST_NOT_FOUND', 'No Mates-mode guest exists for this device');
     }
-    const guest = this.findGuestByDevice(deviceId);
+    const guest = await this.findGuestByDevice(deviceId);
     if (!guest) {
       fail('GUEST_NOT_FOUND', 'No Mates-mode guest exists for this device');
     }
 
-    const existing = this.findUserByContact(link.email, link.phone);
+    const existing = await this.findUserByContact(link.email, link.phone);
     if (existing && existing.id !== guest.id) {
       fail('IDENTITY_TAKEN', 'That email or phone already belongs to another account', 409);
     }
@@ -411,26 +411,26 @@ export class AuthService {
       createdAt: nowIso(),
       upgradedFromUserId: guest.id,
     };
-    this.store.insertUser(verified);
-    this.escrow.reownMasterWallet(guest.id, verified.id);
+    await this.store.insertUser(verified);
+    await this.escrow.reownMasterWallet(guest.id, verified.id);
 
-    this.store.updateUser({
+    await this.store.updateUser({
       ...guest,
       deviceId: null,
     });
-    for (const membership of this.store.listMembershipsForUser(guest.id)) {
-      this.store.removeMembership(membership.tableId, guest.id);
-      this.addMember(membership.tableId, verified.id);
+    for (const membership of await this.store.listMembershipsForUser(guest.id)) {
+      await this.store.removeMembership(membership.tableId, guest.id);
+      await this.addMember(membership.tableId, verified.id);
     }
     return verified;
   }
 
-  private createVerifiedUser(input: {
+  private async createVerifiedUser(input: {
     email: string | null;
     phone: string | null;
     deviceId: string | null;
     upgradedFromUserId: string | null;
-  }): User {
+  }): Promise<User> {
     const user: User = {
       id: randomUUID(),
       email: input.email,
@@ -441,13 +441,13 @@ export class AuthService {
       createdAt: nowIso(),
       upgradedFromUserId: input.upgradedFromUserId,
     };
-    this.store.insertUser(user);
-    this.escrow.ensureMasterWallet(user.id);
+    await this.store.insertUser(user);
+    await this.escrow.ensureMasterWallet(user.id);
     return user;
   }
 
-  private createGuest(deviceId: string): User {
-    const existing = this.store.getUser(guestUserId(deviceId));
+  private async createGuest(deviceId: string): Promise<User> {
+    const existing = await this.store.getUser(guestUserId(deviceId));
     if (existing) {
       return existing;
     }
@@ -461,56 +461,56 @@ export class AuthService {
       createdAt: nowIso(),
       upgradedFromUserId: null,
     };
-    this.store.insertUser(user);
-    this.escrow.ensureMasterWallet(user.id);
+    await this.store.insertUser(user);
+    await this.escrow.ensureMasterWallet(user.id);
     return user;
   }
 
-  private findGuestByDevice(deviceId: string): User | undefined {
-    const byDevice = this.store.getUserByDeviceId(deviceId);
+  private async findGuestByDevice(deviceId: string): Promise<User | undefined> {
+    const byDevice = await this.store.getUserByDeviceId(deviceId);
     if (byDevice?.isGuest) {
       return byDevice;
     }
-    const byId = this.store.getUser(guestUserId(deviceId));
+    const byId = await this.store.getUser(guestUserId(deviceId));
     return byId?.isGuest ? byId : undefined;
   }
 
-  private findUserByContact(email: string | null, phone: string | null): User | undefined {
-    const byEmail = email ? this.store.getUserByEmail(email) : undefined;
-    const byPhone = phone ? this.store.getUserByPhone(phone) : undefined;
+  private async findUserByContact(email: string | null, phone: string | null): Promise<User | undefined> {
+    const byEmail = email ? await this.store.getUserByEmail(email) : undefined;
+    const byPhone = phone ? await this.store.getUserByPhone(phone) : undefined;
     if (byEmail && byPhone && byEmail.id !== byPhone.id) {
       fail('CONTACT_CONFLICT', 'Email and phone belong to different accounts');
     }
     return byEmail ?? byPhone;
   }
 
-  private requireInvite(token: string): Invite {
+  private async requireInvite(token: string): Promise<Invite> {
     if (!token) {
       fail('INVITE_NOT_FOUND', 'Invite is no longer valid', 404);
     }
-    const invite = this.store.getInviteByToken(token);
+    const invite = await this.store.getInviteByToken(token);
     if (!invite) {
       fail('INVITE_NOT_FOUND', 'Invite is no longer valid', 404);
     }
     return invite;
   }
 
-  private addMember(tableId: string, userId: string): void {
-    if (!this.store.isMember(tableId, userId)) {
-      this.store.addMembership({ tableId, userId });
+  private async addMember(tableId: string, userId: string): Promise<void> {
+    if (!(await this.store.isMember(tableId, userId))) {
+      await this.store.addMembership({ tableId, userId });
     }
   }
 
-  private claimInvite(invite: Invite, userId: string): void {
+  private async claimInvite(invite: Invite, userId: string): Promise<void> {
     if (invite.claimedByUserId) {
       return;
     }
-    this.store.updateInvite({ ...invite, claimedByUserId: userId });
+    await this.store.updateInvite({ ...invite, claimedByUserId: userId });
   }
 
-  private issueSession(user: User, tableId: string | null = null): SessionView {
+  private async issueSession(user: User, tableId: string | null = null): Promise<SessionView> {
     const sessionToken = randomUUID();
-    this.store.insertSession({ token: sessionToken, userId: user.id });
+    await this.store.insertSession({ token: sessionToken, userId: user.id });
     return { sessionToken, user, tableId };
   }
 

@@ -18,12 +18,12 @@ export function listenForReleases(store: EscrowStore, ledger: PersonalLedger): E
     getEscrow: (id) => store.getEscrow(id),
     listEscrows: () => store.listEscrows(),
     listLedger: () => store.listLedger(),
-    insertLedger(row) {
-      store.insertLedger(row);
+    async insertLedger(row) {
+      await store.insertLedger(row);
       if (row.kind === 'TRANSITION' && row.toState === 'RELEASED' && row.escrowId) {
-        const escrow = store.getEscrow(row.escrowId);
+        const escrow = await store.getEscrow(row.escrowId);
         if (escrow?.state === 'RELEASED') {
-          ledger.recordRelease(escrow, row.at);
+          await ledger.recordRelease(escrow, row.at);
         }
       }
     },

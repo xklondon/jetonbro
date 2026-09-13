@@ -3,14 +3,14 @@ import type { Escrow } from '../escrow/types.js';
 import { transfersFromRelease } from './derive.js';
 import { fail } from './errors.js';
 import { counterparties, netStanding } from './standing.js';
+import { createMemoryPersonalLedgerStore, type PersonalLedgerStore } from './store.js';
 import type { PersonalLedgerEntry, Standing, StandingRow, StandingSnapshot } from './types.js';
 
 export class PersonalLedger {
-  private readonly entries: PersonalLedgerEntry[] = [];
-  private readonly snapshots: StandingSnapshot[] = [];
+  constructor(private readonly store: PersonalLedgerStore = createMemoryPersonalLedgerStore()) {}
 
   /** Only the RELEASE listener should call this. */
-  recordRelease(escrow: Escrow, timestamp: string): PersonalLedgerEntry[] {
+  async recordRelease(escrow: Escrow, timestamp: string): Promise<PersonalLedgerEntry[]> {
     if (escrow.state !== 'RELEASED') {
       fail('NOT_RELEASE', 'Personal-ledger RELEASE rows can only be derived from a RELEASED escrow');
     }
@@ -26,14 +26,14 @@ export class PersonalLedger {
         timestamp,
         escrowId: escrow.id,
       };
-      this.entries.push(entry);
+      await this.store.insertEntry(entry);
       added.push(entry);
     }
     return added;
   }
 
-  listHistory(userA?: string, userB?: string): PersonalLedgerEntry[] {
-    return this.entries
+  async listHistory(userA?: string, userB?: string): Promise<PersonalLedgerEntry[]> {
+    return (await this.store.listEntries())
       .filter((entry) => {
         if (!userA) {
           return true;
@@ -48,21 +48,22 @@ export class PersonalLedger {
       .map((entry) => ({ ...entry }));
   }
 
-  standing(userA: string, userB: string): Standing {
-    return netStanding(this.entries, userA, userB);
+  async standing(userA: string, userB: string): Promise<Standing> {
+    return netStanding(await this.store.listEntries(), userA, userB);
   }
 
-  standingsFor(userId: string): StandingRow[] {
-    return counterparties(this.entries, userId).map((otherUserId) => ({
+  async standingsFor(userId: string): Promise<StandingRow[]> {
+    const entries = await this.store.listEntries();
+    return counterparties(entries, userId).map((otherUserId) => ({
       otherUserId,
-      standing: netStanding(this.entries, userId, otherUserId),
+      standing: netStanding(entries, userId, otherUserId),
     }));
   }
 
-  save(userId: string, otherUserId?: string): StandingSnapshot {
+  async save(userId: string, otherUserId?: string): Promise<StandingSnapshot> {
     const standings = otherUserId
-      ? [{ otherUserId, standing: this.standing(userId, otherUserId) }]
-      : this.standingsFor(userId);
+      ? [{ otherUserId, standing: await this.standing(userId, otherUserId) }]
+      : await this.standingsFor(userId);
     const snapshot: StandingSnapshot = {
       id: randomUUID(),
       timestamp: new Date().toISOString(),
@@ -70,12 +71,12 @@ export class PersonalLedger {
       otherUserId: otherUserId ?? null,
       standings,
     };
-    this.snapshots.push(snapshot);
+    await this.store.insertSnapshot(snapshot);
     return { ...snapshot, standings: standings.map((row) => ({ ...row, standing: { ...row.standing } })) };
   }
 
-  listSnapshots(userId?: string): StandingSnapshot[] {
-    return this.snapshots
+  async listSnapshots(userId?: string): Promise<StandingSnapshot[]> {
+    return (await this.store.listSnapshots())
       .filter((snapshot) => !userId || snapshot.userId === userId)
       .map((snapshot) => ({
         ...snapshot,
@@ -87,8 +88,8 @@ export class PersonalLedger {
    * Real-life settlement. Writes a MANUAL_SETTLEMENT row so net is zero from
    * this point; never deletes RELEASE history.
    */
-  clear(userA: string, userB: string, actorId: string): PersonalLedgerEntry | null {
-    const standing = this.standing(userA, userB);
+  async clear(userA: string, userB: string, actorId: string): Promise<PersonalLedgerEntry | null> {
+    const standing = await this.standing(userA, userB);
     if (standing.status === 'settled') {
       return null;
     }
@@ -102,11 +103,11 @@ export class PersonalLedger {
       timestamp: new Date().toISOString(),
       actorId,
     };
-    this.entries.push(entry);
+    await this.store.insertEntry(entry);
     return { ...entry };
   }
 }
 
-export function createPersonalLedger(): PersonalLedger {
-  return new PersonalLedger();
+export function createPersonalLedger(store?: PersonalLedgerStore): PersonalLedger {
+  return new PersonalLedger(store ?? createMemoryPersonalLedgerStore());
 }

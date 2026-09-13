@@ -1,18 +1,18 @@
 import type { Escrow, LedgerRow, Wallet } from './types.js';
 
 export interface EscrowStore {
-  insertWallet(wallet: Wallet): void;
-  updateWallet(wallet: Wallet): void;
-  getWalletById(id: string): Wallet | undefined;
-  getMasterWallet(userId: string): Wallet | undefined;
-  getGameWallet(userId: string, tableId: string): Wallet | undefined;
-  listWallets(): Wallet[];
-  insertEscrow(escrow: Escrow): void;
-  updateEscrow(escrow: Escrow): void;
-  getEscrow(id: string): Escrow | undefined;
-  listEscrows(): Escrow[];
-  insertLedger(row: LedgerRow): void;
-  listLedger(): LedgerRow[];
+  insertWallet(wallet: Wallet): Promise<void>;
+  updateWallet(wallet: Wallet): Promise<void>;
+  getWalletById(id: string): Promise<Wallet | undefined>;
+  getMasterWallet(userId: string): Promise<Wallet | undefined>;
+  getGameWallet(userId: string, tableId: string): Promise<Wallet | undefined>;
+  listWallets(): Promise<Wallet[]>;
+  insertEscrow(escrow: Escrow): Promise<void>;
+  updateEscrow(escrow: Escrow): Promise<void>;
+  getEscrow(id: string): Promise<Escrow | undefined>;
+  listEscrows(): Promise<Escrow[]>;
+  insertLedger(row: LedgerRow): Promise<void>;
+  listLedger(): Promise<LedgerRow[]>;
 }
 
 export function createMemoryStore(): EscrowStore {
@@ -21,17 +21,17 @@ export function createMemoryStore(): EscrowStore {
   const ledger: LedgerRow[] = [];
 
   return {
-    insertWallet(wallet) {
+    async insertWallet(wallet) {
       wallets.set(wallet.id, { ...wallet });
     },
-    updateWallet(wallet) {
+    async updateWallet(wallet) {
       wallets.set(wallet.id, { ...wallet });
     },
-    getWalletById(id) {
+    async getWalletById(id) {
       const row = wallets.get(id);
       return row ? { ...row } : undefined;
     },
-    getMasterWallet(userId) {
+    async getMasterWallet(userId) {
       for (const wallet of wallets.values()) {
         if (wallet.userId === userId && wallet.type === 'master') {
           return { ...wallet };
@@ -39,7 +39,7 @@ export function createMemoryStore(): EscrowStore {
       }
       return undefined;
     },
-    getGameWallet(userId, tableId) {
+    async getGameWallet(userId, tableId) {
       for (const wallet of wallets.values()) {
         if (wallet.userId === userId && wallet.type === 'game' && wallet.tableId === tableId) {
           return { ...wallet };
@@ -47,26 +47,26 @@ export function createMemoryStore(): EscrowStore {
       }
       return undefined;
     },
-    listWallets() {
+    async listWallets() {
       return [...wallets.values()].map((wallet) => ({ ...wallet }));
     },
-    insertEscrow(escrow) {
+    async insertEscrow(escrow) {
       escrows.set(escrow.id, cloneEscrow(escrow));
     },
-    updateEscrow(escrow) {
+    async updateEscrow(escrow) {
       escrows.set(escrow.id, cloneEscrow(escrow));
     },
-    getEscrow(id) {
+    async getEscrow(id) {
       const row = escrows.get(id);
       return row ? cloneEscrow(row) : undefined;
     },
-    listEscrows() {
+    async listEscrows() {
       return [...escrows.values()].map((escrow) => cloneEscrow(escrow));
     },
-    insertLedger(row) {
+    async insertLedger(row) {
       ledger.push({ ...row });
     },
-    listLedger() {
+    async listLedger() {
       return ledger.map((row) => ({ ...row }));
     },
   };

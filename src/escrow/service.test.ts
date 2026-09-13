@@ -20,19 +20,19 @@ const splitConfig: ProtocolConfig = {
   payoutRule: 'even-split',
 };
 
-function fundedTable() {
+async function fundedTable() {
   const escrow = createEscrowService();
-  escrow.ensureMasterWallet(PLAYER, 200);
-  escrow.ensureMasterWallet(BANK, 200);
-  escrow.ensureMasterWallet(OTHER, 200);
-  escrow.buyIn({ userId: PLAYER, tableId: TABLE, amount: 50, actorId: PLAYER });
-  escrow.buyIn({ userId: BANK, tableId: TABLE, amount: 80, actorId: BANK });
-  escrow.buyIn({ userId: OTHER, tableId: TABLE, amount: 40, actorId: OTHER });
+  await escrow.ensureMasterWallet(PLAYER, 200);
+  await escrow.ensureMasterWallet(BANK, 200);
+  await escrow.ensureMasterWallet(OTHER, 200);
+  await escrow.buyIn({ userId: PLAYER, tableId: TABLE, amount: 50, actorId: PLAYER });
+  await escrow.buyIn({ userId: BANK, tableId: TABLE, amount: 80, actorId: BANK });
+  await escrow.buyIn({ userId: OTHER, tableId: TABLE, amount: 40, actorId: OTHER });
   return escrow;
 }
 
-function confirmAndLock(service: ReturnType<typeof createEscrowService>, amount = 20) {
-  const confirmed = service.confirm({
+async function confirmAndLock(service: ReturnType<typeof createEscrowService>, amount = 20) {
+  const confirmed = await service.confirm({
     userId: PLAYER,
     tableId: TABLE,
     amount,
@@ -42,10 +42,10 @@ function confirmAndLock(service: ReturnType<typeof createEscrowService>, amount 
 }
 
 describe('EscrowService', () => {
-  it('funds a game wallet from the master wallet at buy-in', () => {
+  it('funds a game wallet from the master wallet at buy-in', async () => {
     const service = createEscrowService();
-    service.ensureMasterWallet(PLAYER, 100);
-    const { master, game } = service.buyIn({
+    await service.ensureMasterWallet(PLAYER, 100);
+    const { master, game } = await service.buyIn({
       userId: PLAYER,
       tableId: TABLE,
       amount: 40,
@@ -57,44 +57,44 @@ describe('EscrowService', () => {
     expect(game.tableId).toBe(TABLE);
   });
 
-  it('fails when locking more than the game wallet balance', () => {
-    const service = fundedTable();
-    const confirmed = service.confirm({
+  it('fails when locking more than the game wallet balance', async () => {
+    const service = await fundedTable();
+    const confirmed = await service.confirm({
       userId: PLAYER,
       tableId: TABLE,
       amount: 51,
       actorId: PLAYER,
     });
-    expect(() => service.lock({ escrowId: confirmed.id, actorId: PLAYER })).toThrow(EscrowError);
+    await expect(service.lock({ escrowId: confirmed.id, actorId: PLAYER })).rejects.toBeInstanceOf(EscrowError);
     try {
-      service.lock({ escrowId: confirmed.id, actorId: PLAYER });
+      await service.lock({ escrowId: confirmed.id, actorId: PLAYER });
     } catch (err) {
       expect(err).toBeInstanceOf(EscrowError);
       expect((err as EscrowError).code).toBe('INSUFFICIENT_GAME');
     }
-    expect(service.getGameWallet(PLAYER, TABLE)?.balance).toBe(50);
-    expect(service.getEscrow(confirmed.id)?.state).toBe('CONFIRMED');
+    expect((await service.getGameWallet(PLAYER, TABLE))?.balance).toBe(50);
+    expect((await service.getEscrow(confirmed.id))?.state).toBe('CONFIRMED');
   });
 
-  it('fails when locking the same confirmed amount twice', () => {
-    const service = fundedTable();
-    const locked = confirmAndLock(service, 10);
-    expect(service.getGameWallet(PLAYER, TABLE)?.balance).toBe(40);
-    expect(() => service.lock({ escrowId: locked.id, actorId: PLAYER })).toThrow(EscrowError);
+  it('fails when locking the same confirmed amount twice', async () => {
+    const service = await fundedTable();
+    const locked = await confirmAndLock(service, 10);
+    expect((await service.getGameWallet(PLAYER, TABLE))?.balance).toBe(40);
+    await expect(service.lock({ escrowId: locked.id, actorId: PLAYER })).rejects.toBeInstanceOf(EscrowError);
     try {
-      service.lock({ escrowId: locked.id, actorId: PLAYER });
+      await service.lock({ escrowId: locked.id, actorId: PLAYER });
     } catch (err) {
       expect((err as EscrowError).code).toBe('DOUBLE_LOCK');
     }
-    expect(service.getEscrow(locked.id)?.state).toBe('LOCKED');
-    expect(service.getGameWallet(PLAYER, TABLE)?.balance).toBe(40);
+    expect((await service.getEscrow(locked.id))?.state).toBe('LOCKED');
+    expect((await service.getGameWallet(PLAYER, TABLE))?.balance).toBe(40);
   });
 
-  it('fails RESOLVE and RELEASE when canResolve denies the actor', () => {
-    const service = fundedTable();
-    const locked = confirmAndLock(service, 10);
+  it('fails RESOLVE and RELEASE when canResolve denies the actor', async () => {
+    const service = await fundedTable();
+    const locked = await confirmAndLock(service, 10);
 
-    expect(() =>
+    await expect(
       service.resolve({
         escrowId: locked.id,
         actorId: OTHER,
@@ -103,10 +103,10 @@ describe('EscrowService', () => {
         outcome: 'win',
         counterpartyUserId: BANK,
       }),
-    ).toThrow(EscrowError);
+    ).rejects.toBeInstanceOf(EscrowError);
 
     try {
-      service.resolve({
+      await service.resolve({
         escrowId: locked.id,
         actorId: OTHER,
         protocolConfig: multiplierConfig,
@@ -118,7 +118,7 @@ describe('EscrowService', () => {
       expect((err as EscrowError).code).toBe('UNAUTHORIZED');
     }
 
-    const resolved = service.resolve({
+    const resolved = await service.resolve({
       escrowId: locked.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
@@ -127,17 +127,17 @@ describe('EscrowService', () => {
       counterpartyUserId: BANK,
     });
 
-    expect(() =>
+    await expect(
       service.release({
         escrowId: resolved.id,
         actorId: OTHER,
         protocolConfig: multiplierConfig,
         canResolve: deny,
       }),
-    ).toThrow(EscrowError);
+    ).rejects.toBeInstanceOf(EscrowError);
 
     try {
-      service.release({
+      await service.release({
         escrowId: resolved.id,
         actorId: OTHER,
         protocolConfig: multiplierConfig,
@@ -147,13 +147,13 @@ describe('EscrowService', () => {
       expect((err as EscrowError).code).toBe('UNAUTHORIZED');
     }
 
-    expect(service.getEscrow(resolved.id)?.state).toBe('RESOLVED');
+    expect((await service.getEscrow(resolved.id))?.state).toBe('RESOLVED');
   });
 
-  it('suggests a multiplier payout and credits it on release', () => {
-    const service = fundedTable();
-    const locked = confirmAndLock(service, 20);
-    const resolved = service.resolve({
+  it('suggests a multiplier payout and credits it on release', async () => {
+    const service = await fundedTable();
+    const locked = await confirmAndLock(service, 20);
+    const resolved = await service.resolve({
       escrowId: locked.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
@@ -162,21 +162,21 @@ describe('EscrowService', () => {
       counterpartyUserId: BANK,
     });
     expect(resolved.payout?.credits).toEqual([{ userId: PLAYER, amount: 40 }]);
-    service.release({
+    await service.release({
       escrowId: resolved.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
       canResolve: allow,
     });
-    expect(service.getEscrow(resolved.id)?.state).toBe('RELEASED');
-    expect(service.getGameWallet(PLAYER, TABLE)?.balance).toBe(70);
-    expect(service.getGameWallet(BANK, TABLE)?.balance).toBe(60);
+    expect((await service.getEscrow(resolved.id))?.state).toBe('RELEASED');
+    expect((await service.getGameWallet(PLAYER, TABLE))?.balance).toBe(70);
+    expect((await service.getGameWallet(BANK, TABLE))?.balance).toBe(60);
   });
 
-  it('lets an authorized actor edit the suggested payout before release', () => {
-    const service = fundedTable();
-    const locked = confirmAndLock(service, 20);
-    const resolved = service.resolve({
+  it('lets an authorized actor edit the suggested payout before release', async () => {
+    const service = await fundedTable();
+    const locked = await confirmAndLock(service, 20);
+    const resolved = await service.resolve({
       escrowId: locked.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
@@ -184,7 +184,7 @@ describe('EscrowService', () => {
       outcome: 'win',
       counterpartyUserId: BANK,
     });
-    service.setResolvedPayout({
+    await service.setResolvedPayout({
       escrowId: resolved.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
@@ -192,20 +192,20 @@ describe('EscrowService', () => {
       credits: [{ userId: PLAYER, amount: 30 }],
       counterpartyUserId: BANK,
     });
-    service.release({
+    await service.release({
       escrowId: resolved.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
       canResolve: allow,
     });
-    expect(service.getGameWallet(PLAYER, TABLE)?.balance).toBe(60);
-    expect(service.getGameWallet(BANK, TABLE)?.balance).toBe(70);
+    expect((await service.getGameWallet(PLAYER, TABLE))?.balance).toBe(60);
+    expect((await service.getGameWallet(BANK, TABLE))?.balance).toBe(70);
   });
 
-  it('splits a pot evenly across declared winners', () => {
-    const service = fundedTable();
-    const locked = confirmAndLock(service, 20);
-    const resolved = service.resolve({
+  it('splits a pot evenly across declared winners', async () => {
+    const service = await fundedTable();
+    const locked = await confirmAndLock(service, 20);
+    const resolved = await service.resolve({
       escrowId: locked.id,
       actorId: BANK,
       protocolConfig: splitConfig,
@@ -216,20 +216,20 @@ describe('EscrowService', () => {
       { userId: PLAYER, amount: 10 },
       { userId: OTHER, amount: 10 },
     ]);
-    service.release({
+    await service.release({
       escrowId: resolved.id,
       actorId: BANK,
       protocolConfig: splitConfig,
       canResolve: allow,
     });
-    expect(service.getGameWallet(PLAYER, TABLE)?.balance).toBe(40);
-    expect(service.getGameWallet(OTHER, TABLE)?.balance).toBe(50);
+    expect((await service.getGameWallet(PLAYER, TABLE))?.balance).toBe(40);
+    expect((await service.getGameWallet(OTHER, TABLE))?.balance).toBe(50);
   });
 
-  it('writes an immutable ledger row for every escrow transition', () => {
-    const service = fundedTable();
-    const locked = confirmAndLock(service, 10);
-    const resolved = service.resolve({
+  it('writes an immutable ledger row for every escrow transition', async () => {
+    const service = await fundedTable();
+    const locked = await confirmAndLock(service, 10);
+    const resolved = await service.resolve({
       escrowId: locked.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
@@ -237,28 +237,28 @@ describe('EscrowService', () => {
       outcome: 'push',
       counterpartyUserId: BANK,
     });
-    service.release({
+    await service.release({
       escrowId: resolved.id,
       actorId: BANK,
       protocolConfig: multiplierConfig,
       canResolve: allow,
     });
-    const rows = service.listLedger().filter((row) => row.escrowId === locked.id);
+    const rows = (await service.listLedger()).filter((row) => row.escrowId === locked.id);
     expect(rows.map((row) => row.toState)).toEqual(['CONFIRMED', 'LOCKED', 'RESOLVED', 'RELEASED']);
     expect(rows[2]?.declaredBy).toBe(BANK);
     expect(rows.every((row) => row.at && row.actorId && typeof row.amount === 'number')).toBe(true);
   });
 
-  it('reowns a master wallet onto a new user id without creating a second wallet', () => {
+  it('reowns a master wallet onto a new user id without creating a second wallet', async () => {
     const service = createEscrowService();
-    const original = service.ensureMasterWallet('guest:device', 25);
-    const moved = service.reownMasterWallet('guest:device', 'user-verified');
+    const original = await service.ensureMasterWallet('guest:device', 25);
+    const moved = await service.reownMasterWallet('guest:device', 'user-verified');
     expect(moved.id).toBe(original.id);
     expect(moved.userId).toBe('user-verified');
     expect(moved.balance).toBe(25);
-    expect(service.getMasterWallet('guest:device')).toBeUndefined();
-    expect(service.listMasterWallets()).toHaveLength(1);
-    service.ensureMasterWallet('user-verified');
-    expect(service.listMasterWallets()).toHaveLength(1);
+    expect(await service.getMasterWallet('guest:device')).toBeUndefined();
+    expect(await service.listMasterWallets()).toHaveLength(1);
+    await service.ensureMasterWallet('user-verified');
+    expect(await service.listMasterWallets()).toHaveLength(1);
   });
 });

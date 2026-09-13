@@ -21,8 +21,8 @@ import type {
 export class EscrowService {
   constructor(private readonly store: EscrowStore) {}
 
-  ensureMasterWallet(userId: string, openingBalance = 0): Wallet {
-    const existing = this.store.getMasterWallet(userId);
+  async ensureMasterWallet(userId: string, openingBalance = 0): Promise<Wallet> {
+    const existing = await this.store.getMasterWallet(userId);
     if (existing) {
       return existing;
     }
@@ -34,21 +34,21 @@ export class EscrowService {
       tableId: null,
       balance: openingBalance,
     };
-    this.store.insertWallet(wallet);
+    await this.store.insertWallet(wallet);
     return wallet;
   }
 
-  buyIn(input: BuyInInput): { master: Wallet; game: Wallet; ledger: LedgerRow } {
+  async buyIn(input: BuyInInput): Promise<{ master: Wallet; game: Wallet; ledger: LedgerRow }> {
     assertPositiveInteger(input.amount, 'amount');
-    const master = this.requireMaster(input.userId);
+    const master = await this.requireMaster(input.userId);
     if (master.balance < input.amount) {
       fail('INSUFFICIENT_MASTER', 'Master wallet does not have enough chips for buy-in');
     }
 
     const nextMaster = { ...master, balance: master.balance - input.amount };
-    this.store.updateWallet(nextMaster);
+    await this.store.updateWallet(nextMaster);
 
-    let game = this.store.getGameWallet(input.userId, input.tableId);
+    let game = await this.store.getGameWallet(input.userId, input.tableId);
     if (!game) {
       game = {
         id: randomUUID(),
@@ -57,12 +57,12 @@ export class EscrowService {
         tableId: input.tableId,
         balance: 0,
       };
-      this.store.insertWallet(game);
+      await this.store.insertWallet(game);
     }
     const nextGame = { ...game, balance: game.balance + input.amount };
-    this.store.updateWallet(nextGame);
+    await this.store.updateWallet(nextGame);
 
-    const ledger = this.appendLedger({
+    const ledger = await this.appendLedger({
       actorId: input.actorId,
       amount: input.amount,
       kind: 'BUY_IN',
@@ -75,9 +75,9 @@ export class EscrowService {
     return { master: nextMaster, game: nextGame, ledger };
   }
 
-  creditGame(input: BuyInInput): { game: Wallet; ledger: LedgerRow } {
+  async creditGame(input: BuyInInput): Promise<{ game: Wallet; ledger: LedgerRow }> {
     assertPositiveInteger(input.amount, 'amount');
-    let game = this.store.getGameWallet(input.userId, input.tableId);
+    let game = await this.store.getGameWallet(input.userId, input.tableId);
     if (!game) {
       game = {
         id: randomUUID(),
@@ -86,11 +86,11 @@ export class EscrowService {
         tableId: input.tableId,
         balance: 0,
       };
-      this.store.insertWallet(game);
+      await this.store.insertWallet(game);
     }
     const nextGame = { ...game, balance: game.balance + input.amount };
-    this.store.updateWallet(nextGame);
-    const ledger = this.appendLedger({
+    await this.store.updateWallet(nextGame);
+    const ledger = await this.appendLedger({
       actorId: input.actorId,
       amount: input.amount,
       kind: 'CREDIT',
@@ -102,62 +102,62 @@ export class EscrowService {
     return { game: nextGame, ledger };
   }
 
-  getMasterWallet(userId: string): Wallet | undefined {
+  async getMasterWallet(userId: string): Promise<Wallet | undefined> {
     return this.store.getMasterWallet(userId);
   }
 
-  listMasterWallets(): Wallet[] {
-    return this.store.listWallets().filter((wallet) => wallet.type === 'master');
+  async listMasterWallets(): Promise<Wallet[]> {
+    return (await this.store.listWallets()).filter((wallet) => wallet.type === 'master');
   }
 
   /**
    * Move a master wallet from one user id to another. Fails if the target
    * already has a different master wallet — upgrade must not duplicate.
    */
-  reownMasterWallet(fromUserId: string, toUserId: string): Wallet {
+  async reownMasterWallet(fromUserId: string, toUserId: string): Promise<Wallet> {
     if (fromUserId === toUserId) {
-      const same = this.store.getMasterWallet(fromUserId);
+      const same = await this.store.getMasterWallet(fromUserId);
       if (!same) {
         fail('WALLET_NOT_FOUND', 'Master wallet not found');
       }
       return same;
     }
-    const source = this.store.getMasterWallet(fromUserId);
+    const source = await this.store.getMasterWallet(fromUserId);
     if (!source) {
       fail('WALLET_NOT_FOUND', 'Guest master wallet not found');
     }
-    const target = this.store.getMasterWallet(toUserId);
+    const target = await this.store.getMasterWallet(toUserId);
     if (target && target.id !== source.id) {
       fail('DUPLICATE_WALLET', 'Verified identity already has a master wallet');
     }
     const next = { ...source, userId: toUserId };
-    this.store.updateWallet(next);
+    await this.store.updateWallet(next);
     return next;
   }
 
-  getGameWallet(userId: string, tableId: string): Wallet | undefined {
+  async getGameWallet(userId: string, tableId: string): Promise<Wallet | undefined> {
     return this.store.getGameWallet(userId, tableId);
   }
 
-  getEscrow(escrowId: string): Escrow | undefined {
+  async getEscrow(escrowId: string): Promise<Escrow | undefined> {
     return this.store.getEscrow(escrowId);
   }
 
-  listEscrowsForTable(tableId: string): Escrow[] {
-    return this.store.listEscrows().filter((escrow) => escrow.tableId === tableId);
+  async listEscrowsForTable(tableId: string): Promise<Escrow[]> {
+    return (await this.store.listEscrows()).filter((escrow) => escrow.tableId === tableId);
   }
 
-  listWalletsForUser(userId: string): Wallet[] {
-    return this.store.listWallets().filter((wallet) => wallet.userId === userId);
+  async listWalletsForUser(userId: string): Promise<Wallet[]> {
+    return (await this.store.listWallets()).filter((wallet) => wallet.userId === userId);
   }
 
-  listLedger(): LedgerRow[] {
+  async listLedger(): Promise<LedgerRow[]> {
     return this.store.listLedger();
   }
 
-  confirm(input: ConfirmInput): Escrow {
+  async confirm(input: ConfirmInput): Promise<Escrow> {
     assertPositiveInteger(input.amount, 'amount');
-    this.requireGame(input.userId, input.tableId);
+    await this.requireGame(input.userId, input.tableId);
     const escrow: Escrow = {
       id: randomUUID(),
       tableId: input.tableId,
@@ -165,8 +165,8 @@ export class EscrowService {
       amount: input.amount,
       state: 'CONFIRMED',
     };
-    this.store.insertEscrow(escrow);
-    this.appendLedger({
+    await this.store.insertEscrow(escrow);
+    await this.appendLedger({
       actorId: input.actorId,
       amount: input.amount,
       kind: 'TRANSITION',
@@ -177,19 +177,19 @@ export class EscrowService {
     return escrow;
   }
 
-  lock(input: LockInput): Escrow {
-    const escrow = this.requireEscrow(input.escrowId);
+  async lock(input: LockInput): Promise<Escrow> {
+    const escrow = await this.requireEscrow(input.escrowId);
     if (escrow.state !== 'CONFIRMED') {
       fail('DOUBLE_LOCK', 'Only a CONFIRMED amount can be locked');
     }
-    const game = this.requireGame(escrow.userId, escrow.tableId);
+    const game = await this.requireGame(escrow.userId, escrow.tableId);
     if (game.balance < escrow.amount) {
       fail('INSUFFICIENT_GAME', 'Game wallet does not have enough chips to lock');
     }
-    this.store.updateWallet({ ...game, balance: game.balance - escrow.amount });
+    await this.store.updateWallet({ ...game, balance: game.balance - escrow.amount });
     const next: Escrow = { ...escrow, state: 'LOCKED' };
-    this.store.updateEscrow(next);
-    this.appendLedger({
+    await this.store.updateEscrow(next);
+    await this.appendLedger({
       actorId: input.actorId,
       amount: escrow.amount,
       kind: 'TRANSITION',
@@ -200,9 +200,9 @@ export class EscrowService {
     return next;
   }
 
-  resolve(input: ResolveInput): Escrow {
+  async resolve(input: ResolveInput): Promise<Escrow> {
     assertAuthorized(input.actorId, input.protocolConfig, input.canResolve);
-    const escrow = this.requireEscrow(input.escrowId);
+    const escrow = await this.requireEscrow(input.escrowId);
     if (escrow.state !== 'LOCKED') {
       fail('INVALID_TRANSITION', 'RESOLVE requires a LOCKED escrow');
     }
@@ -215,8 +215,8 @@ export class EscrowService {
       resolvedBy: input.actorId,
       payout,
     };
-    this.store.updateEscrow(next);
-    this.appendLedger({
+    await this.store.updateEscrow(next);
+    await this.appendLedger({
       actorId: input.actorId,
       amount: escrow.amount,
       kind: 'TRANSITION',
@@ -229,9 +229,9 @@ export class EscrowService {
     return next;
   }
 
-  setResolvedPayout(input: SetResolvedPayoutInput): Escrow {
+  async setResolvedPayout(input: SetResolvedPayoutInput): Promise<Escrow> {
     assertAuthorized(input.actorId, input.protocolConfig, input.canResolve);
-    const escrow = this.requireEscrow(input.escrowId);
+    const escrow = await this.requireEscrow(input.escrowId);
     if (escrow.state !== 'RESOLVED' || !escrow.payout) {
       fail('INVALID_TRANSITION', 'Payout can only be edited while RESOLVED, before release');
     }
@@ -242,8 +242,8 @@ export class EscrowService {
       escrow.payout.outcome,
     );
     const next: Escrow = { ...escrow, payout };
-    this.store.updateEscrow(next);
-    this.appendLedger({
+    await this.store.updateEscrow(next);
+    await this.appendLedger({
       actorId: input.actorId,
       amount: escrow.amount,
       kind: 'PAYOUT_ADJUST',
@@ -256,16 +256,16 @@ export class EscrowService {
     return next;
   }
 
-  release(input: ReleaseInput): Escrow {
+  async release(input: ReleaseInput): Promise<Escrow> {
     assertAuthorized(input.actorId, input.protocolConfig, input.canResolve);
-    const escrow = this.requireEscrow(input.escrowId);
+    const escrow = await this.requireEscrow(input.escrowId);
     if (escrow.state !== 'RESOLVED' || !escrow.payout) {
       fail('INVALID_TRANSITION', 'RELEASE requires a RESOLVED escrow');
     }
-    applyPayout(this.store, escrow);
+    await applyPayout(this.store, escrow);
     const next: Escrow = { ...escrow, state: 'RELEASED' };
-    this.store.updateEscrow(next);
-    this.appendLedger({
+    await this.store.updateEscrow(next);
+    await this.appendLedger({
       actorId: input.actorId,
       amount: escrow.amount,
       kind: 'TRANSITION',
@@ -277,31 +277,31 @@ export class EscrowService {
     return next;
   }
 
-  private requireMaster(userId: string): Wallet {
-    const wallet = this.store.getMasterWallet(userId);
+  private async requireMaster(userId: string): Promise<Wallet> {
+    const wallet = await this.store.getMasterWallet(userId);
     if (!wallet) {
       fail('WALLET_NOT_FOUND', 'Master wallet not found');
     }
     return wallet;
   }
 
-  private requireGame(userId: string, tableId: string): Wallet {
-    const wallet = this.store.getGameWallet(userId, tableId);
+  private async requireGame(userId: string, tableId: string): Promise<Wallet> {
+    const wallet = await this.store.getGameWallet(userId, tableId);
     if (!wallet) {
       fail('WALLET_NOT_FOUND', 'Game wallet not found — buy in first');
     }
     return wallet;
   }
 
-  private requireEscrow(escrowId: string): Escrow {
-    const escrow = this.store.getEscrow(escrowId);
+  private async requireEscrow(escrowId: string): Promise<Escrow> {
+    const escrow = await this.store.getEscrow(escrowId);
     if (!escrow) {
       fail('ESCROW_NOT_FOUND', 'Escrow not found');
     }
     return escrow;
   }
 
-  private appendLedger(partial: {
+  private async appendLedger(partial: {
     actorId: string;
     amount: number;
     kind: LedgerKind;
@@ -310,13 +310,13 @@ export class EscrowService {
     toState: LedgerRow['toState'];
     declaredBy?: string;
     detail?: string;
-  }): LedgerRow {
+  }): Promise<LedgerRow> {
     const row: LedgerRow = {
       id: randomUUID(),
       at: new Date().toISOString(),
       ...partial,
     };
-    this.store.insertLedger(row);
+    await this.store.insertLedger(row);
     return row;
   }
 }
@@ -388,7 +388,7 @@ function payoutDetail(payout: ResolvedPayout): string {
   return `rule=${payout.rule} outcome=${payout.outcome ?? ''} credits=${credits}`;
 }
 
-function applyPayout(store: EscrowStore, escrow: Escrow): void {
+async function applyPayout(store: EscrowStore, escrow: Escrow): Promise<void> {
   const payout = escrow.payout!;
   const creditTotal = payout.credits.reduce((sum, c) => sum + c.amount, 0);
   const extra = creditTotal - escrow.amount;
@@ -397,30 +397,30 @@ function applyPayout(store: EscrowStore, escrow: Escrow): void {
     if (!payout.counterpartyUserId) {
       fail('PAYOUT_INVALID', 'Payout larger than pot requires a counterparty');
     }
-    const source = requireGameAt(store, payout.counterpartyUserId, escrow.tableId);
+    const source = await requireGameAt(store, payout.counterpartyUserId, escrow.tableId);
     if (source.balance < extra) {
       fail('INSUFFICIENT_GAME', 'Counterparty game wallet cannot cover the payout');
     }
-    store.updateWallet({ ...source, balance: source.balance - extra });
+    await store.updateWallet({ ...source, balance: source.balance - extra });
   } else if (extra < 0) {
     if (!payout.counterpartyUserId) {
       fail('PAYOUT_INVALID', 'Payout smaller than pot requires a counterparty to receive the remainder');
     }
-    const sink = requireGameAt(store, payout.counterpartyUserId, escrow.tableId);
-    store.updateWallet({ ...sink, balance: sink.balance + -extra });
+    const sink = await requireGameAt(store, payout.counterpartyUserId, escrow.tableId);
+    await store.updateWallet({ ...sink, balance: sink.balance + -extra });
   }
 
   for (const credit of payout.credits) {
     if (credit.amount === 0) {
       continue;
     }
-    const dest = requireGameAt(store, credit.userId, escrow.tableId);
-    store.updateWallet({ ...dest, balance: dest.balance + credit.amount });
+    const dest = await requireGameAt(store, credit.userId, escrow.tableId);
+    await store.updateWallet({ ...dest, balance: dest.balance + credit.amount });
   }
 }
 
-function requireGameAt(store: EscrowStore, userId: string, tableId: string): Wallet {
-  const wallet = store.getGameWallet(userId, tableId);
+async function requireGameAt(store: EscrowStore, userId: string, tableId: string): Promise<Wallet> {
+  const wallet = await store.getGameWallet(userId, tableId);
   if (!wallet) {
     fail('WALLET_NOT_FOUND', `Game wallet not found for ${userId}`);
   }

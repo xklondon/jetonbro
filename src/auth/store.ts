@@ -1,30 +1,30 @@
 import type { Invite, MagicLink, Membership, Session, TableRecord, User } from './types.js';
 
 export interface AuthStore {
-  insertUser(user: User): void;
-  updateUser(user: User): void;
-  getUser(id: string): User | undefined;
-  getUserByEmail(email: string): User | undefined;
-  getUserByPhone(phone: string): User | undefined;
-  getUserByDeviceId(deviceId: string): User | undefined;
-  insertTable(table: TableRecord): void;
-  getTable(id: string): TableRecord | undefined;
-  insertInvite(invite: Invite): void;
-  updateInvite(invite: Invite): void;
-  getInviteByToken(token: string): Invite | undefined;
-  getInvite(id: string): Invite | undefined;
-  listInvitesForTable(tableId: string): Invite[];
-  insertMagicLink(link: MagicLink): void;
-  getMagicLink(token: string): MagicLink | undefined;
-  consumeMagicLink(token: string): MagicLink | undefined;
-  insertSession(session: Session): void;
-  getSession(token: string): Session | undefined;
-  deleteSession(token: string): void;
-  addMembership(membership: Membership): void;
-  removeMembership(tableId: string, userId: string): void;
-  isMember(tableId: string, userId: string): boolean;
-  listMembers(tableId: string): string[];
-  listMembershipsForUser(userId: string): Membership[];
+  insertUser(user: User): Promise<void>;
+  updateUser(user: User): Promise<void>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByPhone(phone: string): Promise<User | undefined>;
+  getUserByDeviceId(deviceId: string): Promise<User | undefined>;
+  insertTable(table: TableRecord): Promise<void>;
+  getTable(id: string): Promise<TableRecord | undefined>;
+  insertInvite(invite: Invite): Promise<void>;
+  updateInvite(invite: Invite): Promise<void>;
+  getInviteByToken(token: string): Promise<Invite | undefined>;
+  getInvite(id: string): Promise<Invite | undefined>;
+  listInvitesForTable(tableId: string): Promise<Invite[]>;
+  insertMagicLink(link: MagicLink): Promise<void>;
+  getMagicLink(token: string): Promise<MagicLink | undefined>;
+  consumeMagicLink(token: string): Promise<MagicLink | undefined>;
+  insertSession(session: Session): Promise<void>;
+  getSession(token: string): Promise<Session | undefined>;
+  deleteSession(token: string): Promise<void>;
+  addMembership(membership: Membership): Promise<void>;
+  removeMembership(tableId: string, userId: string): Promise<void>;
+  isMember(tableId: string, userId: string): Promise<boolean>;
+  listMembers(tableId: string): Promise<string[]>;
+  listMembershipsForUser(userId: string): Promise<Membership[]>;
 }
 
 export function createMemoryAuthStore(): AuthStore {
@@ -39,17 +39,17 @@ export function createMemoryAuthStore(): AuthStore {
   const cloneUser = (user: User): User => ({ ...user });
 
   return {
-    insertUser(user) {
+    async insertUser(user) {
       users.set(user.id, cloneUser(user));
     },
-    updateUser(user) {
+    async updateUser(user) {
       users.set(user.id, cloneUser(user));
     },
-    getUser(id) {
+    async getUser(id) {
       const row = users.get(id);
       return row ? cloneUser(row) : undefined;
     },
-    getUserByEmail(email) {
+    async getUserByEmail(email) {
       for (const user of users.values()) {
         if (user.email === email) {
           return cloneUser(user);
@@ -57,7 +57,7 @@ export function createMemoryAuthStore(): AuthStore {
       }
       return undefined;
     },
-    getUserByPhone(phone) {
+    async getUserByPhone(phone) {
       for (const user of users.values()) {
         if (user.phone === phone) {
           return cloneUser(user);
@@ -65,7 +65,7 @@ export function createMemoryAuthStore(): AuthStore {
       }
       return undefined;
     },
-    getUserByDeviceId(deviceId) {
+    async getUserByDeviceId(deviceId) {
       for (const user of users.values()) {
         if (user.deviceId === deviceId) {
           return cloneUser(user);
@@ -73,42 +73,42 @@ export function createMemoryAuthStore(): AuthStore {
       }
       return undefined;
     },
-    insertTable(table) {
+    async insertTable(table) {
       tables.set(table.id, { ...table });
     },
-    getTable(id) {
+    async getTable(id) {
       const row = tables.get(id);
       return row ? { ...row } : undefined;
     },
-    insertInvite(invite) {
+    async insertInvite(invite) {
       const copy = { ...invite };
       invites.set(invite.token, copy);
       invitesById.set(invite.id, copy);
     },
-    updateInvite(invite) {
+    async updateInvite(invite) {
       const copy = { ...invite };
       invites.set(invite.token, copy);
       invitesById.set(invite.id, copy);
     },
-    listInvitesForTable(tableId) {
+    async listInvitesForTable(tableId) {
       return [...invitesById.values()].filter((invite) => invite.tableId === tableId).map((invite) => ({ ...invite }));
     },
-    getInviteByToken(token) {
+    async getInviteByToken(token) {
       const row = invites.get(token);
       return row ? { ...row } : undefined;
     },
-    getInvite(id) {
+    async getInvite(id) {
       const row = invitesById.get(id);
       return row ? { ...row } : undefined;
     },
-    insertMagicLink(link) {
+    async insertMagicLink(link) {
       magic.set(link.token, { ...link });
     },
-    getMagicLink(token) {
+    async getMagicLink(token) {
       const row = magic.get(token);
       return row ? { ...row } : undefined;
     },
-    consumeMagicLink(token) {
+    async consumeMagicLink(token) {
       const row = magic.get(token);
       if (!row) {
         return undefined;
@@ -116,31 +116,31 @@ export function createMemoryAuthStore(): AuthStore {
       magic.delete(token);
       return { ...row };
     },
-    insertSession(session) {
+    async insertSession(session) {
       sessions.set(session.token, { ...session });
     },
-    getSession(token) {
+    async getSession(token) {
       const row = sessions.get(token);
       return row ? { ...row } : undefined;
     },
-    deleteSession(token) {
+    async deleteSession(token) {
       sessions.delete(token);
     },
-    addMembership(membership) {
+    async addMembership(membership) {
       const set = members.get(membership.tableId) ?? new Set<string>();
       set.add(membership.userId);
       members.set(membership.tableId, set);
     },
-    removeMembership(tableId, userId) {
+    async removeMembership(tableId, userId) {
       members.get(tableId)?.delete(userId);
     },
-    isMember(tableId, userId) {
+    async isMember(tableId, userId) {
       return members.get(tableId)?.has(userId) ?? false;
     },
-    listMembers(tableId) {
+    async listMembers(tableId) {
       return [...(members.get(tableId) ?? [])];
     },
-    listMembershipsForUser(userId) {
+    async listMembershipsForUser(userId) {
       const out: Membership[] = [];
       for (const [tableId, set] of members) {
         if (set.has(userId)) {

@@ -49,8 +49,8 @@ async function createInvite(
   };
 }
 
-function masterWalletsFor(escrow: EscrowService, userId: string) {
-  return escrow.listMasterWallets().filter((wallet) => wallet.userId === userId);
+async function masterWalletsFor(escrow: EscrowService, userId: string) {
+  return (await escrow.listMasterWallets()).filter((wallet) => wallet.userId === userId);
 }
 
 describe('invite / identity paths', () => {
@@ -78,9 +78,9 @@ describe('invite / identity paths', () => {
     expect(me.body.tableIds).toEqual([tableId]);
     expect(me.body.wallet.id).toBeTruthy();
 
-    expect(masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
-    expect(escrow.listMasterWallets()).toHaveLength(2);
-    expect(masterWalletsFor(escrow, ownerId)).toHaveLength(1);
+    expect(await masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
+    expect(await escrow.listMasterWallets()).toHaveLength(2);
+    expect(await masterWalletsFor(escrow, ownerId)).toHaveLength(1);
   });
 
   it('WhatsApp invite uses the same magic-link/verify path via a share intent', async () => {
@@ -99,8 +99,8 @@ describe('invite / identity paths', () => {
       .expect(200);
 
     expect(session.body.user.email).toBe('wa@t.test');
-    expect(masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
-    expect(escrow.listMasterWallets()).toHaveLength(2);
+    expect(await masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
+    expect(await escrow.listMasterWallets()).toHaveLength(2);
   });
 
   it('QR (non-mates): contact capture then the same magic-link flow', async () => {
@@ -123,8 +123,8 @@ describe('invite / identity paths', () => {
       .expect(200);
 
     expect(session.body.user.phone).toBe('+447700900123');
-    expect(masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
-    expect(escrow.listMasterWallets()).toHaveLength(2);
+    expect(await masterWalletsFor(escrow, session.body.user.id)).toHaveLength(1);
+    expect(await escrow.listMasterWallets()).toHaveLength(2);
   });
 
   it('Mates-mode guest joins immediately with a device-scoped wallet and no T&Cs', async () => {
@@ -152,8 +152,8 @@ describe('invite / identity paths', () => {
     expect(me.body.tableIds).toEqual([tableId]);
     expect(me.body.wallet.userId).toBe(guestUserId('device-mates-1'));
 
-    expect(masterWalletsFor(escrow, guestUserId('device-mates-1'))).toHaveLength(1);
-    expect(escrow.listMasterWallets()).toHaveLength(2);
+    expect(await masterWalletsFor(escrow, guestUserId('device-mates-1'))).toHaveLength(1);
+    expect(await escrow.listMasterWallets()).toHaveLength(2);
   });
 
   it('guest upgrade re-owns the existing wallet instead of creating a second one', async () => {
@@ -165,7 +165,7 @@ describe('invite / identity paths', () => {
       .expect(201);
 
     const guestId = guest.body.user.id as string;
-    const original = escrow.getMasterWallet(guestId);
+    const original = await escrow.getMasterWallet(guestId);
     expect(original).toBeDefined();
 
     const link = await agent
@@ -173,7 +173,7 @@ describe('invite / identity paths', () => {
       .send({ email: 'upgraded@t.test', deviceId: 'device-upgrade' })
       .expect(201);
 
-    expect(escrow.getMasterWallet(guestId)?.id).toBe(original!.id);
+    expect((await escrow.getMasterWallet(guestId))?.id).toBe(original!.id);
 
     const upgraded = await agent
       .post('/api/auth/verify')
@@ -185,12 +185,12 @@ describe('invite / identity paths', () => {
     expect(upgraded.body.user.isGuest).toBe(false);
     expect(upgraded.body.user.upgradedFromUserId).toBe(guestId);
 
-    expect(escrow.getMasterWallet(guestId)).toBeUndefined();
-    const moved = escrow.getMasterWallet(upgraded.body.user.id);
+    expect(await escrow.getMasterWallet(guestId)).toBeUndefined();
+    const moved = await escrow.getMasterWallet(upgraded.body.user.id);
     expect(moved?.id).toBe(original!.id);
     expect(moved?.userId).toBe(upgraded.body.user.id);
-    expect(escrow.listMasterWallets()).toHaveLength(2);
-    expect(masterWalletsFor(escrow, upgraded.body.user.id)).toHaveLength(1);
+    expect(await escrow.listMasterWallets()).toHaveLength(2);
+    expect(await masterWalletsFor(escrow, upgraded.body.user.id)).toHaveLength(1);
 
     const me = await agent
       .get('/api/auth/me')
@@ -236,7 +236,7 @@ describe('invite / identity paths', () => {
 
   it('a bare GET on the verify link never creates an account or wallet', async () => {
     const { agent, escrow } = await ownerWithTable();
-    const before = escrow.listMasterWallets().length;
+    const before = (await escrow.listMasterWallets()).length;
     const link = await agent.post('/api/auth/request-magic-link').send({ email: 'scanner@t.test' }).expect(201);
 
     const peeked = await agent
@@ -248,9 +248,9 @@ describe('invite / identity paths', () => {
     expect(peeked.body.email).toBe('scanner@t.test');
     expect(peeked.body.sessionToken).toBeUndefined();
     expect(peeked.body.user).toBeUndefined();
-    expect(escrow.listMasterWallets()).toHaveLength(before);
+    expect(await escrow.listMasterWallets()).toHaveLength(before);
     expect(escrow.getMasterWallet).toBeDefined();
-    expect(escrow.listMasterWallets().some((wallet) => wallet.userId.includes('scanner'))).toBe(false);
+    expect((await escrow.listMasterWallets()).some((wallet) => wallet.userId.includes('scanner'))).toBe(false);
 
     const again = await agent.get('/api/auth/verify').query({ token: link.body.token }).expect(200);
     expect(again.body.requiresTerms).toBe(false);
@@ -260,6 +260,6 @@ describe('invite / identity paths', () => {
       .send({ token: link.body.token, acceptedTerms: true })
       .expect(200);
     expect(created.body.user.email).toBe('scanner@t.test');
-    expect(escrow.listMasterWallets()).toHaveLength(before + 1);
+    expect(await escrow.listMasterWallets()).toHaveLength(before + 1);
   });
 });

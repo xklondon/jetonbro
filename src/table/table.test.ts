@@ -166,21 +166,23 @@ describe('table play + standings', () => {
     const agent = request(app);
     const a = await signIn(agent, 'a@t.test');
     const b = await signIn(agent, 'b@t.test');
-    escrow.ensureMasterWallet(a.userId, 0);
-    escrow.creditGame({ userId: a.userId, tableId: 't1', amount: 30, actorId: a.userId });
-    escrow.creditGame({ userId: b.userId, tableId: 't1', amount: 30, actorId: b.userId });
-    const locked = escrow.lock({
-      escrowId: escrow.confirm({ userId: a.userId, tableId: 't1', amount: 10, actorId: a.userId }).id,
+    await escrow.ensureMasterWallet(a.userId, 0);
+    await escrow.creditGame({ userId: a.userId, tableId: 't1', amount: 30, actorId: a.userId });
+    await escrow.creditGame({ userId: b.userId, tableId: 't1', amount: 30, actorId: b.userId });
+    const confirmed = await escrow.confirm({ userId: a.userId, tableId: 't1', amount: 10, actorId: a.userId });
+    const locked = await escrow.lock({
+      escrowId: confirmed.id,
       actorId: a.userId,
     });
-    escrow.release({
-      escrowId: escrow.resolve({
-        escrowId: locked.id,
-        actorId: b.userId,
-        protocolConfig: { payoutRule: 'even-split' },
-        canResolve: () => true,
-        winners: [b.userId],
-      }).id,
+    const resolved = await escrow.resolve({
+      escrowId: locked.id,
+      actorId: b.userId,
+      protocolConfig: { payoutRule: 'even-split' },
+      canResolve: () => true,
+      winners: [b.userId],
+    });
+    await escrow.release({
+      escrowId: resolved.id,
       actorId: b.userId,
       protocolConfig: { payoutRule: 'even-split' },
       canResolve: () => true,
@@ -192,7 +194,7 @@ describe('table play + standings', () => {
     expect(standings.body.rows[0].standing.status).toBe('owes');
 
     await agent.post('/api/standings/save').set(auth(a.token)).send({}).expect(201);
-    expect(ledger.listSnapshots(a.userId)).toHaveLength(1);
+    expect(await ledger.listSnapshots(a.userId)).toHaveLength(1);
 
     await agent.post('/api/standings/clear').set(auth(a.token)).send({ otherUserId: b.userId }).expect(200);
     const after = await agent.get('/api/standings').set(auth(a.token)).expect(200);
