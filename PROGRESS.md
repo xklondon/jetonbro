@@ -72,6 +72,7 @@ Not a requirements build-order step. Friends-only Railway deploy.
 | 2026-09-13 | Single Railway service: Express serves `/api` and `web/dist` | `createApp` already static-serves `web/dist` when present. One origin, no CORS, one deploy. Two services would be extra moving parts for a v1 friends table. |
 | 2026-09-13 | `DATABASE_URL` is optional; in-memory escrow if unset | Railway can attach Postgres later. The process must still boot without a DB while the store is in-memory. |
 | 2026-09-13 | Pin Node 20: `engines.node` `>=20`, Nixpacks `nodejs_20` + `NIXPACKS_NODE_VERSION=20` | Railway was building on Node 18.20.5; webidl-conversions / whatwg-url require >=20. |
+| 2026-09-13 | **EBUSY `rmdir node_modules/.cache` during `npm ci`:** option 1 — `.npmrc` + `NPM_CONFIG_CACHE=/tmp/.npm-cache`. Also dropped the extra `npm ci` from `railway.json` `buildCommand` (install phase already runs it). Did not use option 2 (`--no-cache`) or option 3 (`npm install`). | Nixpacks mounts a cache at `node_modules/.cache`. A second `npm ci` in the build command tries to delete that mount. `npm ci` stays the install command. |
 
 ## Blocked
 
