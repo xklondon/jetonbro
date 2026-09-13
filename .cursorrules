@@ -1,0 +1,36 @@
+# JetonBro .cursorrules
+
+## Scope
+- No card or dice simulation, ever. No hand evaluation, ever. Physical cards
+  and dice are played by humans, offline. If a task seems to require the app
+  to understand cards, dice, or hand rankings, stop and flag it — do not
+  implement it, even as a helper or shortcut.
+- Manual hand-entry/photo fields (per jetonbro-requirements-v4.md) are
+  display-only. Never parse, OCR, or score them.
+- No real money, no real-money rails, no payment integrations.
+- No poker side-pot math (uneven all-ins) in v1 — single pot only.
+
+## Architecture
+- Protocol-specific logic (blackjack/poker/zilch) lives only in its protocol
+  config object (actions, phases, roles, payout rule) as defined in
+  jetonbro-requirements-v4.md. Never as bespoke branching code per game.
+  Adding a new game means adding a new config object, not new code paths.
+- Exactly one service module mutates wallet or escrow-ledger rows. No other
+  file writes to a wallet or ledger row, directly or indirectly.
+- The personal ledger (Standings) is a derived read-model over existing
+  RELEASE events. It is never written to independently, except for the
+  explicit "Clear" action, which itself must write its own manual-settlement
+  ledger entry rather than deleting history.
+- Every REST route, socket event, and app-defined action type must be
+  registered in docs/ROUTE_MANIFEST.md in the same PR that introduces it.
+  Before adding any of the three, check the manifest for an existing
+  equivalent — extend it, don't duplicate it.
+
+## Hygiene
+- No dead code, no commented-out routes, no unused wrapper functions in a
+  merged PR — delete or don't merge.
+- Every new-file PR states which existing module it extends, or confirms
+  this is genuinely new functionality with no existing overlap.
+- Keep the frontend sharp and the backend minimal — if a proposed backend
+  addition doesn't map to something explicit in jetonbro-requirements-v4.md,
+  flag it before building it rather than building it speculatively.
