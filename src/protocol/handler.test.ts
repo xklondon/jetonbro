@@ -1,0 +1,249 @@
+import { describe, expect, it } from 'vitest';
+import { createEscrowService } from '../escrow/index.js';
+import { canResolveForTable } from './authority.js';
+import { BLACKJACK_PROTOCOL, POKER_PROTOCOL, ZILCH_PROTOCOL } from './configs.js';
+import { ProtocolError } from './errors.js';
+import { applyAction, assertActionAllowed } from './handler.js';
+import { createProtocolTable, getAuthorityUserId, getCurrentTurnUserId } from './table.js';
+
+const P1 = 'p1';
+const P2 = 'p2';
+const P3 = 'p3';
+const BANK = 'bank';
+
+function codeOf(run: () => void): string {
+  try {
+    run();
+    throw new Error('expected ProtocolError');
+  } catch (err) {
+    expect(err).toBeInstanceOf(ProtocolError);
+    return (err as ProtocolError).code;
+  }
+}
+
+describe('protocol action phases', () => {
+  it('rejects blackjack Double before betting is closed', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-1',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      standingAuthorityUserId: BANK,
+    });
+    table = applyAction(table, BANK, 'open-betting');
+    expect(table.phase).toBe('betting-open');
+    expect(codeOf(() => assertActionAllowed(table, P1, 'double'))).toBe('ACTION_PHASE');
+
+    table = applyAction(table, BANK, 'close-betting');
+    expect(codeOf(() => assertActionAllowed(table, P1, 'double'))).toBe('ACTION_PHASE');
+
+    table = applyAction(table, BANK, 'signal-cards-dealt');
+    expect(table.phase).toBe('post-deal');
+    expect(() => assertActionAllowed(table, P1, 'double')).not.toThrow();
+  });
+
+  it('rejects poker declare-winners before showdown', () => {
+    let table = createProtocolTable({
+      tableId: 'pk-1',
+      protocol: POKER_PROTOCOL,
+      playerIds: [P1, P2, P3],
+    });
+    table = applyAction(table, P1, 'start-hand');
+    expect(codeOf(() => assertActionAllowed(table, P1, 'declare-winners'))).toBe('ACTION_PHASE');
+    table = applyAction(table, P1, 'begin-betting');
+    expect(codeOf(() => assertActionAllowed(table, P1, 'declare-winners'))).toBe('ACTION_PHASE');
+    table = applyAction(table, P1, 'begin-showdown');
+    expect(() => assertActionAllowed(table, P1, 'declare-winners')).not.toThrow();
+  });
+
+  it('rejects zilch declare-outcome before turn resolution', () => {
+    let table = createProtocolTable({
+      tableId: 'z-1',
+      protocol: ZILCH_PROTOCOL,
+      playerIds: [P1, P2],
+    });
+    table = applyAction(table, P1, 'start-turn');
+    expect(codeOf(() => assertActionAllowed(table, P1, 'declare-outcome'))).toBe('ACTION_PHASE');
+    table = applyAction(table, P1, 'begin-resolution');
+    expect(() => assertActionAllowed(table, P1, 'declare-outcome')).not.toThrow();
+  });
+});
+
+describe('turn-order enforcement', () => {
+  it('rejects a poker action from a player who does not hold the turn', () => {
+    let table = createProtocolTable({
+      tableId: 'pk-turn',
+      protocol: POKER_PROTOCOL,
+      playerIds: [P1, P2, P3],
+    });
+    table = applyAction(table, P1, 'start-hand');
+    table = applyAction(table, P1, 'begin-betting');
+    expect(getCurrentTurnUserId(table)).toBe(P1);
+    expect(codeOf(() => assertActionAllowed(table, P2, 'bet'))).toBe('TURN_ORDER');
+    table = applyAction(table, P1, 'bet');
+    expect(getCurrentTurnUserId(table)).toBe(P2);
+    expect(() => assertActionAllowed(table, P2, 'call')).not.toThrow();
+  });
+
+  it('rejects a zilch stake from a player who does not hold the turn', () => {
+    let table = createProtocolTable({
+      tableId: 'z-turn',
+      protocol: ZILCH_PROTOCOL,
+      playerIds: [P1, P2],
+    });
+    table = applyAction(table, P1, 'start-turn');
+    expect(codeOf(() => assertActionAllowed(table, P2, 'stake'))).toBe('TURN_ORDER');
+    expect(() => assertActionAllowed(table, P1, 'stake')).not.toThrow();
+  });
+
+  it('does not enforce turn between blackjack players, but tracks the active box', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-box',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      standingAuthorityUserId: BANK,
+    });
+    table = applyAction(table, BANK, 'open-betting');
+    expect(() => applyAction(table, P2, 'bet')).not.toThrow();
+    table = applyAction(table, P2, 'bet');
+    expect(table.activeSeatUserId).toBe(P2);
+    table = applyAction(table, P1, 'bet');
+    expect(table.activeSeatUserId).toBe(P1);
+  });
+});
+
+describe('rotating authority', () => {
+  it('rotates the poker dealer on new-hand', () => {
+    let table = createProtocolTable({
+      tableId: 'pk-rot',
+      protocol: POKER_PROTOCOL,
+      playerIds: [P1, P2, P3],
+    });
+    expect(getAuthorityUserId(table)).toBe(P1);
+    table = applyAction(table, P1, 'start-hand');
+    table = applyAction(table, P1, 'begin-betting');
+    table = applyAction(table, P1, 'begin-showdown');
+    table = applyAction(table, P1, 'finish-showdown');
+    table = applyAction(table, P1, 'new-hand');
+    expect(getAuthorityUserId(table)).toBe(P2);
+    expect(getCurrentTurnUserId(table)).toBe(P3);
+  });
+
+  it('rotates the zilch turn-holder on next-turn', () => {
+    let table = createProtocolTable({
+      tableId: 'z-rot',
+      protocol: ZILCH_PROTOCOL,
+      playerIds: [P1, P2, P3],
+    });
+    table = applyAction(table, P1, 'start-turn');
+    table = applyAction(table, P1, 'begin-resolution');
+    table = applyAction(table, P1, 'next-turn');
+    expect(getAuthorityUserId(table)).toBe(P2);
+    expect(getCurrentTurnUserId(table)).toBe(P2);
+  });
+
+  it('rotates the blackjack bank on reopen-betting only in rotating mode', () => {
+    let standing = createProtocolTable({
+      tableId: 'bj-stand',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      standingAuthorityUserId: BANK,
+    });
+    standing = toNewRound(standing, BANK);
+    standing = applyAction(standing, BANK, 'reopen-betting');
+    expect(getAuthorityUserId(standing)).toBe(BANK);
+
+    let rotating = createProtocolTable({
+      tableId: 'bj-rot',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2, P3],
+      authorityMode: 'rotating',
+    });
+    expect(getAuthorityUserId(rotating)).toBe(P1);
+    rotating = toNewRound(rotating, P1);
+    rotating = applyAction(rotating, P1, 'reopen-betting');
+    expect(getAuthorityUserId(rotating)).toBe(P2);
+  });
+});
+
+describe('canResolve wired to escrow', () => {
+  it('authorizes the standing bank and rejects others, including after a new round', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-auth',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      standingAuthorityUserId: BANK,
+    });
+    expect(canResolveForTable(table)(BANK, BLACKJACK_PROTOCOL)).toBe(true);
+    expect(canResolveForTable(table)(P1, BLACKJACK_PROTOCOL)).toBe(false);
+    table = toNewRound(table, BANK);
+    table = applyAction(table, BANK, 'reopen-betting');
+    expect(canResolveForTable(table)(BANK, BLACKJACK_PROTOCOL)).toBe(true);
+    expect(canResolveForTable(table)(P1, BLACKJACK_PROTOCOL)).toBe(false);
+  });
+
+  it('authorizes the current rotating dealer and rejects the previous one after new-hand', () => {
+    let table = createProtocolTable({
+      tableId: 'pk-auth',
+      protocol: POKER_PROTOCOL,
+      playerIds: [P1, P2, P3],
+    });
+    expect(canResolveForTable(table)(P1, POKER_PROTOCOL)).toBe(true);
+    table = applyAction(table, P1, 'start-hand');
+    table = applyAction(table, P1, 'begin-betting');
+    table = applyAction(table, P1, 'begin-showdown');
+    table = applyAction(table, P1, 'finish-showdown');
+    table = applyAction(table, P1, 'new-hand');
+    expect(canResolveForTable(table)(P1, POKER_PROTOCOL)).toBe(false);
+    expect(canResolveForTable(table)(P2, POKER_PROTOCOL)).toBe(true);
+  });
+
+  it('is the canResolve callback EscrowService uses for resolve and release', () => {
+    const escrow = createEscrowService();
+    escrow.ensureMasterWallet(P1, 100);
+    escrow.ensureMasterWallet(P2, 100);
+    escrow.buyIn({ userId: P1, tableId: 'wired', amount: 40, actorId: P1 });
+    escrow.buyIn({ userId: P2, tableId: 'wired', amount: 40, actorId: P2 });
+    const locked = escrow.lock({
+      escrowId: escrow.confirm({ userId: P1, tableId: 'wired', amount: 10, actorId: P1 }).id,
+      actorId: P1,
+    });
+
+    let table = createProtocolTable({
+      tableId: 'wired',
+      protocol: POKER_PROTOCOL,
+      playerIds: [P1, P2],
+    });
+    expect(() =>
+      escrow.resolve({
+        escrowId: locked.id,
+        actorId: P2,
+        protocolConfig: POKER_PROTOCOL,
+        canResolve: canResolveForTable(table),
+        winners: [P1],
+      }),
+    ).toThrow(/not allowed/);
+
+    const resolved = escrow.resolve({
+      escrowId: locked.id,
+      actorId: P1,
+      protocolConfig: POKER_PROTOCOL,
+      canResolve: canResolveForTable(table),
+      winners: [P1],
+    });
+    escrow.release({
+      escrowId: resolved.id,
+      actorId: P1,
+      protocolConfig: POKER_PROTOCOL,
+      canResolve: canResolveForTable(table),
+    });
+    expect(escrow.getEscrow(resolved.id)?.state).toBe('RELEASED');
+  });
+});
+
+function toNewRound(table: ReturnType<typeof createProtocolTable>, bankId: string) {
+  let next = applyAction(table, bankId, 'open-betting');
+  next = applyAction(next, bankId, 'close-betting');
+  next = applyAction(next, bankId, 'signal-cards-dealt');
+  next = applyAction(next, bankId, 'begin-resolution');
+  return applyAction(next, bankId, 'finish-resolution');
+}

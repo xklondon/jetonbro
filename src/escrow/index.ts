@@ -1,4 +1,5 @@
 export { createEscrowService, EscrowService } from './service.js';
+export { createMemoryStore, type EscrowStore } from './store.js';
 export { EscrowError } from './errors.js';
 export type {
   BuyInInput,
