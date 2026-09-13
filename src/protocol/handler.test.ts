@@ -31,6 +31,7 @@ describe('protocol action phases', () => {
     });
     table = applyAction(table, BANK, 'open-betting');
     expect(table.phase).toBe('betting-open');
+    table = applyAction(table, P1, 'bet', { amount: 10 });
     expect(codeOf(() => assertActionAllowed(table, P1, 'double'))).toBe('ACTION_PHASE');
 
     table = applyAction(table, BANK, 'close-betting');
@@ -237,6 +238,61 @@ describe('canResolve wired to escrow', () => {
       canResolve: canResolveForTable(table),
     });
     expect(escrow.getEscrow(resolved.id)?.state).toBe('RELEASED');
+  });
+});
+
+describe('blackjack box ownership', () => {
+  it('lets a seated player act only on their own box, not another seated player\'s', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-own',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      standingAuthorityUserId: BANK,
+    });
+    table = applyAction(table, BANK, 'open-betting');
+    table = applyAction(table, P1, 'bet', { amount: 10 });
+    table = applyAction(table, P2, 'bet', { amount: 10 });
+    expect(table.boxes).toHaveLength(2);
+    const p1Box = table.boxes.find((box) => box.ownerUserId === P1)!;
+    const p2Box = table.boxes.find((box) => box.ownerUserId === P2)!;
+    expect(p1Box.stake).toBe(10);
+    expect(p2Box.ownerUserId).toBe(P2);
+    expect(codeOf(() => applyAction(table, P2, 'bet', { boxId: p1Box.id, amount: 5 }))).toBe(
+      'BOX_OWNERSHIP',
+    );
+
+    table = applyAction(table, BANK, 'close-betting');
+    expect(table.boxes.every((box) => box.status === 'locked')).toBe(true);
+    table = applyAction(table, BANK, 'signal-cards-dealt');
+
+    expect(codeOf(() => assertActionAllowed(table, P1, 'double', { boxId: p2Box.id }))).toBe('BOX_OWNERSHIP');
+    expect(codeOf(() => applyAction(table, P1, 'split', { boxId: p2Box.id }))).toBe('BOX_OWNERSHIP');
+    expect(codeOf(() => applyAction(table, P2, 'bet', { boxId: p1Box.id }))).toBe('ACTION_PHASE');
+
+    table = applyAction(table, BANK, 'open-insurance-window');
+    expect(codeOf(() => applyAction(table, P2, 'insurance', { boxId: p1Box.id, amount: 5 }))).toBe(
+      'BOX_OWNERSHIP',
+    );
+
+    expect(() => applyAction(table, P1, 'double', { boxId: p1Box.id, amount: 10 })).not.toThrow();
+    const after = applyAction(table, P1, 'split', { boxId: p1Box.id });
+    expect(after.boxes.filter((box) => box.ownerUserId === P1)).toHaveLength(2);
+    expect(after.boxes.filter((box) => box.ownerUserId === P2)).toHaveLength(1);
+  });
+
+  it('still requires the actor to be seated, in addition to owning the box', () => {
+    let table = createProtocolTable({
+      tableId: 'bj-seat',
+      protocol: BLACKJACK_PROTOCOL,
+      playerIds: [P1, P2],
+      standingAuthorityUserId: BANK,
+    });
+    table = applyAction(table, BANK, 'open-betting');
+    table = applyAction(table, P1, 'bet', { amount: 5 });
+    const box = table.boxes[0]!;
+    expect(codeOf(() => assertActionAllowed(table, 'stranger', 'bet', { boxId: box.id }))).toBe(
+      'UNAUTHORIZED',
+    );
   });
 });
 

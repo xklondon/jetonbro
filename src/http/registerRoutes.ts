@@ -2,8 +2,16 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import { AuthError } from '../auth/errors.js';
 import type { AuthService, CreateInviteInput } from '../auth/service.js';
 import type { InviteChannel } from '../auth/types.js';
+import type { TableService } from '../table/service.js';
 
-export function registerRoutes(app: Express, auth: AuthService): void {
+export interface RouteDeps {
+  auth: AuthService;
+  tables: TableService;
+}
+
+export function registerRoutes(app: Express, deps: RouteDeps): void {
+  const { auth, tables } = deps;
+
   app.post('/api/auth/request-magic-link', (req, res, next) => {
     try {
       const body = req.body as { email?: string; phone?: string; inviteToken?: string; deviceId?: string };
@@ -21,10 +29,16 @@ export function registerRoutes(app: Express, auth: AuthService): void {
 
   app.get('/api/auth/verify', (req, res, next) => {
     try {
-      const token = firstQuery(req.query.token);
-      const acceptedTerms = parseAcceptedTerms(firstQuery(req.query.acceptedTerms));
-      const result = auth.verify({ token, acceptedTerms });
-      res.json(result);
+      res.json(auth.inspectMagicLink(firstQuery(req.query.token)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/auth/verify', (req, res, next) => {
+    try {
+      const body = req.body as { token?: string; acceptedTerms?: boolean };
+      res.json(auth.verify({ token: body.token ?? '', acceptedTerms: Boolean(body.acceptedTerms) }));
     } catch (error) {
       next(error);
     }
@@ -49,7 +63,16 @@ export function registerRoutes(app: Express, auth: AuthService): void {
 
   app.post('/api/tables', (req, res, next) => {
     try {
-      res.status(201).json(auth.createTable(bearerToken(req)));
+      const body = (req.body ?? {}) as { protocolId?: 'blackjack' | 'poker' | 'zilch' };
+      res.status(201).json(auth.createTable(bearerToken(req), { protocolId: body.protocolId }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/tables/:tableId', (req, res, next) => {
+    try {
+      res.json(tables.snapshot(bearerToken(req), req.params.tableId ?? ''));
     } catch (error) {
       next(error);
     }
@@ -70,6 +93,49 @@ export function registerRoutes(app: Express, auth: AuthService): void {
     }
   });
 
+  app.post('/api/tables/:tableId/actions', (req, res, next) => {
+    try {
+      const body = req.body as {
+        actionId?: string;
+        amount?: number;
+        boxId?: string;
+        targetUserId?: string;
+        outcome?: string;
+        winners?: string[];
+      };
+      res.json(
+        tables.act(bearerToken(req), req.params.tableId ?? '', {
+          actionId: body.actionId ?? '',
+          amount: body.amount,
+          boxId: body.boxId,
+          targetUserId: body.targetUserId,
+          outcome: body.outcome,
+          winners: body.winners,
+        }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/tables/:tableId/buy-in', (req, res, next) => {
+    try {
+      const body = req.body as { amount?: number };
+      res.json(tables.buyIn(bearerToken(req), req.params.tableId ?? '', Number(body.amount)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/tables/:tableId/hand-display', (req, res, next) => {
+    try {
+      const body = req.body as { text?: string; photo?: string };
+      res.json(tables.setHandDisplay(bearerToken(req), req.params.tableId ?? '', body));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get('/api/invites/preview', (req, res, next) => {
     try {
       res.json(auth.previewInvite(firstQuery(req.query.token)));
@@ -82,6 +148,32 @@ export function registerRoutes(app: Express, auth: AuthService): void {
     try {
       const body = req.body as { token?: string; deviceId?: string };
       res.status(201).json(auth.joinMates({ token: body.token ?? '', deviceId: body.deviceId ?? '' }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/standings', (req, res, next) => {
+    try {
+      res.json(tables.standings(bearerToken(req)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/standings/save', (req, res, next) => {
+    try {
+      const body = req.body as { otherUserId?: string };
+      res.status(201).json(tables.saveStandings(bearerToken(req), body.otherUserId));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/standings/clear', (req, res, next) => {
+    try {
+      const body = req.body as { otherUserId?: string };
+      res.json({ entry: tables.clearStandings(bearerToken(req), body.otherUserId ?? '') });
     } catch (error) {
       next(error);
     }
@@ -118,8 +210,4 @@ function firstQuery(value: unknown): string {
     return typeof value[0] === 'string' ? value[0] : '';
   }
   return typeof value === 'string' ? value : '';
-}
-
-function parseAcceptedTerms(value: string): boolean {
-  return value === '1' || value === 'true' || value === 'yes';
 }

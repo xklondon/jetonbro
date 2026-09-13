@@ -1,7 +1,15 @@
+import { randomUUID } from 'node:crypto';
 import { fail } from './errors.js';
 import { getProtocol } from './configs.js';
 import { getAuthorityUserId, getCurrentTurnUserId } from './table.js';
-import type { ProtocolAction, ProtocolConfig, ProtocolRole, ProtocolTableState } from './types.js';
+import type {
+  ActionInput,
+  Box,
+  ProtocolAction,
+  ProtocolConfig,
+  ProtocolRole,
+  ProtocolTableState,
+} from './types.js';
 
 export function getAction(protocol: ProtocolConfig, actionId: string): ProtocolAction {
   const action = protocol.actions.find((item) => item.id === actionId);
@@ -11,7 +19,7 @@ export function getAction(protocol: ProtocolConfig, actionId: string): ProtocolA
   return action;
 }
 
-export function assertActionAllowed(
+export function assertPhaseRole(
   state: ProtocolTableState,
   actorId: string,
   actionId: string,
@@ -28,16 +36,43 @@ export function assertActionAllowed(
   return action;
 }
 
+export function assertActionAllowed(
+  state: ProtocolTableState,
+  actorId: string,
+  actionId: string,
+  input: ActionInput = {},
+): ProtocolAction {
+  const action = assertPhaseRole(state, actorId, actionId);
+  if (action.requiresOwnedBox || action.requiresBox || input.boxId) {
+    resolveBox(state, actorId, action, input);
+  }
+  return action;
+}
+
+export function listAllowedActions(state: ProtocolTableState, actorId: string): ProtocolAction[] {
+  const protocol = getProtocol(state.protocolId);
+  return protocol.actions.filter((action) => {
+    try {
+      assertPhaseRole(state, actorId, action.id);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
 export function applyAction(
   state: ProtocolTableState,
   actorId: string,
   actionId: string,
+  input: ActionInput = {},
 ): ProtocolTableState {
-  const action = assertActionAllowed(state, actorId, actionId);
+  const action = assertActionAllowed(state, actorId, actionId, input);
   const next: ProtocolTableState = {
     ...state,
     playerIds: [...state.playerIds],
     flags: { ...state.flags, ...(action.setFlags ?? {}) },
+    boxes: state.boxes.map((box) => ({ ...box })),
   };
 
   if (action.nextPhase) {
@@ -57,7 +92,93 @@ export function applyAction(
     applyAfterRotateTurn(next, action.afterRotateTurn);
   }
 
+  applyBoxEffects(next, actorId, action, input);
   return next;
+}
+
+function resolveBox(
+  state: ProtocolTableState,
+  actorId: string,
+  action: ProtocolAction,
+  input: ActionInput,
+): Box {
+  let box: Box | undefined;
+  if (input.boxId) {
+    box = state.boxes.find((item) => item.id === input.boxId);
+    if (!box) {
+      fail('BOX_NOT_FOUND', 'Box not found');
+    }
+  } else if (action.requiresOwnedBox || action.createsOwnedBox) {
+    const owned = state.boxes.filter((item) => item.ownerUserId === actorId);
+    if (owned.length === 1) {
+      box = owned[0];
+    } else if (owned.length > 1) {
+      fail('BOX_REQUIRED', 'Choose which box to act on');
+    }
+  }
+
+  if ((action.requiresBox || action.requiresOwnedBox) && !box) {
+    fail('BOX_NOT_FOUND', 'Box not found');
+  }
+  if (box && (action.requiresOwnedBox || action.createsOwnedBox || action.addsToOwnedBox || action.splitsOwnedBox)) {
+    if (box.ownerUserId !== actorId) {
+      fail('BOX_OWNERSHIP', 'You can only act on your own box');
+    }
+  }
+  return box as Box;
+}
+
+function applyBoxEffects(
+  state: ProtocolTableState,
+  actorId: string,
+  action: ProtocolAction,
+  input: ActionInput,
+): void {
+  const amount = input.amount ?? 0;
+
+  if (action.createsOwnedBox) {
+    const existing = input.boxId
+      ? state.boxes.find((box) => box.id === input.boxId)
+      : state.boxes.find((box) => box.ownerUserId === actorId && box.status === 'open');
+    if (existing) {
+      existing.stake += amount;
+    } else {
+      state.boxes.push({
+        id: randomUUID(),
+        ownerUserId: actorId,
+        stake: amount,
+        status: 'open',
+      });
+    }
+  }
+
+  if (action.addsToOwnedBox) {
+    const box = resolveBox(state, actorId, action, input);
+    box.stake += amount > 0 ? amount : box.stake;
+  }
+
+  if (action.splitsOwnedBox) {
+    const box = resolveBox(state, actorId, action, input);
+    state.boxes.push({
+      id: randomUUID(),
+      ownerUserId: actorId,
+      stake: box.stake,
+      status: box.status,
+    });
+  }
+
+  if (action.locksAllBoxes) {
+    for (const box of state.boxes) {
+      if (box.status === 'open') {
+        box.status = 'locked';
+      }
+    }
+  }
+
+  if (action.resolvesBox) {
+    const box = resolveBox(state, actorId, action, input);
+    box.status = 'resolved';
+  }
 }
 
 function assertRole(

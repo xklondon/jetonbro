@@ -75,6 +75,33 @@ export class EscrowService {
     return { master: nextMaster, game: nextGame, ledger };
   }
 
+  creditGame(input: BuyInInput): { game: Wallet; ledger: LedgerRow } {
+    assertPositiveInteger(input.amount, 'amount');
+    let game = this.store.getGameWallet(input.userId, input.tableId);
+    if (!game) {
+      game = {
+        id: randomUUID(),
+        userId: input.userId,
+        type: 'game',
+        tableId: input.tableId,
+        balance: 0,
+      };
+      this.store.insertWallet(game);
+    }
+    const nextGame = { ...game, balance: game.balance + input.amount };
+    this.store.updateWallet(nextGame);
+    const ledger = this.appendLedger({
+      actorId: input.actorId,
+      amount: input.amount,
+      kind: 'CREDIT',
+      escrowId: null,
+      fromState: null,
+      toState: null,
+      detail: `credit table=${input.tableId} user=${input.userId}`,
+    });
+    return { game: nextGame, ledger };
+  }
+
   getMasterWallet(userId: string): Wallet | undefined {
     return this.store.getMasterWallet(userId);
   }
@@ -114,6 +141,14 @@ export class EscrowService {
 
   getEscrow(escrowId: string): Escrow | undefined {
     return this.store.getEscrow(escrowId);
+  }
+
+  listEscrowsForTable(tableId: string): Escrow[] {
+    return this.store.listEscrows().filter((escrow) => escrow.tableId === tableId);
+  }
+
+  listWalletsForUser(userId: string): Wallet[] {
+    return this.store.listWallets().filter((wallet) => wallet.userId === userId);
   }
 
   listLedger(): LedgerRow[] {

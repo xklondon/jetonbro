@@ -47,6 +47,7 @@ export function createProtocolTable(input: CreateProtocolTableInput): ProtocolTa
     tableOwnerUserId: input.tableOwnerUserId ?? null,
     flags: {},
     activeSeatUserId: input.playerIds[0] ?? null,
+    boxes: [],
   };
 }
 

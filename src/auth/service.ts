@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { EscrowService } from '../escrow/service.js';
 import { fail } from './errors.js';
 import { createMemoryAuthStore, type AuthStore } from './store.js';
-import type { Invite, InviteChannel, MagicLink, User } from './types.js';
+import type { Invite, InviteChannel, MagicLink, TableRecord, User } from './types.js';
 
 export const GUEST_ID_PREFIX = 'guest:';
 
@@ -97,6 +97,36 @@ export class AuthService {
     return { token, verifyUrl };
   }
 
+  /**
+   * Validate a magic-link token only. Does not consume the link, accept
+   * T&Cs, create an account, or provision a wallet.
+   */
+  inspectMagicLink(token: string): {
+    email: string | null;
+    phone: string | null;
+    requiresTerms: boolean;
+    isUpgrade: boolean;
+    inviteChannel: InviteChannel | null;
+    tableId: string | null;
+  } {
+    const link = this.store.getMagicLink(token);
+    if (!link) {
+      fail('MAGIC_LINK_INVALID', 'Magic link is invalid or already used', 401);
+    }
+    const invite = link.inviteId ? this.store.getInvite(link.inviteId) : undefined;
+    const existing = this.findUserByContact(link.email, link.phone);
+    const isUpgrade = Boolean(link.guestDeviceId);
+    const requiresTerms = isUpgrade || !existing?.acceptedTermsAt;
+    return {
+      email: link.email,
+      phone: link.phone,
+      requiresTerms,
+      isUpgrade,
+      inviteChannel: invite?.channel ?? null,
+      tableId: invite?.tableId ?? null,
+    };
+  }
+
   verify(input: VerifyInput): SessionView {
     const link = this.store.getMagicLink(input.token);
     if (!link) {
@@ -133,15 +163,34 @@ export class AuthService {
     return this.issueSession(user);
   }
 
-  createTable(sessionToken: string): { id: string; ownerUserId: string } {
+  createTable(
+    sessionToken: string,
+    input: { protocolId?: TableRecord['protocolId'] } = {},
+  ): TableRecord {
     const user = this.requireSessionUser(sessionToken);
     if (user.isGuest || !user.acceptedTermsAt) {
       fail('TERMS_REQUIRED', 'Creating a table requires a verified account that has accepted the T&Cs', 403);
     }
-    const table = { id: randomUUID(), ownerUserId: user.id };
+    const protocolId = input.protocolId ?? 'blackjack';
+    if (protocolId !== 'blackjack' && protocolId !== 'poker' && protocolId !== 'zilch') {
+      fail('PROTOCOL_INVALID', 'protocolId must be blackjack, poker, or zilch');
+    }
+    const table: TableRecord = { id: randomUUID(), ownerUserId: user.id, protocolId };
     this.store.insertTable(table);
     this.addMember(table.id, user.id);
     return table;
+  }
+
+  getTable(tableId: string): TableRecord | undefined {
+    return this.store.getTable(tableId);
+  }
+
+  listMemberIds(tableId: string): string[] {
+    return this.store.listMembers(tableId);
+  }
+
+  getUser(userId: string): User | undefined {
+    return this.store.getUser(userId);
   }
 
   createInvite(sessionToken: string, tableId: string, input: CreateInviteInput): {

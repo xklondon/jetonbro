@@ -16,6 +16,7 @@ export function listenForReleases(store: EscrowStore, ledger: PersonalLedger): E
     insertEscrow: (escrow) => store.insertEscrow(escrow),
     updateEscrow: (escrow) => store.updateEscrow(escrow),
     getEscrow: (id) => store.getEscrow(id),
+    listEscrows: () => store.listEscrows(),
     listLedger: () => store.listLedger(),
     insertLedger(row) {
       store.insertLedger(row);

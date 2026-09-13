@@ -10,6 +10,7 @@ export interface EscrowStore {
   insertEscrow(escrow: Escrow): void;
   updateEscrow(escrow: Escrow): void;
   getEscrow(id: string): Escrow | undefined;
+  listEscrows(): Escrow[];
   insertLedger(row: LedgerRow): void;
   listLedger(): LedgerRow[];
 }
@@ -58,6 +59,9 @@ export function createMemoryStore(): EscrowStore {
     getEscrow(id) {
       const row = escrows.get(id);
       return row ? cloneEscrow(row) : undefined;
+    },
+    listEscrows() {
+      return [...escrows.values()].map((escrow) => cloneEscrow(escrow));
     },
     insertLedger(row) {
       ledger.push({ ...row });

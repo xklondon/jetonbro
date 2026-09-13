@@ -4,7 +4,7 @@ Agent-session memory. Update this file at the start and end of every build-order
 
 ## Current
 
-Build-order step 4 (auth / invite) is done and waiting for review. **Do not start step 5 until this is approved.**
+Build-order step 5 (core UI) is done and waiting for review. **Do not start step 6 until this is approved.** Step 4 is committed (`fea4fd2`).
 
 ## Guardrails (genesis Steps 1–3)
 
@@ -22,7 +22,7 @@ From `jetonbro-requirements-v4.md` § Build order. One step at a time; stop afte
 | 2 | Protocol configs + turn-order, wired to escrow | done | 2026-09-13 | Three data-only protocol configs + shared handler/turn-order in `src/protocol/`. `canResolveForTable` is what `EscrowService` consumes. Local commit (no remote PR). |
 | 3 | Personal ledger read-model (Save / Clear) | done | 2026-09-13 | `src/ledger/` derives pair transfers from RELEASE via an `EscrowStore` wrapper. Save snapshots; Clear writes `MANUAL_SETTLEMENT`. Local commit (no remote PR). |
 | 4 | Auth / invite (magic-link, WhatsApp, QR, Mates) | done | 2026-09-13 | `src/auth/` + first REST routes in `src/http/registerRoutes.ts`. One magic-link path; WhatsApp is a share intent. Guest upgrade calls `reownMasterWallet`. Route guard exercised (duplicate throwaway failed, then removed). |
-| 5 | Core UI (stack/pot, phase actions, Simple, Standings) | not started | | |
+| 5 | Core UI (stack/pot, phase actions, Simple, Standings) | done | 2026-09-13 | Blackjack boxes + ownership gate. GET verify is peek-only; POST completes T&Cs. Simple skin is a token object. Standings wired to the personal ledger. |
 | 6 | Remaining skins + chip-visual mode | not started | | |
 | 7 | Fun nav (Yellow card, Red card, Magic 8-ball) | not started | | |
 
@@ -51,11 +51,16 @@ Assumptions not spelled out in `jetonbro-requirements-v4.md`. Flag these; do not
 | 2026-09-13 | Clear writes `MANUAL_SETTLEMENT` from the debtor to the creditor; net treats settlement A→B as cancelling A's debt to B | Same-direction as a RELEASE transfer would deepen the debt. Settlement is an offset, not another game transfer. |
 | 2026-09-13 | Clear on an already-settled pair is a no-op (no row) | Requirements do not say to write a zero-amount settlement. |
 | 2026-09-13 | **Blackjack box ownership (step 2 open question):** display-only turn should **not** let a player act on someone else's box. v4 says the player confirms into **their** box and that boxes act independently (no wait-your-turn between players). Step 2's handler currently only checks "seated player" for `bet`/`double`/`split`. Box-owner enforcement is missing and should be added when boxes exist as table state — not a turn-pointer job. | Answer recorded in step 3 as requested. |
-| 2026-09-13 | **Blackjack box-ownership enforcement is still open.** Step 4 did not resolve it. Address it in step 5 when box entities are introduced — not via the turn pointer. | Flagged again so it is not forgotten between invite work and core UI. |
+| 2026-09-13 | **Blackjack box-ownership enforcement is still open.** Step 4 did not resolve it. Address it in step 5 when box entities are introduced — not via the turn pointer. | Flagged again so it is not forgotten between invite work and core UI. Resolved in step 5 (see later row). |
 | 2026-09-13 | WhatsApp invite is the same magic-link/verify pair as email; the only extra is a `wa.me/?text=` share URL | Requirements: different channel, not a second auth path. |
 | 2026-09-13 | Mates guest user id is `guest:${deviceId}`; upgrade calls `EscrowService.reownMasterWallet` and never `ensureMasterWallet` on the verified id first | Wallet writes stay in `src/escrow/`. Creating the verified wallet first would hide a duplicate-wallet bug. |
 | 2026-09-13 | Failed T&Cs on `GET /api/auth/verify` does not consume the magic link | Otherwise a share tap without the checkbox would burn the invite. |
 | 2026-09-13 | REST identities are registered only in `src/http/registerRoutes.ts` with full paths on `app` | `scripts/check-routes.sh` extracts `app\|router.(get\|post\|…)` and matches the Identity column. First real exercise: clean pass → throwaway duplicate `POST /api/auth/request-magic-link` failed as designed → throwaway removed → pass. |
+| 2026-09-13 | Blackjack `Box` lives on `ProtocolTableState`; Bet/Double/Split/Insurance use `requiresOwnedBox` / `createsOwnedBox` flags | Ownership is a box-entity gate, not the display-only turn pointer. Same handler for all protocols; poker/zilch simply have no boxes. |
+| 2026-09-13 | `GET /api/auth/verify` only inspects the token; `POST /api/auth/verify` completes T&Cs / account | Mail scanners auto-follow GET. Completing on GET with `acceptedTerms=1` was a real foot-gun. |
+| 2026-09-13 | Simple is `SIMPLE_SKIN` (`SkinTokens`); Casino/Bank/Fun are reserved ids on the same type | One component tree reads CSS variables. Step 6 adds token objects, not new table/standings components. |
+| 2026-09-13 | Bank assign/top-up credits the game wallet via `EscrowService.creditGame` | v4 setup phase assigns jetons to the game wallet. That write stays in `src/escrow/`. |
+| 2026-09-13 | Lock + applyAction share one table snapshot (`stack` + `pot.amount`) | UI piles CSS-transition those fields. No separate animation state. |
 
 ## Blocked
 
@@ -68,3 +73,12 @@ None.
 3. **Wallet / ledger writes?** Only through `EscrowService` (`ensureMasterWallet` on create, `reownMasterWallet` on guest upgrade). Auth never writes wallet rows.
 4. **Card / dice / hand-eval?** No.
 5. **Per-game branches?** No. Invite channels are config on the invite record, not protocol code.
+
+## Step 5 PR questions
+
+1. **Extend or new?** Extends `src/protocol/` (boxes + action flags), `src/escrow/` (`creditGame`, list helpers), `src/auth/` (inspect + `protocolId` on tables), `src/http/` (new routes). New: `src/table/` (composes protocol + escrow + ledger) and `web/` (Simple-skinned UI).
+2. **Route / event / action?** Yes — `POST /api/auth/verify` plus table snapshot/actions/buy-in/hand-display and standings save/clear. `GET /api/auth/verify` notes updated. All in `docs/ROUTE_MANIFEST.md`. No sockets. No new protocol action *ids* (flags on existing rows).
+3. **Wallet / ledger writes?** Only through `EscrowService` (lock/resolve/release/buy-in/credit). Standings Save/Clear go through `PersonalLedger`.
+4. **Card / dice / hand-eval?** No. Hand-entry/photo is stored and shown as-is.
+5. **Per-game branches?** No. Box/chip/credit behaviour is action flags. Authority role name is `protocol.authorityRole`.
+6. **Do Simple tokens accommodate three more skins without restructuring components?** Yes, checked explicitly. `SkinTokens` already unions `simple | casino | bank | fun`. Components use `--skin-*` variables and `ThemeProvider tokens={…}` only. `SKINS` has reserved slots. A test applies dummy Casino/Bank/Fun objects through `applySkinTokens` + `StackAndPot` with no extra props. Step 6 is more token objects (plus chip-visual as a presentational layer on the same piles), not a new component tree.

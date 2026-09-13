@@ -14,6 +14,7 @@ export interface User {
 export interface TableRecord {
   id: string;
   ownerUserId: string;
+  protocolId: 'blackjack' | 'poker' | 'zilch';
 }
 
 export interface Invite {

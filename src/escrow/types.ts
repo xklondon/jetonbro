@@ -48,7 +48,7 @@ export interface Escrow {
   resolvedBy?: string;
 }
 
-export type LedgerKind = 'BUY_IN' | 'TRANSITION' | 'PAYOUT_ADJUST';
+export type LedgerKind = 'BUY_IN' | 'CREDIT' | 'TRANSITION' | 'PAYOUT_ADJUST';
 
 export interface LedgerRow {
   id: string;
