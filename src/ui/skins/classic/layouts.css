@@ -11,6 +11,7 @@
   width: 100%;
   max-width: 430px;
   min-height: 100dvh;
+  max-height: 100dvh;
   overflow: hidden;
   overflow-x: hidden;
   background: radial-gradient(circle at 50% 34%, var(--felt-hi), var(--felt) 48%, var(--emerald));
@@ -86,6 +87,57 @@
 .classic-skin .gold-button:disabled,
 .classic-skin .bank-phase-control button:disabled {
   opacity: 0.45;
+}
+
+.classic-skin .bank-phase-control .dealer-tools {
+  margin-bottom: 8px;
+}
+
+.classic-skin .bank-phase-control .dealer-tools button {
+  width: 100%;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background: #10241f;
+  color: var(--ivory);
+  font-weight: 500;
+  padding: 8px 4px;
+}
+
+.classic-skin .dealer-spot {
+  width: 100%;
+  text-align: center;
+  color: var(--gold);
+  font: 13px Georgia, serif;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.classic-skin main.felt.setup-felt {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.classic-skin .setup-seats {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.classic-skin .setup-seat {
+  height: 96px;
+  min-height: 96px;
+  border-radius: 22px 22px 14px 14px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.classic-skin .setup-seats.one .setup-seat {
+  max-width: 220px;
+  flex: 0 1 220px;
 }
 
 .classic-skin main.felt {

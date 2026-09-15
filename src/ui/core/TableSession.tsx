@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ClientSnapshot } from "@/application/queries/views";
 import { getSkin } from "@/ui/skins/registry";
 
@@ -14,7 +15,7 @@ async function sendCommand(tableId: string, command: string, payload: Record<str
       ...payload,
     }),
   });
-  const data = (await response.json()) as { error?: string };
+  const data = (await response.json()) as { error?: string; abandoned?: boolean };
   if (!response.ok) {
     throw new Error(data.error ?? "This action could not be completed.");
   }
@@ -23,6 +24,7 @@ async function sendCommand(tableId: string, command: string, payload: Record<str
 
 export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const skin = getSkin();
+  const router = useRouter();
   const [snapshot, setSnapshot] = useState(initial);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(initial.player?.boxes[0]?.id ?? null);
@@ -62,7 +64,11 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const onCommand = async (command: string, payload: Record<string, string> = {}) => {
     setNotice(null);
     try {
-      await sendCommand(snapshot.tableId, command, payload);
+      const result = await sendCommand(snapshot.tableId, command, payload);
+      if (command === "abandonDraft" && result.abandoned) {
+        router.push("/");
+        return;
+      }
       const refresh = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
       if (!refresh.ok) {
         const failed = (await refresh.json()) as { error?: string };

@@ -154,6 +154,7 @@ model Table {
   currentPhase            RoundPhase          @default(TABLE_SETUP)
   currentRoundId          String?             @unique
   joinEnabled             Boolean             @default(true)
+  setupCompletedAt        DateTime?
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
 

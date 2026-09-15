@@ -210,10 +210,47 @@
 }
 
 .classic-skin .setup-sheet {
-  max-height: min(92dvh, 760px);
+  max-height: min(88dvh, 720px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.classic-skin .sheet.setup-mask .sheet-panel {
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+.classic-skin .sheet.setup-mask h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.classic-skin .qr-panel.compact-qr img {
+  width: 120px;
+  height: 120px;
+  padding: 6px;
+}
+
+.classic-skin .setup-mask .game-pick.compact .game-card {
+  min-height: 52px;
+  aspect-ratio: auto;
+  padding: 4px 2px;
+}
+
+.classic-skin .setup-mask .create-table-form label {
+  gap: 4px;
+}
+
+.classic-skin .setup-mask .email-row {
+  margin-bottom: 4px;
+}
+
+.classic-skin .setup-mask .field-label {
+  margin-bottom: 4px;
+}
+
+.classic-skin .setup-mask .setup-defaults {
+  margin-top: 4px;
 }
 
 .classic-skin .create-table-form {
@@ -224,10 +261,13 @@
 }
 
 .classic-skin .setup-sheet-body {
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
   flex: 1;
-  padding-bottom: 8px;
+  padding-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .classic-skin .setup-sheet-actions {

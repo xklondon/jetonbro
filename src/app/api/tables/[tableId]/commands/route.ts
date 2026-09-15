@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/application/auth";
 import { DomainError } from "@/domain/errors";
-import { assignBankDealer, distributeJetons, removeMember, updateTableSettings } from "@/application/services/tables";
+import {
+  abandonDraft,
+  assignBankDealer,
+  distributeJetons,
+  finalizeSetup,
+  removeMember,
+  updateTableSettings,
+} from "@/application/services/tables";
 import { addPlayerManually, inviteByEmail, rotateQrInvitation } from "@/application/services/invitations";
 import {
   addBox,
@@ -130,6 +137,17 @@ async function dispatch(
       if (!resolution) throw new DomainError("INVALID_RESOLUTION", "Choose a valid Insurance result.");
       return settleInsurance({ ...ctx, resolution });
     }
+    case "finalizeSetup":
+      return finalizeSetup({
+        ...ctx,
+        name: String(p.name ?? ""),
+        startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
+        emails: String(p.emails ?? "")
+          .split(/[,\s]+/)
+          .filter(Boolean),
+      });
+    case "abandonDraft":
+      return abandonDraft(ctx);
     case "inviteByEmail":
       return inviteByEmail({
         ...ctx,

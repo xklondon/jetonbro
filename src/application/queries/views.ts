@@ -143,6 +143,7 @@ export type SetupTableView = {
   canStartBetting: boolean;
   startBlockedReason: string | null;
   isOwner: boolean;
+  setupCompleted: boolean;
 };
 
 export type WaitingTableView = {

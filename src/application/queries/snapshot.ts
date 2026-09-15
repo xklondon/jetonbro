@@ -185,6 +185,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
                 ? "Waiting for a player to join"
                 : null,
           isOwner,
+          setupCompleted: table.setupCompletedAt !== null,
         }
       : null;
 

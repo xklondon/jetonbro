@@ -10,8 +10,12 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await openAs(context, page, ownerEmail, "Alex");
   await createBlackjackTable(page, "Salon table", { starting: "100" });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
-  await expect(page.getByText("Waiting for players…")).toBeVisible();
-  await expect(page.getByAltText("Shared table join QR code")).toBeVisible();
+  await expect(page.locator(".waiting-room")).toHaveCount(0);
+  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "QR" }).click();
+  await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
+  await page.getByRole("button", { name: "Close" }).click();
 
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
   const data = (await snapshot.json()) as { setup?: { joinUrl: string | null }; phase?: string };
@@ -31,7 +35,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await joPage.goto(joinPath);
   await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
 
-  await expect(page.locator(".member-row").filter({ hasText: /Joined|Ready/ }).first()).toBeVisible({
+  await expect(page.locator(".setup-seat").filter({ hasText: /Joined|Ready/ }).first()).toBeVisible({
     timeout: 15_000,
   });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled();

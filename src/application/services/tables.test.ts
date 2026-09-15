@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
-import { createTable, distributeJetons } from "@/application/services/tables";
+import { createTable, distributeJetons, ensureDraftTable, finalizeSetup, abandonDraft } from "@/application/services/tables";
 import { inviteByEmail, joinWithToken } from "@/application/services/invitations";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import { listHomeTables } from "@/application/queries/home";
@@ -62,6 +62,7 @@ describeDb("create table home journey", () => {
     expect(snapshot.setup?.canStartBetting).toBe(false);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Bank / Dealer")).toBe(true);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Invited" && seat.name === playerEmail)).toBe(true);
+    expect(snapshot.setup?.setupCompleted).toBe(false);
 
     const home = await listHomeTables(owner.id);
     expect(home.some((item) => item.id === created.tableId && item.role === "Bank / Dealer")).toBe(true);
@@ -261,5 +262,106 @@ describeDb("create table home journey", () => {
     const lobby = await loadSnapshot(created.tableId, owner.id);
     expect(lobby.setup?.canStartBetting).toBe(true);
     expect(lobby.setup?.joinUrl).toContain(qr.token);
+  });
+
+  test("CREATE A TABLE reuses one TABLE_SETUP draft and refresh does not create another", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const first = await ensureDraftTable({ actorId: owner.id, name: "Alex's table" });
+    const second = await ensureDraftTable({ actorId: owner.id, name: "Alex's table" });
+    expect(second.tableId).toBe(first.tableId);
+    expect(await prisma.table.count({ where: { ownerId: owner.id } })).toBe(1);
+
+    const snapshot = await loadSnapshot(first.tableId, owner.id);
+    expect(snapshot.phase).toBe("TABLE_SETUP");
+    expect(snapshot.setup?.setupCompleted).toBe(false);
+    expect(snapshot.setup?.joinUrl).toContain("/join/");
+    expect(snapshot.waiting).toBeNull();
+    expect(snapshot.bank).toBeNull();
+
+    const qrBefore = snapshot.setup?.joinUrl;
+    await finalizeSetup({
+      actorId: owner.id,
+      tableId: first.tableId,
+      idempotencyKey: randomUUID(),
+      name: "Salon table",
+      startingJetonsPerPlayer: "100",
+      emails: [],
+    });
+    const again = await finalizeSetup({
+      actorId: owner.id,
+      tableId: first.tableId,
+      idempotencyKey: randomUUID(),
+      name: "Salon table",
+      startingJetonsPerPlayer: "100",
+      emails: [],
+    });
+    expect(again.ok).toBe(true);
+    const after = await loadSnapshot(first.tableId, owner.id);
+    expect(after.setup?.setupCompleted).toBe(true);
+    expect(after.setup?.tableName).toBe("Salon table");
+    expect(after.setup?.joinUrl).toBe(qrBefore);
+    expect(after.waiting).toBeNull();
+
+    const nextDraft = await ensureDraftTable({ actorId: owner.id, name: "Another table" });
+    expect(nextDraft.tableId).not.toBe(first.tableId);
+    expect(await prisma.table.count({ where: { ownerId: owner.id } })).toBe(2);
+  });
+
+  test("finalizeSetup invites appear as boxes and Open Betting enables after the first join", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const playerEmail = `sam-${randomUUID()}@jetonbro.test`;
+    const player = await user(playerEmail, "Sam");
+    const created = await ensureDraftTable({ actorId: owner.id, name: "Draft table" });
+    await finalizeSetup({
+      actorId: owner.id,
+      tableId: created.tableId,
+      idempotencyKey: randomUUID(),
+      name: "Draft table",
+      startingJetonsPerPlayer: "100",
+      emails: [playerEmail],
+    });
+    const invited = await loadSnapshot(created.tableId, owner.id);
+    expect(invited.setup?.seats.some((seat) => seat.status === "Invited" && seat.name === playerEmail)).toBe(true);
+    expect(invited.setup?.canStartBetting).toBe(false);
+
+    const invite = await prisma.invitation.findFirstOrThrow({
+      where: { tableId: created.tableId, kind: "EMAIL", email: playerEmail },
+    });
+    await joinWithToken({ userId: player.id, token: invite.token, userEmail: player.email });
+    const joined = await loadSnapshot(created.tableId, owner.id);
+    expect(joined.setup?.seats.some((seat) => seat.name === "Sam" && (seat.status === "Joined" || seat.status === "Ready"))).toBe(true);
+    expect(joined.setup?.canStartBetting).toBe(true);
+
+    const funded = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId: created.tableId, userId: player.id } },
+    });
+    expect(funded.availableMillis).toBe(100000n);
+    expect(await prisma.ledgerEntry.count({ where: { tableId: created.tableId, transactionType: "INITIAL_ALLOCATION" } })).toBe(1);
+  });
+
+  test("empty draft can be abandoned until a Player joins", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const player = await user(`player-${randomUUID()}@jetonbro.test`, "Sam");
+    const created = await ensureDraftTable({ actorId: owner.id, name: "Leave me" });
+    const removed = await abandonDraft({
+      actorId: owner.id,
+      tableId: created.tableId,
+      idempotencyKey: randomUUID(),
+    });
+    expect(removed.abandoned).toBe(true);
+    expect(await prisma.table.findUnique({ where: { id: created.tableId } })).toBeNull();
+
+    const kept = await ensureDraftTable({ actorId: owner.id, name: "Keep me" });
+    const qr = await prisma.invitation.findFirstOrThrow({
+      where: { tableId: kept.tableId, kind: "QR", revokedAt: null },
+    });
+    await joinWithToken({ userId: player.id, token: qr.token, userEmail: player.email });
+    const blocked = await abandonDraft({
+      actorId: owner.id,
+      tableId: kept.tableId,
+      idempotencyKey: randomUUID(),
+    });
+    expect(blocked.abandoned).toBe(false);
+    expect(await prisma.table.findUnique({ where: { id: kept.tableId } })).not.toBeNull();
   });
 });

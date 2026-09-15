@@ -84,9 +84,9 @@ src/ui/skins/registry.ts     typed skin selection
 - `AUTH_URL` is the public origin for magic links, invitation URLs, and Auth.js redirects. Production redirects must never use `localhost` or `*.railway.internal`.
 - Successful magic-link login without an invitation lands on authenticated home (`/`). Invitation callbacks stay on `/join/{token}` using the existing EMAIL/QR token model.
 - Creating a table uses domain Blackjack defaults (`THREE_TWO` payout, 3 boxes, Insurance on). The creator is Bank/Dealer and remains in `TABLE_SETUP` until they open betting.
-- `CREATE A TABLE` opens exactly one setup sheet. One `START TABLE` command creates the table, Bank/Dealer membership, EMAIL/QR invitations, and `startingJetonsPerPlayerMillis`, then opens the Bank waiting room in `TABLE_SETUP`.
+- `CREATE A TABLE` immediately creates or reuses one `TABLE_SETUP` draft and opens `/tables/{tableId}` with a single setup mask over the real Dealer table. The mask already shows the shared table QR. `SET UP TABLE` finalizes name, starting jetons, and invitations, then closes the mask onto the Dealer table. There is no separate waiting-room page.
 - There is one reusable table QR join URL. Multiple authenticated users may redeem it; each user gets one membership. Email invitations stay individually addressed.
-- `OPEN BETTING` is enabled only after a Player has joined and is the `TABLE_SETUP -> BETTING` command.
+- During `TABLE_SETUP` the Dealer table shows `CURRENT PHASE: TABLE SETUP`, player boxes for Invited/Joined/Ready, a compact QR overlay control, `+ PLAYER`, and `OPEN BETTING`. `OPEN BETTING` is enabled only after a Player has joined and is the `TABLE_SETUP -> BETTING` command.
 - During BETTING the Bank may `DEAL CARDS NOW` or `DEAL IN 7 SECONDS`. Both require at least one valid player bet. The seven-second option stores `Round.bettingCloseDeadlineAt` and closes betting exactly once at that deadline. Clients display the same countdown from that deadline. `DEAL CARDS NOW` may finish immediately during the countdown.
 - Table stores `startingJetonsPerPlayerMillis`. When an invited user becomes a joined member, that membership is credited once (`starting-jetons:{tableId}:{userId}` plus `TableMember.startingJetonsCredited`). The Bank may later add more with the existing Bank-only control. The Bank is not a betting player.
 - Redeem/join retries are idempotent: they do not create a second membership or credit starting jetons twice.
@@ -149,8 +149,8 @@ Full acceptance means:
 - Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
 - Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true), and `startingJetonsPerPlayerMillis` are server-authoritative
 - Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack
-- Authenticated home: `CREATE A TABLE` opens a single setup sheet; `START TABLE` opens the Bank waiting room in `TABLE_SETUP`
-- Bank waiting room: one shared QR, `+ ADD PLAYER`, `OPEN BETTING` after the first Player joins
+- Authenticated home: `CREATE A TABLE` creates or reuses one `TABLE_SETUP` draft and opens the table under a single setup mask
+- Dealer `TABLE_SETUP`: after `SET UP TABLE`, the real table surface is visible immediately. Compact QR overlay and `+ PLAYER` stay in the top controls. No permanent centre QR / waiting-room page
 - Betting close: `Round.bettingCloseDeadlineAt` is the server-authoritative 7-second deal deadline
 - Verification: lightweight local changes use guardrails, affected Vitest, and `next build`. Full Playwright, screenshots, commit, push, and Railway deploy only for ledger/auth/phase/migration work or an accepted release batch
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`

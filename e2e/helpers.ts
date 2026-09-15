@@ -23,10 +23,12 @@ export async function openSetupSheet(page: Page) {
   const create = page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ });
   await expect(create).toBeVisible();
   await create.click();
-  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
+  await expect(page).toHaveURL(/\/tables\//);
+  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeVisible();
-  await expect(page.getByLabel("Player email")).toBeVisible();
-  await expect(page.getByLabel("Starting jetons per player")).toBeVisible();
+  await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
+  await expect(page.locator(".setup-mask").getByLabel("Starting jetons per player")).toBeVisible();
+  await expect(page.locator(".setup-mask").getByAltText("Shared table join QR code")).toBeVisible();
 }
 
 export async function createBlackjackTable(
@@ -35,18 +37,23 @@ export async function createBlackjackTable(
   options?: { starting?: string; email?: string },
 ) {
   await openSetupSheet(page);
-  await page.getByLabel("Table name").fill(name);
-  await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
+  await page.locator(".setup-mask").getByLabel("Table name").fill(name);
+  await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
   if (options?.email) {
-    await page.getByLabel("Player email").fill(options.email);
+    await page.locator(".setup-mask").getByLabel("Player email").fill(options.email);
   }
-  await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.getByRole("button", { name: "+ ADD PLAYER" })).toBeVisible();
-  await expect(page.getByText(/Blackjack · Bank\/Dealer/)).toBeVisible();
+  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "+ PLAYER" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "QR" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toHaveCount(0);
+  await expect(page.locator(".waiting-room")).toHaveCount(0);
 }
 
 export async function invitePlayerFromLobby(page: Page, email: string) {
-  await page.getByRole("button", { name: "+ ADD PLAYER" }).click();
+  await page.getByRole("button", { name: "+ PLAYER" }).click();
   await page.getByLabel("Player email").fill(email);
   await page.getByRole("button", { name: "Send invitation" }).click();
   await expect(page.getByText("Invited")).toBeVisible();

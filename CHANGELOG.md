@@ -4,22 +4,22 @@
 
 ### Table setup and betting
 
-- `CREATE A TABLE` opens one setup sheet: game, player emails, starting jetons, and `START TABLE`.
-- After `START TABLE` the Bank waiting room stays in `TABLE_SETUP` with one shared QR. `OPEN BETTING` is the `TABLE_SETUP → BETTING` command.
+- `CREATE A TABLE` immediately creates or reuses one `TABLE_SETUP` draft and opens `/tables/{tableId}` with a single setup mask over the real Dealer table. The mask already shows the shared table QR.
+- `SET UP TABLE` finalizes name, starting jetons, and invitations, then closes the mask. There is no separate waiting-room page.
+- During `TABLE_SETUP` the Dealer table shows `CURRENT PHASE: TABLE SETUP`, player boxes for Invited/Joined/Ready, a compact QR overlay, `+ PLAYER`, and `OPEN BETTING`. `OPEN BETTING` is enabled after the first Player joins and is the `TABLE_SETUP → BETTING` command.
 - During BETTING the Bank can `DEAL CARDS NOW` or `DEAL IN 7 SECONDS`. The seven-second option stores `Round.bettingCloseDeadlineAt`; refresh resumes from that deadline and the close happens once.
-- One idempotent command creates the table, makes the creator Bank/Dealer, stores `startingJetonsPerPlayerMillis`, and writes EMAIL/QR invitations.
+- Repeated create clicks reuse the same empty draft. Refresh returns to that draft and QR. Finalizing is idempotent. An unused draft can be abandoned only before another Player joins.
 - Joining credits starting jetons to that membership exactly once (`starting-jetons:{tableId}:{userId}`).
-- The Bank lobby lists Bank/Dealer, Invited, Joined, and Ready seats with `+ ADD PLAYER` and QR.
 - Tapping a jeton now fails with a domain error such as `You do not have enough jetons` instead of a generic 500. The previous production bet failure was `creditTableAvailable` throwing a plain `Error` when AVAILABLE was 0 because join never credited starting jetons.
-- Join/redeem retries are idempotent. Live Bank lobby status uses SSE plus a short snapshot poll so `Invited` becomes `Joined`/`Ready` without a manual refresh.
+- Join/redeem retries are idempotent. Live Dealer seats use SSE plus a short snapshot poll so `Invited` becomes `Joined`/`Ready` without a manual refresh.
 
 ### Authenticated home
 
 - Empty authenticated home is a welcome screen with game cards, `CREATE A TABLE`, and `JOIN A TABLE`.
 - First landing of a browser session plays a short decorative jeton rain that never blocks actions, runs once per session, and is skipped when `prefers-reduced-motion` is set.
 - Existing tables appear as cards with game, phase, player count, role, and `RETURN TO TABLE`.
-- Create-table is one Classic setup sheet: Blackjack is selectable; Poker and Zilch show `Coming later`. Blackjack settings use domain defaults and persist `maxBoxesPerPlayer` and `insuranceEnabled`.
-- Creator becomes Bank/Dealer and lands on the table setup lobby with email and QR invites. Betting does not start automatically.
+- Create-table is one Classic setup mask on the Dealer table: Blackjack is selectable; Poker and Zilch show `Coming later`. Blackjack settings use domain defaults and persist `maxBoxesPerPlayer` and `insuranceEnabled`.
+- Creator becomes Bank/Dealer on the real table route immediately. Betting does not start automatically.
 - Auth.js redirects and magic-link URLs are rewritten onto `AUTH_URL`. Localhost and `*.railway.internal` origins are never kept in production callbacks. Invitation `/join/{token}` destinations are preserved.
 
 ### Email

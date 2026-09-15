@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/application/auth";
 import { DomainError } from "@/domain/errors";
-import { createTable } from "@/application/services/tables";
+import { createTable, ensureDraftTable } from "@/application/services/tables";
 import { publicOrigin } from "@/application/auth-urls";
 import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 
 const schema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).optional(),
+  draft: z.boolean().optional(),
   game: z.string().optional(),
   startingAllocation: z.string().optional(),
   startingJetonsPerPlayer: z.string().optional(),
@@ -28,6 +29,16 @@ export async function POST(request: Request) {
   }
   try {
     const body = schema.parse(await request.json());
+    if (body.draft) {
+      const result = await ensureDraftTable({
+        actorId: session.user.id,
+        name: body.name,
+      });
+      return NextResponse.json(result);
+    }
+    if (!body.name) {
+      return NextResponse.json({ error: "A table name is required." }, { status: 400 });
+    }
     const result = await createTable({
       actorId: session.user.id,
       name: body.name,

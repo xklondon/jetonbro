@@ -42,12 +42,7 @@ export type JetonBroSkin = {
     defaultTableName: string;
     tables: HomeTableCard[];
     notice?: string | null;
-    onSetupTable: (fields: {
-      name: string;
-      game: "BLACKJACK";
-      startingJetonsPerPlayer: string;
-      emails: string[];
-    }) => Promise<void>;
+    onCreateTable: () => Promise<void>;
     onJoinTable: (destination: string) => void;
     onOpenTable: (tableId: string) => void;
   }>;
@@ -62,5 +57,8 @@ export type JetonBroSkin = {
       emails: string[];
     }) => Promise<void>;
     embedded?: boolean;
+    joinUrl?: string | null;
+    defaultStartingJetons?: string;
+    initialEmails?: string[];
   }>;
 };

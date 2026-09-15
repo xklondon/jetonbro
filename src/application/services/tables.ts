@@ -10,7 +10,23 @@ import { parseJetonInput, parseWholeJetons, type JetonMillis } from "@/domain/mo
 import type { BlackjackPayoutRule } from "@/domain/blackjack/payouts";
 import { BLACKJACK_TABLE_DEFAULTS, parseMaxBoxesPerPlayer } from "@/domain/blackjack/settings";
 import { collectInviteEmails } from "@/domain/invitations/email";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+
+function isOpenDraftConflict(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+}
+
+async function findOpenDraft(ownerId: string) {
+  return prisma.table.findFirst({
+    where: {
+      ownerId,
+      currentPhase: "TABLE_SETUP",
+      status: "SETUP",
+      setupCompletedAt: null,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
 
 function parseOptionalJetons(value: string | undefined): JetonMillis | null {
   if (!value || value.trim() === "") return null;
@@ -198,6 +214,135 @@ export async function createTable(input: {
 
     publishTable(table.id);
     return { tableId: table.id };
+  });
+}
+
+export async function ensureDraftTable(input: { actorId: string; name?: string }) {
+  const existing = await findOpenDraft(input.actorId);
+  if (existing) return { tableId: existing.id };
+  try {
+    return await createTable({
+      actorId: input.actorId,
+      idempotencyKey: `draft:${input.actorId}:${randomToken()}`,
+      name: (input.name ?? "Table").trim() || "Table",
+      game: "BLACKJACK",
+      startingJetonsPerPlayer: BLACKJACK_TABLE_DEFAULTS.startingAllocation,
+      emails: [],
+    });
+  } catch (error) {
+    if (isOpenDraftConflict(error)) {
+      const raced = await findOpenDraft(input.actorId);
+      if (raced) return { tableId: raced.id };
+    }
+    throw error;
+  }
+}
+
+export async function finalizeSetup(input: {
+  actorId: string;
+  tableId: string;
+  idempotencyKey: string;
+  name: string;
+  startingJetonsPerPlayer?: string;
+  emails?: string[];
+  origin?: string;
+}) {
+  if (!input.name.trim()) {
+    throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
+  }
+  const emails = collectInviteEmails(input.emails ?? []);
+  const startingJetonsPerPlayerMillis = parseWholeJetons(
+    input.startingJetonsPerPlayer?.trim() || BLACKJACK_TABLE_DEFAULTS.startingAllocation,
+  );
+  return withIdempotency(input.actorId, input.idempotencyKey, "finalizeSetup", input, async () => {
+    const table = await requireOwnerOrBank(input.tableId, input.actorId);
+    if (table.currentPhase !== "TABLE_SETUP") {
+      throw new ConflictError("Table setup can only be finished during TABLE_SETUP.");
+    }
+    const existingInvites = await prisma.invitation.findMany({
+      where: { tableId: table.id, kind: "EMAIL" },
+    });
+    const alreadyInvited = new Set(
+      existingInvites.map((invite) => (invite.email ?? "").toLowerCase()).filter(Boolean),
+    );
+    const newEmails = emails.filter((email) => !alreadyInvited.has(email));
+    const createdInvites: { email: string; token: string }[] = [];
+
+    await prisma.$transaction(async (tx) => {
+      await tx.table.update({
+        where: { id: table.id },
+        data: {
+          name: input.name.trim(),
+          startingJetonsPerPlayerMillis,
+          setupCompletedAt: table.setupCompletedAt ?? new Date(),
+        },
+      });
+      for (const email of newEmails) {
+        const created = await tx.invitation.create({
+          data: {
+            tableId: table.id,
+            kind: "EMAIL",
+            email,
+            token: randomToken(),
+            expiresAt: hoursFromNow(48),
+            createdById: input.actorId,
+          },
+        });
+        createdInvites.push({ email, token: created.token });
+      }
+    });
+
+    if (input.origin) {
+      for (const invite of createdInvites) {
+        try {
+          await sendInvitationEmail({
+            to: invite.email,
+            tableName: input.name.trim(),
+            url: `${input.origin}/join/${invite.token}`,
+          });
+        } catch {
+          console.error(
+            "[jetonbro-command] command=finalizeSetup table=" +
+              table.id +
+              " actor=" +
+              input.actorId +
+              " phase=TABLE_SETUP code=INVITE_EMAIL_FAILED",
+          );
+        }
+      }
+    }
+
+    publishTable(table.id);
+    return { ok: true, tableId: table.id };
+  });
+}
+
+export async function abandonDraft(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "abandonDraft", input, async () => {
+    const table = await prisma.table.findUnique({
+      where: { id: input.tableId },
+      include: { members: { where: { leftAt: null } } },
+    });
+    if (!table) return { abandoned: true };
+    if (table.ownerId !== input.actorId) {
+      throw new ForbiddenError("Only the table owner can cancel this draft.");
+    }
+    if (table.currentPhase !== "TABLE_SETUP") {
+      throw new ConflictError("This table can no longer be abandoned.");
+    }
+    const joinedPlayers = table.members.filter((member) => !member.isBankDealer && member.userId !== table.bankDealerId);
+    if (joinedPlayers.length > 0) {
+      if (!table.setupCompletedAt) {
+        await prisma.table.update({
+          where: { id: table.id },
+          data: { setupCompletedAt: new Date() },
+        });
+        publishTable(table.id);
+      }
+      return { abandoned: false };
+    }
+    await prisma.table.delete({ where: { id: table.id } });
+    return { abandoned: true };
   });
 }
 
