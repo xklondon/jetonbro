@@ -32,4 +32,4 @@ One Next.js process and one PostgreSQL database. **Run exactly one application i
 
 `npm start` applies migrations and serves the app locally. Railway staging uses `npx prisma migrate deploy` as the pre-deploy command, then `npx next start`. Health: `GET /api/health`. The Railway service is pinned to **one replica**.
 
-Email invitations and magic links are delivered by SMTP only when `EMAIL_SERVER` is set. See `docs/architecture/deployment.md` and `docs/architecture/invitations.md`.
+Email invitations and magic links are delivered with the Resend HTTP API when `RESEND_API_KEY` and `EMAIL_FROM` are set. See `docs/architecture/deployment.md` and `docs/architecture/invitations.md`.

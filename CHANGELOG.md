@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Email
+
+- Replaced SMTP/Nodemailer with the Resend HTTP API for magic-link and invitation delivery.
+- Production requires `RESEND_API_KEY` and `EMAIL_FROM`. The development mailbox never runs in production.
+
 ### Staging baseline
 
 - Shortened the Player bet placeholder to `Amount` and stacked it on narrow screens so it is not clipped at 320px.

@@ -16,9 +16,16 @@ Balances are stored in PostgreSQL. Refresh and SSE reconnect load a complete ser
 
 ## Email
 
-Real invitation and magic-link delivery requires `EMAIL_SERVER` (SMTP URL) and `EMAIL_FROM`.
+Real invitation and magic-link delivery uses the Resend HTTP API.
 
-Without `EMAIL_SERVER`, links are only written to `tmp/mailbox.jsonl`. That is local development, not production delivery.
+Required variables:
+
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+
+The API key is read only from `process.env.RESEND_API_KEY`. It is never placed in a URL, client bundle, API response, log line, or error message.
+
+The local development mailbox (`tmp/mailbox.jsonl`) is used only when `NODE_ENV` is not `production` and `ALLOW_DEV_MAILBOX=true`. Production never falls back to that mailbox.
 
 ## Development endpoints
 

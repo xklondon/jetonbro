@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
-import Email from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/application/db";
-import { deliverMail } from "@/application/mail";
+import { sendMagicLinkEmail } from "@/application/mail";
 
 declare module "next-auth" {
   interface Session {
@@ -22,20 +21,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/sign-in",
   },
   providers: [
-    Email({
-      server: process.env.EMAIL_SERVER || "smtp://127.0.0.1:1025",
-      from: process.env.EMAIL_FROM ?? "JetonBro <noreply@localhost>",
+    {
+      id: "email",
+      type: "email",
+      name: "Email",
       maxAge: 60 * 60,
       sendVerificationRequest: async ({ identifier, url }) => {
-        await deliverMail({
-          to: identifier,
-          kind: "magic-link",
-          subject: "Sign in to JetonBro",
-          text: `Open this link to sign in to JetonBro:\n${url}\n\nThis link expires. JetonBro records virtual jetons only; they have no built-in cash value.`,
-          url,
-        });
+        await sendMagicLinkEmail(identifier, url);
       },
-    }),
+    },
   ],
   callbacks: {
     session({ session, user }) {

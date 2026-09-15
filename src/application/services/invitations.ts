@@ -1,7 +1,7 @@
 import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
-import { deliverMail } from "@/application/mail";
+import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
 import { requireOwnerOrBank } from "@/application/services/tables";
@@ -51,16 +51,12 @@ export async function inviteByEmail(input: {
         },
       });
       const url = `${input.origin}/join/${token}`;
-      await deliverMail(
-        {
-          to: email,
-          kind: "table-invite",
-          subject: `Join ${table.name} on JetonBro`,
-          text: `You are invited to join ${table.name} on JetonBro. Open this link to sit at the table:\n${url}\n\nThis link expires. Jetons tracked in JetonBro have no built-in cash value.`,
-          url,
-        },
-        input.ip,
-      );
+      await sendInvitationEmail({
+        to: email,
+        tableName: table.name,
+        url,
+        ip: input.ip,
+      });
       invitations.push({ id: invitation.id, email });
     }
     publishTable(table.id);

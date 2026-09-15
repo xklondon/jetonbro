@@ -79,7 +79,8 @@ src/ui/skins/registry.ts     typed skin selection
 - `npm start` runs `prisma migrate deploy && next start`.
 - Railway staging: `preDeployCommand` runs `npx prisma migrate deploy`, then `npx next start`, healthcheck `/api/health`, **exactly one replica**.
 - `ALLOW_DEV_MAILBOX` is local/CI only and is ignored when `NODE_ENV=production`. `/api/dev/*` always 404s in production.
-- Real email delivery requires `EMAIL_SERVER`. Without it, links are written to `tmp/mailbox.jsonl` only.
+- Real email delivery uses the Resend HTTP API (`RESEND_API_KEY` + `EMAIL_FROM`). The API key is never placed in a URL.
+- The development mailbox is used only when `NODE_ENV !== "production"` and `ALLOW_DEV_MAILBOX=true`. Production never falls back to it.
 
 ## Change discipline
 
@@ -110,5 +111,5 @@ Do not claim completion from code inspection alone.
 - Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
 - Verification: `npm run guardrails`, Vitest, `next build`, Playwright real-app phase screenshots plus two-session join
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
-- Production email SMTP delivery is not configured; invitation token generation is
-- Next milestone: configure SMTP and magic-link cookies on staging, then archive/change-game UX. Do not enable GitHub automatic production deployment yet.
+- Email delivery: Resend HTTP API. Live receipt of a magic-link email has not been confirmed
+- Next milestone: confirm a live Resend magic link signs a Player in, then archive/change-game UX
