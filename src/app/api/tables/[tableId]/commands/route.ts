@@ -5,9 +5,11 @@ import { DomainError } from "@/domain/errors";
 import {
   abandonDraft,
   assignBankDealer,
+  closeTable,
   distributeJetons,
   finalizeSetup,
   removeMember,
+  saveTable,
   updateTableSettings,
 } from "@/application/services/tables";
 import { addPlayerManually, inviteByEmail, rotateQrInvitation } from "@/application/services/invitations";
@@ -27,6 +29,7 @@ import {
   splitBox,
   startBetting,
   startNextRound,
+  scheduleNextRound,
 } from "@/application/services/blackjack-round";
 import { BOX_OUTCOMES } from "@/domain/blackjack/payouts";
 import { INSURANCE_RESOLUTIONS } from "@/domain/blackjack/payouts";
@@ -94,6 +97,12 @@ async function dispatch(
   command: string,
   ctx: { actorId: string; tableId: string; idempotencyKey: string; origin: string; ip: string; payload: Record<string, unknown> },
 ) {
+  if (command !== "closeTable") {
+    const table = await prisma.table.findUnique({ where: { id: ctx.tableId }, select: { status: true } });
+    if (table?.status === "ARCHIVED") {
+      throw new DomainError("TABLE_CLOSED", "This table is closed.");
+    }
+  }
   const p = ctx.payload;
   switch (command) {
     case "startBetting":
@@ -102,6 +111,8 @@ async function dispatch(
       return dealCards(ctx);
     case "scheduleDeal":
       return scheduleDeal(ctx);
+    case "scheduleNextRound":
+      return scheduleNextRound(ctx);
     case "enterPayout":
       return enterPayout(ctx);
     case "startNextRound":
@@ -184,6 +195,10 @@ async function dispatch(
         bankMayDistributeJetons: p.bankMayDistributeJetons === undefined ? undefined : Boolean(p.bankMayDistributeJetons),
         game: p.game ? String(p.game) : undefined,
       });
+    case "saveTable":
+      return saveTable(ctx);
+    case "closeTable":
+      return closeTable(ctx);
     default:
       throw new DomainError("UNKNOWN_COMMAND", "Unknown table command.");
   }

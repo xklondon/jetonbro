@@ -2,7 +2,7 @@ import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
 import { sendInvitationEmail } from "@/application/mail";
-import { appendLedger, creditTableAvailable } from "@/application/services/ledger";
+import { appendLedger, creditPlayerPocket, creditTableAvailable } from "@/application/services/ledger";
 import { publishTable } from "@/application/realtime/bus";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@/domain/errors";
 import { isPlayableGame } from "@/domain/games";
@@ -363,6 +363,123 @@ export async function requireOwnerOrBank(tableId: string, userId: string) {
     throw new ForbiddenError("Only the table owner or Bank/Dealer can do that.");
   }
   return table;
+}
+
+export async function requireOwner(tableId: string, userId: string) {
+  const table = await prisma.table.findUnique({
+    where: { id: tableId },
+    include: {
+      currentRound: { include: { boxes: true, insuranceBets: true } },
+      members: { where: { leftAt: null } },
+    },
+  });
+  if (!table) throw new NotFoundError("Table not found.");
+  if (table.ownerId !== userId) {
+    throw new ForbiddenError("Only the table owner can do that.");
+  }
+  return table;
+}
+
+export async function transferPocketIntoTable(
+  tx: Prisma.TransactionClient,
+  input: { tableId: string; memberId: string; userId: string; actorId: string },
+): Promise<void> {
+  const ledgerKey = `pocket-in:${input.tableId}:${input.userId}`;
+  const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey: ledgerKey } });
+  if (existing) return;
+  const account = await tx.playerAccount.findUnique({ where: { userId: input.userId } });
+  if (!account || account.globalAvailableMillis <= 0n) return;
+  const amount = account.globalAvailableMillis;
+  await creditPlayerPocket(tx, input.userId, -amount);
+  const { before, after } = await creditTableAvailable(tx, input.memberId, amount);
+  await appendLedger(tx, {
+    playerId: input.userId,
+    actorId: input.actorId,
+    tableId: input.tableId,
+    transactionType: "TABLE_TRANSFER_IN",
+    amountMillis: amount,
+    balanceBeforeMillis: before,
+    balanceAfterMillis: after,
+    idempotencyKey: ledgerKey,
+    description: "Personal ledger jetons carried into this table",
+  });
+}
+
+export async function saveTable(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "saveTable", input, async () => {
+    const table = await requireOwner(input.tableId, input.actorId);
+    if (table.status === "ARCHIVED") {
+      throw new DomainError("TABLE_CLOSED", "This table is closed.");
+    }
+    await prisma.table.update({
+      where: { id: table.id },
+      data: { pausedAt: table.pausedAt ?? new Date() },
+    });
+    publishTable(table.id);
+    return { ok: true, paused: true };
+  });
+}
+
+export async function closeTable(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "closeTable", input, async () => {
+    const table = await requireOwner(input.tableId, input.actorId);
+    if (table.status === "ARCHIVED") {
+      return { ok: true, closed: true };
+    }
+    const boxes = table.currentRound?.boxes.filter((box) => !box.removedAt) ?? [];
+    const lockedBoxes = boxes.filter((box) => box.lockedBetMillis > 0n && !box.settledKey);
+    const lockedInsurance = table.currentRound?.insuranceBets.filter((bet) => !bet.settledKey) ?? [];
+    if (lockedBoxes.length > 0 || lockedInsurance.length > 0) {
+      throw new ConflictError("Close the table only after every locked position is settled.");
+    }
+    if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
+      throw new ConflictError("Close the table only when the round is complete.");
+    }
+    try {
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Table" WHERE id = ${table.id} FOR UPDATE`;
+      const fresh = await tx.table.findUniqueOrThrow({ where: { id: table.id } });
+      if (fresh.status === "ARCHIVED") return;
+      const members = await tx.tableMember.findMany({
+        where: { tableId: table.id, leftAt: null },
+      });
+      for (const member of members) {
+        if (member.isBankDealer) continue;
+        const amount = member.availableMillis;
+        const ledgerKey = `close-table:${table.id}:${member.userId}`;
+        const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey: ledgerKey } });
+        if (existing) continue;
+        if (amount > 0n) {
+          const { before, after } = await creditTableAvailable(tx, member.id, -amount);
+          const pocket = await creditPlayerPocket(tx, member.userId, amount);
+          await appendLedger(tx, {
+            playerId: member.userId,
+            actorId: input.actorId,
+            tableId: table.id,
+            transactionType: "TABLE_TRANSFER_OUT",
+            amountMillis: amount,
+            balanceBeforeMillis: before,
+            balanceAfterMillis: after,
+            idempotencyKey: ledgerKey,
+            description: "Table closed · remaining jetons saved to personal ledger",
+          });
+          void pocket;
+        }
+      }
+      await tx.table.update({
+        where: { id: table.id },
+        data: { status: "ARCHIVED", closedAt: new Date(), pausedAt: null, joinEnabled: false },
+      });
+    });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return { ok: true, closed: true };
+      }
+      throw error;
+    }
+    publishTable(table.id);
+    return { ok: true, closed: true };
+  });
 }
 
 export async function updateTableSettings(input: {

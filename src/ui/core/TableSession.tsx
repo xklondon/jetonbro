@@ -69,6 +69,10 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
         router.push("/");
         return;
       }
+      if (command === "saveTable" || command === "closeTable") {
+        router.push("/");
+        return;
+      }
       const refresh = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
       if (!refresh.ok) {
         const failed = (await refresh.json()) as { error?: string };

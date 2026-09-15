@@ -20,10 +20,10 @@ const box = (overrides: Partial<BoxView> = {}): BoxView => ({
   outcome: null,
   returned: null,
   payoutActions: [
-    { outcome: "WON", label: "Won" },
-    { outcome: "PUSH", label: "Push" },
-    { outcome: "LOST", label: "Lost" },
-    { outcome: "BLACKJACK", label: "Blackjack" },
+    { outcome: "WON", label: "Win · return 50", swipeLabel: "WIN +50" },
+    { outcome: "PUSH", label: "Push · return 25", swipeLabel: "Push · return 25" },
+    { outcome: "LOST", label: "Lose · return 0", swipeLabel: "LOSS · 0" },
+    { outcome: "BLACKJACK", label: "Blackjack · return 62.5", swipeLabel: "Blackjack · return 62.5" },
   ],
   ...overrides,
 });
@@ -54,12 +54,28 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
     lockedOrdinary: { millis: "25000", label: "25" },
     insurance: { window: "CLOSED", total: { millis: "0", label: "0" }, count: 0, resolution: null },
     bettingCloseDeadlineAt: null,
+    nextRoundDeadlineAt: null,
     hasValidBet: true,
+    players: [
+      {
+        userId: "p1",
+        name: "Alex",
+        available: { millis: "100000", label: "100" },
+        locked: { millis: "25000", label: "25" },
+        status: "Betting",
+        boxes: [box({ insurance: null })],
+      },
+    ],
+    isOwner: true,
+    tableStatus: "ACTIVE",
+    paused: false,
+    closePreview: null,
     actions: {
       dealCards: true,
       scheduleDeal: true,
       payoutPhase: false,
       nextHand: false,
+      scheduleNextRound: false,
       openInsurance: false,
       closeInsurance: false,
       settleBoxes: false,
@@ -67,6 +83,8 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
       addPlayer: true,
       giveJetons: true,
       changeBank: true,
+      saveTable: true,
+      closeTable: false,
     },
     insuranceSettleActions: [
       { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
@@ -101,6 +119,7 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
           scheduleDeal: false,
           payoutPhase: true,
           nextHand: false,
+          scheduleNextRound: false,
           openInsurance: false,
           closeInsurance: true,
           settleBoxes: false,
@@ -108,6 +127,8 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
           addPlayer: false,
           giveJetons: false,
           changeBank: false,
+          saveTable: true,
+          closeTable: false,
         },
       }),
       members,
@@ -127,14 +148,25 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
         phase: "PAYOUT",
         phaseLabel: "PAYOUT",
         title: "Settle the round",
-        primaryAction: { id: "nextHand", label: "Start next hand", enabled: false },
+        primaryAction: { id: "nextHand", label: "NEXT ROUND NOW", enabled: false },
         boxes: [box()],
+        players: [
+          {
+            userId: "p1",
+            name: "Alex",
+            available: { millis: "100000", label: "100" },
+            locked: { millis: "25000", label: "25" },
+            status: "Awaiting payout",
+            boxes: [box(), box({ id: "2", boxNumber: 2, label: "Box 2", isSplit: true })],
+          },
+        ],
         insurance: { window: "CLOSED", total: { millis: "12500", label: "12.5" }, count: 1, resolution: null },
         actions: {
           dealCards: false,
           scheduleDeal: false,
           payoutPhase: false,
           nextHand: false,
+          scheduleNextRound: false,
           openInsurance: false,
           closeInsurance: false,
           settleBoxes: true,
@@ -142,6 +174,8 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
           addPlayer: false,
           giveJetons: false,
           changeBank: false,
+          saveTable: true,
+          closeTable: false,
         },
       }),
       members,
@@ -149,9 +183,59 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
     }),
   );
   expect(html).toContain("PAYOUT");
-  expect(html).toContain("Start next hand");
-  expect(html).toContain("Won");
+  expect(html).toContain("NEXT ROUND NOW");
+  expect(html).toContain("NEXT ROUND IN 7 SECONDS");
+  expect(html).toContain("dealer-list");
+  expect(html).not.toContain("dealer-grid");
+  expect(html).toContain("Box 2");
+  expect(html).toContain("WIN +50");
+  expect(html).toContain("LOSS · 0");
+  expect(html).toContain("Push · return 25");
+  expect(html).toContain("Blackjack · return 62.5");
   expect(html).toContain("Dealer Blackjack");
   expect(html).not.toContain("Deal cards");
-  expect(html).toMatch(/<button[^>]*disabled[^>]*>Start next hand/);
+  expect(html).toMatch(/<button[^>]*disabled[^>]*>NEXT ROUND NOW/);
+});
+
+test("resolved boxes keep row state without payout controls", () => {
+  const resolved = box({ outcome: "WON", returned: { millis: "50000", label: "50" } });
+  const html = renderToStaticMarkup(
+    createElement(ClassicBankTable, {
+      view: bankView({
+        phase: "PAYOUT",
+        phaseLabel: "PAYOUT",
+        boxes: [resolved],
+        players: [
+          {
+            userId: "p1",
+            name: "Alex",
+            available: { millis: "100000", label: "100" },
+            locked: { millis: "0", label: "0" },
+            status: "Settled",
+            boxes: [resolved],
+          },
+        ],
+        actions: {
+          dealCards: false,
+          scheduleDeal: false,
+          payoutPhase: false,
+          nextHand: false,
+          scheduleNextRound: false,
+          openInsurance: false,
+          closeInsurance: false,
+          settleBoxes: true,
+          settleInsurance: false,
+          addPlayer: false,
+          giveJetons: false,
+          changeBank: false,
+          saveTable: true,
+          closeTable: false,
+        },
+      }),
+      members,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("Win · 50");
+  expect(html).not.toContain("payout-access");
 });

@@ -8,6 +8,8 @@ export type HomeTableCard = {
   playerCount: number;
   role: string;
   updatedAt: string;
+  saved: boolean;
+  closed: boolean;
 };
 
 const PHASE_RANK: Record<string, number> = {
@@ -48,10 +50,12 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
       id: membership.table.id,
       name: membership.table.name,
       game: gameLabel(membership.table.game),
-      phase: membership.table.currentPhase,
+      phase: membership.table.status === "ARCHIVED" ? "CLOSED" : membership.table.pausedAt ? "SAVED" : membership.table.currentPhase,
       playerCount: membership.table.members.length,
       role: roleLabel(membership.table.bankDealerId === userId, membership.table.ownerId === userId),
       updatedAt: membership.table.updatedAt.toISOString(),
+      saved: membership.table.pausedAt !== null && membership.table.status !== "ARCHIVED",
+      closed: membership.table.status === "ARCHIVED",
     }))
     .sort((a, b) => {
       const rank = (PHASE_RANK[a.phase] ?? 9) - (PHASE_RANK[b.phase] ?? 9);

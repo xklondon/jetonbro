@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Dealer payouts, next round, and table close
+
+- Bank/Dealer PAYOUT is a compact vertical player list. Each unresolved box is settled independently: swipe right WIN, swipe left LOSS, double-tap PUSH, with accessible Win/Push/Lose/Blackjack. Labels come from `suggestedPayout`; balances update only after the snapshot confirms settlement.
+- After every required box and Insurance stake is settled, `NEXT ROUND NOW` and `NEXT ROUND IN 7 SECONDS` replace Start next hand. The countdown uses `Round.nextRoundDeadlineAt`. Immediate start during the countdown still creates only one next BETTING round.
+- Short Classic outcome celebrations run only after confirmed settlement, respect `prefers-reduced-motion`, and never change accounting.
+- Owner SAVE TABLE pauses the table (`pausedAt`) without moving balances. CLOSE TABLE & SAVE BALANCES moves each Player’s AVAILABLE into `PLAYER_POCKET` with `TABLE_TRANSFER_OUT`, then later tables credit `TABLE_TRANSFER_IN` on join. Closed tables reject gameplay commands. The Bank virtual reserve is not stored or transported.
+
 ### Table setup and betting
 
 - `CREATE A TABLE` immediately creates or reuses one `TABLE_SETUP` draft and opens `/tables/{tableId}` with a single setup mask over the real Dealer table. The mask already shows the shared table QR.

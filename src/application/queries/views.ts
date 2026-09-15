@@ -14,6 +14,7 @@ export type ChipView = {
 export type PayoutActionView = {
   outcome: BoxOutcome;
   label: string;
+  swipeLabel?: string;
 };
 
 export type BoxView = {
@@ -67,11 +68,26 @@ export type PlayerPermittedActions = {
   insurance: boolean;
 };
 
+export type BankPlayerGroupView = {
+  userId: string;
+  name: string;
+  available: MoneyView;
+  locked: MoneyView;
+  status: string;
+  boxes: BoxView[];
+};
+
+export type CloseTablePreview = {
+  confirmation: string;
+  players: { userId: string; name: string; available: MoneyView; locked: MoneyView }[];
+};
+
 export type BankPermittedActions = {
   dealCards: boolean;
   scheduleDeal: boolean;
   payoutPhase: boolean;
   nextHand: boolean;
+  scheduleNextRound: boolean;
   openInsurance: boolean;
   closeInsurance: boolean;
   settleBoxes: boolean;
@@ -79,6 +95,8 @@ export type BankPermittedActions = {
   addPlayer: boolean;
   giveJetons: boolean;
   changeBank: boolean;
+  saveTable: boolean;
+  closeTable: boolean;
 };
 
 export type PlayerTableView = {
@@ -92,6 +110,7 @@ export type PlayerTableView = {
   actions: PlayerPermittedActions;
   insuranceWindowOpen: boolean;
   bettingCloseDeadlineAt: string | null;
+  nextRoundDeadlineAt: string | null;
 };
 
 export type BankTableView = {
@@ -103,6 +122,7 @@ export type BankTableView = {
   phaseLabel: string;
   primaryAction: { id: "dealCards" | "payoutPhase" | "nextHand" | "settleAll"; label: string; enabled: boolean };
   boxes: BoxView[];
+  players: BankPlayerGroupView[];
   playerCount: number;
   boxCount: number;
   lockedOrdinary: MoneyView;
@@ -110,7 +130,12 @@ export type BankTableView = {
   actions: BankPermittedActions;
   insuranceSettleActions: { id: InsurancePotView["window"] extends never ? never : string; label: string }[];
   bettingCloseDeadlineAt: string | null;
+  nextRoundDeadlineAt: string | null;
   hasValidBet: boolean;
+  isOwner: boolean;
+  tableStatus: "SETUP" | "ACTIVE" | "ARCHIVED";
+  paused: boolean;
+  closePreview: CloseTablePreview | null;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";
@@ -144,6 +169,9 @@ export type SetupTableView = {
   startBlockedReason: string | null;
   isOwner: boolean;
   setupCompleted: boolean;
+  tableStatus: "SETUP" | "ACTIVE" | "ARCHIVED";
+  paused: boolean;
+  closePreview: CloseTablePreview | null;
 };
 
 export type WaitingTableView = {
@@ -162,6 +190,7 @@ export type ClientSnapshot = {
   isOwner: boolean;
   isBank: boolean;
   phase: RoundPhase;
+  tableClosed: boolean;
   members: MemberView[];
   setup: SetupTableView | null;
   waiting: WaitingTableView | null;

@@ -1,0 +1,1 @@
+export const NEXT_ROUND_COUNTDOWN_MS = 7000;

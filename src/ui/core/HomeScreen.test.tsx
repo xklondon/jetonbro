@@ -59,6 +59,9 @@ const setupView = (overrides: Partial<SetupTableView> = {}): SetupTableView => (
   startBlockedReason: "Waiting for a player to join",
   isOwner: true,
   setupCompleted: false,
+  tableStatus: "SETUP",
+  paused: false,
+  closePreview: null,
   ...overrides,
 });
 

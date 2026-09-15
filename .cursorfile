@@ -49,8 +49,8 @@ Insurance is a Bank-triggered window during PLAYING, not a phase. It is settled 
 
 ## Permissions
 
-- Owner: create table, invite, add/remove players before a round, assign Bank/Dealer, distribute jetons, archive later.
-- Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next hand.
+- Owner: create table, invite, add/remove players before a round, assign Bank/Dealer, distribute jetons, save table, close table and transport remaining AVAILABLE to `PLAYER_POCKET`. Dealer reassignment does not transfer ownership.
+- Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next round.
 - Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open.
 
 ## Design architecture
@@ -152,7 +152,10 @@ Full acceptance means:
 - Authenticated home: `CREATE A TABLE` creates or reuses one `TABLE_SETUP` draft and opens the table under a single setup mask
 - Dealer `TABLE_SETUP`: after `SET UP TABLE`, the real table surface is visible immediately. Compact QR overlay and `+ PLAYER` stay in the top controls. No permanent centre QR / waiting-room page
 - Betting close: `Round.bettingCloseDeadlineAt` is the server-authoritative 7-second deal deadline
+- Next round: after every box and required Insurance stake is settled, the Bank uses `NEXT ROUND NOW` or `NEXT ROUND IN 7 SECONDS`. The seven-second option stores `Round.nextRoundDeadlineAt` (not `bettingCloseDeadlineAt`). Refresh resumes that deadline. At zero, or on `NEXT ROUND NOW`, the table opens exactly one new BETTING round.
+- Dealer PAYOUT: compact vertical player list. Swipe right WIN, swipe left LOSS, double-tap PUSH. Accessible Win/Push/Lose/Blackjack remain. Labels come from `suggestedPayout`. Insurance is independent of box swipes.
+- Owner SAVE TABLE sets `Table.pausedAt` and keeps membership, table balances, and ledger history. CLOSE TABLE & SAVE BALANCES is owner-only, allowed only with no locked positions during `TABLE_SETUP` or `ROUND_COMPLETE`, writes `TABLE_TRANSFER_OUT` into `PLAYER_POCKET`, marks `ARCHIVED`/`closedAt`, and later joins write `TABLE_TRANSFER_IN`. The Bank virtual reserve is not stored or transported. Dealer reassignment does not transfer ownership.
 - Verification: lightweight local changes use guardrails, affected Vitest, and `next build`. Full Playwright, screenshots, commit, push, and Railway deploy only for ledger/auth/phase/migration work or an accepted release batch
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
 - Email delivery: Resend HTTP API. Magic-link sign-in works on production
-- Next milestone: archive/change-game UX after this production betting deploy
+- Next milestone: change-game UX after accepted close/archive transport

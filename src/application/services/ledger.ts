@@ -58,3 +58,27 @@ export async function creditTableAvailable(
   });
   return { before: member.availableMillis, after };
 }
+
+export async function creditPlayerPocket(
+  tx: Tx,
+  userId: string,
+  amount: bigint,
+): Promise<{ before: bigint; after: bigint }> {
+  const account = await tx.playerAccount.upsert({
+    where: { userId },
+    update: {},
+    create: { userId, globalAvailableMillis: 0n },
+  });
+  if (amount === 0n) {
+    return { before: account.globalAvailableMillis, after: account.globalAvailableMillis };
+  }
+  const after = account.globalAvailableMillis + amount;
+  if (after < 0n) {
+    throw new DomainError("INSUFFICIENT_FUNDS", "You do not have enough jetons");
+  }
+  await tx.playerAccount.update({
+    where: { userId },
+    data: { globalAvailableMillis: after },
+  });
+  return { before: account.globalAvailableMillis, after };
+}

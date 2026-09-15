@@ -1,18 +1,16 @@
 import { prisma } from "@/application/db";
-import {
-  insuranceMaxMillis,
-  ordinaryReturnMillis,
-  type BoxOutcome,
-} from "@/domain/blackjack/payouts";
+import { insuranceMaxMillis, suggestedPayouts } from "@/domain/blackjack/payouts";
 import { formatJetons } from "@/domain/money";
 import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
-import { ensureBettingClosedIfDue } from "@/application/services/blackjack-round";
+import { ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
 import type {
+  BankPlayerGroupView,
   BankTableView,
   BoxView,
   ClientSnapshot,
+  CloseTablePreview,
   MoneyView,
   PlayerTableView,
   SetupTableView,
@@ -32,24 +30,18 @@ function displayName(user: { name: string | null; email: string }): string {
 const BANK_COPY: Record<string, [string, string]> = {
   BETTING: ["Players are betting", "Add players or distribute jetons while bets are open"],
   PLAYING: ["Cards are in play", "Every active box remains visible"],
-  PAYOUT: ["Settle every box", "Tap Won, Push, Lost or Blackjack for each box"],
-  ROUND_COMPLETE: ["Round complete", "Start the next hand when you are ready"],
+  PAYOUT: ["Settle every box", "Win, Push, Lose or Blackjack for each box"],
+  ROUND_COMPLETE: ["Round complete", "Start the next round when every position is settled"],
 };
 
 function payoutActions(
   stake: bigint,
   rule: "THREE_TWO" | "SIX_FIVE",
 ): BoxView["payoutActions"] {
-  const outcomes: BoxOutcome[] = ["WON", "PUSH", "LOST", "BLACKJACK"];
-  const names: Record<BoxOutcome, string> = {
-    WON: "Won",
-    PUSH: "Push",
-    LOST: "Lost",
-    BLACKJACK: "Blackjack",
-  };
-  return outcomes.map((outcome) => ({
-    outcome,
-    label: `${names[outcome]} · return ${formatJetons(ordinaryReturnMillis(stake, outcome, rule))}`,
+  return suggestedPayouts(stake, rule).map((item) => ({
+    outcome: item.outcome,
+    label: item.buttonLabel,
+    swipeLabel: item.swipeLabel,
   }));
 }
 
@@ -60,6 +52,7 @@ function boxLabelForPlayer(box: { displayLabel: string; boxNumber: number; isSpl
 
 export async function loadSnapshot(tableId: string, viewerId: string): Promise<ClientSnapshot> {
   await ensureBettingClosedIfDue(tableId);
+  await ensureNextRoundIfDue(tableId);
   const table = await prisma.table.findUnique({
     where: { id: tableId },
     include: {
@@ -92,9 +85,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       id: box.id,
       playerId: box.playerId,
       playerName: player ? displayName(player) : "Player",
-      label: isBank ? `${player ? displayName(player).toUpperCase() : "PLAYER"} · BOX ${box.boxNumber}` : boxLabelForPlayer(box),
+      label: isBank
+        ? box.isSplitOffshoot
+          ? box.displayLabel
+          : `Box ${box.boxNumber}`
+        : boxLabelForPlayer(box),
       boxNumber: box.boxNumber,
-      bet: money(box.lockedBetMillis || box.originalStakeMillis),
+      bet: money(box.outcome ? box.originalStakeMillis : box.lockedBetMillis || box.originalStakeMillis),
       originalStake: money(box.originalStakeMillis),
       isDoubled: box.isDoubled,
       isSplit: box.isSplitOffshoot,
@@ -107,9 +104,30 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         : null,
       outcome: box.outcome,
       returned: box.returnedMillis !== null ? money(box.returnedMillis) : null,
-      payoutActions: payoutActions(box.lockedBetMillis, table.blackjackPayout),
+      payoutActions: payoutActions(box.lockedBetMillis || box.originalStakeMillis, table.blackjackPayout),
     };
   });
+
+  const playerMembers = table.members.filter((member) => !member.isBankDealer && member.userId !== table.bankDealerId);
+  const closePreview: CloseTablePreview = {
+    confirmation: "Save each Player’s remaining jetons to their personal ledger and close this table?",
+    players: playerMembers.map((member) => {
+      const playerBoxes = (table.currentRound?.boxes ?? []).filter(
+        (box) => box.playerId === member.userId && !box.removedAt,
+      );
+      const lockedBet = playerBoxes.reduce((sum, box) => sum + box.lockedBetMillis, 0n);
+      const lockedIns =
+        table.currentRound?.insuranceBets
+          .filter((bet) => bet.playerId === member.userId && !bet.settledKey)
+          .reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
+      return {
+        userId: member.userId,
+        name: displayName(member.user),
+        available: money(member.availableMillis),
+        locked: money(lockedBet + lockedIns),
+      };
+    }),
+  };
 
   const setup: SetupTableView | null =
     table.currentPhase === "TABLE_SETUP" && (isOwner || isBank)
@@ -186,6 +204,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
                 : null,
           isOwner,
           setupCompleted: table.setupCompletedAt !== null,
+          tableStatus: table.status,
+          paused: table.pausedAt !== null,
+          closePreview: isOwner ? closePreview : null,
         }
       : null;
 
@@ -209,7 +230,56 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   const insuranceOpen = table.currentRound?.insuranceWindow === "OPEN";
   const unresolvedInsurance =
     (table.currentRound?.insuranceBets.length ?? 0) > 0 && table.currentRound?.insuranceWindow !== "SETTLED";
-  const canNextHand = table.currentPhase === "ROUND_COMPLETE";
+  const unresolvedBoxes = boxes.some((box) => !box.outcome);
+  const lockedInsuranceOpen =
+    unresolvedInsurance ||
+    (table.currentRound?.insuranceBets.some((bet) => !bet.settledKey) ?? false);
+  const canNextHand = table.currentPhase === "ROUND_COMPLETE" && !unresolvedBoxes && !lockedInsuranceOpen;
+  const nextRoundDeadline = table.currentRound?.nextRoundDeadlineAt?.toISOString() ?? null;
+  const nextRoundCountdownActive = Boolean(
+    table.currentPhase === "ROUND_COMPLETE" &&
+      table.currentRound?.nextRoundDeadlineAt &&
+      table.currentRound.nextRoundDeadlineAt.getTime() > Date.now(),
+  );
+  const tableClosed = table.status === "ARCHIVED";
+  const anyLocked = closePreview.players.some((player) => BigInt(player.locked.millis) > 0n);
+  const canCloseTable =
+    isOwner &&
+    !tableClosed &&
+    !anyLocked &&
+    (table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
+
+  const players: BankPlayerGroupView[] = playerMembers.map((member) => {
+    const playerBoxes = boxes.filter((box) => box.playerId === member.userId);
+    const lockedBet = (table.currentRound?.boxes ?? [])
+      .filter((box) => box.playerId === member.userId && !box.removedAt)
+      .reduce((sum, box) => sum + box.lockedBetMillis, 0n);
+    const lockedIns =
+      table.currentRound?.insuranceBets
+        .filter((bet) => bet.playerId === member.userId && !bet.settledKey)
+        .reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
+    const allSettled = playerBoxes.length > 0 && playerBoxes.every((box) => Boolean(box.outcome));
+    const status =
+      table.currentPhase === "BETTING"
+        ? "Betting"
+        : table.currentPhase === "PLAYING"
+          ? "In play"
+          : table.currentPhase === "PAYOUT"
+            ? allSettled
+              ? "Settled"
+              : "Awaiting payout"
+            : table.currentPhase === "ROUND_COMPLETE"
+              ? "Round complete"
+              : "At table";
+    return {
+      userId: member.userId,
+      name: displayName(member.user),
+      available: money(member.availableMillis),
+      locked: money(lockedBet + lockedIns),
+      status,
+      boxes: playerBoxes,
+    };
+  });
 
   const player: PlayerTableView | null =
     !isBank && table.currentPhase !== "TABLE_SETUP"
@@ -223,6 +293,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           boxes: ownBoxes,
           insuranceWindowOpen: insuranceOpen,
           bettingCloseDeadlineAt: table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null,
+          nextRoundDeadlineAt: nextRoundDeadline,
           actions: {
             bet: table.currentPhase === "BETTING",
             retract: table.currentPhase === "BETTING",
@@ -239,7 +310,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         ? null
         : null;
 
-  const lockedOrdinary = boxes.reduce((sum, box) => sum + BigInt(box.bet.millis), 0n);
+  const lockedOrdinary = (table.currentRound?.boxes ?? [])
+    .filter((box) => !box.removedAt)
+    .reduce((sum, box) => sum + box.lockedBetMillis, 0n);
   const insuranceTotal =
     table.currentRound?.insuranceBets.reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
 
@@ -261,14 +334,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         phaseLabel: table.currentPhase.replace("_", " "),
         primaryAction:
           table.currentPhase === "BETTING"
-            ? { id: "dealCards", label: "DEAL CARDS NOW", enabled: hasValidBet }
+            ? { id: "dealCards", label: "DEAL CARDS NOW", enabled: hasValidBet && !tableClosed }
             : table.currentPhase === "PLAYING"
-              ? { id: "payoutPhase", label: "Payout phase", enabled: true }
-              : table.currentPhase === "PAYOUT"
-                ? { id: "nextHand", label: "Start next hand", enabled: false }
-                : { id: "nextHand", label: "Start next hand", enabled: canNextHand },
+              ? { id: "payoutPhase", label: "Payout phase", enabled: !tableClosed }
+              : { id: "nextHand", label: "NEXT ROUND NOW", enabled: canNextHand && !tableClosed },
         boxes,
-        playerCount: new Set(boxes.map((box) => box.playerId)).size,
+        players,
+        playerCount: players.length,
         boxCount: boxes.length,
         lockedOrdinary: money(lockedOrdinary),
         insurance: {
@@ -278,33 +350,42 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           resolution: table.currentRound?.insuranceResolution ?? null,
         },
         actions: {
-          dealCards: table.currentPhase === "BETTING" && hasValidBet,
-          scheduleDeal: table.currentPhase === "BETTING" && hasValidBet && !countdownActive,
-          payoutPhase: table.currentPhase === "PLAYING",
-          nextHand: canNextHand,
+          dealCards: table.currentPhase === "BETTING" && hasValidBet && !tableClosed,
+          scheduleDeal: table.currentPhase === "BETTING" && hasValidBet && !countdownActive && !tableClosed,
+          payoutPhase: table.currentPhase === "PLAYING" && !tableClosed,
+          nextHand: canNextHand && !tableClosed,
+          scheduleNextRound: canNextHand && !nextRoundCountdownActive && !tableClosed,
           openInsurance:
             table.currentPhase === "PLAYING" &&
             table.insuranceEnabled &&
             table.currentRound?.insuranceWindow !== "OPEN" &&
-            table.currentRound?.insuranceWindow !== "SETTLED",
-          closeInsurance: table.currentPhase === "PLAYING" && insuranceOpen,
-          settleBoxes: table.currentPhase === "PAYOUT",
-          settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance,
-          addPlayer: table.currentPhase === "BETTING",
-          giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons,
-          changeBank: table.currentPhase === "BETTING" && isOwner,
+            table.currentRound?.insuranceWindow !== "SETTLED" &&
+            !tableClosed,
+          closeInsurance: table.currentPhase === "PLAYING" && insuranceOpen && !tableClosed,
+          settleBoxes: table.currentPhase === "PAYOUT" && !tableClosed,
+          settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance && !tableClosed,
+          addPlayer: table.currentPhase === "BETTING" && !tableClosed,
+          giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
+          changeBank: table.currentPhase === "BETTING" && isOwner && !tableClosed,
+          saveTable: isOwner && !tableClosed,
+          closeTable: canCloseTable,
         },
         insuranceSettleActions: [
           { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
           { id: "NO_DEALER_BLACKJACK", label: "No Blackjack" },
         ],
         bettingCloseDeadlineAt: deadline,
+        nextRoundDeadlineAt: nextRoundDeadline,
         hasValidBet,
+        isOwner,
+        tableStatus: table.status,
+        paused: table.pausedAt !== null,
+        closePreview: isOwner ? closePreview : null,
       }
     : null;
 
   if (isBank && table.currentPhase === "ROUND_COMPLETE" && bank) {
-    bank.primaryAction = { id: "nextHand", label: "Start next hand", enabled: true };
+    bank.primaryAction = { id: "nextHand", label: "NEXT ROUND NOW", enabled: canNextHand && !tableClosed };
   }
 
   return {
@@ -314,6 +395,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     isOwner,
     isBank,
     phase: table.currentPhase,
+    tableClosed,
     members: table.members.map((member) => ({
       userId: member.userId,
       name: displayName(member.user),

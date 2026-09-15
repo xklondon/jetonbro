@@ -12,6 +12,8 @@ export type HomeTableCardView = {
   phase: string;
   playerCount: number;
   role: string;
+  saved?: boolean;
+  closed?: boolean;
 };
 
 function phaseLabel(phase: string): string {
@@ -97,15 +99,19 @@ export function ClassicHome({
                   <div>
                     <strong>{table.name}</strong>
                     <div className="muted">
-                      {table.game} · {phaseLabel(table.phase)}
+                      {table.game} · {table.closed ? "Closed" : table.saved ? "Saved" : phaseLabel(table.phase)}
                     </div>
                     <div className="muted">
                       {table.playerCount} {table.playerCount === 1 ? "player" : "players"} · {table.role}
                     </div>
                   </div>
-                  <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
-                    RETURN TO TABLE
-                  </button>
+                  {table.closed ? (
+                    <div className="muted">Balances saved to personal ledgers</div>
+                  ) : (
+                    <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
+                      RETURN TO TABLE
+                    </button>
+                  )}
                 </article>
               ))}
             </div>

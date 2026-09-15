@@ -49,14 +49,14 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await playerPage.screenshot({ path: join(out, "app-player-before-bet-390x844.png") });
   await playerPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(playerPage.getByText("75", { exact: true }).first()).toBeVisible();
-  await expect(playerPage.locator(".box").first()).toContainText("25");
+  await expect(playerPage.locator(".player-box, .box").first()).toContainText("25");
   await playerPage.screenshot({ path: join(out, "app-player-after-bet-25-390x844.png") });
   await playerPage.reload();
   await expect(playerPage.getByText("75", { exact: true }).first()).toBeVisible();
-  await expect(playerPage.locator(".box").first()).toContainText("25");
+  await expect(playerPage.locator(".player-box, .box").first()).toContainText("25");
 
   await page.reload();
-  await expect(page.locator(".box").first()).toContainText("25");
+  await expect(page.locator(".payout-row, .dealer-player").first()).toContainText("25");
   await page.screenshot({ path: join(out, "app-bank-player-bet-25-390x844.png") });
 
   await playerContext.close();

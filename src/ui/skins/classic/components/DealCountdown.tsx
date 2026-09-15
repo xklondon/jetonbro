@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export function DealCountdown({ deadline }: { deadline: string | null }) {
+export function DealCountdown({ deadline, label = "Cards in" }: { deadline: string | null; label?: string }) {
   const [seconds, setSeconds] = useState<number | null>(null);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function DealCountdown({ deadline }: { deadline: string | null }) {
   if (!seconds) return null;
   return (
     <div className="deal-countdown" aria-live="polite">
-      Cards in {seconds}
+      {label} {seconds}
     </div>
   );
 }

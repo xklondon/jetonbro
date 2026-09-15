@@ -4,7 +4,7 @@ import { withIdempotency } from "@/application/idempotency";
 import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
-import { requireOwnerOrBank, creditStartingJetonsOnce } from "@/application/services/tables";
+import { requireOwnerOrBank, creditStartingJetonsOnce, transferPocketIntoTable } from "@/application/services/tables";
 import { DomainError, NotFoundError } from "@/domain/errors";
 import { assertInvitationUsable } from "@/domain/invitations/types";
 
@@ -129,6 +129,12 @@ export async function joinWithToken(input: { userId: string; token: string; user
           startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
           isBankDealer: false,
         });
+        await transferPocketIntoTable(tx, {
+          tableId: table.id,
+          memberId: existing.id,
+          userId: input.userId,
+          actorId: input.userId,
+        });
       }
       return;
     }
@@ -169,6 +175,12 @@ export async function joinWithToken(input: { userId: string; token: string; user
         actorId: input.userId,
         startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
         isBankDealer: false,
+      });
+      await transferPocketIntoTable(tx, {
+        tableId: table.id,
+        memberId: member.id,
+        userId: input.userId,
+        actorId: input.userId,
       });
     }
   });

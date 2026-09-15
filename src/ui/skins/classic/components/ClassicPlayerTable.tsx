@@ -53,6 +53,7 @@ export function ClassicPlayerTable({
         <strong>{view.title}</strong>
         <span>{view.copy}</span>
         <DealCountdown deadline={view.bettingCloseDeadlineAt} />
+        <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
       </div>
       <main className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}>
         <div className={boxClass}>

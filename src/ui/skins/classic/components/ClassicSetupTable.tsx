@@ -17,6 +17,7 @@ export function ClassicSetupTable({
   const [emails, setEmails] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState<"menu" | "close" | null>(null);
   const [qrData, setQrData] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const playerSeats = view.seats.filter((seat) => seat.status !== "Bank / Dealer");
@@ -48,7 +49,7 @@ export function ClassicSetupTable({
   }
 
   return (
-    <PhoneShell>
+    <PhoneShell onMenu={view.isOwner ? () => setMenuOpen("menu") : undefined}>
       <div>
       <div className="phase-head">
         <strong>{view.tableName}</strong>
@@ -173,6 +174,50 @@ export function ClassicSetupTable({
           </div>
         </div>
       ) : null}
+      <div className={`sheet${menuOpen ? " open" : ""}`}>
+        <div className="sheet-panel">
+          {menuOpen === "menu" ? (
+            <>
+              <h3>Table</h3>
+              <button className="gold-button" type="button" onClick={() => { onCommand("saveTable"); setMenuOpen(null); }}>
+                SAVE TABLE
+              </button>
+              <button className="gold-button" type="button" onClick={() => setMenuOpen("close")}>
+                CLOSE TABLE & SAVE BALANCES
+              </button>
+              <button className="text-link" type="button" onClick={() => setMenuOpen(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {menuOpen === "close" ? (
+            <>
+              <h3>Close this table</h3>
+              <p>{view.closePreview?.confirmation ?? "Save each Player’s remaining jetons to their personal ledger and close this table?"}</p>
+              {(view.closePreview?.players ?? []).map((player) => (
+                <div className="member-row" key={player.userId}>
+                  <div>
+                    <strong>{player.name}</strong>
+                    <div className="muted">Personal ledger · {player.available.label}</div>
+                    <div className="muted">Locked {player.locked.label}</div>
+                  </div>
+                </div>
+              ))}
+              <button
+                className="gold-button"
+                type="button"
+                disabled={view.closePreview?.players.some((player) => player.locked.millis !== "0") ?? false}
+                onClick={() => { onCommand("closeTable"); setMenuOpen(null); }}
+              >
+                Confirm close
+              </button>
+              <button className="text-link" type="button" onClick={() => setMenuOpen("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
     </PhoneShell>
   );
 }

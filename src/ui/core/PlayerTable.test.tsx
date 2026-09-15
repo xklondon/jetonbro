@@ -13,6 +13,7 @@ const view: PlayerTableView = {
   available: { millis: "75000", label: "75" },
   insuranceWindowOpen: false,
   bettingCloseDeadlineAt: null,
+  nextRoundDeadlineAt: null,
   actions: {
     bet: false,
     retract: false,

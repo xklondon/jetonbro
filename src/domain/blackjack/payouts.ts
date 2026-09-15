@@ -1,5 +1,5 @@
 import { DomainError } from "../errors";
-import type { JetonMillis } from "../money";
+import { formatJetons, type JetonMillis } from "../money";
 
 export const PAYOUT_RULES = ["THREE_TWO", "SIX_FIVE"] as const;
 export type BlackjackPayoutRule = (typeof PAYOUT_RULES)[number];
@@ -83,6 +83,40 @@ export function insuranceProfitMillis(lockedInsurance: JetonMillis, resolution: 
 
 export function insuranceMaxMillis(originalStake: JetonMillis): JetonMillis {
   return originalStake / 2n;
+}
+
+export type SuggestedPayout = {
+  outcome: BoxOutcome;
+  returnMillis: JetonMillis;
+  swipeLabel: string;
+  buttonLabel: string;
+};
+
+const OUTCOME_BUTTON: Record<BoxOutcome, string> = {
+  WON: "Win",
+  PUSH: "Push",
+  LOST: "Lose",
+  BLACKJACK: "Blackjack",
+};
+
+/** Authoritative labels for a box stake. Skins must not recompute returns. */
+export function suggestedPayout(
+  lockedStake: JetonMillis,
+  outcome: BoxOutcome,
+  rule: BlackjackPayoutRule,
+): SuggestedPayout {
+  const returnMillis = ordinaryReturnMillis(lockedStake, outcome, rule);
+  const returned = formatJetons(returnMillis);
+  return {
+    outcome,
+    returnMillis,
+    swipeLabel: outcome === "LOST" ? "LOSS · 0" : outcome === "WON" ? `WIN +${returned}` : `${OUTCOME_BUTTON[outcome]} · return ${returned}`,
+    buttonLabel: `${OUTCOME_BUTTON[outcome]} · return ${returned}`,
+  };
+}
+
+export function suggestedPayouts(lockedStake: JetonMillis, rule: BlackjackPayoutRule): SuggestedPayout[] {
+  return BOX_OUTCOMES.map((outcome) => suggestedPayout(lockedStake, outcome, rule));
 }
 
 export function outcomeLedgerType(outcome: BoxOutcome) {

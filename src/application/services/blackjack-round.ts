@@ -16,11 +16,13 @@ import { DEAL_COUNTDOWN_MS } from "@/domain/blackjack/deal";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@/domain/errors";
 import { formatJetons, parseJetonInput } from "@/domain/money";
 import type { Prisma } from "@prisma/client";
-import { clearDealTimer, scheduleDealTimer } from "@/application/services/deal-timer";
+import { clearDealTimer, clearNextRoundTimer, scheduleDealTimer, scheduleNextRoundTimer } from "@/application/services/deal-timer";
+import { NEXT_ROUND_COUNTDOWN_MS } from "@/domain/blackjack/next-round";
 
 type Tx = Prisma.TransactionClient;
 
 async function loadTableForUpdate(tx: Tx, tableId: string) {
+  await tx.$queryRaw`SELECT id FROM "Table" WHERE id = ${tableId} FOR UPDATE`;
   const table = await tx.table.findUnique({
     where: { id: tableId },
     include: {
@@ -29,6 +31,9 @@ async function loadTableForUpdate(tx: Tx, tableId: string) {
     },
   });
   if (!table) throw new NotFoundError("Table not found.");
+  if (table.status === "ARCHIVED") {
+    throw new DomainError("TABLE_CLOSED", "This table is closed.");
+  }
   return table;
 }
 
@@ -156,6 +161,12 @@ export async function startBetting(input: { actorId: string; tableId: string; id
         }
       }
       const roundCount = await tx.round.count({ where: { tableId: table.id } });
+      if (table.currentRoundId) {
+        await tx.round.update({
+          where: { id: table.currentRoundId },
+          data: { nextRoundDeadlineAt: null },
+        });
+      }
       const round = await tx.round.create({
         data: {
           tableId: table.id,
@@ -179,9 +190,11 @@ export async function startBetting(input: { actorId: string; tableId: string; id
           currentPhase: "BETTING",
           currentRoundId: round.id,
           status: "ACTIVE",
+          pausedAt: null,
         },
       });
     });
+    clearNextRoundTimer(input.tableId);
     publishTable(input.tableId);
     return { ok: true };
   });
@@ -727,14 +740,70 @@ export async function settleInsurance(input: {
 
 export async function startNextRound(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "startNextRound", input, async () => {
+    await maybeCompleteRound(input.tableId);
     const table = await prisma.table.findUnique({ where: { id: input.tableId } });
     if (!table) throw new NotFoundError("Table not found.");
+    if (table.status === "ARCHIVED") {
+      throw new DomainError("TABLE_CLOSED", "This table is closed.");
+    }
     requireBank(table, input.actorId);
+    if (table.currentPhase === "BETTING") {
+      return { ok: true };
+    }
     requirePhase(table.currentPhase, "ROUND_COMPLETE");
     assertTransition("ROUND_COMPLETE", "BETTING");
+    clearNextRoundTimer(input.tableId);
     await startBetting({ ...input, idempotencyKey: `${input.idempotencyKey}:betting` });
     return { ok: true };
   });
+}
+
+export async function scheduleNextRound(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "scheduleNextRound", input, async () => {
+    await maybeCompleteRound(input.tableId);
+    const result = await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      requirePhase(table.currentPhase, "ROUND_COMPLETE");
+      if (!table.currentRound) throw new ConflictError("No round to continue.");
+      if (table.currentRound.nextRoundDeadlineAt && table.currentRound.nextRoundDeadlineAt.getTime() > Date.now()) {
+        return { deadline: table.currentRound.nextRoundDeadlineAt.toISOString() };
+      }
+      const deadline = new Date(Date.now() + NEXT_ROUND_COUNTDOWN_MS);
+      await tx.round.update({
+        where: { id: table.currentRound.id },
+        data: { nextRoundDeadlineAt: deadline },
+      });
+      return { deadline: deadline.toISOString() };
+    });
+    scheduleNextRoundTimer(input.tableId, new Date(result.deadline), async (tableId) => {
+      await ensureNextRoundIfDue(tableId);
+    });
+    publishTable(input.tableId);
+    return result;
+  });
+}
+
+export async function ensureNextRoundIfDue(tableId: string): Promise<boolean> {
+  const table = await prisma.table.findUnique({
+    where: { id: tableId },
+    include: { currentRound: true },
+  });
+  if (!table || table.status === "ARCHIVED") return false;
+  if (table.currentPhase !== "ROUND_COMPLETE" || !table.currentRound?.nextRoundDeadlineAt) {
+    return false;
+  }
+  if (table.currentRound.nextRoundDeadlineAt.getTime() > Date.now()) {
+    return false;
+  }
+  if (!table.bankDealerId) return false;
+  await startBetting({
+    actorId: table.bankDealerId,
+    tableId,
+    idempotencyKey: `next-round-due:${tableId}:${table.currentRound.id}`,
+  });
+  clearNextRoundTimer(tableId);
+  return true;
 }
 
 async function maybeCompleteRound(tableId: string) {

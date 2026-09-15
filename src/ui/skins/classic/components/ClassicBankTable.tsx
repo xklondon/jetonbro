@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BankTableView, MemberView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
-import { FeltBox } from "./FeltBox";
+import { DealerPayoutRow } from "./DealerPayoutRow";
+import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
+import { selectOutcomeCelebration, type OutcomeCelebration } from "@/ui/core/outcome-celebration";
+import { chipsFromMillis } from "./chips";
 
 export function ClassicBankTable({
   view,
@@ -17,57 +20,130 @@ export function ClassicBankTable({
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
 }) {
-  const [sheet, setSheet] = useState<"player" | "jetons" | null>(null);
+  const [sheet, setSheet] = useState<"player" | "jetons" | "menu" | "close" | null>(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
+  const [celebration, setCelebration] = useState<OutcomeCelebration | null>(null);
+  const seenOutcomes = useRef(new Set(view.boxes.filter((box) => box.outcome).map((box) => box.id)));
   const showInsurance = view.phase === "PLAYING" || view.phase === "PAYOUT" || view.insurance.count > 0;
+  const showNextRound = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const reducedMotion =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    for (const box of view.boxes) {
+      if (!box.outcome || seenOutcomes.current.has(box.id)) continue;
+      seenOutcomes.current.add(box.id);
+      const next = selectOutcomeCelebration(`${box.id}:${box.outcome}`, box.outcome, reducedMotion);
+      if (next.overlay) {
+        setCelebration(next);
+        window.setTimeout(() => setCelebration(null), 1400);
+      }
+    }
+  }, [view.boxes, reducedMotion]);
 
   return (
-    <PhoneShell rightLabel={`♠ ${view.boxCount}`}>
-      <div className="phase-head">
-        <strong>{view.title}</strong>
-        <span>{view.copy}</span>
-      </div>
-      <div className="bank-phase-control">
-        <div className="current">
-          CURRENT PHASE: <strong>{view.phaseLabel}</strong>
+    <PhoneShell rightLabel={`♠ ${view.boxCount}`} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
+      <OutcomeCelebrationOverlay celebration={celebration} />
+      <div>
+        <div className="phase-head">
+          <strong>{view.title}</strong>
+          <span>{view.copy}</span>
         </div>
-        <DealCountdown deadline={view.bettingCloseDeadlineAt} />
-        {view.phase === "BETTING" ? (
-          <div className="deal-actions">
-            <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
-              DEAL CARDS NOW
-            </button>
-            <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
-              DEAL IN 7 SECONDS
-            </button>
+        <div className="bank-phase-control">
+          <div className="current">
+            CURRENT PHASE: <strong>{view.phaseLabel}</strong>
           </div>
-        ) : (
-          <button
-            type="button"
-            disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
-            onClick={() => {
-              if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
-              if (view.primaryAction.id === "nextHand") onCommand("startNextRound");
-            }}
-          >
-            {view.primaryAction.label}
-          </button>
-        )}
+          <DealCountdown deadline={view.bettingCloseDeadlineAt} />
+          <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
+          {view.phase === "BETTING" ? (
+            <div className="deal-actions">
+              <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
+                DEAL CARDS NOW
+              </button>
+              <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
+                DEAL IN 7 SECONDS
+              </button>
+            </div>
+          ) : showNextRound ? (
+            <div className="deal-actions">
+              <button type="button" disabled={!view.actions.nextHand} onClick={() => onCommand("startNextRound")}>
+                NEXT ROUND NOW
+              </button>
+              <button
+                type="button"
+                disabled={!view.actions.scheduleNextRound}
+                onClick={() => onCommand("scheduleNextRound")}
+              >
+                NEXT ROUND IN 7 SECONDS
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
+              onClick={() => {
+                if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
+              }}
+            >
+              {view.primaryAction.label}
+            </button>
+          )}
+        </div>
       </div>
-      <main className="felt">
-        <div className="dealer-grid">
-          {view.boxes.map((box) => (
-            <FeltBox
-              key={box.id}
-              box={box}
-              bank
-              showOutcomes={view.actions.settleBoxes}
-              onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
-            />
-          ))}
+      <main className="felt dealer-list-felt">
+        <div className="dealer-list">
+          {view.players.length === 0
+            ? view.boxes.map((box) => (
+                <DealerPayoutRow
+                  key={box.id}
+                  box={box}
+                  payoutEnabled={view.actions.settleBoxes}
+                  onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
+                />
+              ))
+            : view.players.map((player) => (
+                <section className="dealer-player" key={player.userId} data-player-group={player.userId}>
+                  <header className="dealer-player-head">
+                    <div>
+                      <strong>{player.name}</strong>
+                      <div className="muted">{player.status}</div>
+                    </div>
+                    <div className="dealer-player-balances">
+                      <span>Available {player.available.label}</span>
+                      <span>Locked {player.locked.label}</span>
+                    </div>
+                  </header>
+                  {player.boxes.map((box) =>
+                    view.actions.settleBoxes || box.outcome ? (
+                      <DealerPayoutRow
+                        key={box.id}
+                        box={box}
+                        payoutEnabled={view.actions.settleBoxes}
+                        onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
+                      />
+                    ) : (
+                      <div className="payout-row is-idle" key={box.id} data-box-id={box.id}>
+                        <div className="payout-row-inner">
+                          <div>
+                            <strong>{box.label}</strong>
+                            <div className="muted">Stake {box.bet.label}</div>
+                          </div>
+                          <span className="chip-pile compact">
+                            {chipsFromMillis(box.bet.millis).map((chip, index) => (
+                              <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
+                                {chip.label}
+                              </span>
+                            ))}
+                          </span>
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </section>
+              ))}
         </div>
       </main>
       <footer className="dock dealer-dock">
@@ -137,46 +213,85 @@ export function ClassicBankTable({
       </footer>
       <div className={`sheet${sheet ? " open" : ""}`}>
         <div className="sheet-panel">
-          <h3>{sheet === "jetons" ? "Give jetons" : "Add player"}</h3>
-          {sheet === "jetons" ? (
+          {sheet === "menu" ? (
             <>
-              <select value={memberId} onChange={(event) => setMemberId(event.target.value)}>
-                {members.map((member) => (
-                  <option key={member.userId} value={member.userId}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-              <input placeholder="Jeton amount" value={amount} onChange={(event) => setAmount(event.target.value)} />
+              <h3>Table</h3>
+              <button className="gold-button" type="button" disabled={!view.actions.saveTable} onClick={() => { onCommand("saveTable"); setSheet(null); }}>
+                SAVE TABLE
+              </button>
+              <button className="gold-button" type="button" onClick={() => setSheet("close")}>
+                CLOSE TABLE & SAVE BALANCES
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet(null)}>
+                Cancel
+              </button>
             </>
-          ) : (
+          ) : null}
+          {sheet === "close" ? (
             <>
-              <input placeholder="Player name" value={name} onChange={(event) => setName(event.target.value)} />
-              <input placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+              <h3>Close this table</h3>
+              <p>{view.closePreview?.confirmation ?? "Save each Player’s remaining jetons to their personal ledger and close this table?"}</p>
+              {(view.closePreview?.players ?? []).map((player) => (
+                <div className="member-row" key={player.userId}>
+                  <div>
+                    <strong>{player.name}</strong>
+                    <div className="muted">Personal ledger · {player.available.label}</div>
+                    <div className="muted">Locked {player.locked.label}</div>
+                  </div>
+                </div>
+              ))}
+              <button className="gold-button" type="button" disabled={!view.actions.closeTable} onClick={() => { onCommand("closeTable"); setSheet(null); }}>
+                Confirm close
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
             </>
-          )}
-          <div className="sheet-actions">
-            <button type="button" onClick={() => setSheet(null)}>
-              Cancel
-            </button>
-            <button
-              className="gold-button"
-              type="button"
-              onClick={() => {
-                if (sheet === "jetons") {
-                  onCommand("giveJetons", { userId: memberId, amount });
-                } else {
-                  onCommand("addPlayer", { email, name });
-                }
-                setSheet(null);
-                setEmail("");
-                setName("");
-                setAmount("");
-              }}
-            >
-              Confirm
-            </button>
-          </div>
+          ) : null}
+          {sheet === "jetons" || sheet === "player" ? (
+            <>
+              <h3>{sheet === "jetons" ? "Give jetons" : "Add player"}</h3>
+              {sheet === "jetons" ? (
+                <>
+                  <select value={memberId} onChange={(event) => setMemberId(event.target.value)}>
+                    {members.map((member) => (
+                      <option key={member.userId} value={member.userId}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input placeholder="Jeton amount" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                </>
+              ) : (
+                <>
+                  <input placeholder="Player name" value={name} onChange={(event) => setName(event.target.value)} />
+                  <input placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+                </>
+              )}
+              <div className="sheet-actions">
+                <button type="button" onClick={() => setSheet(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="gold-button"
+                  type="button"
+                  onClick={() => {
+                    if (sheet === "jetons") {
+                      onCommand("giveJetons", { userId: memberId, amount });
+                    } else {
+                      onCommand("addPlayer", { email, name });
+                    }
+                    setSheet(null);
+                    setEmail("");
+                    setName("");
+                    setAmount("");
+                  }}
+                >
+                  Confirm
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </PhoneShell>
