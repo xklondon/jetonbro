@@ -161,4 +161,5 @@ test("player payout shows Hand complete after every box is resolved", () => {
   );
   expect(html).toContain("Hand complete");
   expect(html).toContain("YOUR JETONS");
+  expect(html).not.toContain("outcome-celebration");
 });

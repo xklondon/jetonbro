@@ -28,8 +28,8 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
   await expect(page.locator(".setup-mask").getByLabel("Table name")).toHaveValue("Alex's table");
   await expect(page.locator(".setup-mask").getByAltText("Shared table join QR code")).toBeVisible();
-  await expect(page.locator(".setup-mask").getByRole("button", { name: "Copy link" })).toBeVisible();
-  await expect(page.locator(".setup-mask").getByRole("button", { name: "Share" })).toBeVisible();
+  await expect(page.locator(".setup-mask").getByRole("button", { name: "COPY LINK" })).toBeVisible();
+  await expect(page.locator(".setup-mask").getByRole("button", { name: "SHARE" })).toBeVisible();
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await page.screenshot({ path: join(out, "app-welcome-games-390x844.png") });
   await page.screenshot({ path: join(out, "app-blackjack-setup-390x844.png") });

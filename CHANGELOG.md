@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Setup invites, next-round restart, and Player celebrations
+
+- The setup mask shows compact game tiles, table name and starting jetons, then the full shared QR (`SCAN TO JOIN TABLE`, `COPY LINK`, `SHARE`), then a compact `OR INVITE BY EMAIL` row. `SET UP TABLE` stays sticky. The QR is no longer clipped under the form.
+- `NEXT ROUND NOW` is enabled once every box and required Insurance stake is settled, including a PAYOUT snapshot that already shows those settlements. A blocked restart returns `NEXT_ROUND_BLOCKED` instead of a generic phase conflict. Round logs include table, round, actor, phase, unresolved counts, deadline, and a stable code.
+- Major win/loss/push/Blackjack celebrations play on the affected Player device after a confirmed snapshot. The Dealer keeps compact row confirmation only.
+
 ### Dealer payouts, next round, and table close
 
 - Bank/Dealer PAYOUT is a compact vertical player list. Each unresolved box is settled independently: swipe right WIN, swipe left LOSS, double-tap PUSH, with accessible Win/Push/Lose/Blackjack. Labels come from `suggestedPayout`; balances update only after the snapshot confirms settlement.

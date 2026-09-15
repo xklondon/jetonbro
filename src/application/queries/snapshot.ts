@@ -228,13 +228,15 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
 
   const ownBoxes = boxes.filter((box) => box.playerId === viewerId);
   const insuranceOpen = table.currentRound?.insuranceWindow === "OPEN";
+  const unresolvedInsuranceBets =
+    table.currentRound?.insuranceBets.filter((bet) => !bet.settledKey).length ?? 0;
   const unresolvedInsurance =
-    (table.currentRound?.insuranceBets.length ?? 0) > 0 && table.currentRound?.insuranceWindow !== "SETTLED";
-  const unresolvedBoxes = boxes.some((box) => !box.outcome);
-  const lockedInsuranceOpen =
-    unresolvedInsurance ||
-    (table.currentRound?.insuranceBets.some((bet) => !bet.settledKey) ?? false);
-  const canNextHand = table.currentPhase === "ROUND_COMPLETE" && !unresolvedBoxes && !lockedInsuranceOpen;
+    unresolvedInsuranceBets > 0 ||
+    ((table.currentRound?.insuranceBets.length ?? 0) > 0 && table.currentRound?.insuranceWindow !== "SETTLED");
+  const unresolvedBoxes = boxes.filter((box) => !box.outcome).length;
+  const readyForNextRound = unresolvedBoxes === 0 && !unresolvedInsurance;
+  const canNextHand =
+    readyForNextRound && (table.currentPhase === "ROUND_COMPLETE" || table.currentPhase === "PAYOUT");
   const nextRoundDeadline = table.currentRound?.nextRoundDeadlineAt?.toISOString() ?? null;
   const nextRoundCountdownActive = Boolean(
     table.currentPhase === "ROUND_COMPLETE" &&

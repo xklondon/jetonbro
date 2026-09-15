@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PlayerTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { FeltBox } from "./FeltBox";
 import { DealCountdown } from "./DealCountdown";
+import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
+import {
+  selectInsuranceCelebration,
+  selectOutcomeCelebration,
+  type OutcomeCelebration,
+} from "@/ui/core/outcome-celebration";
 
 const DENOMS = ["5", "10", "25", "50"] as const;
 
@@ -37,6 +43,29 @@ export function ClassicPlayerTable({
   }, [view.boxes.length]);
   const reducedMotion =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [celebration, setCelebration] = useState<OutcomeCelebration | null>(null);
+  const seenOutcomes = useRef(new Set(view.boxes.filter((box) => box.outcome).map((box) => `${box.id}:${box.outcome}`)));
+  const seenInsurance = useRef(new Set(view.boxes.filter((box) => box.insuranceResult).map((box) => box.id)));
+
+  useEffect(() => {
+    for (const box of view.boxes) {
+      const key = box.outcome ? `${box.id}:${box.outcome}` : null;
+      if (key && !seenOutcomes.current.has(key)) {
+        seenOutcomes.current.add(key);
+        const next = selectOutcomeCelebration(key, box.outcome!, reducedMotion, "player", box.returned?.label);
+        setCelebration(next);
+        window.setTimeout(() => setCelebration(null), 1400);
+      }
+      if (box.insuranceResult && !seenInsurance.current.has(box.id)) {
+        seenInsurance.current.add(box.id);
+        const won = /return/i.test(box.insuranceResult) && !/lost/i.test(box.insuranceResult);
+        const returned = box.insuranceResult?.match(/return ([0-9.]+)/)?.[1] ?? null;
+        const next = selectInsuranceCelebration(`${box.id}:insurance`, won, reducedMotion, returned);
+        setCelebration(next);
+        window.setTimeout(() => setCelebration(null), 1400);
+      }
+    }
+  }, [view.boxes, reducedMotion]);
 
   function boxAtPoint(x: number, y: number): string | null {
     const el = document.elementFromPoint(x, y);
@@ -49,6 +78,7 @@ export function ClassicPlayerTable({
 
   return (
     <PhoneShell rightLabel={`♠ ${view.boxes.length}`}>
+      <OutcomeCelebrationOverlay celebration={celebration} />
       <div className="phase-head">
         <strong>{view.title}</strong>
         <span>{view.copy}</span>

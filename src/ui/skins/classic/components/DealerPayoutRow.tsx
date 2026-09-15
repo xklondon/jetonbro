@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
 import { isHorizontalPayoutGesture, payoutSwipeOutcome } from "@/ui/core/payout-gesture";
-import { selectOutcomeCelebration } from "@/ui/core/outcome-celebration";
 
 export function DealerPayoutRow({
   box,
@@ -17,24 +16,13 @@ export function DealerPayoutRow({
 }) {
   const [dx, setDx] = useState(0);
   const [submitted, setSubmitted] = useState(false);
-  const [celebrationCopy, setCelebrationCopy] = useState<string | null>(null);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const lastTap = useRef(0);
   const locking = useRef(false);
   const chips = chipsFromMillis(box.bet.millis);
   const winAction = box.payoutActions.find((action) => action.outcome === "WON");
   const lossAction = box.payoutActions.find((action) => action.outcome === "LOST");
-  const reducedMotion =
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const unresolved = payoutEnabled && !box.outcome && !submitted;
-
-  useEffect(() => {
-    if (!box.outcome) return;
-    const celebration = selectOutcomeCelebration(`${box.id}:${box.outcome}`, box.outcome, reducedMotion);
-    setCelebrationCopy(celebration.copy);
-    const timer = window.setTimeout(() => setCelebrationCopy(null), 1400);
-    return () => window.clearTimeout(timer);
-  }, [box.id, box.outcome, reducedMotion]);
 
   function settle(outcome: BoxView["payoutActions"][number]["outcome"]) {
     if (!unresolved) return;
@@ -123,7 +111,6 @@ export function DealerPayoutRow({
             : "Unresolved"}
           {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
           {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
-          {celebrationCopy ? <div className="outcome-row-copy">{celebrationCopy}</div> : null}
         </div>
       </div>
       </div>

@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { BankTableView, MemberView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
 import { DealerPayoutRow } from "./DealerPayoutRow";
-import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
-import { selectOutcomeCelebration, type OutcomeCelebration } from "@/ui/core/outcome-celebration";
 import { chipsFromMillis } from "./chips";
 
 export function ClassicBankTable({
@@ -25,28 +23,11 @@ export function ClassicBankTable({
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
-  const [celebration, setCelebration] = useState<OutcomeCelebration | null>(null);
-  const seenOutcomes = useRef(new Set(view.boxes.filter((box) => box.outcome).map((box) => box.id)));
   const showInsurance = view.phase === "PLAYING" || view.phase === "PAYOUT" || view.insurance.count > 0;
   const showNextRound = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
-  const reducedMotion =
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  useEffect(() => {
-    for (const box of view.boxes) {
-      if (!box.outcome || seenOutcomes.current.has(box.id)) continue;
-      seenOutcomes.current.add(box.id);
-      const next = selectOutcomeCelebration(`${box.id}:${box.outcome}`, box.outcome, reducedMotion);
-      if (next.overlay) {
-        setCelebration(next);
-        window.setTimeout(() => setCelebration(null), 1400);
-      }
-    }
-  }, [view.boxes, reducedMotion]);
 
   return (
     <PhoneShell rightLabel={`♠ ${view.boxCount}`} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
-      <OutcomeCelebrationOverlay celebration={celebration} />
       <div>
         <div className="phase-head">
           <strong>{view.title}</strong>

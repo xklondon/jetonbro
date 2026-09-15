@@ -132,10 +132,15 @@ test("single setup mask includes invites, QR actions and SET UP TABLE", () => {
   expect(html).toMatch(/Alex(&#x27;|')s table/);
   expect(html).toContain("SET UP TABLE");
   expect(html).not.toContain("START TABLE");
+  expect(html).toContain("SCAN TO JOIN TABLE");
+  expect(html).toContain("OR INVITE BY EMAIL");
   expect(html).toContain("Player email");
-  expect(html).toContain("+ Add another player");
-  expect(html).toContain("Copy link");
-  expect(html).toContain("Share");
+  expect(html).toContain("+ ADD ANOTHER");
+  expect(html).toContain("COPY LINK");
+  expect(html).toContain("SHARE");
+  expect(html.indexOf("SCAN TO JOIN TABLE")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
+  expect(html.indexOf("COPY LINK")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
+  expect(html.indexOf("OR INVITE BY EMAIL")).toBeLessThan(html.indexOf("SET UP TABLE"));
   expect(html).not.toContain("Maximum boxes per player");
 });
 
@@ -152,8 +157,10 @@ test("setup mask sits over the dealer table and shows the shared QR", () => {
   expect(html).toContain("DEALER · Alex");
   expect(html).toContain("setup-mask");
   expect(html).toContain("Shared table join QR code");
-  expect(html).toContain("Copy link");
-  expect(html).toContain("Share");
+  expect(html).toContain("SCAN TO JOIN TABLE");
+  expect(html).toContain("COPY LINK");
+  expect(html).toContain("SHARE");
+  expect(html).toContain("OR INVITE BY EMAIL");
   expect(html).not.toContain("waiting-room");
 });
 

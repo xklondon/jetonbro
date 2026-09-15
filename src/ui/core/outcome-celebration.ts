@@ -1,6 +1,7 @@
 import type { BoxOutcome } from "@/domain/blackjack/payouts";
 
 export type CelebrationKind = "row" | "rain" | "notes" | "shimmer" | "shake" | "return";
+export type CelebrationAudience = "player" | "dealer";
 
 export type OutcomeCelebration = {
   kind: CelebrationKind;
@@ -8,9 +9,9 @@ export type OutcomeCelebration = {
   overlay: boolean;
 };
 
-const WIN_COPY = ["Winner!", "Nice one!", "Jetons incoming"] as const;
-const LOSS_COPY = ["Tough luck", "Ouch", "Next hand"] as const;
-const PUSH_COPY = "Push — jetons returned";
+const WIN_COPY = ["WINNER!", "NICE ONE!"] as const;
+const LOSS_COPY = "TOUGH LUCK";
+const PUSH_COPY = "PUSH — JETONS RETURNED";
 
 function hashSeed(seed: string): number {
   let hash = 0;
@@ -24,25 +25,65 @@ export function selectOutcomeCelebration(
   seed: string,
   outcome: BoxOutcome,
   reducedMotion: boolean,
+  audience: CelebrationAudience = "dealer",
+  returnedLabel?: string | null,
 ): OutcomeCelebration {
+  const returned = returnedLabel ? ` · ${returnedLabel}` : "";
+  if (audience === "dealer") {
+    const copy =
+      outcome === "WON" || outcome === "BLACKJACK"
+        ? `Win${returned}`
+        : outcome === "LOST"
+          ? "Loss"
+          : PUSH_COPY;
+    return { kind: "row", copy, overlay: false };
+  }
+
   if (reducedMotion) {
     return {
       kind: outcome === "LOST" ? "shake" : outcome === "PUSH" ? "return" : "row",
-      copy: outcome === "WON" || outcome === "BLACKJACK" ? WIN_COPY[0] : outcome === "LOST" ? LOSS_COPY[0] : PUSH_COPY,
+      copy:
+        outcome === "BLACKJACK"
+          ? `BLACKJACK${returned}`
+          : outcome === "WON"
+            ? `${WIN_COPY[0]}${returned}`
+            : outcome === "LOST"
+              ? LOSS_COPY
+              : PUSH_COPY,
       overlay: false,
     };
   }
-  const n = hashSeed(seed) % 4;
+
+  const n = hashSeed(seed) % 2;
   if (outcome === "PUSH") {
-    return { kind: "return", copy: PUSH_COPY, overlay: false };
+    return { kind: "return", copy: PUSH_COPY, overlay: true };
   }
   if (outcome === "LOST") {
-    const copy = LOSS_COPY[n % LOSS_COPY.length] ?? LOSS_COPY[0];
-    return { kind: n === 0 ? "row" : "shake", copy, overlay: false };
+    return { kind: "shake", copy: LOSS_COPY, overlay: true };
   }
-  const copy = WIN_COPY[n % WIN_COPY.length] ?? WIN_COPY[0];
-  if (n === 0) return { kind: "row", copy, overlay: false };
-  if (n === 1) return { kind: "rain", copy, overlay: true };
-  if (n === 2) return { kind: "notes", copy, overlay: true };
-  return { kind: "shimmer", copy, overlay: true };
+  if (outcome === "BLACKJACK") {
+    return { kind: "shimmer", copy: `BLACKJACK${returned}`, overlay: true };
+  }
+  const copy = `${WIN_COPY[n] ?? WIN_COPY[0]}${returned}`;
+  return { kind: n === 0 ? "rain" : "notes", copy, overlay: true };
+}
+
+export function selectInsuranceCelebration(
+  seed: string,
+  won: boolean,
+  reducedMotion: boolean,
+  returnedLabel?: string | null,
+): OutcomeCelebration {
+  if (reducedMotion || !won) {
+    return {
+      kind: won ? "row" : "shake",
+      copy: won ? `INSURANCE WON${returnedLabel ? ` · ${returnedLabel}` : ""}` : "INSURANCE LOST",
+      overlay: false,
+    };
+  }
+  return {
+    kind: hashSeed(seed) % 2 === 0 ? "rain" : "shimmer",
+    copy: `INSURANCE WON${returnedLabel ? ` · ${returnedLabel}` : ""}`,
+    overlay: true,
+  };
 }

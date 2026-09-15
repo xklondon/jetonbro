@@ -18,6 +18,7 @@ import { formatJetons, parseJetonInput } from "@/domain/money";
 import type { Prisma } from "@prisma/client";
 import { clearDealTimer, clearNextRoundTimer, scheduleDealTimer, scheduleNextRoundTimer } from "@/application/services/deal-timer";
 import { NEXT_ROUND_COUNTDOWN_MS } from "@/domain/blackjack/next-round";
+import { logRoundEvent } from "@/application/command-log";
 
 type Tx = Prisma.TransactionClient;
 
@@ -741,16 +742,42 @@ export async function settleInsurance(input: {
 export async function startNextRound(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "startNextRound", input, async () => {
     await maybeCompleteRound(input.tableId);
-    const table = await prisma.table.findUnique({ where: { id: input.tableId } });
+    const table = await prisma.table.findUnique({
+      where: { id: input.tableId },
+      include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
+    });
     if (!table) throw new NotFoundError("Table not found.");
     if (table.status === "ARCHIVED") {
       throw new DomainError("TABLE_CLOSED", "This table is closed.");
     }
     requireBank(table, input.actorId);
+    const blockers = table.currentRound
+      ? roundBlockers(table.currentRound)
+      : { unresolvedBoxes: 0, unresolvedInsurance: 0 };
+    logRoundEvent({
+      event: "startNextRound",
+      tableId: input.tableId,
+      roundId: table.currentRound?.id,
+      actorId: input.actorId,
+      phase: table.currentPhase,
+      unresolvedBoxes: blockers.unresolvedBoxes,
+      unresolvedInsurance: blockers.unresolvedInsurance,
+      deadline: table.currentRound?.nextRoundDeadlineAt?.toISOString() ?? null,
+      code: table.currentPhase === "BETTING" ? "ALREADY_BETTING" : table.currentPhase,
+    });
     if (table.currentPhase === "BETTING") {
       return { ok: true };
     }
-    requirePhase(table.currentPhase, "ROUND_COMPLETE");
+    if (table.currentPhase !== "ROUND_COMPLETE") {
+      throw new DomainError(
+        "NEXT_ROUND_BLOCKED",
+        blockers.unresolvedInsurance > 0
+          ? "Settle Insurance independently before starting the next round."
+          : blockers.unresolvedBoxes > 0
+            ? "Settle every remaining box before starting the next round."
+            : "The round is not ready to restart yet.",
+      );
+    }
     assertTransition("ROUND_COMPLETE", "BETTING");
     clearNextRoundTimer(input.tableId);
     await startBetting({ ...input, idempotencyKey: `${input.idempotencyKey}:betting` });
@@ -764,7 +791,27 @@ export async function scheduleNextRound(input: { actorId: string; tableId: strin
     const result = await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
-      requirePhase(table.currentPhase, "ROUND_COMPLETE");
+      if (table.currentPhase !== "ROUND_COMPLETE") {
+        const blockers = table.currentRound
+          ? roundBlockers(table.currentRound)
+          : { unresolvedBoxes: 0, unresolvedInsurance: 0 };
+        logRoundEvent({
+          event: "scheduleNextRound.blocked",
+          tableId: input.tableId,
+          roundId: table.currentRound?.id,
+          actorId: input.actorId,
+          phase: table.currentPhase,
+          unresolvedBoxes: blockers.unresolvedBoxes,
+          unresolvedInsurance: blockers.unresolvedInsurance,
+          code: "NEXT_ROUND_BLOCKED",
+        });
+        throw new DomainError(
+          "NEXT_ROUND_BLOCKED",
+          blockers.unresolvedInsurance > 0
+            ? "Settle Insurance independently before starting the next round."
+            : "Settle every remaining box before starting the next round.",
+        );
+      }
       if (!table.currentRound) throw new ConflictError("No round to continue.");
       if (table.currentRound.nextRoundDeadlineAt && table.currentRound.nextRoundDeadlineAt.getTime() > Date.now()) {
         return { deadline: table.currentRound.nextRoundDeadlineAt.toISOString() };
@@ -787,7 +834,7 @@ export async function scheduleNextRound(input: { actorId: string; tableId: strin
 export async function ensureNextRoundIfDue(tableId: string): Promise<boolean> {
   const table = await prisma.table.findUnique({
     where: { id: tableId },
-    include: { currentRound: true },
+    include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
   });
   if (!table || table.status === "ARCHIVED") return false;
   if (table.currentPhase !== "ROUND_COMPLETE" || !table.currentRound?.nextRoundDeadlineAt) {
@@ -797,6 +844,18 @@ export async function ensureNextRoundIfDue(tableId: string): Promise<boolean> {
     return false;
   }
   if (!table.bankDealerId) return false;
+  const blockers = roundBlockers(table.currentRound);
+  logRoundEvent({
+    event: "ensureNextRoundIfDue",
+    tableId,
+    roundId: table.currentRound.id,
+    actorId: table.bankDealerId,
+    phase: table.currentPhase,
+    unresolvedBoxes: blockers.unresolvedBoxes,
+    unresolvedInsurance: blockers.unresolvedInsurance,
+    deadline: table.currentRound.nextRoundDeadlineAt.toISOString(),
+    code: "NEXT_ROUND_DUE",
+  });
   await startBetting({
     actorId: table.bankDealerId,
     tableId,
@@ -806,18 +865,38 @@ export async function ensureNextRoundIfDue(tableId: string): Promise<boolean> {
   return true;
 }
 
+function roundBlockers(round: {
+  boxes: { removedAt: Date | null; settledKey: string | null; lockedBetMillis: bigint }[];
+  insuranceBets: { settledKey: string | null }[];
+  insuranceWindow: string;
+}) {
+  const boxes = round.boxes.filter((box) => !box.removedAt);
+  const unresolvedBoxes = boxes.filter((box) => !box.settledKey || box.lockedBetMillis > 0n).length;
+  const unsettledInsuranceBets = round.insuranceBets.filter((bet) => !bet.settledKey).length;
+  const unresolvedInsurance =
+    round.insuranceBets.length > 0 && (round.insuranceWindow !== "SETTLED" || unsettledInsuranceBets > 0)
+      ? Math.max(unsettledInsuranceBets, 1)
+      : 0;
+  return { unresolvedBoxes, unresolvedInsurance };
+}
+
 async function maybeCompleteRound(tableId: string) {
   await prisma.$transaction(async (tx) => {
     const table = await loadTableForUpdate(tx, tableId);
     if (table.currentPhase !== "PAYOUT" || !table.currentRound) return;
-    const boxes = table.currentRound.boxes.filter((box) => !box.removedAt);
-    const unresolvedBoxes = boxes.filter((box) => !box.settledKey || box.lockedBetMillis > 0n);
-    const unresolvedInsurance = table.currentRound.insuranceBets.filter((bet) => !bet.settledKey);
-    const insuranceNeedsResolution =
-      table.currentRound.insuranceBets.length > 0
-        ? table.currentRound.insuranceWindow !== "SETTLED" || unresolvedInsurance.length > 0
-        : false;
-    if (unresolvedBoxes.length > 0 || insuranceNeedsResolution) return;
+    const blockers = roundBlockers(table.currentRound);
+    if (blockers.unresolvedBoxes > 0 || blockers.unresolvedInsurance > 0) {
+      logRoundEvent({
+        event: "maybeCompleteRound.blocked",
+        tableId,
+        roundId: table.currentRound.id,
+        phase: table.currentPhase,
+        unresolvedBoxes: blockers.unresolvedBoxes,
+        unresolvedInsurance: blockers.unresolvedInsurance,
+        code: "NEXT_ROUND_BLOCKED",
+      });
+      return;
+    }
     assertTransition("PAYOUT", "ROUND_COMPLETE");
     await tx.round.update({
       where: { id: table.currentRound.id },
@@ -826,6 +905,15 @@ async function maybeCompleteRound(tableId: string) {
     await tx.table.update({
       where: { id: table.id },
       data: { currentPhase: "ROUND_COMPLETE" },
+    });
+    logRoundEvent({
+      event: "maybeCompleteRound.completed",
+      tableId,
+      roundId: table.currentRound.id,
+      phase: "ROUND_COMPLETE",
+      unresolvedBoxes: 0,
+      unresolvedInsurance: 0,
+      code: "ROUND_COMPLETE",
     });
   });
 }

@@ -1,5 +1,7 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
+import jsQR from "jsqr";
+import { PNG } from "pngjs";
 
 export async function openAs(context: BrowserContext, page: Page, email: string, name: string) {
   const response = await page.request.post("/api/dev/session", {
@@ -29,6 +31,7 @@ export async function openSetupSheet(page: Page) {
   await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
   await expect(page.locator(".setup-mask").getByLabel("Starting jetons per player")).toBeVisible();
   await expect(page.locator(".setup-mask").getByAltText("Shared table join QR code")).toBeVisible();
+  await expect(page.locator(".setup-mask").getByText("SCAN TO JOIN TABLE")).toBeVisible();
 }
 
 export async function createBlackjackTable(
@@ -68,4 +71,12 @@ export async function noHorizontalOverflow(page: Page) {
 
 export function uniqueEmail(prefix: string) {
   return `${prefix}-${randomUUID()}@jetonbro.test`;
+}
+
+export function decodeQrDataUrl(dataUrl: string): string | null {
+  const encoded = dataUrl.split(",")[1];
+  if (!encoded) return null;
+  const png = PNG.sync.read(Buffer.from(encoded, "base64"));
+  const code = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
+  return code?.data ?? null;
 }

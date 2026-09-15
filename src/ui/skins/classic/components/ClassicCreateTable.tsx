@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PhoneShell } from "./PhoneShell";
 import { ClassicGameCards } from "./ClassicGameCards";
 import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
+import { joinQrDataUrl } from "@/ui/core/join-qr";
 
 export type CreateTableFields = {
   name: string;
@@ -36,16 +37,15 @@ export function ClassicCreateTable({
   const [startingJetonsPerPlayer, setStartingJetonsPerPlayer] = useState<string>(
     defaultStartingJetons ?? BLACKJACK_TABLE_DEFAULTS.startingAllocation,
   );
-  const [emails, setEmails] = useState<string[]>(initialEmails?.length ? initialEmails : [""]);
+  const extraInitial = (initialEmails ?? []).filter((email) => email.trim());
+  const [emails, setEmails] = useState<string[]>(extraInitial.length ? extraInitial : [""]);
   const [pending, setPending] = useState(false);
   const [qrData, setQrData] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!joinUrl) return;
-    void import("qrcode").then((QRCode) => {
-      void QRCode.toDataURL(joinUrl, { margin: 1, width: 160 }).then(setQrData);
-    });
+    void joinQrDataUrl(joinUrl).then(setQrData);
   }, [joinUrl]);
 
   async function copyLink() {
@@ -103,21 +103,38 @@ export function ClassicCreateTable({
             onChange={(event) => setStartingJetonsPerPlayer(event.target.value)}
           />
         </label>
-        <div>
-          <div className="field-label">Invite players</div>
+        {joinUrl ? (
+          <div className="qr-panel setup-qr" data-join-url={joinUrl} aria-label="Shared table join QR code">
+            <div className="qr-kicker">SCAN TO JOIN TABLE</div>
+            {qrData ? (
+              <img src={qrData} width={240} height={240} alt="Shared table join QR code" />
+            ) : (
+              <div className="muted">Preparing table QR…</div>
+            )}
+            <div className="qr-actions">
+              <button type="button" onClick={() => void copyLink()}>
+                {copied ? "Copied" : "COPY LINK"}
+              </button>
+              <button type="button" onClick={() => void shareLink()}>
+                SHARE
+              </button>
+            </div>
+          </div>
+        ) : null}
+        <div className="setup-email">
+          <div className="field-label">OR INVITE BY EMAIL</div>
           {emails.map((email, index) => (
             <div className="email-row" key={index}>
-              <label>
-                Player email
-                <input
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) =>
-                    setEmails((rows) => rows.map((row, rowIndex) => (rowIndex === index ? event.target.value : row)))
-                  }
-                />
-              </label>
+              <input
+                type="email"
+                autoComplete="email"
+                aria-label="Player email"
+                placeholder="Email"
+                value={email}
+                onChange={(event) =>
+                  setEmails((rows) => rows.map((row, rowIndex) => (rowIndex === index ? event.target.value : row)))
+                }
+              />
               {emails.length > 1 ? (
                 <button
                   type="button"
@@ -130,24 +147,10 @@ export function ClassicCreateTable({
               ) : null}
             </div>
           ))}
-          <button type="button" className="text-link" onClick={() => setEmails((rows) => [...rows, ""])}>
-            + Add another player
+          <button type="button" className="text-link add-email" onClick={() => setEmails((rows) => [...rows, ""])}>
+            + ADD ANOTHER
           </button>
         </div>
-        {joinUrl ? (
-          <div className="qr-panel compact-qr" aria-label="Shared table join QR code">
-            {qrData ? <img src={qrData} alt="Shared table join QR code" /> : <div className="muted">Preparing table QR…</div>}
-            <div className="dealer-tools">
-              <button type="button" onClick={() => void copyLink()}>
-                {copied ? "Copied" : "Copy link"}
-              </button>
-              <button type="button" onClick={() => void shareLink()}>
-                Share
-              </button>
-            </div>
-          </div>
-        ) : null}
-        <p className="muted setup-defaults">Blackjack 3:2 · max 3 boxes · Insurance on</p>
       </div>
       <div className="setup-sheet-actions">
         <button className="gold-button" type="submit" disabled={pending}>

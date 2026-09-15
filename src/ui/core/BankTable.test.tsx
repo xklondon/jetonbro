@@ -195,6 +195,8 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).toContain("Dealer Blackjack");
   expect(html).not.toContain("Deal cards");
   expect(html).toMatch(/<button[^>]*disabled[^>]*>NEXT ROUND NOW/);
+  expect(html).not.toContain("outcome-celebration");
+  expect(html).not.toContain("WINNER!");
 });
 
 test("resolved boxes keep row state without payout controls", () => {

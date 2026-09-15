@@ -17,27 +17,32 @@ test("horizontal lock starts only after a clear sideways move", () => {
   expect(isHorizontalPayoutGesture(4, 20)).toBe(false);
 });
 
-test("outcome celebrations are deterministic and skip particles when reduced motion", () => {
-  const win = selectOutcomeCelebration("box-1:WON", "WON", false);
-  const again = selectOutcomeCelebration("box-1:WON", "WON", false);
+test("player celebrations overlay and reduced motion is testable", () => {
+  const win = selectOutcomeCelebration("box-1:WON", "WON", false, "player", "50");
+  const again = selectOutcomeCelebration("box-1:WON", "WON", false, "player", "50");
   expect(win).toEqual(again);
-  const quiet = selectOutcomeCelebration("box-1:WON", "WON", true);
+  expect(win.overlay).toBe(true);
+  expect(win.copy).toMatch(/WINNER!|NICE ONE!/);
+  expect(win.copy).toContain("50");
+  const dealer = selectOutcomeCelebration("box-1:WON", "WON", false, "dealer", "50");
+  expect(dealer.overlay).toBe(false);
+  const quiet = selectOutcomeCelebration("box-1:WON", "WON", true, "player", "50");
   expect(quiet.overlay).toBe(false);
-  const push = selectOutcomeCelebration("box-2:PUSH", "PUSH", false);
-  expect(push.copy).toContain("Push");
+  const push = selectOutcomeCelebration("box-2:PUSH", "PUSH", false, "player");
+  expect(push.copy).toContain("PUSH");
 });
 
 test("celebration overlay is decorative and hidden from assistive tech", () => {
   const html = renderToStaticMarkup(
     createElement(OutcomeCelebrationOverlay, {
-      celebration: { kind: "rain", copy: "Winner!", overlay: true },
+      celebration: { kind: "rain", copy: "WINNER!", overlay: true },
     }),
   );
   expect(html).toContain('aria-hidden="true"');
-  expect(html).toContain("Winner!");
+  expect(html).toContain("WINNER!");
   const quiet = renderToStaticMarkup(
     createElement(OutcomeCelebrationOverlay, {
-      celebration: { kind: "row", copy: "Winner!", overlay: false },
+      celebration: { kind: "row", copy: "WINNER!", overlay: false },
     }),
   );
   expect(quiet).toBe("");

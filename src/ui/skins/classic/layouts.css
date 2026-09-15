@@ -754,12 +754,13 @@
 
 .classic-skin .outcome-celebration {
   position: absolute;
-  inset: 48px 12px auto 12px;
+  inset: 52px 12px 148px 12px;
   z-index: 8;
   pointer-events: none;
   text-align: center;
   color: var(--gold);
   font: 18px Georgia, serif;
+  overflow: hidden;
 }
 
 .classic-skin .outcome-particle {
