@@ -6,6 +6,8 @@ import {
 } from "@/domain/blackjack/payouts";
 import { formatJetons } from "@/domain/money";
 import { ForbiddenError, NotFoundError } from "@/domain/errors";
+import { GAME_CATALOG } from "@/domain/games";
+import { publicOrigin } from "@/application/auth-urls";
 import type {
   BankTableView,
   BoxView,
@@ -77,7 +79,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
 
   const isBank = table.bankDealerId === viewerId;
   const isOwner = table.ownerId === viewerId;
-  const origin = process.env.AUTH_URL ?? "";
+  const origin = publicOrigin();
   const qr = table.invitations.find((invite) => invite.kind === "QR" && !invite.revokedAt);
   const joinUrl = isOwner || isBank ? (qr ? `${origin}/join/${qr.token}` : null) : null;
 
@@ -114,11 +116,11 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           phase: "TABLE_SETUP",
           tableName: table.name,
           game: "Blackjack",
-          gameOptions: [
-            { id: "BLACKJACK", label: "Blackjack", available: true },
-            { id: "POKER", label: "Poker · Coming later", available: false },
-            { id: "ZILCH", label: "Zilch · Coming later", available: false },
-          ],
+          gameOptions: GAME_CATALOG.map((game) => ({
+            id: game.id,
+            label: game.comingLater ? `${game.label} · ${game.comingLater}` : game.label,
+            available: game.available,
+          })),
           ownerName: displayName(table.owner),
           bankName: table.bankDealer ? displayName(table.bankDealer) : "Unassigned",
           members: table.members.map((member) => ({
@@ -141,6 +143,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           minBet: table.minBetMillis !== null ? money(table.minBetMillis) : null,
           maxBet: table.maxBetMillis !== null ? money(table.maxBetMillis) : null,
           blackjackPayout: table.blackjackPayout,
+          maxBoxesPerPlayer: table.maxBoxesPerPlayer,
+          insuranceEnabled: table.insuranceEnabled,
           bankMayDistributeJetons: table.bankMayDistributeJetons,
           canStartBetting: Boolean(table.bankDealerId) && table.members.some((member) => member.userId !== table.bankDealerId),
           startBlockedReason: !table.bankDealerId
@@ -188,11 +192,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           actions: {
             bet: table.currentPhase === "BETTING",
             retract: table.currentPhase === "BETTING",
-            addBox: table.currentPhase === "BETTING",
+            addBox:
+              table.currentPhase === "BETTING" &&
+              ownBoxes.filter((box) => !box.isSplit).length < table.maxBoxesPerPlayer,
             removeEmptyBox: table.currentPhase === "BETTING",
             double: table.currentPhase === "PLAYING",
             split: table.currentPhase === "PLAYING",
-            insurance: table.currentPhase === "PLAYING" && insuranceOpen,
+            insurance: table.currentPhase === "PLAYING" && insuranceOpen && table.insuranceEnabled,
           },
         }
       : table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
@@ -233,7 +239,11 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           dealCards: table.currentPhase === "BETTING",
           payoutPhase: table.currentPhase === "PLAYING",
           nextHand: canNextHand,
-          openInsurance: table.currentPhase === "PLAYING" && table.currentRound?.insuranceWindow !== "OPEN" && table.currentRound?.insuranceWindow !== "SETTLED",
+          openInsurance:
+            table.currentPhase === "PLAYING" &&
+            table.insuranceEnabled &&
+            table.currentRound?.insuranceWindow !== "OPEN" &&
+            table.currentRound?.insuranceWindow !== "SETTLED",
           closeInsurance: table.currentPhase === "PLAYING" && insuranceOpen,
           settleBoxes: table.currentPhase === "PAYOUT",
           settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance,

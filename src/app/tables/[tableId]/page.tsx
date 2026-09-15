@@ -11,7 +11,7 @@ export default async function TablePage({
   const session = await auth();
   const { tableId } = await params;
   if (!session?.user?.id) {
-    redirect(`/sign-in?callbackUrl=/tables/${tableId}`);
+    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/tables/${tableId}`)}`);
   }
   const snapshot = await loadSnapshot(tableId, session.user.id);
   return <TableSession initial={snapshot} />;

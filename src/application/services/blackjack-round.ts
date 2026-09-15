@@ -135,6 +135,12 @@ export async function addBox(input: { actorId: string; tableId: string; idempote
       if (table.bankDealerId === input.actorId && table.members.length > 1) {
         throw new ForbiddenError("The Bank/Dealer does not open betting boxes.");
       }
+      const ownPrimary = table.currentRound.boxes.filter(
+        (item) => item.playerId === input.actorId && !item.removedAt && !item.isSplitOffshoot,
+      );
+      if (ownPrimary.length >= table.maxBoxesPerPlayer) {
+        throw new DomainError("MAX_BOXES", `This table allows at most ${table.maxBoxesPerPlayer} boxes per player.`);
+      }
       const number = nextBoxNumber(table.currentRound.boxes, input.actorId);
       const box = await tx.bettingBox.create({
         data: {
@@ -364,6 +370,9 @@ export async function openInsurance(input: { actorId: string; tableId: string; i
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
       requirePhase(table.currentPhase, "PLAYING");
+      if (!table.insuranceEnabled) {
+        throw new DomainError("INSURANCE_DISABLED", "Insurance is not enabled at this table.");
+      }
       if (!table.currentRound) throw new ConflictError("No open round.");
       if (table.currentRound.insuranceWindow === "SETTLED") {
         throw new ConflictError("Insurance for this round is already settled.");
@@ -412,6 +421,9 @@ export async function buyInsurance(input: {
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requirePhase(table.currentPhase, "PLAYING");
+      if (!table.insuranceEnabled) {
+        throw new DomainError("INSURANCE_DISABLED", "Insurance is not enabled at this table.");
+      }
       if (table.currentRound?.insuranceWindow !== "OPEN") {
         throw new DomainError("INSURANCE_CLOSED", "Insurance is only available while the Bank has opened the event.");
       }

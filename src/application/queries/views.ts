@@ -123,6 +123,8 @@ export type SetupTableView = {
   minBet: MoneyView | null;
   maxBet: MoneyView | null;
   blackjackPayout: "THREE_TWO" | "SIX_FIVE";
+  maxBoxesPerPlayer: number;
+  insuranceEnabled: boolean;
   bankMayDistributeJetons: boolean;
   canStartBetting: boolean;
   startBlockedReason: string | null;

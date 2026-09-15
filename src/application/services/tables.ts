@@ -6,6 +6,7 @@ import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@/dom
 import { isPlayableGame } from "@/domain/games";
 import { parseJetonInput, type JetonMillis } from "@/domain/money";
 import type { BlackjackPayoutRule } from "@/domain/blackjack/payouts";
+import { BLACKJACK_TABLE_DEFAULTS, parseMaxBoxesPerPlayer } from "@/domain/blackjack/settings";
 import { publishTable } from "@/application/realtime/bus";
 
 function parseOptionalJetons(value: string | undefined): JetonMillis | null {
@@ -17,15 +18,21 @@ export async function createTable(input: {
   actorId: string;
   idempotencyKey: string;
   name: string;
+  game?: string;
   bankDealerId?: string;
   startingAllocation?: string;
   minBet?: string;
   maxBet?: string;
   blackjackPayout?: BlackjackPayoutRule;
+  maxBoxesPerPlayer?: number | string;
+  insuranceEnabled?: boolean;
   bankMayDistributeJetons?: boolean;
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
+  }
+  if (input.game && !isPlayableGame(input.game)) {
+    throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
   }
   return withIdempotency(input.actorId, input.idempotencyKey, "createTable", input, async () => {
     const bankDealerId = input.bankDealerId ?? input.actorId;
@@ -35,6 +42,9 @@ export async function createTable(input: {
     if (minBet !== null && maxBet !== null && minBet > maxBet) {
       throw new DomainError("INVALID_LIMITS", "Minimum bet cannot exceed maximum bet.");
     }
+    const maxBoxesPerPlayer = parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer);
+    const insuranceEnabled = input.insuranceEnabled ?? BLACKJACK_TABLE_DEFAULTS.insuranceEnabled;
+    const blackjackPayout = input.blackjackPayout ?? BLACKJACK_TABLE_DEFAULTS.blackjackPayout;
 
     const table = await prisma.$transaction(async (tx) => {
       const created = await tx.table.create({
@@ -45,7 +55,9 @@ export async function createTable(input: {
           bankDealerId,
           minBetMillis: minBet,
           maxBetMillis: maxBet,
-          blackjackPayout: input.blackjackPayout ?? "THREE_TWO",
+          blackjackPayout,
+          maxBoxesPerPlayer,
+          insuranceEnabled,
           bankMayDistributeJetons: input.bankMayDistributeJetons ?? true,
           currentPhase: "TABLE_SETUP",
           status: "SETUP",
@@ -136,6 +148,8 @@ export async function updateTableSettings(input: {
   minBet?: string;
   maxBet?: string;
   blackjackPayout?: BlackjackPayoutRule;
+  maxBoxesPerPlayer?: number | string;
+  insuranceEnabled?: boolean;
   bankMayDistributeJetons?: boolean;
   game?: string;
 }) {
@@ -155,6 +169,8 @@ export async function updateTableSettings(input: {
         minBetMillis: parseOptionalJetons(input.minBet),
         maxBetMillis: parseOptionalJetons(input.maxBet),
         blackjackPayout: input.blackjackPayout,
+        maxBoxesPerPlayer: input.maxBoxesPerPlayer === undefined ? undefined : parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer),
+        insuranceEnabled: input.insuranceEnabled,
         bankMayDistributeJetons: input.bankMayDistributeJetons,
       },
     });

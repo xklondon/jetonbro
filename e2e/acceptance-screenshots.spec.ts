@@ -1,33 +1,9 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { randomUUID } from "node:crypto";
+import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { createBlackjackTable, noHorizontalOverflow, openAs, uniqueEmail } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
-
-async function openAs(context: BrowserContext, page: Page, email: string, name: string) {
-  const response = await page.request.post("/api/dev/session", {
-    data: { email, name },
-  });
-  const data = (await response.json()) as { sessionToken: string };
-  await context.addCookies([
-    {
-      name: "authjs.session-token",
-      value: data.sessionToken,
-      domain: "127.0.0.1",
-      path: "/",
-      httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
-}
-
-async function noHorizontalOverflow(page: Page) {
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-  );
-  expect(overflow).toBe(false);
-}
 
 test("real Player and Bank phases with Insurance", async ({ page, context, browser }) => {
   test.setTimeout(120_000);
@@ -35,14 +11,10 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   const health = await page.request.get("/api/health");
   expect((await health.json()).ok).toBe(true);
 
-  const ownerEmail = `owner-${randomUUID()}@jetonbro.test`;
-  const alexEmail = `alex-${randomUUID()}@jetonbro.test`;
+  const ownerEmail = uniqueEmail("owner");
+  const alexEmail = uniqueEmail("alex");
   await openAs(context, page, ownerEmail, "Owner");
-  await page.goto("/tables/new");
-  await page.getByPlaceholder("Table name").fill("Acceptance table");
-  await page.getByPlaceholder("Starting jetons for you").fill("0");
-  await page.getByRole("button", { name: "Open the table" }).click();
-  await expect(page.getByText("Table setup")).toBeVisible();
+  await createBlackjackTable(page, "Acceptance table");
 
   await page.getByPlaceholder("Invite by email").fill(alexEmail);
   await page.getByRole("button", { name: "Send email invites" }).click();

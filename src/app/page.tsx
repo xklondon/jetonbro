@@ -1,26 +1,15 @@
 import { auth } from "@/application/auth";
-import { prisma } from "@/application/db";
+import { listHomeTables } from "@/application/queries/home";
+import { firstName } from "@/application/auth-urls";
 import { redirect } from "next/navigation";
 import { HomeClient } from "./home-client";
 
 export default async function HomePage() {
   const session = await auth();
   if (!session?.user?.id) {
-    redirect("/sign-in");
+    redirect("/sign-in?callbackUrl=/");
   }
-  const memberships = await prisma.tableMember.findMany({
-    where: { userId: session.user.id, leftAt: null },
-    include: { table: true },
-    orderBy: { joinedAt: "desc" },
-  });
-  return (
-    <HomeClient
-      name={session.user.name || session.user.email || "Player"}
-      tables={memberships.map((membership) => ({
-        id: membership.table.id,
-        name: membership.table.name,
-        phase: membership.table.currentPhase,
-      }))}
-    />
-  );
+  const tables = await listHomeTables(session.user.id);
+  const displayName = firstName(session.user.name || session.user.email || "Player");
+  return <HomeClient displayName={displayName} tables={tables} />;
 }

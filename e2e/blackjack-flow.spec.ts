@@ -1,44 +1,18 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { randomUUID } from "node:crypto";
+import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
-async function openAs(
-  context: BrowserContext,
-  page: Page,
-  email: string,
-  name: string,
-) {
-  const response = await page.request.post("/api/dev/session", {
-    data: { email, name },
-  });
-  const data = (await response.json()) as { sessionToken: string };
-  await context.addCookies([
-    {
-      name: "authjs.session-token",
-      value: data.sessionToken,
-      domain: "127.0.0.1",
-      path: "/",
-      httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
-}
-
 test("two player sessions join a table and open betting", async ({ page, context, browser }) => {
   await mkdir(out, { recursive: true });
-  const ownerEmail = `owner-${randomUUID()}@jetonbro.test`;
-  const alexEmail = `alex-${randomUUID()}@jetonbro.test`;
-  const joEmail = `jo-${randomUUID()}@jetonbro.test`;
+  const ownerEmail = uniqueEmail("owner");
+  const alexEmail = uniqueEmail("alex");
+  const joEmail = uniqueEmail("jo");
 
   await openAs(context, page, ownerEmail, "Owner");
-  await page.goto("/tables/new");
-  await page.getByPlaceholder("Table name").fill("Salon table");
-  await page.getByPlaceholder("Starting jetons for you").fill("0");
-  await page.getByRole("button", { name: "Open the table" }).click();
-  await expect(page.getByText("Table setup")).toBeVisible();
+  await createBlackjackTable(page, "Salon table");
   await page.screenshot({ path: join(out, "app-setup-390x844.png") });
 
   await page.getByPlaceholder("Invite by email").fill(alexEmail);

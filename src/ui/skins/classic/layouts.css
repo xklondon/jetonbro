@@ -3,6 +3,7 @@
   background: var(--night);
   display: flex;
   justify-content: center;
+  align-items: stretch;
   overflow-x: hidden;
 }
 
@@ -11,6 +12,7 @@
   max-width: 430px;
   min-height: 100dvh;
   overflow: hidden;
+  overflow-x: hidden;
   background: radial-gradient(circle at 50% 34%, var(--felt-hi), var(--felt) 48%, var(--emerald));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -521,12 +523,13 @@
 @media (min-width: 481px) {
   .classic-page {
     padding: 16px 0;
+    align-items: center;
   }
 
   .classic-skin .phone {
-    min-height: 790px;
-    max-height: 932px;
-    height: 844px;
+    min-height: min(844px, 100dvh);
+    max-height: min(844px, 100dvh);
+    height: min(844px, 100dvh);
     border-radius: 34px;
     box-shadow: 0 20px 55px rgba(0, 0, 0, 0.3);
   }

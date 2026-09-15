@@ -81,6 +81,9 @@ src/ui/skins/registry.ts     typed skin selection
 - `ALLOW_DEV_MAILBOX` is local/CI only and is ignored when `NODE_ENV=production`. `/api/dev/*` always 404s in production.
 - Real email delivery uses the Resend HTTP API (`RESEND_API_KEY` + `EMAIL_FROM`). The API key is never placed in a URL.
 - The development mailbox is used only when `NODE_ENV !== "production"` and `ALLOW_DEV_MAILBOX=true`. Production never falls back to it.
+- `AUTH_URL` is the public origin for magic links, invitation URLs, and Auth.js redirects. Production redirects must never use `localhost` or `*.railway.internal`.
+- Successful magic-link login without an invitation lands on authenticated home (`/`). Invitation callbacks stay on `/join/{token}` using the existing EMAIL/QR token model.
+- Creating a table uses domain Blackjack defaults (`THREE_TWO` payout, 3 boxes, Insurance on). The creator is Bank/Dealer and remains in `TABLE_SETUP` until they start betting.
 
 ## Change discipline
 
@@ -104,12 +107,14 @@ Do not claim completion from code inspection alone.
 
 ## Current status
 
-- Repository: Blackjack MVP staging baseline (not production-ready)
+- Repository: Blackjack MVP with authenticated welcome / create-table journey
 - Current game: Blackjack MVP
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
 - Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
-- Verification: `npm run guardrails`, Vitest, `next build`, Playwright real-app phase screenshots plus two-session join
+- Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true) are server-authoritative
+- Authenticated home: empty users see welcome, game cards, CREATE A TABLE and JOIN A TABLE; existing tables show return cards
+- Verification: `npm run guardrails`, Vitest, `next build`, Playwright welcome/create/lobby plus real-app phase screenshots and two-session join
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
-- Email delivery: Resend HTTP API. Live receipt of a magic-link email has not been confirmed
-- Next milestone: confirm a live Resend magic link signs a Player in, then archive/change-game UX
+- Email delivery: Resend HTTP API. Magic-link sign-in works on production; the welcome-to-lobby journey must be reconfirmed on the deployed commit
+- Next milestone: archive/change-game UX after the production create-table journey is confirmed

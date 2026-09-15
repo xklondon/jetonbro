@@ -15,7 +15,7 @@ export default async function JoinPage({
     return <JoinClient token={token} state="invalid" />;
   }
   if (!session?.user) {
-    redirect(`/sign-in?callbackUrl=/join/${token}`);
+    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/join/${token}`)}`);
   }
   return <JoinClient token={token} state="ready" />;
 }

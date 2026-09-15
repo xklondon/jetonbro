@@ -22,6 +22,7 @@ import {
 } from "@/application/services/blackjack-round";
 import { BOX_OUTCOMES } from "@/domain/blackjack/payouts";
 import { INSURANCE_RESOLUTIONS } from "@/domain/blackjack/payouts";
+import { publicOrigin } from "@/application/auth-urls";
 
 const commandSchema = z.object({
   command: z.string(),
@@ -29,7 +30,7 @@ const commandSchema = z.object({
 }).passthrough();
 
 function originFrom(request: NextRequest): string {
-  return process.env.AUTH_URL ?? request.nextUrl.origin;
+  return publicOrigin(request.nextUrl.origin);
 }
 
 export async function POST(
@@ -150,6 +151,8 @@ async function dispatch(
         minBet: p.minBet ? String(p.minBet) : undefined,
         maxBet: p.maxBet ? String(p.maxBet) : undefined,
         blackjackPayout: p.blackjackPayout === "SIX_FIVE" ? "SIX_FIVE" : "THREE_TWO",
+        maxBoxesPerPlayer: p.maxBoxesPerPlayer === undefined ? undefined : String(p.maxBoxesPerPlayer),
+        insuranceEnabled: p.insuranceEnabled === undefined ? undefined : p.insuranceEnabled === true || p.insuranceEnabled === "true",
         bankMayDistributeJetons: p.bankMayDistributeJetons === undefined ? undefined : Boolean(p.bankMayDistributeJetons),
         game: p.game ? String(p.game) : undefined,
       });

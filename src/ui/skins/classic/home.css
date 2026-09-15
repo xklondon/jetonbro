@@ -1,0 +1,193 @@
+.classic-skin main.felt.home-stack {
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 12px;
+  overflow-x: hidden;
+}
+
+.classic-skin .home-head-compact strong {
+  font-size: 16px;
+}
+
+.classic-skin .game-pick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.classic-skin .game-card {
+  min-width: 0;
+  aspect-ratio: 0.72;
+  border: 1px solid rgba(223, 189, 105, 0.38);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(223, 189, 105, 0.18), transparent 42%),
+    linear-gradient(180deg, #0e4f3e 0%, #07291f 100%);
+  color: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.classic-skin .game-card-suit {
+  font: 28px Georgia, serif;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.classic-skin .game-card strong {
+  font: 13px Georgia, serif;
+  letter-spacing: 0.04em;
+}
+
+.classic-skin .game-card small {
+  font-size: 10px;
+  opacity: 0.7;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.classic-skin .game-card em {
+  font-size: 10px;
+  font-style: normal;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.classic-skin .game-card.is-selected {
+  box-shadow: 0 0 0 2px var(--gold), 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.classic-skin .game-card.is-disabled,
+.classic-skin .game-card:disabled {
+  opacity: 0.48;
+  filter: grayscale(0.35);
+}
+
+.classic-skin .home-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.classic-skin .home-actions.compact {
+  gap: 6px;
+}
+
+.classic-skin .home-create {
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.classic-skin .text-link {
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  padding: 8px;
+  width: 100%;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.classic-skin .home-table-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.classic-skin .home-table-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(7, 28, 24, 0.72);
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.classic-skin .home-table-card .gold-button {
+  width: 100%;
+}
+
+.classic-skin .create-table-form label,
+.classic-skin .create-table-form fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(244, 234, 213, 0.82);
+}
+
+.classic-skin .payout-pick {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.classic-skin .payout-pick legend {
+  padding: 0 0 6px;
+}
+
+.classic-skin .payout-pick button {
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 10px;
+  padding: 10px;
+  font: 16px Georgia, serif;
+}
+
+.classic-skin .payout-pick button.is-selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+  color: var(--gold);
+}
+
+.classic-skin .toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.classic-skin .toggle-row.is-on strong {
+  color: var(--gold);
+}
+
+.classic-skin .sheet-panel .text-link,
+.classic-skin .dock .text-link {
+  margin-top: 4px;
+}
+
+@media (max-width: 360px) {
+  .classic-skin .game-card strong {
+    font-size: 12px;
+  }
+
+  .classic-skin .game-card-suit {
+    font-size: 22px;
+  }
+
+  .classic-skin .game-card small,
+  .classic-skin .game-card em {
+    font-size: 9px;
+  }
+}

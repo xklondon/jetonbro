@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Authenticated home
+
+- Empty authenticated home is a welcome screen with game cards, `CREATE A TABLE`, and `JOIN A TABLE`.
+- First landing of a browser session plays a short decorative jeton rain that never blocks actions, runs once per session, and is skipped when `prefers-reduced-motion` is set.
+- Existing tables appear as cards with game, phase, player count, role, and `RETURN TO TABLE`.
+- Create-table is a two-step Classic wizard: Blackjack is selectable; Poker and Zilch show `Coming later`. Blackjack settings use domain defaults and persist `maxBoxesPerPlayer` and `insuranceEnabled`.
+- Creator becomes Bank/Dealer and lands on the table setup lobby with email and QR invites. Betting does not start automatically.
+- Auth.js redirects and magic-link URLs are rewritten onto `AUTH_URL`. Localhost and `*.railway.internal` origins are never kept in production callbacks. Invitation `/join/{token}` destinations are preserved.
+
 ### Email
 
 - Replaced SMTP/Nodemailer with the Resend HTTP API for magic-link and invitation delivery.

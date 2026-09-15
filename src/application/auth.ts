@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/application/db";
 import { sendMagicLinkEmail } from "@/application/mail";
+import { resolveAuthRedirect, rewriteMagicLinkUrl } from "@/application/auth-urls";
 
 declare module "next-auth" {
   interface Session {
@@ -27,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       name: "Email",
       maxAge: 60 * 60,
       sendVerificationRequest: async ({ identifier, url }) => {
-        await sendMagicLinkEmail(identifier, url);
+        await sendMagicLinkEmail(identifier, rewriteMagicLinkUrl(url));
       },
     },
   ],
@@ -37,6 +38,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.email = user.email;
       session.user.name = user.name;
       return session;
+    },
+    redirect({ url, baseUrl }) {
+      return resolveAuthRedirect(url, baseUrl);
     },
   },
 });

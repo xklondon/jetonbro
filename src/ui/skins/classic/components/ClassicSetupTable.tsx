@@ -55,6 +55,10 @@ export function ClassicSetupTable({
               ))}
             </select>
             <div className="muted">Owner {view.ownerName} · Bank/Dealer {view.bankName}</div>
+            <div className="muted">
+              Max boxes {view.maxBoxesPerPlayer} · Insurance {view.insuranceEnabled ? "on" : "off"} · Payout{" "}
+              {view.blackjackPayout === "SIX_FIVE" ? "6:5" : "3:2"}
+            </div>
           </div>
           <div className="setup-card">
             <div>Blackjack payout</div>

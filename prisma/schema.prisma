@@ -147,6 +147,8 @@ model Table {
   minBetMillis            BigInt?
   maxBetMillis            BigInt?
   blackjackPayout         BlackjackPayoutRule @default(THREE_TWO)
+  maxBoxesPerPlayer       Int                 @default(3)
+  insuranceEnabled        Boolean             @default(true)
   bankMayDistributeJetons Boolean             @default(true)
   currentPhase            RoundPhase          @default(TABLE_SETUP)
   currentRoundId          String?             @unique

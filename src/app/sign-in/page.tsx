@@ -1,5 +1,7 @@
 import { auth } from "@/application/auth";
+import { safeCallbackPath } from "@/application/auth-urls";
 import { SignInClient } from "./sign-in-client";
+import { redirect } from "next/navigation";
 
 export default async function SignInPage({
   searchParams,
@@ -8,10 +10,9 @@ export default async function SignInPage({
 }) {
   const session = await auth();
   const params = await searchParams;
-  return (
-    <SignInClient
-      signedIn={Boolean(session?.user)}
-      callbackUrl={params.callbackUrl ?? "/"}
-    />
-  );
+  const callbackUrl = safeCallbackPath(params.callbackUrl);
+  if (session?.user) {
+    redirect(callbackUrl);
+  }
+  return <SignInClient signedIn={false} callbackUrl={callbackUrl} />;
 }
