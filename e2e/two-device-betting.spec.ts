@@ -19,7 +19,7 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByLabel("Player email").fill(playerEmail);
   await page.screenshot({ path: join(out, "app-create-table-setup-390x844.png") });
-  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
 
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
@@ -40,7 +40,7 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   });
   await page.screenshot({ path: join(out, "app-bank-lobby-invited-joined-390x844.png") });
 
-  await page.getByRole("button", { name: /START BETTING/i }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
 
   await playerPage.reload();
@@ -49,11 +49,11 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await playerPage.screenshot({ path: join(out, "app-player-before-bet-390x844.png") });
   await playerPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(playerPage.getByText("75", { exact: true }).first()).toBeVisible();
-  await expect(playerPage.locator("button.box").first()).toContainText("25");
+  await expect(playerPage.locator(".box").first()).toContainText("25");
   await playerPage.screenshot({ path: join(out, "app-player-after-bet-25-390x844.png") });
   await playerPage.reload();
   await expect(playerPage.getByText("75", { exact: true }).first()).toBeVisible();
-  await expect(playerPage.locator("button.box").first()).toContainText("25");
+  await expect(playerPage.locator(".box").first()).toContainText("25");
 
   await page.reload();
   await expect(page.locator(".box").first()).toContainText("25");

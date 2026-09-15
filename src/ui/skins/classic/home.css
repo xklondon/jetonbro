@@ -211,11 +211,152 @@
 
 .classic-skin .setup-sheet {
   max-height: min(92dvh, 760px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.classic-skin .create-table-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.classic-skin .setup-sheet-body {
   overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  padding-bottom: 8px;
+}
+
+.classic-skin .setup-sheet-actions {
+  flex-shrink: 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(223, 189, 105, 0.18);
 }
 
 .classic-skin .sheet-panel.setup-sheet .gold-button {
   margin-top: 8px;
+}
+
+.classic-skin .qr-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.classic-skin .qr-panel img {
+  width: 180px;
+  height: 180px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.classic-skin .waiting-players {
+  text-align: center;
+  color: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.classic-skin .waiting-pulse {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: waiting-bounce 1.2s ease-in-out infinite;
+}
+
+.classic-skin .deal-countdown {
+  margin: 6px 0 8px;
+  font-family: Georgia, serif;
+  font-size: 22px;
+  color: var(--gold);
+  animation: countdown-pop 0.45s ease;
+}
+
+.classic-skin .deal-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.classic-skin main.felt.betting-open {
+  box-shadow: inset 0 0 40px rgba(223, 189, 105, 0.18);
+}
+
+.classic-skin main.felt.betting-closing .chip-pile .chip {
+  animation: chip-settle 0.5s ease;
+}
+
+.classic-skin .box.drop-target {
+  outline: 2px solid var(--gold);
+}
+
+.classic-skin .drag-ghost {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.classic-skin .chip-lift {
+  transform: scale(1.06);
+}
+
+.classic-skin .chip-slot {
+  position: relative;
+  display: inline-flex;
+}
+
+.classic-skin .chip-retract {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #1a1208;
+  color: var(--ivory);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+.classic-skin .c-exact {
+  background: #d7c48a;
+  color: #342706;
+}
+
+@keyframes waiting-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes countdown-pop {
+  from { transform: scale(0.92); opacity: 0.6; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chip-settle {
+  0% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classic-skin .waiting-pulse,
+  .classic-skin .deal-countdown,
+  .classic-skin main.felt.betting-closing .chip-pile .chip,
+  .classic-skin .chip-lift {
+    animation: none;
+    transform: none;
+  }
 }
 
 @media (max-width: 360px) {

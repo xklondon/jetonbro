@@ -12,9 +12,11 @@ import {
   type InsuranceResolution,
 } from "@/domain/blackjack/payouts";
 import { assertTransition } from "@/domain/blackjack/transitions";
+import { DEAL_COUNTDOWN_MS } from "@/domain/blackjack/deal";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@/domain/errors";
 import { formatJetons, parseJetonInput } from "@/domain/money";
 import type { Prisma } from "@prisma/client";
+import { clearDealTimer, scheduleDealTimer } from "@/application/services/deal-timer";
 
 type Tx = Prisma.TransactionClient;
 
@@ -70,6 +72,56 @@ function assertBetLimits(
   if (maxBet !== null && resulting > maxBet) {
     throw new DomainError("ABOVE_MAXIMUM", `The maximum bet is ${formatJetons(maxBet)} jetons.`);
   }
+}
+
+function hasValidBet(boxes: { removedAt: Date | null; lockedBetMillis: bigint }[]): boolean {
+  return boxes.some((box) => !box.removedAt && box.lockedBetMillis > 0n);
+}
+
+async function transitionBettingToPlaying(
+  tx: Tx,
+  table: Awaited<ReturnType<typeof loadTableForUpdate>>,
+): Promise<boolean> {
+  if (table.currentPhase !== "BETTING" || !table.currentRound) return false;
+  if (!hasValidBet(table.currentRound.boxes)) {
+    await tx.round.update({
+      where: { id: table.currentRound.id },
+      data: { bettingCloseDeadlineAt: null },
+    });
+    return false;
+  }
+  assertTransition("BETTING", "PLAYING");
+  await tx.bettingBox.updateMany({
+    where: { roundId: table.currentRound.id, lockedBetMillis: 0n, removedAt: null },
+    data: { removedAt: new Date() },
+  });
+  await tx.round.update({
+    where: { id: table.currentRound.id },
+    data: { phase: "PLAYING", bettingClosedAt: new Date(), bettingCloseDeadlineAt: null },
+  });
+  await tx.table.update({
+    where: { id: table.id },
+    data: { currentPhase: "PLAYING" },
+  });
+  return true;
+}
+
+export async function ensureBettingClosedIfDue(tableId: string): Promise<boolean> {
+  const closed = await prisma.$transaction(async (tx) => {
+    const table = await loadTableForUpdate(tx, tableId);
+    if (table.currentPhase !== "BETTING" || !table.currentRound?.bettingCloseDeadlineAt) {
+      return false;
+    }
+    if (table.currentRound.bettingCloseDeadlineAt.getTime() > Date.now()) {
+      return false;
+    }
+    return transitionBettingToPlaying(tx, table);
+  });
+  if (closed) {
+    clearDealTimer(tableId);
+    publishTable(tableId);
+  }
+  return closed;
 }
 
 export async function startBetting(input: { actorId: string; tableId: string; idempotencyKey: string }) {
@@ -205,9 +257,14 @@ export async function placeOrRetractBet(input: {
 }) {
   const amount = parseJetonInput(input.amount);
   return withIdempotency(input.actorId, input.idempotencyKey, "placeOrRetractBet", input, async () => {
+    await ensureBettingClosedIfDue(input.tableId);
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       if (table.currentPhase !== "BETTING") {
+        throw new ConflictError("Betting is not open yet");
+      }
+      const deadline = table.currentRound?.bettingCloseDeadlineAt;
+      if (deadline && deadline.getTime() <= Date.now()) {
         throw new ConflictError("Betting is not open yet");
       }
       if (table.bankDealerId === input.actorId) {
@@ -266,28 +323,54 @@ export async function placeOrRetractBet(input: {
   });
 }
 
+export async function scheduleDeal(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "scheduleDeal", input, async () => {
+    const result = await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      requirePhase(table.currentPhase, "BETTING");
+      const round = table.currentRound;
+      if (!round) throw new ConflictError("No open round.");
+      if (!hasValidBet(round.boxes)) {
+        throw new DomainError("NO_BETS", "At least one player must place a bet first.");
+      }
+      if (round.bettingCloseDeadlineAt && round.bettingCloseDeadlineAt.getTime() > Date.now()) {
+        return { deadline: round.bettingCloseDeadlineAt.toISOString() };
+      }
+      const deadline = new Date(Date.now() + DEAL_COUNTDOWN_MS);
+      await tx.round.update({
+        where: { id: round.id },
+        data: { bettingCloseDeadlineAt: deadline },
+      });
+      return { deadline: deadline.toISOString() };
+    });
+    scheduleDealTimer(input.tableId, new Date(result.deadline), async (tableId) => {
+      await ensureBettingClosedIfDue(tableId);
+    });
+    publishTable(input.tableId);
+    return result;
+  });
+}
+
 export async function dealCards(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "dealCards", input, async () => {
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
+      if (table.currentPhase === "PLAYING") {
+        return;
+      }
       requirePhase(table.currentPhase, "BETTING");
-      assertTransition("BETTING", "PLAYING");
-      const round = table.currentRound;
-      if (!round) throw new ConflictError("No open round.");
-      await tx.bettingBox.updateMany({
-        where: { roundId: round.id, lockedBetMillis: 0n, removedAt: null },
-        data: { removedAt: new Date() },
-      });
-      await tx.round.update({
-        where: { id: round.id },
-        data: { phase: "PLAYING", bettingClosedAt: new Date() },
-      });
-      await tx.table.update({
-        where: { id: table.id },
-        data: { currentPhase: "PLAYING" },
-      });
+      if (!table.currentRound) throw new ConflictError("No open round.");
+      if (!hasValidBet(table.currentRound.boxes)) {
+        throw new DomainError("NO_BETS", "At least one player must place a bet first.");
+      }
+      const moved = await transitionBettingToPlaying(tx, table);
+      if (!moved) {
+        throw new DomainError("NO_BETS", "At least one player must place a bet first.");
+      }
     });
+    clearDealTimer(input.tableId);
     publishTable(input.tableId);
     return { ok: true };
   });

@@ -47,14 +47,17 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
     title: "Take bets",
     copy: "Close when ready",
     phaseLabel: "BETTING",
-    primaryAction: { id: "dealCards", label: "Deal cards", enabled: true },
+    primaryAction: { id: "dealCards", label: "DEAL CARDS NOW", enabled: true },
     boxes: [box({ insurance: null })],
     playerCount: 1,
     boxCount: 1,
     lockedOrdinary: { millis: "25000", label: "25" },
     insurance: { window: "CLOSED", total: { millis: "0", label: "0" }, count: 0, resolution: null },
+    bettingCloseDeadlineAt: null,
+    hasValidBet: true,
     actions: {
       dealCards: true,
+      scheduleDeal: true,
       payoutPhase: false,
       nextHand: false,
       openInsurance: false,
@@ -73,15 +76,16 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
   };
 }
 
-test("Bank betting keeps Deal cards at the top", () => {
+test("Bank betting keeps deal controls at the top", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicBankTable, { view: bankView({}), members, onCommand: () => undefined }),
   );
   expect(html).toContain("CURRENT PHASE:");
   expect(html).toContain("BETTING");
-  expect(html).toContain("Deal cards");
-  expect(html.indexOf("CURRENT PHASE:")).toBeLessThan(html.indexOf("Deal cards"));
-  expect(html.indexOf("Deal cards")).toBeLessThan(html.indexOf("ON TABLE"));
+  expect(html).toContain("DEAL CARDS NOW");
+  expect(html).toContain("DEAL IN 7 SECONDS");
+  expect(html.indexOf("CURRENT PHASE:")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
+  expect(html.indexOf("DEAL CARDS NOW")).toBeLessThan(html.indexOf("ON TABLE"));
 });
 
 test("Bank playing shows an open Insurance window as a side pot", () => {
@@ -94,6 +98,7 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
         insurance: { window: "OPEN", total: { millis: "12500", label: "12.5" }, count: 1, resolution: null },
         actions: {
           dealCards: false,
+          scheduleDeal: false,
           payoutPhase: true,
           nextHand: false,
           openInsurance: false,
@@ -127,6 +132,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
         insurance: { window: "CLOSED", total: { millis: "12500", label: "12.5" }, count: 1, resolution: null },
         actions: {
           dealCards: false,
+          scheduleDeal: false,
           payoutPhase: false,
           nextHand: false,
           openInsurance: false,

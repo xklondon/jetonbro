@@ -52,6 +52,7 @@ export function ClassicCreateTable({
         }
       }}
     >
+      <div className="setup-sheet-body">
       {notice ? <div className="error">{notice}</div> : null}
       <div>
         <div className="field-label">Game</div>
@@ -103,9 +104,17 @@ export function ClassicCreateTable({
         />
       </label>
       <p className="muted setup-defaults">Blackjack 3:2 · max 3 boxes · Insurance on</p>
+      </div>
+      <div className="setup-sheet-actions">
       <button className="gold-button" type="submit" disabled={pending}>
-        {pending ? "Setting up table" : "SET UP TABLE"}
+        {pending ? "Starting table" : "START TABLE"}
       </button>
+      {embedded ? (
+        <button className="text-link" type="button" onClick={onBack}>
+          Cancel
+        </button>
+      ) : null}
+      </div>
     </form>
   );
 

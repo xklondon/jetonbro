@@ -19,7 +19,7 @@ test("authenticated welcome, create table and lobby", async ({ page, context }) 
   await page.screenshot({ path: join(out, "app-welcome-empty-390x844.png") });
 
   await page.getByRole("button", { name: "CREATE A TABLE" }).click();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeEnabled();
   await expect(page.getByRole("button", { name: /Poker/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: /Zilch/ })).toBeDisabled();
@@ -29,12 +29,12 @@ test("authenticated welcome, create table and lobby", async ({ page, context }) 
   await page.screenshot({ path: join(out, "app-blackjack-setup-390x844.png") });
 
   await page.getByLabel("Starting jetons per player").fill("0");
-  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.getByText(/Bank\/Dealer Alex/)).toBeVisible();
   await expect(page.getByRole("button", { name: "+ ADD PLAYER" })).toBeVisible();
-  await page.getByRole("button", { name: "Show QR" }).click();
-  await expect(page.getByAltText("Table join QR code")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Waiting for a player to join" })).toBeDisabled();
+  await expect(page.getByAltText("Shared table join QR code")).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
+  await expect(page.getByText("Waiting for a player to join")).toBeVisible();
   await page.screenshot({ path: join(out, "app-table-lobby-invites-390x844.png") });
 
   await page.goto("/");
@@ -52,7 +52,7 @@ test("welcome animation is non-blocking, session-limited and respects reduced mo
   await page.goto("/");
   await expect(page.locator(".welcome-celebration")).toBeVisible();
   await page.getByRole("button", { name: "CREATE A TABLE" }).click();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
 
   await page.goto("/");
   await expect(page.getByRole("button", { name: "CREATE A TABLE" })).toBeVisible();

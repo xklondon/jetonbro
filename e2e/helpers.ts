@@ -23,7 +23,7 @@ export async function openSetupSheet(page: Page) {
   const create = page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ });
   await expect(create).toBeVisible();
   await create.click();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeVisible();
   await expect(page.getByLabel("Player email")).toBeVisible();
   await expect(page.getByLabel("Starting jetons per player")).toBeVisible();
@@ -40,7 +40,7 @@ export async function createBlackjackTable(
   if (options?.email) {
     await page.getByLabel("Player email").fill(options.email);
   }
-  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.getByRole("button", { name: "+ ADD PLAYER" })).toBeVisible();
   await expect(page.getByText(/Blackjack · Bank\/Dealer/)).toBeVisible();
 }

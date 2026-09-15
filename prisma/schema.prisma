@@ -208,9 +208,10 @@ model Round {
   phase               RoundPhase
   insuranceWindow     InsuranceWindowState @default(CLOSED)
   insuranceResolution InsuranceResolution?
-  createdAt           DateTime             @default(now())
-  bettingClosedAt     DateTime?
-  payoutEnteredAt     DateTime?
+  createdAt                 DateTime             @default(now())
+  bettingClosedAt           DateTime?
+  bettingCloseDeadlineAt    DateTime?
+  payoutEnteredAt           DateTime?
   completedAt         DateTime?
 
   table         Table          @relation("TableRounds", fields: [tableId], references: [id], onDelete: Cascade)

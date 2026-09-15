@@ -112,9 +112,6 @@ export function ClassicHome({
               onBack={() => setSetupOpen(false)}
               onCreate={onSetupTable}
             />
-            <button className="text-link" type="button" onClick={() => setSetupOpen(false)}>
-              Cancel
-            </button>
           </div>
         </div>
         <div className={`sheet${joinOpen ? " open" : ""}`}>

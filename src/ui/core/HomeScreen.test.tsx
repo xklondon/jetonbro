@@ -28,7 +28,7 @@ test("create table is one setup surface", () => {
     }),
   );
   expect(html).toContain("CREATE A TABLE");
-  expect((html.match(/SET UP TABLE/g) ?? []).length).toBe(1);
+  expect((html.match(/START TABLE/g) ?? []).length).toBe(1);
   expect(html).toContain("Player email");
   expect(html).toContain("Starting jetons per player");
   expect(html).toContain("Blackjack");
@@ -85,7 +85,7 @@ test("single setup includes invites and hides advanced settings", () => {
     }),
   );
   expect(html).toMatch(/Alex(&#x27;|')s table/);
-  expect(html).toContain("SET UP TABLE");
+  expect(html).toContain("START TABLE");
   expect(html).toContain("Player email");
   expect(html).toContain("+ Add another player");
   expect(html).not.toContain("Maximum boxes per player");

@@ -1,0 +1,1 @@
+ALTER TABLE "Round" ADD COLUMN IF NOT EXISTS "bettingCloseDeadlineAt" TIMESTAMP(3);

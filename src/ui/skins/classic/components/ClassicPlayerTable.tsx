@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { PlayerTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { FeltBox } from "./FeltBox";
+import { DealCountdown } from "./DealCountdown";
+
+const DENOMS = ["5", "10", "25", "50"] as const;
 
 export function ClassicPlayerTable({
   view,
@@ -20,27 +23,50 @@ export function ClassicPlayerTable({
 }) {
   const [exact, setExact] = useState("");
   const [insuranceAmount, setInsuranceAmount] = useState("");
+  const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
+  const [drag, setDrag] = useState<{ denom: string; x: number; y: number } | null>(null);
+  const skipClick = useRef(false);
+  const origin = useRef<{ x: number; y: number } | null>(null);
+  const draggingDenom = useRef<string | null>(null);
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const boxClass = useMemo(() => {
     if (view.boxes.length >= 4) return "player-boxes scroll";
     if (view.boxes.length === 3) return "player-boxes three";
-    return "player-boxes";
+    if (view.boxes.length === 2) return "player-boxes two";
+    return "player-boxes one";
   }, [view.boxes.length]);
+  const reducedMotion =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function boxAtPoint(x: number, y: number): string | null {
+    const el = document.elementFromPoint(x, y);
+    return el?.closest("[data-drop-box]")?.getAttribute("data-drop-box") ?? null;
+  }
+
+  function place(amount: string, boxId: string) {
+    onCommand("placeBet", { boxId, amount, mode: "ADD" });
+  }
 
   return (
     <PhoneShell rightLabel={`♠ ${view.boxes.length}`}>
       <div className="phase-head">
         <strong>{view.title}</strong>
         <span>{view.copy}</span>
+        <DealCountdown deadline={view.bettingCloseDeadlineAt} />
       </div>
-      <main className="felt">
+      <main className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}>
         <div className={boxClass}>
           {view.boxes.map((box) => (
             <FeltBox
               key={box.id}
               box={box}
               selected={box.id === selected?.id}
+              dropHighlight={hoverBoxId === box.id}
               onSelect={() => onSelectBox(box.id)}
+              retractable={view.actions.retract}
+              onRetractChip={(amount) =>
+                onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
+              }
             />
           ))}
         </div>
@@ -147,22 +173,69 @@ export function ClassicPlayerTable({
           </div>
         </div>
         <div className="jetons">
-          {["5", "10", "25", "50"].map((denom) => (
+          {DENOMS.map((denom) => (
             <button
               key={denom}
               type="button"
               disabled={!view.actions.bet || !selected}
-              onClick={() =>
-                selected && onCommand("placeBet", { boxId: selected.id, amount: denom, mode: "ADD" })
-              }
               aria-label={`Add ${denom} jetons`}
+              style={drag ? { touchAction: "none" } : undefined}
+              onPointerDown={(event) => {
+                if (!view.actions.bet) return;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                skipClick.current = false;
+                origin.current = { x: event.clientX, y: event.clientY };
+                draggingDenom.current = denom;
+                setDrag({ denom, x: event.clientX, y: event.clientY });
+              }}
+              onPointerMove={(event) => {
+                if (draggingDenom.current !== denom || !origin.current) return;
+                const dist = Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y);
+                if (dist > 8) skipClick.current = true;
+                setDrag({ denom, x: event.clientX, y: event.clientY });
+                setHoverBoxId(boxAtPoint(event.clientX, event.clientY));
+              }}
+              onPointerUp={(event) => {
+                const target = boxAtPoint(event.clientX, event.clientY);
+                const dragged = skipClick.current;
+                draggingDenom.current = null;
+                origin.current = null;
+                setDrag(null);
+                setHoverBoxId(null);
+                if (dragged && target) {
+                  place(denom, target);
+                }
+              }}
+              onPointerCancel={() => {
+                draggingDenom.current = null;
+                origin.current = null;
+                setDrag(null);
+                setHoverBoxId(null);
+              }}
+              onClick={() => {
+                if (skipClick.current) {
+                  skipClick.current = false;
+                  return;
+                }
+                if (selected) place(denom, selected.id);
+              }}
             >
-              <span className={`chip c${denom}`}>{denom}</span>
+              <span className={`chip c${denom}${drag?.denom === denom && !reducedMotion ? " chip-lift" : ""}`}>
+                {denom}
+              </span>
             </button>
           ))}
         </div>
       </footer>
+      {drag ? (
+        <div
+          className={`drag-ghost chip c${drag.denom}${reducedMotion ? "" : " settling"}`}
+          style={{ left: drag.x, top: drag.y }}
+          aria-hidden="true"
+        >
+          {drag.denom}
+        </div>
+      ) : null}
     </PhoneShell>
   );
 }
-

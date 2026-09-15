@@ -8,6 +8,7 @@ import { formatJetons } from "@/domain/money";
 import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
+import { ensureBettingClosedIfDue } from "@/application/services/blackjack-round";
 import type {
   BankTableView,
   BoxView,
@@ -58,6 +59,7 @@ function boxLabelForPlayer(box: { displayLabel: string; boxNumber: number; isSpl
 }
 
 export async function loadSnapshot(tableId: string, viewerId: string): Promise<ClientSnapshot> {
+  await ensureBettingClosedIfDue(tableId);
   const table = await prisma.table.findUnique({
     where: { id: tableId },
     include: {
@@ -219,6 +221,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           available: money(viewer.availableMillis),
           boxes: ownBoxes,
           insuranceWindowOpen: insuranceOpen,
+          bettingCloseDeadlineAt: table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null,
           actions: {
             bet: table.currentPhase === "BETTING",
             retract: table.currentPhase === "BETTING",
@@ -239,6 +242,14 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   const insuranceTotal =
     table.currentRound?.insuranceBets.reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
 
+  const hasValidBet = boxes.some((box) => BigInt(box.bet.millis) > 0n);
+  const deadline = table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null;
+  const countdownActive = Boolean(
+    table.currentPhase === "BETTING" &&
+      table.currentRound?.bettingCloseDeadlineAt &&
+      table.currentRound.bettingCloseDeadlineAt.getTime() > Date.now(),
+  );
+
   const bank: BankTableView | null = isBank && table.currentPhase !== "TABLE_SETUP"
     ? {
         role: "BANK",
@@ -249,7 +260,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         phaseLabel: table.currentPhase.replace("_", " "),
         primaryAction:
           table.currentPhase === "BETTING"
-            ? { id: "dealCards", label: "Deal cards", enabled: true }
+            ? { id: "dealCards", label: "DEAL CARDS NOW", enabled: hasValidBet }
             : table.currentPhase === "PLAYING"
               ? { id: "payoutPhase", label: "Payout phase", enabled: true }
               : table.currentPhase === "PAYOUT"
@@ -266,7 +277,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           resolution: table.currentRound?.insuranceResolution ?? null,
         },
         actions: {
-          dealCards: table.currentPhase === "BETTING",
+          dealCards: table.currentPhase === "BETTING" && hasValidBet,
+          scheduleDeal: table.currentPhase === "BETTING" && hasValidBet && !countdownActive,
           payoutPhase: table.currentPhase === "PLAYING",
           nextHand: canNextHand,
           openInsurance:
@@ -285,6 +297,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
           { id: "NO_DEALER_BLACKJACK", label: "No Blackjack" },
         ],
+        bettingCloseDeadlineAt: deadline,
+        hasValidBet,
       }
     : null;
 

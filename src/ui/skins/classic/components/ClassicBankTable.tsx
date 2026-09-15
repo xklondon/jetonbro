@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BankTableView, MemberView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
+import { DealCountdown } from "./DealCountdown";
 import { FeltBox } from "./FeltBox";
 
 export function ClassicBankTable({
@@ -33,17 +34,28 @@ export function ClassicBankTable({
         <div className="current">
           CURRENT PHASE: <strong>{view.phaseLabel}</strong>
         </div>
-        <button
-          type="button"
-          disabled={!view.primaryAction.enabled && view.primaryAction.id !== "dealCards" && view.primaryAction.id !== "payoutPhase"}
-          onClick={() => {
-            if (view.primaryAction.id === "dealCards") onCommand("dealCards");
-            if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
-            if (view.primaryAction.id === "nextHand") onCommand("startNextRound");
-          }}
-        >
-          {view.primaryAction.label}
-        </button>
+        <DealCountdown deadline={view.bettingCloseDeadlineAt} />
+        {view.phase === "BETTING" ? (
+          <div className="deal-actions">
+            <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
+              DEAL CARDS NOW
+            </button>
+            <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
+              DEAL IN 7 SECONDS
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
+            onClick={() => {
+              if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
+              if (view.primaryAction.id === "nextHand") onCommand("startNextRound");
+            }}
+          >
+            {view.primaryAction.label}
+          </button>
+        )}
       </div>
       <main className="felt">
         <div className="dealer-grid">

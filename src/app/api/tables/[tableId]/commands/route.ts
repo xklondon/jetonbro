@@ -9,6 +9,7 @@ import {
   buyInsurance,
   closeInsurance,
   dealCards,
+  scheduleDeal,
   doubleBox,
   enterPayout,
   openInsurance,
@@ -92,6 +93,8 @@ async function dispatch(
       return startBetting(ctx);
     case "dealCards":
       return dealCards(ctx);
+    case "scheduleDeal":
+      return scheduleDeal(ctx);
     case "enterPayout":
       return enterPayout(ctx);
     case "startNextRound":

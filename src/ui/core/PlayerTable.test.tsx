@@ -12,6 +12,7 @@ const view: PlayerTableView = {
   copy: "Select a box",
   available: { millis: "75000", label: "75" },
   insuranceWindowOpen: false,
+  bettingCloseDeadlineAt: null,
   actions: {
     bet: false,
     retract: false,
@@ -97,7 +98,28 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
   );
   expect(html).toContain("Amount");
   expect(html).toContain("YOUR JETONS");
+  expect(html).toContain("Retract 25 jetons from Box 1");
+  expect(html).toContain("player-boxes two");
   expect(html.indexOf("Amount")).toBeLessThan(html.indexOf("YOUR JETONS"));
+});
+
+test("a single player box is centred on the felt", () => {
+  const oneBox: PlayerTableView = {
+    ...view,
+    phase: "BETTING",
+    boxes: [view.boxes[0]!],
+    bettingCloseDeadlineAt: null,
+    actions: { ...view.actions, bet: true, retract: true, addBox: true, double: false, split: false, insurance: false },
+  };
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: oneBox,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("player-boxes one");
 });
 
 test("player payout keeps the jeton dock visible under settlement status", () => {

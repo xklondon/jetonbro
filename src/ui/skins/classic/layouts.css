@@ -97,13 +97,22 @@
 
 .classic-skin .player-boxes {
   width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   gap: 8px;
 }
 
-.classic-skin .player-boxes.three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.classic-skin .player-boxes.one .box {
+  width: min(78%, 240px);
+}
+
+.classic-skin .player-boxes.two .box {
+  width: min(48%, 190px);
+}
+
+.classic-skin .player-boxes.three .box {
+  width: min(32%, 140px);
 }
 
 .classic-skin .player-boxes.scroll {

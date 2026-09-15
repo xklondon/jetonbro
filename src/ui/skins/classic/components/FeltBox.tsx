@@ -10,6 +10,9 @@ export function FeltBox({
   bank = false,
   showOutcomes = false,
   onSettle,
+  retractable = false,
+  onRetractChip,
+  dropHighlight = false,
 }: {
   box: BoxView;
   selected?: boolean;
@@ -17,18 +20,35 @@ export function FeltBox({
   bank?: boolean;
   showOutcomes?: boolean;
   onSettle?: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
+  retractable?: boolean;
+  onRetractChip?: (amount: string) => void;
+  dropHighlight?: boolean;
 }) {
   const chips = chipsFromMillis(box.bet.millis);
+  const className = `box${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}`;
   const content = (
     <>
       <span className="box-name">{box.label}</span>
-      <span className="amount-label">{bank ? "BET" : "BET"}</span>
+      <span className="amount-label">BET</span>
       <span className="amount">{box.bet.label}</span>
       {!showOutcomes ? (
         <span className="chip-pile">
           {chips.map((chip, index) => (
-            <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
-              {chip.label}
+            <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
+              <span className={`chip ${chip.className}${chip.exact ? "" : ""}`}>{chip.label}</span>
+              {retractable ? (
+                <button
+                  type="button"
+                  className="chip-retract"
+                  aria-label={`Retract ${chip.label} jetons from Box ${box.boxNumber}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRetractChip?.(chip.amount);
+                  }}
+                >
+                  ×
+                </button>
+              ) : null}
             </span>
           ))}
         </span>
@@ -56,7 +76,10 @@ export function FeltBox({
               key={action.outcome}
               type="button"
               className={action.outcome.toLowerCase()}
-              onClick={() => onSettle?.(action.outcome)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSettle?.(action.outcome);
+              }}
             >
               {action.label}
             </button>
@@ -68,10 +91,26 @@ export function FeltBox({
 
   if (onSelect) {
     return (
-      <button className={`box${selected ? " selected" : ""}`} type="button" onClick={onSelect}>
+      <div
+        className={className}
+        data-drop-box={box.id}
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect();
+          }
+        }}
+      >
         {content}
-      </button>
+      </div>
     );
   }
-  return <div className="box">{content}</div>;
+  return (
+    <div className={className} data-drop-box={box.id}>
+      {content}
+    </div>
+  );
 }

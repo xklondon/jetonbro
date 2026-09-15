@@ -41,15 +41,14 @@ test("two player sessions join a table and open betting", async ({ page, context
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({
     timeout: 15000,
   });
-  await page.getByRole("button", { name: "Show QR" }).click();
-  await expect(page.getByAltText("Table join QR code")).toBeVisible();
+  await expect(page.getByAltText("Shared table join QR code")).toBeVisible();
 
-  const memberSelect = page.locator("select").last();
-  await memberSelect.selectOption({ label: "Alex" });
-  await page.getByPlaceholder("Jeton amount").fill("100");
-  await page.getByRole("button", { name: "Give jetons" }).click();
-  await page.getByRole("button", { name: /START BETTING/i }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText(/CURRENT PHASE/i)).toBeVisible();
+  await page.getByRole("button", { name: /Give jetons/ }).click();
+  await page.locator("select").last().selectOption({ label: "Alex" });
+  await page.getByPlaceholder("Jeton amount").fill("100");
+  await page.getByRole("button", { name: "Confirm" }).click();
   await alexPage.reload();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
 });

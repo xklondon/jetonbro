@@ -4,7 +4,9 @@
 
 ### Table setup and betting
 
-- `CREATE A TABLE` opens one setup sheet: game, player emails, starting jetons, and `SET UP TABLE`.
+- `CREATE A TABLE` opens one setup sheet: game, player emails, starting jetons, and `START TABLE`.
+- After `START TABLE` the Bank waiting room stays in `TABLE_SETUP` with one shared QR. `OPEN BETTING` is the `TABLE_SETUP → BETTING` command.
+- During BETTING the Bank can `DEAL CARDS NOW` or `DEAL IN 7 SECONDS`. The seven-second option stores `Round.bettingCloseDeadlineAt`; refresh resumes from that deadline and the close happens once.
 - One idempotent command creates the table, makes the creator Bank/Dealer, stores `startingJetonsPerPlayerMillis`, and writes EMAIL/QR invitations.
 - Joining credits starting jetons to that membership exactly once (`starting-jetons:{tableId}:{userId}`).
 - The Bank lobby lists Bank/Dealer, Invited, Joined, and Ready seats with `+ ADD PLAYER` and QR.

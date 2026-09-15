@@ -69,6 +69,7 @@ export type PlayerPermittedActions = {
 
 export type BankPermittedActions = {
   dealCards: boolean;
+  scheduleDeal: boolean;
   payoutPhase: boolean;
   nextHand: boolean;
   openInsurance: boolean;
@@ -90,6 +91,7 @@ export type PlayerTableView = {
   boxes: BoxView[];
   actions: PlayerPermittedActions;
   insuranceWindowOpen: boolean;
+  bettingCloseDeadlineAt: string | null;
 };
 
 export type BankTableView = {
@@ -107,6 +109,8 @@ export type BankTableView = {
   insurance: InsurancePotView;
   actions: BankPermittedActions;
   insuranceSettleActions: { id: InsurancePotView["window"] extends never ? never : string; label: string }[];
+  bettingCloseDeadlineAt: string | null;
+  hasValidBet: boolean;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";

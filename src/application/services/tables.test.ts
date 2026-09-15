@@ -52,9 +52,14 @@ describeDb("create table home journey", () => {
 
     const table = await prisma.table.findUniqueOrThrow({ where: { id: created.tableId } });
     expect(table.bankDealerId).toBe(owner.id);
+    expect(table.currentPhase).toBe("TABLE_SETUP");
     expect(table.startingJetonsPerPlayerMillis).toBe(100000n);
 
     const snapshot = await loadSnapshot(created.tableId, owner.id);
+    expect(snapshot.phase).toBe("TABLE_SETUP");
+    expect(snapshot.bank).toBeNull();
+    expect(snapshot.setup?.joinUrl).toContain("/join/");
+    expect(snapshot.setup?.canStartBetting).toBe(false);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Bank / Dealer")).toBe(true);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Invited" && seat.name === playerEmail)).toBe(true);
 
@@ -225,5 +230,36 @@ describeDb("create table home journey", () => {
     await expect(
       startBetting({ actorId: owner.id, tableId: created.tableId, idempotencyKey: randomUUID() }),
     ).rejects.toMatchObject({ code: "NO_PLAYERS" });
+  });
+
+  test("one shared QR lets two users join once each", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const sam = await user(`sam-${randomUUID()}@jetonbro.test`, "Sam");
+    const jo = await user(`jo-${randomUUID()}@jetonbro.test`, "Jo");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Shared QR",
+      startingJetonsPerPlayer: "100",
+    });
+    const qr = await prisma.invitation.findFirstOrThrow({
+      where: { tableId: created.tableId, kind: "QR", revokedAt: null },
+    });
+    const emailInvite = await prisma.invitation.findFirst({
+      where: { tableId: created.tableId, kind: "EMAIL" },
+    });
+    expect(qr.token).not.toBe(emailInvite?.token);
+    await joinWithToken({ userId: sam.id, token: qr.token, userEmail: sam.email });
+    await joinWithToken({ userId: jo.id, token: qr.token, userEmail: jo.email });
+    await joinWithToken({ userId: sam.id, token: qr.token, userEmail: sam.email });
+    expect(await prisma.tableMember.count({ where: { tableId: created.tableId, userId: sam.id } })).toBe(1);
+    expect(await prisma.tableMember.count({ where: { tableId: created.tableId, userId: jo.id } })).toBe(1);
+    const samMember = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId: created.tableId, userId: sam.id } },
+    });
+    expect(samMember.availableMillis).toBe(100000n);
+    const lobby = await loadSnapshot(created.tableId, owner.id);
+    expect(lobby.setup?.canStartBetting).toBe(true);
+    expect(lobby.setup?.joinUrl).toContain(qr.token);
   });
 });

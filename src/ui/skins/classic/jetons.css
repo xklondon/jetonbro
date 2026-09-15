@@ -48,6 +48,7 @@
   border: 0;
   background: transparent;
   padding: 1px;
+  touch-action: none;
 }
 
 .classic-skin .jetons .chip {

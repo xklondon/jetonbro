@@ -29,13 +29,14 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
 
   await page.reload();
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({ timeout: 15000 });
-  await page.locator("select").last().selectOption({ label: "Alex" });
-  await page.getByPlaceholder("Jeton amount").fill("200");
-  await page.getByRole("button", { name: "Give jetons" }).click();
-  await page.getByRole("button", { name: /START BETTING/i }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Deal cards" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
+  await page.getByRole("button", { name: /Give jetons/ }).click();
+  await page.locator("select").last().selectOption({ label: "Alex" });
+  await page.getByPlaceholder("Jeton amount").fill("200");
+  await page.getByRole("button", { name: "Confirm" }).click();
 
   await alexPage.reload();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
@@ -44,11 +45,11 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await alexPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await alexPage.getByPlaceholder("Amount").fill("25");
   await alexPage.getByRole("button", { name: "Bet", exact: true }).click();
-  await expect(alexPage.locator("button.box").filter({ hasText: "YOUR BOX 1" })).toContainText("25");
+  await expect(alexPage.locator(".box").filter({ hasText: "YOUR BOX 1" })).toContainText("25");
   await alexPage.getByRole("button", { name: /YOUR BOX 2/ }).click();
   await alexPage.getByPlaceholder("Amount").fill("10");
   await alexPage.getByRole("button", { name: "Bet", exact: true }).click();
-  await expect(alexPage.locator("button.box").filter({ hasText: "YOUR BOX 2" })).toContainText("10");
+  await expect(alexPage.locator(".box").filter({ hasText: "YOUR BOX 2" })).toContainText("10");
   await expect(alexPage.getByText("165", { exact: true }).first()).toBeVisible();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
   await alexPage.setViewportSize({ width: 390, height: 844 });
@@ -61,12 +62,12 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await alexPage.setViewportSize({ width: 390, height: 844 });
 
   await page.reload();
-  await expect(page.getByRole("button", { name: "Deal cards" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-betting-390x844.png") });
-  await page.getByRole("button", { name: "Deal cards" }).click();
+  await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Payout phase" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Deal cards" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
 
   await alexPage.reload();
   await expect(alexPage.getByRole("button", { name: "Double" })).toBeVisible();
@@ -90,7 +91,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.getByRole("button", { name: "Close Insurance" }).click();
   await page.getByRole("button", { name: "Payout phase" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Deal cards" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Start next hand" })).toBeDisabled();
   await expect(page.getByRole("button", { name: /Won/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Dealer Blackjack" })).toBeVisible();

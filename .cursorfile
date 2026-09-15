@@ -83,8 +83,11 @@ src/ui/skins/registry.ts     typed skin selection
 - The development mailbox is used only when `NODE_ENV !== "production"` and `ALLOW_DEV_MAILBOX=true`. Production never falls back to it.
 - `AUTH_URL` is the public origin for magic links, invitation URLs, and Auth.js redirects. Production redirects must never use `localhost` or `*.railway.internal`.
 - Successful magic-link login without an invitation lands on authenticated home (`/`). Invitation callbacks stay on `/join/{token}` using the existing EMAIL/QR token model.
-- Creating a table uses domain Blackjack defaults (`THREE_TWO` payout, 3 boxes, Insurance on). The creator is Bank/Dealer and remains in `TABLE_SETUP` until they start betting.
-- `CREATE A TABLE` opens exactly one setup sheet. One `SET UP TABLE` command creates the table, Bank/Dealer membership, EMAIL/QR invitations, and `startingJetonsPerPlayerMillis`.
+- Creating a table uses domain Blackjack defaults (`THREE_TWO` payout, 3 boxes, Insurance on). The creator is Bank/Dealer and remains in `TABLE_SETUP` until they open betting.
+- `CREATE A TABLE` opens exactly one setup sheet. One `START TABLE` command creates the table, Bank/Dealer membership, EMAIL/QR invitations, and `startingJetonsPerPlayerMillis`, then opens the Bank waiting room in `TABLE_SETUP`.
+- There is one reusable table QR join URL. Multiple authenticated users may redeem it; each user gets one membership. Email invitations stay individually addressed.
+- `OPEN BETTING` is enabled only after a Player has joined and is the `TABLE_SETUP -> BETTING` command.
+- During BETTING the Bank may `DEAL CARDS NOW` or `DEAL IN 7 SECONDS`. Both require at least one valid player bet. The seven-second option stores `Round.bettingCloseDeadlineAt` and closes betting exactly once at that deadline. Clients display the same countdown from that deadline. `DEAL CARDS NOW` may finish immediately during the countdown.
 - Table stores `startingJetonsPerPlayerMillis`. When an invited user becomes a joined member, that membership is credited once (`starting-jetons:{tableId}:{userId}` plus `TableMember.startingJetonsCredited`). The Bank may later add more with the existing Bank-only control. The Bank is not a betting player.
 - Redeem/join retries are idempotent: they do not create a second membership or credit starting jetons twice.
 - Betting commands return domain errors (`INSUFFICIENT_FUNDS`, phase/permission messages). A joined Player with starting jetons can lock AVAILABLE into LOCKED_BET during BETTING.
@@ -92,23 +95,50 @@ src/ui/skins/registry.ts     typed skin selection
 
 ## Change discipline
 
-Before editing:
+From here, implementation requests use lightweight prompts unless the work falls under the full acceptance process.
+
+Keep the existing architecture, domain rules, ledger, auth, and Classic skin boundaries intact. Implement only the requested change.
+
+### Lightweight prompts (default)
+
+Read this file first.
+
+Implement only the requested change. Keep the existing architecture, domain rules, ledger, auth and Classic skin boundaries intact.
+
+Run only directly affected tests during development. At completion run:
+
+- `npm run guardrails`
+- affected Vitest files
+- `npm run build`
+
+Do not run the full Playwright suite, generate screenshots, update architecture documents, commit, push or deploy unless explicitly requested.
+
+For visual, copy, or layout changes, affected tests plus build are sufficient until several improvements are batched into one deployment. Make small changes locally, leave them for review, and deploy only when a batch is accepted.
+
+Do not claim completion from code inspection alone.
+
+### Full acceptance process
+
+Use the full acceptance process only for:
+
+- Accounting or ledger changes
+- Authentication / invitations
+- Phase transitions
+- Database migrations
+- Releases to Railway
+
+Full acceptance means:
 
 1. Read this file.
 2. Read the files and tests directly affected.
 3. State the existing invariant or behavior being changed.
 4. Keep the change within one vertical slice.
-
-After editing:
-
-1. Run focused tests.
-2. Run the full test suite and production build before declaring a slice complete.
-3. Render the affected 390x844 mobile states.
-4. Verify at 320x700.
-5. Update this file and the changelog when architectural facts or status changed.
-6. Report exact results and genuine limitations.
-
-Do not claim completion from code inspection alone.
+5. Run focused tests during development.
+6. Run guardrails, the full Vitest suite, production build, and the Playwright coverage that proves the changed flow.
+7. Render affected 390x844 mobile states and verify at 320x700 when the UI is part of the change.
+8. Update this file and `CHANGELOG.md` when architectural facts, invariants, permissions, commands, deployment, or status changed.
+9. Commit, push, and deploy only when explicitly requested.
+10. Report exact results and genuine limitations.
 
 ## Current status
 
@@ -119,8 +149,10 @@ Do not claim completion from code inspection alone.
 - Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
 - Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true), and `startingJetonsPerPlayerMillis` are server-authoritative
 - Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack
-- Authenticated home: `CREATE A TABLE` opens a single setup sheet; existing tables show return cards
-- Verification: `npm run guardrails`, Vitest, `next build`, Playwright welcome/setup/lobby plus two-browser join-and-bet
+- Authenticated home: `CREATE A TABLE` opens a single setup sheet; `START TABLE` opens the Bank waiting room in `TABLE_SETUP`
+- Bank waiting room: one shared QR, `+ ADD PLAYER`, `OPEN BETTING` after the first Player joins
+- Betting close: `Round.bettingCloseDeadlineAt` is the server-authoritative 7-second deal deadline
+- Verification: lightweight local changes use guardrails, affected Vitest, and `next build`. Full Playwright, screenshots, commit, push, and Railway deploy only for ledger/auth/phase/migration work or an accepted release batch
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
 - Email delivery: Resend HTTP API. Magic-link sign-in works on production
 - Next milestone: archive/change-game UX after this production betting deploy

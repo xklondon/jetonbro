@@ -15,23 +15,32 @@ export function ClassicSetupTable({
 }) {
   const [emails, setEmails] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [showQr, setShowQr] = useState(false);
   const [qrData, setQrData] = useState<string | null>(null);
-  const [giveUser, setGiveUser] = useState("");
-  const [giveAmount, setGiveAmount] = useState("");
+  const [copied, setCopied] = useState(false);
+  const playersJoined = view.members.some((member) => !member.isBankDealer);
 
   useEffect(() => {
-    if (giveUser) return;
-    const next = view.members.find((member) => !member.isBankDealer)?.userId;
-    if (next) setGiveUser(next);
-  }, [view.members, giveUser]);
-
-  useEffect(() => {
-    if (!showQr || !view.joinUrl) return;
+    if (!view.joinUrl) return;
     void import("qrcode").then((QRCode) => {
-      void QRCode.toDataURL(view.joinUrl!, { margin: 1, width: 240 }).then(setQrData);
+      void QRCode.toDataURL(view.joinUrl!, { margin: 1, width: 220 }).then(setQrData);
     });
-  }, [showQr, view.joinUrl]);
+  }, [view.joinUrl]);
+
+  async function copyLink() {
+    if (!view.joinUrl) return;
+    await navigator.clipboard.writeText(view.joinUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  async function shareLink() {
+    if (!view.joinUrl) return;
+    if (navigator.share) {
+      await navigator.share({ title: view.tableName, url: view.joinUrl });
+      return;
+    }
+    await copyLink();
+  }
 
   return (
     <PhoneShell>
@@ -39,11 +48,12 @@ export function ClassicSetupTable({
         <strong>{view.tableName}</strong>
         <span>Blackjack · Bank/Dealer {view.bankName}</span>
       </div>
-      <main className="felt home-stack">
+      <main className="felt home-stack waiting-room">
         {notice ? <div className="error">{notice}</div> : null}
         <div className="setup-card">
           <div>Starting jetons per player</div>
           <strong>{view.startingJetonsPerPlayer.label}</strong>
+          <p className="muted setup-defaults">Blackjack 3:2 · max {view.maxBoxesPerPlayer} boxes · Insurance {view.insuranceEnabled ? "on" : "off"}</p>
         </div>
         {view.seats.map((seat) => (
           <div className="member-row" key={seat.id}>
@@ -53,34 +63,26 @@ export function ClassicSetupTable({
             </div>
           </div>
         ))}
-        <div className="home-actions compact">
-          <button className="gold-button" type="button" onClick={() => setAddOpen(true)}>
-            + ADD PLAYER
-          </button>
-        </div>
-        {view.members.some((member) => !member.isBankDealer) ? (
-          <div className="setup-card">
-            <div>Give extra jetons</div>
-            <select value={giveUser} onChange={(event) => setGiveUser(event.target.value)}>
-              {view.members
-                .filter((member) => !member.isBankDealer)
-                .map((member) => (
-                  <option key={member.userId} value={member.userId}>
-                    {member.name}
-                  </option>
-                ))}
-            </select>
-            <input placeholder="Jeton amount" value={giveAmount} onChange={(event) => setGiveAmount(event.target.value)} />
-            <button className="gold-button" type="button" onClick={() => onCommand("giveJetons", { userId: giveUser, amount: giveAmount })}>
-              Give jetons
+        {!playersJoined ? (
+          <div className="waiting-players" aria-live="polite">
+            <span className="waiting-pulse" aria-hidden="true" />
+            <strong>Waiting for players…</strong>
+          </div>
+        ) : null}
+        <div className="qr-panel">
+          {qrData ? <img src={qrData} alt="Shared table join QR code" /> : <div className="muted">Preparing table QR…</div>}
+          <div className="dealer-tools">
+            <button type="button" onClick={() => void copyLink()}>
+              {copied ? "Copied" : "Copy link"}
+            </button>
+            <button type="button" onClick={() => void shareLink()}>
+              Share
             </button>
           </div>
-        ) : null}
-        {showQr && qrData ? (
-          <div className="qr-wrap">
-            <img src={qrData} alt="Table join QR code" />
-          </div>
-        ) : null}
+        </div>
+        <button className="gold-button" type="button" onClick={() => setAddOpen(true)}>
+          + ADD PLAYER
+        </button>
         <div className={`sheet${addOpen ? " open" : ""}`}>
           <div className="sheet-panel">
             <h3>Add a player</h3>
@@ -101,16 +103,6 @@ export function ClassicSetupTable({
             >
               Send invitation
             </button>
-            <button
-              className="gold-button"
-              type="button"
-              onClick={() => {
-                setShowQr(true);
-                setAddOpen(false);
-              }}
-            >
-              Show QR / share link
-            </button>
             <button className="text-link" type="button" onClick={() => setAddOpen(false)}>
               Cancel
             </button>
@@ -118,22 +110,19 @@ export function ClassicSetupTable({
         </div>
       </main>
       <footer className="dock">
-        <div className="dealer-tools" style={{ marginBottom: 8 }}>
-          <button type="button" onClick={() => setShowQr((value) => !value)}>
-            {showQr ? "Hide QR" : "Show QR"}
-          </button>
-          <button type="button" onClick={() => onCommand("rotateQr")}>
-            Rotate join link
-          </button>
-        </div>
         <button
           className="gold-button"
           type="button"
           disabled={!view.canStartBetting}
           onClick={() => onCommand("startBetting")}
         >
-          {view.canStartBetting ? "START BETTING" : view.startBlockedReason ?? "START BETTING"}
+          OPEN BETTING
         </button>
+        {!view.canStartBetting && view.startBlockedReason ? (
+          <p className="muted" style={{ textAlign: "center", marginTop: 6 }}>
+            {view.startBlockedReason}
+          </p>
+        ) : null}
       </footer>
     </PhoneShell>
   );

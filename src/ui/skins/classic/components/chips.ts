@@ -1,29 +1,24 @@
-import { formatJetons } from "@/domain/money";
+import { chipCompositionFromMillis } from "@/domain/jetons/chips";
 
 export type VisualChip = {
   label: string;
-  className: "c5" | "c10" | "c25" | "c50";
+  amount: string;
+  className: "c5" | "c10" | "c25" | "c50" | "c-exact";
+  exact: boolean;
 };
 
-const DENOMS: { millis: bigint; label: string; className: VisualChip["className"] }[] = [
-  { millis: 50000n, label: "50", className: "c50" },
-  { millis: 25000n, label: "25", className: "c25" },
-  { millis: 10000n, label: "10", className: "c10" },
-  { millis: 5000n, label: "5", className: "c5" },
-];
+const CLASS_BY_LABEL: Record<string, VisualChip["className"]> = {
+  "5": "c5",
+  "10": "c10",
+  "25": "c25",
+  "50": "c50",
+};
 
 export function chipsFromMillis(millis: string): VisualChip[] {
-  let remaining = BigInt(millis);
-  const chips: VisualChip[] = [];
-  if (remaining <= 0n) return chips;
-  for (const denom of DENOMS) {
-    while (remaining >= denom.millis && chips.length < 6) {
-      chips.push({ label: denom.label, className: denom.className });
-      remaining -= denom.millis;
-    }
-  }
-  if (remaining > 0n && chips.length < 6) {
-    chips.push({ label: formatJetons(remaining), className: "c5" });
-  }
-  return chips;
+  return chipCompositionFromMillis(BigInt(millis)).map((chip) => ({
+    label: chip.label,
+    amount: chip.label,
+    className: chip.exact ? "c-exact" : (CLASS_BY_LABEL[chip.label] ?? "c-exact"),
+    exact: chip.exact,
+  }));
 }
