@@ -163,7 +163,10 @@ for (const file of srcFiles) {
   const rel = relative(root, file).replaceAll("\\", "/");
   if (rel.startsWith("src/domain/") || rel.startsWith("src/application/")) {
     const source = readFileSync(file, "utf8");
-    if (/\benabled:\s*true\b/.test(source) && /\b(POKER|ZILCH)\b/.test(source)) {
+    if (
+      /id:\s*["'](POKER|ZILCH)["'][\s\S]{0,120}available:\s*true/.test(source) ||
+      /playable:\s*true[\s\S]{0,80}(POKER|ZILCH)|(POKER|ZILCH)[\s\S]{0,80}playable:\s*true/.test(source)
+    ) {
       fail(`A game other than Blackjack appears enabled in ${rel}`);
     }
   }

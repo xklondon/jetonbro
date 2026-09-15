@@ -1,0 +1,21 @@
+.classic-skin {
+  --emerald: #063d31;
+  --felt: #075744;
+  --felt-hi: #0b7056;
+  --night: #071714;
+  --panel: #0a241e;
+  --gold: #dfbd69;
+  --ivory: #f4ead5;
+  --red: #b8373f;
+  --blue: #2466a8;
+  --green: #19865c;
+  --black: #22282c;
+  color: #fff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.classic-skin *,
+.classic-skin *::before,
+.classic-skin *::after {
+  box-sizing: border-box;
+}

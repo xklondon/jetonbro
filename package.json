@@ -5,7 +5,46 @@
   "description": "JetonBro live table companion for virtual jetons used alongside physical games.",
   "scripts": {
     "guardrails": "node scripts/check-guardrails.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "prisma migrate deploy && next start",
+    "lint": "next lint",
+    "test": "npm run guardrails && vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "npm run guardrails && playwright test",
+    "test:e2e:screenshots": "playwright test e2e/screenshots.spec.ts",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
     "pretest": "npm run guardrails",
     "prebuild": "npm run guardrails"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.3",
+    "@prisma/client": "^6.19.3",
+    "next": "^15.5.25",
+    "next-auth": "^5.0.0-beta.32",
+    "nodemailer": "^8.0.11",
+    "prisma": "^6.19.3",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.1",
+    "@types/nodemailer": "^8.0.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.1"
   }
 }

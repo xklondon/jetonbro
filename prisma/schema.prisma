@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GameId {
+  BLACKJACK
+}
+
+enum TableStatus {
+  SETUP
+  ACTIVE
+  ARCHIVED
+}
+
+enum RoundPhase {
+  TABLE_SETUP
+  BETTING
+  PLAYING
+  PAYOUT
+  ROUND_COMPLETE
+}
+
+enum BlackjackPayoutRule {
+  THREE_TWO
+  SIX_FIVE
+}
+
+enum InvitationKind {
+  EMAIL
+  QR
+}
+
+enum BoxOutcome {
+  WON
+  PUSH
+  LOST
+  BLACKJACK
+}
+
+enum InsuranceWindowState {
+  CLOSED
+  OPEN
+  SETTLED
+}
+
+enum InsuranceResolution {
+  DEALER_BLACKJACK
+  NO_DEALER_BLACKJACK
+}
+
+enum LedgerTransactionType {
+  INITIAL_ALLOCATION
+  BANK_DISTRIBUTION
+  BANK_ADJUSTMENT
+  BET_LOCKED
+  BET_RETRACTED
+  DOUBLE_LOCKED
+  SPLIT_LOCKED
+  INSURANCE_LOCKED
+  BET_WIN_RETURN
+  BET_PUSH_RETURN
+  BET_LOSS
+  BLACKJACK_RETURN
+  INSURANCE_WIN_RETURN
+  INSURANCE_LOSS
+  TABLE_TRANSFER_IN
+  TABLE_TRANSFER_OUT
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  name                  String?
+  email                 String    @unique
+  emailVerified         DateTime?
+  image                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  ownedTables        Table[]              @relation("TableOwner")
+  bankTables         Table[]              @relation("TableBank")
+  memberships        TableMember[]
+  invitationsCreated Invitation[]         @relation("InvitationCreator")
+  ledgerAsPlayer     LedgerEntry[]        @relation("LedgerPlayer")
+  ledgerAsActor      LedgerEntry[]        @relation("LedgerActor")
+  boxes              BettingBox[]
+  insuranceBets      InsuranceBet[]
+  idempotency        IdempotencyRecord[]
+  playerAccount      PlayerAccount?
+}
+
+model PlayerAccount {
+  userId                String @id
+  globalAvailableMillis BigInt @default(0)
+  user                  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Table {
+  id                      String              @id @default(cuid())
+  name                    String
+  game                    GameId              @default(BLACKJACK)
+  status                  TableStatus         @default(SETUP)
+  ownerId                 String
+  bankDealerId            String?
+  minBetMillis            BigInt?
+  maxBetMillis            BigInt?
+  blackjackPayout         BlackjackPayoutRule @default(THREE_TWO)
+  bankMayDistributeJetons Boolean             @default(true)
+  currentPhase            RoundPhase          @default(TABLE_SETUP)
+  currentRoundId          String?             @unique
+  joinEnabled             Boolean             @default(true)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  owner         User           @relation("TableOwner", fields: [ownerId], references: [id])
+  bankDealer    User?          @relation("TableBank", fields: [bankDealerId], references: [id])
+  currentRound  Round?         @relation("CurrentRound", fields: [currentRoundId], references: [id], onDelete: SetNull)
+  members       TableMember[]
+  invitations   Invitation[]
+  rounds        Round[]        @relation("TableRounds")
+  ledgerEntries LedgerEntry[]
+}
+
+model TableMember {
+  id              String    @id @default(cuid())
+  tableId         String
+  userId          String
+  isOwner         Boolean   @default(false)
+  isBankDealer    Boolean   @default(false)
+  availableMillis BigInt    @default(0)
+  joinedAt        DateTime  @default(now())
+  leftAt          DateTime?
+
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([tableId, userId])
+}
+
+model Invitation {
+  id          String         @id @default(cuid())
+  tableId     String
+  kind        InvitationKind
+  email       String?
+  token       String         @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  usedAt      DateTime?
+  createdById String
+  createdAt   DateTime       @default(now())
+
+  table     Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("InvitationCreator", fields: [createdById], references: [id])
+
+  @@index([tableId, kind])
+}
+
+model Round {
+  id                  String               @id @default(cuid())
+  tableId             String
+  number              Int
+  phase               RoundPhase
+  insuranceWindow     InsuranceWindowState @default(CLOSED)
+  insuranceResolution InsuranceResolution?
+  createdAt           DateTime             @default(now())
+  bettingClosedAt     DateTime?
+  payoutEnteredAt     DateTime?
+  completedAt         DateTime?
+
+  table         Table          @relation("TableRounds", fields: [tableId], references: [id], onDelete: Cascade)
+  currentFor    Table?         @relation("CurrentRound")
+  boxes         BettingBox[]
+  insuranceBets InsuranceBet[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([tableId, number])
+}
+
+model BettingBox {
+  id                  String      @id @default(cuid())
+  roundId             String
+  playerId            String
+  boxNumber           Int
+  displayLabel        String
+  parentBoxId         String?
+  originalStakeMillis BigInt      @default(0)
+  lockedBetMillis     BigInt      @default(0)
+  isDoubled           Boolean     @default(false)
+  isSplitOffshoot     Boolean     @default(false)
+  removedAt           DateTime?
+  outcome             BoxOutcome?
+  returnedMillis      BigInt?
+  settledAt           DateTime?
+  settledKey          String?     @unique
+
+  round         Round          @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  player        User           @relation(fields: [playerId], references: [id])
+  parentBox     BettingBox?    @relation("SplitSource", fields: [parentBoxId], references: [id])
+  splitBoxes    BettingBox[]   @relation("SplitSource")
+  insuranceBets InsuranceBet[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([roundId, playerId, boxNumber])
+}
+
+model InsuranceBet {
+  id             String               @id @default(cuid())
+  roundId        String
+  playerId       String
+  boxId          String
+  amountMillis   BigInt
+  resolution     InsuranceResolution?
+  returnedMillis BigInt?
+  settledAt      DateTime?
+  settledKey     String?              @unique
+  createdAt      DateTime             @default(now())
+
+  round         Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  player        User         @relation(fields: [playerId], references: [id])
+  box           BettingBox   @relation(fields: [boxId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@unique([roundId, boxId])
+}
+
+model LedgerEntry {
+  id                  String                 @id @default(cuid())
+  playerId            String
+  tableId             String?
+  roundId             String?
+  boxId               String?
+  insuranceBetId      String?
+  transactionType     LedgerTransactionType
+  amountMillis        BigInt
+  balanceBeforeMillis BigInt
+  balanceAfterMillis  BigInt
+  timestamp           DateTime               @default(now())
+  actorId             String
+  idempotencyKey      String                 @unique
+  description         String
+
+  player       User          @relation("LedgerPlayer", fields: [playerId], references: [id])
+  actor        User          @relation("LedgerActor", fields: [actorId], references: [id])
+  table        Table?        @relation(fields: [tableId], references: [id])
+  round        Round?        @relation(fields: [roundId], references: [id])
+  box          BettingBox?   @relation(fields: [boxId], references: [id])
+  insuranceBet InsuranceBet? @relation(fields: [insuranceBetId], references: [id])
+
+  @@index([playerId, timestamp])
+  @@index([tableId, timestamp])
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(cuid())
+  key          String
+  actorId      String
+  command      String
+  requestHash  String
+  responseJson Json
+  createdAt    DateTime @default(now())
+  actor        User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, key])
+}

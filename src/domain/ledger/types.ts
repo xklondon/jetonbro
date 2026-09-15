@@ -1,0 +1,29 @@
+export const LEDGER_TRANSACTION_TYPES = [
+  "INITIAL_ALLOCATION",
+  "BANK_DISTRIBUTION",
+  "BANK_ADJUSTMENT",
+  "BET_LOCKED",
+  "BET_RETRACTED",
+  "DOUBLE_LOCKED",
+  "SPLIT_LOCKED",
+  "INSURANCE_LOCKED",
+  "BET_WIN_RETURN",
+  "BET_PUSH_RETURN",
+  "BET_LOSS",
+  "BLACKJACK_RETURN",
+  "INSURANCE_WIN_RETURN",
+  "INSURANCE_LOSS",
+  "TABLE_TRANSFER_IN",
+  "TABLE_TRANSFER_OUT",
+] as const;
+
+export type LedgerTransactionType = (typeof LEDGER_TRANSACTION_TYPES)[number];
+
+export const ACCOUNTING_BUCKETS = [
+  "AVAILABLE",
+  "LOCKED_BET",
+  "LOCKED_INSURANCE",
+  "SETTLED",
+] as const;
+
+export type AccountingBucket = (typeof ACCOUNTING_BUCKETS)[number];

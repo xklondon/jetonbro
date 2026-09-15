@@ -34,6 +34,25 @@ Blackjack is the only implemented game until its full two-device flow is accepte
 
 No backward transitions and no phase skipping.
 
+Insurance is a Bank-triggered window during PLAYING, not a phase. It is settled independently during PAYOUT.
+
+## Accounting
+
+- Unit: millijetons (`bigint`, 1000 = 1 jeton). Floating-point arithmetic is not used for balances.
+- AVAILABLE is `TableMember.availableMillis`.
+- LOCKED_BET is `BettingBox.lockedBetMillis`.
+- LOCKED_INSURANCE is `InsuranceBet.amountMillis` until Insurance is settled.
+- BANK_VIRTUAL_RESERVE is unlimited and not stored as a balance. It is the source of minted table jetons and payout profit, and the sink of lost ordinary and Insurance stakes.
+- Commands that change value require an idempotency key and write at least one ledger entry in the same transaction.
+- Ordinary payouts: win profit 1× / return 2×; push profit 0 / return 1×; loss return 0; Blackjack 3:2 profit 1.5× / return 2.5×; Blackjack 6:5 profit 1.2× / return 2.2×.
+- Insurance 2:1: profit 2× Insurance stake / return 3× Insurance stake. Settled independently of the box.
+
+## Permissions
+
+- Owner: create table, invite, add/remove players before a round, assign Bank/Dealer, distribute jetons, archive later.
+- Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next hand.
+- Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open.
+
 ## Design architecture
 
 - `classic` is the first and default skin.
@@ -50,6 +69,17 @@ src/ui/core/                 semantic screen composition
 src/ui/skins/classic/        Classic components, tokens and styles
 src/ui/skins/registry.ts     typed skin selection
 ```
+
+## Deployment
+
+- One Next.js app, one PostgreSQL database.
+- In-process SSE is single-instance only. Railway must run exactly one application instance.
+- `GET /api/health` reports database connectivity and does not expose secrets.
+- `npm run guardrails` before tests and build.
+- `npm start` runs `prisma migrate deploy && next start`.
+- Railway staging: `preDeployCommand` runs `npx prisma migrate deploy`, then `npx next start`, healthcheck `/api/health`, **exactly one replica**.
+- `ALLOW_DEV_MAILBOX` is local/CI only and is ignored when `NODE_ENV=production`. `/api/dev/*` always 404s in production.
+- Real email delivery requires `EMAIL_SERVER`. Without it, links are written to `tmp/mailbox.jsonl` only.
 
 ## Change discipline
 
@@ -73,8 +103,12 @@ Do not claim completion from code inspection alone.
 
 ## Current status
 
-- Repository: genesis / not yet implemented
+- Repository: Blackjack MVP staging baseline (not production-ready)
 - Current game: Blackjack MVP
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
-- Next milestone: Phase 0 table setup and invitation flow
+- Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
+- Verification: `npm run guardrails`, Vitest, `next build`, Playwright real-app phase screenshots plus two-session join
+- Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
+- Production email SMTP delivery is not configured; invitation token generation is
+- Next milestone: configure SMTP and magic-link cookies on staging, then archive/change-game UX. Do not enable GitHub automatic production deployment yet.

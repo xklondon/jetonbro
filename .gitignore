@@ -5,14 +5,14 @@ dist/
 coverage/
 playwright-report/
 test-results/
+tsconfig.tsbuildinfo
 screenshots/rendered/.tmp/
 tmp/
 .turbo/
 .vercel/
 *.log
 .env
-.env.local
-.env.*.local
+.env*.local
 .DS_Store
 Thumbs.db
 prisma/*.db

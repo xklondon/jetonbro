@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: jetonbro
+      POSTGRES_PASSWORD: jetonbro
+      POSTGRES_DB: jetonbro
+    ports:
+      - "55433:5432"
+    volumes:
+      - jetonbro_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jetonbro -d jetonbro"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  jetonbro_pg:

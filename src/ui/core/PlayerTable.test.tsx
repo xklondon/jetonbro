@@ -1,0 +1,141 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, test } from "vitest";
+import { ClassicPlayerTable } from "@/ui/skins/classic/components/ClassicPlayerTable";
+import type { PlayerTableView } from "@/application/queries/views";
+
+const view: PlayerTableView = {
+  role: "PLAYER",
+  phase: "PLAYING",
+  tableName: "Salon",
+  title: "Play your hands",
+  copy: "Select a box",
+  available: { millis: "75000", label: "75" },
+  insuranceWindowOpen: false,
+  actions: {
+    bet: false,
+    retract: false,
+    addBox: false,
+    removeEmptyBox: false,
+    double: true,
+    split: true,
+    insurance: false,
+  },
+  boxes: [
+    {
+      id: "1",
+      playerId: "p1",
+      playerName: "Alex",
+      label: "YOUR BOX 1",
+      boxNumber: 1,
+      bet: { millis: "25000", label: "25" },
+      originalStake: { millis: "25000", label: "25" },
+      isDoubled: false,
+      isSplit: false,
+      insurance: null,
+      insuranceMax: { millis: "12500", label: "12.5" },
+      insuranceResult: null,
+      outcome: null,
+      returned: null,
+      payoutActions: [],
+    },
+    {
+      id: "2",
+      playerId: "p1",
+      playerName: "Alex",
+      label: "YOUR BOX 2",
+      boxNumber: 2,
+      bet: { millis: "10000", label: "10" },
+      originalStake: { millis: "10000", label: "10" },
+      isDoubled: false,
+      isSplit: false,
+      insurance: null,
+      insuranceMax: { millis: "5000", label: "5" },
+      insuranceResult: null,
+      outcome: null,
+      returned: null,
+      payoutActions: [],
+    },
+  ],
+};
+
+test("player sees all own boxes together and keeps jetons visible while playing", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("YOUR BOX 1");
+  expect(html).toContain("YOUR BOX 2");
+  expect(html).toContain("YOUR JETONS");
+  expect(html).toContain("AVAILABLE VALUE");
+  expect(html).toContain("75");
+  expect(html).toContain("Insurance");
+  expect(html).toContain("Double");
+  expect(html).toContain("Split");
+  expect(html.indexOf("Insurance")).toBeLessThan(html.indexOf("YOUR JETONS"));
+  expect(html).toContain("selected");
+});
+
+test("player betting keeps the permanent jeton dock below exact-amount controls", () => {
+  const bettingView: PlayerTableView = {
+    ...view,
+    phase: "BETTING",
+    title: "Place your bets",
+    actions: { ...view.actions, bet: true, retract: true, addBox: true, double: false, split: false, insurance: false },
+  };
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: bettingView,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("Amount");
+  expect(html).toContain("YOUR JETONS");
+  expect(html.indexOf("Amount")).toBeLessThan(html.indexOf("YOUR JETONS"));
+});
+
+test("player payout keeps the jeton dock visible under settlement status", () => {
+  const payoutView: PlayerTableView = {
+    ...view,
+    phase: "PAYOUT",
+    title: "Waiting for the Bank",
+    actions: { ...view.actions, double: false, split: false, insurance: false },
+  };
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: payoutView,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("Waiting for the Bank");
+  expect(html).toContain("YOUR JETONS");
+  expect(html.indexOf("Waiting for the Bank")).toBeLessThan(html.indexOf("YOUR JETONS"));
+});
+
+test("player payout shows Hand complete after every box is resolved", () => {
+  const payoutView: PlayerTableView = {
+    ...view,
+    phase: "PAYOUT",
+    title: "Hand complete",
+    boxes: view.boxes.map((box) => ({ ...box, outcome: "LOST" as const })),
+    actions: { ...view.actions, double: false, split: false, insurance: false },
+  };
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: payoutView,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("Hand complete");
+  expect(html).toContain("YOUR JETONS");
+});
