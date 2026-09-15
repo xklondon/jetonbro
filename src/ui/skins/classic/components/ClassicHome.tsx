@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { PhoneShell } from "./PhoneShell";
-import { ClassicGameCards } from "./ClassicGameCards";
 import { WelcomeCelebration } from "./WelcomeCelebration";
+import { ClassicCreateTable, type CreateTableFields } from "./ClassicCreateTable";
 import { parseJoinDestination } from "@/application/auth-urls";
 
 export type HomeTableCardView = {
@@ -21,19 +21,23 @@ function phaseLabel(phase: string): string {
 
 export function ClassicHome({
   displayName,
+  defaultTableName,
   tables,
-  onCreateTable,
+  notice,
+  onSetupTable,
   onJoinTable,
   onOpenTable,
 }: {
   displayName: string;
+  defaultTableName: string;
   tables: HomeTableCardView[];
-  onCreateTable: () => void;
+  notice?: string | null;
+  onSetupTable: (fields: CreateTableFields) => Promise<void>;
   onJoinTable: (destination: string) => void;
   onOpenTable: (tableId: string) => void;
 }) {
   const empty = tables.length === 0;
-  const [selectedGame, setSelectedGame] = useState<"BLACKJACK" | null>(empty ? "BLACKJACK" : null);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [joinValue, setJoinValue] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -59,15 +63,9 @@ export function ClassicHome({
         <span>{empty ? "Pick a game, bring your friends, run the Bank." : "Return to a table or open a new one."}</span>
       </div>
       <main className="felt home-stack">
-        {empty ? <ClassicGameCards selectedId={selectedGame} onSelectBlackjack={() => setSelectedGame("BLACKJACK")} /> : null}
         {empty ? (
           <div className="home-actions">
-            <button
-              className="gold-button home-create"
-              type="button"
-              disabled={selectedGame !== "BLACKJACK"}
-              onClick={onCreateTable}
-            >
+            <button className="gold-button home-create" type="button" onClick={() => setSetupOpen(true)}>
               CREATE A TABLE
             </button>
             <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
@@ -77,7 +75,7 @@ export function ClassicHome({
         ) : (
           <>
             <div className="home-actions compact">
-              <button className="gold-button home-create" type="button" onClick={onCreateTable}>
+              <button className="gold-button home-create" type="button" onClick={() => setSetupOpen(true)}>
                 CREATE NEW TABLE
               </button>
               <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
@@ -104,6 +102,21 @@ export function ClassicHome({
             </div>
           </>
         )}
+        <div className={`sheet${setupOpen ? " open" : ""}`}>
+          <div className="sheet-panel setup-sheet">
+            <h3>Set up a table</h3>
+            <ClassicCreateTable
+              embedded
+              defaultTableName={defaultTableName}
+              notice={notice}
+              onBack={() => setSetupOpen(false)}
+              onCreate={onSetupTable}
+            />
+            <button className="text-link" type="button" onClick={() => setSetupOpen(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
         <div className={`sheet${joinOpen ? " open" : ""}`}>
           <div className="sheet-panel">
             <h3>Join a table</h3>

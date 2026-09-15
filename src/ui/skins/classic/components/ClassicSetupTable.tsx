@@ -14,12 +14,17 @@ export function ClassicSetupTable({
   notice?: string | null;
 }) {
   const [emails, setEmails] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [qrData, setQrData] = useState<string | null>(null);
-  const [minBet, setMinBet] = useState(view.minBet?.label ?? "");
-  const [maxBet, setMaxBet] = useState(view.maxBet?.label ?? "");
-  const [giveUser, setGiveUser] = useState(view.members[0]?.userId ?? "");
+  const [giveUser, setGiveUser] = useState("");
   const [giveAmount, setGiveAmount] = useState("");
+
+  useEffect(() => {
+    if (giveUser) return;
+    const next = view.members.find((member) => !member.isBankDealer)?.userId;
+    if (next) setGiveUser(next);
+  }, [view.members, giveUser]);
 
   useEffect(() => {
     if (!showQr || !view.joinUrl) return;
@@ -32,107 +37,84 @@ export function ClassicSetupTable({
     <PhoneShell>
       <div className="phase-head">
         <strong>{view.tableName}</strong>
-        <span>Table setup · physical cards stay at the table</span>
+        <span>Blackjack · Bank/Dealer {view.bankName}</span>
       </div>
-      <main className="felt">
-        <div className="setup-list">
-          {notice ? <div className="error">{notice}</div> : null}
-          <div className="setup-card">
-            <div>Game</div>
-            <select
-              defaultValue="BLACKJACK"
-              onChange={(event) => {
-                if (event.target.value !== "BLACKJACK") {
-                  event.target.value = "BLACKJACK";
-                  onCommand("updateSettings", { game: event.target.value });
-                }
-              }}
-            >
-              {view.gameOptions.map((option) => (
-                <option key={option.id} value={option.id} disabled={!option.available}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <div className="muted">Owner {view.ownerName} · Bank/Dealer {view.bankName}</div>
-            <div className="muted">
-              Max boxes {view.maxBoxesPerPlayer} · Insurance {view.insuranceEnabled ? "on" : "off"} · Payout{" "}
-              {view.blackjackPayout === "SIX_FIVE" ? "6:5" : "3:2"}
+      <main className="felt home-stack">
+        {notice ? <div className="error">{notice}</div> : null}
+        <div className="setup-card">
+          <div>Starting jetons per player</div>
+          <strong>{view.startingJetonsPerPlayer.label}</strong>
+        </div>
+        {view.seats.map((seat) => (
+          <div className="member-row" key={seat.id}>
+            <div>
+              <strong>{seat.name}</strong>
+              <div className="muted">{seat.status}</div>
             </div>
           </div>
+        ))}
+        <div className="home-actions compact">
+          <button className="gold-button" type="button" onClick={() => setAddOpen(true)}>
+            + ADD PLAYER
+          </button>
+        </div>
+        {view.members.some((member) => !member.isBankDealer) ? (
           <div className="setup-card">
-            <div>Blackjack payout</div>
-            <select
-              defaultValue={view.blackjackPayout}
-              onChange={(event) => onCommand("updateSettings", { blackjackPayout: event.target.value, minBet, maxBet })}
-            >
-              <option value="THREE_TWO">3:2</option>
-              <option value="SIX_FIVE">6:5</option>
-            </select>
-            <div className="exact" style={{ marginTop: 8 }}>
-              <input placeholder="Min bet" value={minBet} onChange={(event) => setMinBet(event.target.value)} />
-              <input placeholder="Max bet" value={maxBet} onChange={(event) => setMaxBet(event.target.value)} />
-            </div>
-            <button className="gold-button" type="button" onClick={() => onCommand("updateSettings", { minBet, maxBet, blackjackPayout: view.blackjackPayout })}>
-              Save limits
-            </button>
-          </div>
-          <div className="setup-card">
-            <div>Give jetons</div>
+            <div>Give extra jetons</div>
             <select value={giveUser} onChange={(event) => setGiveUser(event.target.value)}>
-              {view.members.map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {member.name}
-                </option>
-              ))}
+              {view.members
+                .filter((member) => !member.isBankDealer)
+                .map((member) => (
+                  <option key={member.userId} value={member.userId}>
+                    {member.name}
+                  </option>
+                ))}
             </select>
             <input placeholder="Jeton amount" value={giveAmount} onChange={(event) => setGiveAmount(event.target.value)} />
             <button className="gold-button" type="button" onClick={() => onCommand("giveJetons", { userId: giveUser, amount: giveAmount })}>
               Give jetons
             </button>
           </div>
-          {view.members.map((member) => (
-            <div className="member-row" key={member.userId}>
-              <div>
-                <strong>{member.name}</strong>
-                <div className="muted">
-                  {member.isOwner ? "Owner" : ""}
-                  {member.isBankDealer ? " Bank/Dealer" : " Player"}
-                </div>
-              </div>
-              <div>
-                <strong>{member.available?.label ?? "0"}</strong>
-                {!member.isBankDealer ? (
-                  <button
-                    type="button"
-                    className="head-button"
-                    onClick={() => onCommand("assignBank", { userId: member.userId })}
-                  >
-                    Make Bank
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ))}
-          {view.invitations.filter((invite) => invite.pending).map((invite) => (
-            <div className="member-row" key={invite.id}>
-              <div>
-                <strong>{invite.email}</strong>
-                <div className="muted">Pending invitation</div>
-              </div>
-            </div>
-          ))}
-          <div className="setup-card">
-            <input placeholder="Invite by email" value={emails} onChange={(event) => setEmails(event.target.value)} />
-            <button className="gold-button" type="button" onClick={() => onCommand("inviteByEmail", { emails })}>
-              Send email invites
+        ) : null}
+        {showQr && qrData ? (
+          <div className="qr-wrap">
+            <img src={qrData} alt="Table join QR code" />
+          </div>
+        ) : null}
+        <div className={`sheet${addOpen ? " open" : ""}`}>
+          <div className="sheet-panel">
+            <h3>Add a player</h3>
+            <input
+              placeholder="Player email"
+              aria-label="Player email"
+              value={emails}
+              onChange={(event) => setEmails(event.target.value)}
+            />
+            <button
+              className="gold-button"
+              type="button"
+              onClick={() => {
+                onCommand("inviteByEmail", { emails });
+                setEmails("");
+                setAddOpen(false);
+              }}
+            >
+              Send invitation
+            </button>
+            <button
+              className="gold-button"
+              type="button"
+              onClick={() => {
+                setShowQr(true);
+                setAddOpen(false);
+              }}
+            >
+              Show QR / share link
+            </button>
+            <button className="text-link" type="button" onClick={() => setAddOpen(false)}>
+              Cancel
             </button>
           </div>
-          {showQr && qrData ? (
-            <div className="qr-wrap">
-              <img src={qrData} alt="Table join QR code" />
-            </div>
-          ) : null}
         </div>
       </main>
       <footer className="dock">
@@ -150,7 +132,7 @@ export function ClassicSetupTable({
           disabled={!view.canStartBetting}
           onClick={() => onCommand("startBetting")}
         >
-          {view.canStartBetting ? "Start betting" : view.startBlockedReason ?? "Start betting"}
+          {view.canStartBetting ? "START BETTING" : view.startBlockedReason ?? "START BETTING"}
         </button>
       </footer>
     </PhoneShell>

@@ -23,6 +23,8 @@ import {
 import { BOX_OUTCOMES } from "@/domain/blackjack/payouts";
 import { INSURANCE_RESOLUTIONS } from "@/domain/blackjack/payouts";
 import { publicOrigin } from "@/application/auth-urls";
+import { prisma } from "@/application/db";
+import { logCommandFailure } from "@/application/command-log";
 
 const commandSchema = z.object({
   command: z.string(),
@@ -67,11 +69,16 @@ export async function POST(
     });
     return NextResponse.json(result ?? { ok: true });
   } catch (error) {
+    const phase = await prisma.table
+      .findUnique({ where: { id: tableId }, select: { currentPhase: true } })
+      .then((row) => row?.currentPhase)
+      .catch(() => undefined);
+    const code = error instanceof DomainError ? error.code : "UNEXPECTED";
+    logCommandFailure({ command, tableId, actorId, phase, code });
     if (error instanceof DomainError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.httpStatus });
     }
-    console.error(error);
-    return NextResponse.json({ error: "The table could not complete that action." }, { status: 500 });
+    return NextResponse.json({ error: "This action could not be completed." }, { status: 500 });
   }
 }
 

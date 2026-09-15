@@ -84,6 +84,11 @@ src/ui/skins/registry.ts     typed skin selection
 - `AUTH_URL` is the public origin for magic links, invitation URLs, and Auth.js redirects. Production redirects must never use `localhost` or `*.railway.internal`.
 - Successful magic-link login without an invitation lands on authenticated home (`/`). Invitation callbacks stay on `/join/{token}` using the existing EMAIL/QR token model.
 - Creating a table uses domain Blackjack defaults (`THREE_TWO` payout, 3 boxes, Insurance on). The creator is Bank/Dealer and remains in `TABLE_SETUP` until they start betting.
+- `CREATE A TABLE` opens exactly one setup sheet. One `SET UP TABLE` command creates the table, Bank/Dealer membership, EMAIL/QR invitations, and `startingJetonsPerPlayerMillis`.
+- Table stores `startingJetonsPerPlayerMillis`. When an invited user becomes a joined member, that membership is credited once (`starting-jetons:{tableId}:{userId}` plus `TableMember.startingJetonsCredited`). The Bank may later add more with the existing Bank-only control. The Bank is not a betting player.
+- Redeem/join retries are idempotent: they do not create a second membership or credit starting jetons twice.
+- Betting commands return domain errors (`INSUFFICIENT_FUNDS`, phase/permission messages). A joined Player with starting jetons can lock AVAILABLE into LOCKED_BET during BETTING.
+- Live table snapshots use in-process SSE with a short snapshot poll fallback. The listener set is stored on `globalThis` so Next.js module duplication cannot drop updates.
 
 ## Change discipline
 
@@ -112,9 +117,10 @@ Do not claim completion from code inspection alone.
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
 - Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
-- Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true) are server-authoritative
-- Authenticated home: empty users see welcome, game cards, CREATE A TABLE and JOIN A TABLE; existing tables show return cards
-- Verification: `npm run guardrails`, Vitest, `next build`, Playwright welcome/create/lobby plus real-app phase screenshots and two-session join
+- Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true), and `startingJetonsPerPlayerMillis` are server-authoritative
+- Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack
+- Authenticated home: `CREATE A TABLE` opens a single setup sheet; existing tables show return cards
+- Verification: `npm run guardrails`, Vitest, `next build`, Playwright welcome/setup/lobby plus two-browser join-and-bet
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
-- Email delivery: Resend HTTP API. Magic-link sign-in works on production; the welcome-to-lobby journey must be reconfirmed on the deployed commit
-- Next milestone: archive/change-game UX after the production create-table journey is confirmed
+- Email delivery: Resend HTTP API. Magic-link sign-in works on production
+- Next milestone: archive/change-game UX after this production betting deploy

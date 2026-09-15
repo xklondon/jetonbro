@@ -4,7 +4,7 @@ import { withIdempotency } from "@/application/idempotency";
 import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
-import { requireOwnerOrBank } from "@/application/services/tables";
+import { requireOwnerOrBank, creditStartingJetonsOnce } from "@/application/services/tables";
 import { DomainError, NotFoundError } from "@/domain/errors";
 import { assertInvitationUsable } from "@/domain/invitations/types";
 
@@ -103,14 +103,9 @@ export async function joinWithToken(input: { userId: string; token: string; user
   if (!invitation) {
     throw new NotFoundError("This invitation is not valid.");
   }
-  assertInvitationUsable(
-    invitation,
-    new Date(),
-    invitation.kind === "EMAIL" ? input.userEmail : undefined,
-  );
 
   const table = await prisma.table.findUniqueOrThrow({ where: { id: invitation.tableId } });
-  if (table.status === "ARCHIVED" || !table.joinEnabled && invitation.kind === "QR") {
+  if (table.status === "ARCHIVED" || (!table.joinEnabled && invitation.kind === "QR")) {
     throw new DomainError("JOIN_DISABLED", "This table is not accepting new players.");
   }
 
@@ -118,13 +113,40 @@ export async function joinWithToken(input: { userId: string; token: string; user
     const existing = await tx.tableMember.findUnique({
       where: { tableId_userId: { tableId: table.id, userId: input.userId } },
     });
+    if (existing && !existing.leftAt) {
+      if (invitation.kind === "EMAIL" && !invitation.usedAt) {
+        await tx.invitation.update({
+          where: { id: invitation.id },
+          data: { usedAt: new Date() },
+        });
+      }
+      if (table.bankDealerId !== input.userId) {
+        await creditStartingJetonsOnce(tx, {
+          tableId: table.id,
+          memberId: existing.id,
+          userId: input.userId,
+          actorId: input.userId,
+          startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+          isBankDealer: false,
+        });
+      }
+      return;
+    }
+
+    assertInvitationUsable(
+      invitation,
+      new Date(),
+      invitation.kind === "EMAIL" ? input.userEmail : undefined,
+    );
+
+    let member = existing;
     if (existing?.leftAt) {
-      await tx.tableMember.update({
+      member = await tx.tableMember.update({
         where: { id: existing.id },
         data: { leftAt: null },
       });
-    } else if (!existing) {
-      await tx.tableMember.create({
+    } else {
+      member = await tx.tableMember.create({
         data: {
           tableId: table.id,
           userId: input.userId,
@@ -137,6 +159,16 @@ export async function joinWithToken(input: { userId: string; token: string; user
       await tx.invitation.update({
         where: { id: invitation.id },
         data: { usedAt: new Date() },
+      });
+    }
+    if (member && table.bankDealerId !== input.userId) {
+      await creditStartingJetonsOnce(tx, {
+        tableId: table.id,
+        memberId: member.id,
+        userId: input.userId,
+        actorId: input.userId,
+        startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+        isBankDealer: false,
       });
     }
   });
@@ -160,15 +192,26 @@ export async function addPlayerManually(input: {
     await requireOwnerOrBank(input.tableId, input.actorId);
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      await prisma.tableMember.upsert({
-        where: { tableId_userId: { tableId: input.tableId, userId: existingUser.id } },
-        update: { leftAt: null },
-        create: {
-          tableId: input.tableId,
+      await prisma.$transaction(async (tx) => {
+        const member = await tx.tableMember.upsert({
+          where: { tableId_userId: { tableId: input.tableId, userId: existingUser.id } },
+          update: { leftAt: null },
+          create: {
+            tableId: input.tableId,
+            userId: existingUser.id,
+            isOwner: false,
+            isBankDealer: false,
+          },
+        });
+        const table = await tx.table.findUniqueOrThrow({ where: { id: input.tableId } });
+        await creditStartingJetonsOnce(tx, {
+          tableId: table.id,
+          memberId: member.id,
           userId: existingUser.id,
-          isOwner: false,
-          isBankDealer: false,
-        },
+          actorId: input.actorId,
+          startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+          isBankDealer: table.bankDealerId === existingUser.id,
+        });
       });
       if (input.name && !existingUser.name) {
         await prisma.user.update({ where: { id: existingUser.id }, data: { name: input.name } });

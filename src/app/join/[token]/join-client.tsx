@@ -2,7 +2,7 @@
 
 import { getSkin } from "@/ui/skins/registry";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function JoinClient({
   token,
@@ -13,16 +13,19 @@ export function JoinClient({
 }) {
   const skin = getSkin();
   const router = useRouter();
+  const joining = useRef(false);
   const [notice, setNotice] = useState<string | null>(
     state === "invalid" ? "This invitation is not valid or has expired." : "Joining the table…",
   );
 
   useEffect(() => {
-    if (state !== "ready") return;
+    if (state !== "ready" || joining.current) return;
+    joining.current = true;
     void (async () => {
       const response = await fetch(`/api/join/${token}`, { method: "POST" });
       const data = (await response.json()) as { tableId?: string; error?: string };
       if (!response.ok || !data.tableId) {
+        joining.current = false;
         setNotice(data.error ?? "This invitation is not valid or has expired.");
         return;
       }

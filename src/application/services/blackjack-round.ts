@@ -2,7 +2,7 @@ import { prisma } from "@/application/db";
 import { withIdempotency } from "@/application/idempotency";
 import { publishTable } from "@/application/realtime/bus";
 import { appendLedger, creditTableAvailable } from "@/application/services/ledger";
-import { requireMember } from "@/application/services/tables";
+import { requireMember, creditStartingJetonsOnce } from "@/application/services/tables";
 import {
   insuranceMaxMillis,
   insuranceReturnMillis,
@@ -87,6 +87,16 @@ export async function startBetting(input: { actorId: string; tableId: string; id
       const participating = table.members.filter((member) => member.userId !== table.bankDealerId);
       if (participating.length === 0) {
         throw new DomainError("NO_PLAYERS", "At least one player must join before betting opens.");
+      }
+      for (const member of participating) {
+        await creditStartingJetonsOnce(tx, {
+          tableId: table.id,
+          memberId: member.id,
+          userId: member.userId,
+          actorId: input.actorId,
+          startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+          isBankDealer: false,
+        });
       }
       for (const member of table.members) {
         if (member.availableMillis < 0n) {
@@ -197,10 +207,21 @@ export async function placeOrRetractBet(input: {
   return withIdempotency(input.actorId, input.idempotencyKey, "placeOrRetractBet", input, async () => {
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
-      requirePhase(table.currentPhase, "BETTING");
+      if (table.currentPhase !== "BETTING") {
+        throw new ConflictError("Betting is not open yet");
+      }
+      if (table.bankDealerId === input.actorId) {
+        throw new ForbiddenError("You are not a Player at this table");
+      }
+      if (!input.boxId || input.boxId === "undefined") {
+        throw new DomainError("CHOOSE_BOX", "Choose a betting box first");
+      }
       const box = table.currentRound?.boxes.find((item) => item.id === input.boxId && !item.removedAt);
-      if (!box || box.playerId !== input.actorId) {
-        throw new ForbiddenError("You can only change bets on your own boxes.");
+      if (!box) {
+        throw new DomainError("CHOOSE_BOX", "Choose a betting box first");
+      }
+      if (box.playerId !== input.actorId) {
+        throw new ForbiddenError("You are not a Player at this table");
       }
       const member = await lockMember(tx, table.id, input.actorId);
       let nextLocked = box.lockedBetMillis;

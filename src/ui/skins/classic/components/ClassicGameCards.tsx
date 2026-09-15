@@ -11,12 +11,14 @@ const SUITS: Record<string, string> = {
 export function ClassicGameCards({
   selectedId,
   onSelectBlackjack,
+  compact,
 }: {
   selectedId: string | null;
   onSelectBlackjack: () => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="game-pick">
+    <div className={`game-pick${compact ? " compact" : ""}`}>
       {GAME_CATALOG.map((game) => {
         const available = game.available && game.id === "BLACKJACK";
         return (

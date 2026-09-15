@@ -18,15 +18,38 @@ export async function openAs(context: BrowserContext, page: Page, email: string,
   ]);
 }
 
-export async function createBlackjackTable(page: Page, name: string) {
+export async function openSetupSheet(page: Page) {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "CREATE A TABLE" })).toBeVisible();
-  await page.getByRole("button", { name: "CREATE A TABLE" }).click();
-  await expect(page.getByLabel("Table name")).toBeVisible();
+  const create = page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ });
+  await expect(create).toBeVisible();
+  await create.click();
+  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Blackjack/ })).toBeVisible();
+  await expect(page.getByLabel("Player email")).toBeVisible();
+  await expect(page.getByLabel("Starting jetons per player")).toBeVisible();
+}
+
+export async function createBlackjackTable(
+  page: Page,
+  name: string,
+  options?: { starting?: string; email?: string },
+) {
+  await openSetupSheet(page);
   await page.getByLabel("Table name").fill(name);
-  await page.getByLabel("Starting jetons per player").fill("0");
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.getByText("Table setup")).toBeVisible();
+  await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
+  if (options?.email) {
+    await page.getByLabel("Player email").fill(options.email);
+  }
+  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await expect(page.getByRole("button", { name: "+ ADD PLAYER" })).toBeVisible();
+  await expect(page.getByText(/Blackjack · Bank\/Dealer/)).toBeVisible();
+}
+
+export async function invitePlayerFromLobby(page: Page, email: string) {
+  await page.getByRole("button", { name: "+ ADD PLAYER" }).click();
+  await page.getByLabel("Player email").fill(email);
+  await page.getByRole("button", { name: "Send invitation" }).click();
+  await expect(page.getByText("Invited")).toBeVisible();
 }
 
 export async function noHorizontalOverflow(page: Page) {

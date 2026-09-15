@@ -16,7 +16,7 @@ async function sendCommand(tableId: string, command: string, payload: Record<str
   });
   const data = (await response.json()) as { error?: string };
   if (!response.ok) {
-    throw new Error(data.error ?? "The table could not complete that action.");
+    throw new Error(data.error ?? "This action could not be completed.");
   }
   return data;
 }
@@ -28,17 +28,29 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(initial.player?.boxes[0]?.id ?? null);
 
   useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
+      if (!response.ok || cancelled) return;
+      const next = (await response.json()) as ClientSnapshot;
+      if (next.tableId) setSnapshot(next);
+    }
     const source = new EventSource(`/api/tables/${snapshot.tableId}/stream`);
     source.onmessage = (event) => {
       const next = JSON.parse(event.data) as ClientSnapshot;
       setSnapshot(next);
     };
     source.onerror = () => {
-      void fetch(`/api/tables/${snapshot.tableId}/snapshot`)
-        .then((response) => response.json())
-        .then((next: ClientSnapshot) => setSnapshot(next));
+      void refresh();
     };
-    return () => source.close();
+    const poll = window.setInterval(() => {
+      void refresh();
+    }, 2500);
+    return () => {
+      cancelled = true;
+      source.close();
+      window.clearInterval(poll);
+    };
   }, [snapshot.tableId]);
 
   useEffect(() => {
@@ -52,7 +64,15 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     try {
       await sendCommand(snapshot.tableId, command, payload);
       const refresh = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
-      setSnapshot(await refresh.json());
+      if (!refresh.ok) {
+        const failed = (await refresh.json()) as { error?: string };
+        throw new Error(failed.error ?? "Could not refresh the table.");
+      }
+      const next = (await refresh.json()) as ClientSnapshot;
+      if (!next.tableId) {
+        throw new Error("Could not refresh the table.");
+      }
+      setSnapshot(next);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Something went wrong.");
     }

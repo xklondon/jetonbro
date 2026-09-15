@@ -149,6 +149,7 @@ model Table {
   blackjackPayout         BlackjackPayoutRule @default(THREE_TWO)
   maxBoxesPerPlayer       Int                 @default(3)
   insuranceEnabled        Boolean             @default(true)
+  startingJetonsPerPlayerMillis BigInt        @default(100000)
   bankMayDistributeJetons Boolean             @default(true)
   currentPhase            RoundPhase          @default(TABLE_SETUP)
   currentRoundId          String?             @unique
@@ -172,6 +173,7 @@ model TableMember {
   isOwner         Boolean   @default(false)
   isBankDealer    Boolean   @default(false)
   availableMillis BigInt    @default(0)
+  startingJetonsCredited Boolean @default(false)
   joinedAt        DateTime  @default(now())
   leftAt          DateTime?
 

@@ -109,6 +109,14 @@ export type BankTableView = {
   insuranceSettleActions: { id: InsurancePotView["window"] extends never ? never : string; label: string }[];
 };
 
+export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";
+
+export type SetupSeatView = {
+  id: string;
+  name: string;
+  status: SetupSeatStatus;
+};
+
 export type SetupTableView = {
   role: "SETUP";
   phase: "TABLE_SETUP";
@@ -117,6 +125,8 @@ export type SetupTableView = {
   gameOptions: { id: string; label: string; available: boolean }[];
   ownerName: string;
   bankName: string;
+  startingJetonsPerPlayer: MoneyView;
+  seats: SetupSeatView[];
   members: MemberView[];
   invitations: InvitationView[];
   joinUrl: string | null;

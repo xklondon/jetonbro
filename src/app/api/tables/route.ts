@@ -3,12 +3,15 @@ import { z } from "zod";
 import { auth } from "@/application/auth";
 import { DomainError } from "@/domain/errors";
 import { createTable } from "@/application/services/tables";
+import { publicOrigin } from "@/application/auth-urls";
 import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 
 const schema = z.object({
   name: z.string().min(1),
   game: z.string().optional(),
   startingAllocation: z.string().optional(),
+  startingJetonsPerPlayer: z.string().optional(),
+  emails: z.array(z.string()).optional(),
   minBet: z.string().optional(),
   maxBet: z.string().optional(),
   blackjackPayout: z.enum(["THREE_TWO", "SIX_FIVE"]).optional(),
@@ -29,7 +32,9 @@ export async function POST(request: Request) {
       actorId: session.user.id,
       name: body.name,
       game: body.game,
-      startingAllocation: body.startingAllocation ?? BLACKJACK_TABLE_DEFAULTS.startingAllocation,
+      startingJetonsPerPlayer: body.startingJetonsPerPlayer ?? body.startingAllocation ?? BLACKJACK_TABLE_DEFAULTS.startingAllocation,
+      emails: body.emails,
+      origin: publicOrigin(),
       minBet: body.minBet,
       maxBet: body.maxBet,
       blackjackPayout: body.blackjackPayout ?? BLACKJACK_TABLE_DEFAULTS.blackjackPayout,
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Check the table details and try again." }, { status: 400 });
     }
-    console.error(error);
+    console.error("[jetonbro-command] command=createTable table=new actor=" + session.user.id + " phase=TABLE_SETUP code=UNEXPECTED");
     return NextResponse.json({ error: "Could not create the table." }, { status: 500 });
   }
 }

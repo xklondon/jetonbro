@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { sha256 } from "./ids";
+import { DomainError } from "@/domain/errors";
 
 function serialize(value: unknown): string {
   return JSON.stringify(value, (_key, current) =>
@@ -21,7 +22,7 @@ export async function withIdempotency<T>(
   });
   if (existing) {
     if (existing.requestHash !== requestHash || existing.command !== command) {
-      throw new Error("Idempotency key was reused with a different command.");
+      throw new DomainError("IDEMPOTENCY_CONFLICT", "This action has already been processed");
     }
     return existing.responseJson as T;
   }

@@ -1,3 +1,4 @@
+import { DomainError } from "@/domain/errors";
 import type { Prisma } from "@prisma/client";
 import type { LedgerTransactionType } from "@/domain/ledger/types";
 
@@ -49,7 +50,7 @@ export async function creditTableAvailable(
   }
   const after = member.availableMillis + amount;
   if (after < 0n) {
-    throw new Error("Table jeton balance cannot go negative.");
+    throw new DomainError("INSUFFICIENT_FUNDS", "You do not have enough jetons");
   }
   await tx.tableMember.update({
     where: { id: memberId },

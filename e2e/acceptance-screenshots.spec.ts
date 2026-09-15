@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, noHorizontalOverflow, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, invitePlayerFromLobby, noHorizontalOverflow, openAs, uniqueEmail } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -16,9 +16,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await openAs(context, page, ownerEmail, "Owner");
   await createBlackjackTable(page, "Acceptance table");
 
-  await page.getByPlaceholder("Invite by email").fill(alexEmail);
-  await page.getByRole("button", { name: "Send email invites" }).click();
-  await expect(page.getByText("Pending invitation")).toBeVisible();
+  await invitePlayerFromLobby(page, alexEmail);
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(alexEmail)}`);
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };
   const invitePath = new URL(mail.messages[0]!.url!).pathname;
@@ -34,7 +32,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("200");
   await page.getByRole("button", { name: "Give jetons" }).click();
-  await page.getByRole("button", { name: "Start betting" }).click();
+  await page.getByRole("button", { name: /START BETTING/i }).click();
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Deal cards" })).toBeVisible();

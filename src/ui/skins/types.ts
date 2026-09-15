@@ -39,23 +39,28 @@ export type JetonBroSkin = {
   }>;
   Home: ComponentType<{
     displayName: string;
+    defaultTableName: string;
     tables: HomeTableCard[];
-    onCreateTable: () => void;
+    notice?: string | null;
+    onSetupTable: (fields: {
+      name: string;
+      game: "BLACKJACK";
+      startingJetonsPerPlayer: string;
+      emails: string[];
+    }) => Promise<void>;
     onJoinTable: (destination: string) => void;
     onOpenTable: (tableId: string) => void;
   }>;
   CreateTable: ComponentType<{
     defaultTableName: string;
-    initialGame: "BLACKJACK" | null;
     notice?: string | null;
     onBack: () => void;
     onCreate: (fields: {
       name: string;
       game: "BLACKJACK";
-      startingAllocation: string;
-      blackjackPayout: "THREE_TWO" | "SIX_FIVE";
-      maxBoxesPerPlayer: string;
-      insuranceEnabled: boolean;
+      startingJetonsPerPlayer: string;
+      emails: string[];
     }) => Promise<void>;
+    embedded?: boolean;
   }>;
 };

@@ -123,6 +123,36 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           })),
           ownerName: displayName(table.owner),
           bankName: table.bankDealer ? displayName(table.bankDealer) : "Unassigned",
+          startingJetonsPerPlayer: money(table.startingJetonsPerPlayerMillis),
+          seats: [
+            ...table.members
+              .filter((member) => member.isBankDealer || member.userId === table.bankDealerId)
+              .map((member) => ({
+                id: member.userId,
+                name: displayName(member.user),
+                status: "Bank / Dealer" as const,
+              })),
+            ...table.members
+              .filter((member) => !member.isBankDealer && member.userId !== table.bankDealerId)
+              .map((member) => ({
+                id: member.userId,
+                name: displayName(member.user),
+                status: member.startingJetonsCredited && member.availableMillis > 0n ? ("Ready" as const) : ("Joined" as const),
+              })),
+            ...table.invitations
+              .filter(
+                (invite) =>
+                  invite.kind === "EMAIL" &&
+                  !invite.usedAt &&
+                  !invite.revokedAt &&
+                  !table.members.some((member) => member.user.email.toLowerCase() === (invite.email ?? "").toLowerCase()),
+              )
+              .map((invite) => ({
+                id: invite.id,
+                name: invite.email ?? "Player",
+                status: "Invited" as const,
+              })),
+          ],
           members: table.members.map((member) => ({
             userId: member.userId,
             name: displayName(member.user),
@@ -149,9 +179,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           canStartBetting: Boolean(table.bankDealerId) && table.members.some((member) => member.userId !== table.bankDealerId),
           startBlockedReason: !table.bankDealerId
             ? "Assign a Bank/Dealer"
-            : table.members.every((member) => member.userId === table.bankDealerId)
-              ? "Invite at least one player"
-              : null,
+              : !table.members.some((member) => member.userId !== table.bankDealerId)
+                ? "Waiting for a player to join"
+                : null,
           isOwner,
         }
       : null;

@@ -2,12 +2,21 @@
 
 ## Unreleased
 
+### Table setup and betting
+
+- `CREATE A TABLE` opens one setup sheet: game, player emails, starting jetons, and `SET UP TABLE`.
+- One idempotent command creates the table, makes the creator Bank/Dealer, stores `startingJetonsPerPlayerMillis`, and writes EMAIL/QR invitations.
+- Joining credits starting jetons to that membership exactly once (`starting-jetons:{tableId}:{userId}`).
+- The Bank lobby lists Bank/Dealer, Invited, Joined, and Ready seats with `+ ADD PLAYER` and QR.
+- Tapping a jeton now fails with a domain error such as `You do not have enough jetons` instead of a generic 500. The previous production bet failure was `creditTableAvailable` throwing a plain `Error` when AVAILABLE was 0 because join never credited starting jetons.
+- Join/redeem retries are idempotent. Live Bank lobby status uses SSE plus a short snapshot poll so `Invited` becomes `Joined`/`Ready` without a manual refresh.
+
 ### Authenticated home
 
 - Empty authenticated home is a welcome screen with game cards, `CREATE A TABLE`, and `JOIN A TABLE`.
 - First landing of a browser session plays a short decorative jeton rain that never blocks actions, runs once per session, and is skipped when `prefers-reduced-motion` is set.
 - Existing tables appear as cards with game, phase, player count, role, and `RETURN TO TABLE`.
-- Create-table is a two-step Classic wizard: Blackjack is selectable; Poker and Zilch show `Coming later`. Blackjack settings use domain defaults and persist `maxBoxesPerPlayer` and `insuranceEnabled`.
+- Create-table is one Classic setup sheet: Blackjack is selectable; Poker and Zilch show `Coming later`. Blackjack settings use domain defaults and persist `maxBoxesPerPlayer` and `insuranceEnabled`.
 - Creator becomes Bank/Dealer and lands on the table setup lobby with email and QR invites. Betting does not start automatically.
 - Auth.js redirects and magic-link URLs are rewritten onto `AUTH_URL`. Localhost and `*.railway.internal` origins are never kept in production callbacks. Invitation `/join/{token}` destinations are preserved.
 

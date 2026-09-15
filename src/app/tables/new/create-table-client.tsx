@@ -2,37 +2,42 @@
 
 import { getSkin } from "@/ui/skins/registry";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function CreateTableClient({
   defaultTableName,
-  initialGame,
 }: {
   defaultTableName: string;
-  initialGame: "BLACKJACK" | null;
 }) {
   const skin = getSkin();
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
+  const keyRef = useRef<string | null>(null);
+  const payloadRef = useRef<string | null>(null);
   return (
     <skin.CreateTable
       defaultTableName={defaultTableName}
-      initialGame={initialGame}
       notice={notice}
       onBack={() => router.push("/")}
       onCreate={async (fields) => {
+        const payload = JSON.stringify(fields);
+        if (payloadRef.current !== payload) {
+          keyRef.current = crypto.randomUUID();
+          payloadRef.current = payload;
+        }
         const response = await fetch("/api/tables", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             name: fields.name,
             game: fields.game,
-            startingAllocation: fields.startingAllocation || undefined,
-            blackjackPayout: fields.blackjackPayout,
-            maxBoxesPerPlayer: Number.parseInt(fields.maxBoxesPerPlayer, 10),
-            insuranceEnabled: fields.insuranceEnabled,
+            startingJetonsPerPlayer: fields.startingJetonsPerPlayer,
+            emails: fields.emails,
+            blackjackPayout: "THREE_TWO",
+            maxBoxesPerPlayer: 3,
+            insuranceEnabled: true,
             bankMayDistributeJetons: true,
-            idempotencyKey: crypto.randomUUID(),
+            idempotencyKey: keyRef.current,
           }),
         });
         const data = (await response.json()) as { tableId?: string; error?: string };

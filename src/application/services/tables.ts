@@ -1,17 +1,75 @@
 import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
+import { sendInvitationEmail } from "@/application/mail";
 import { appendLedger, creditTableAvailable } from "@/application/services/ledger";
+import { publishTable } from "@/application/realtime/bus";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@/domain/errors";
 import { isPlayableGame } from "@/domain/games";
-import { parseJetonInput, type JetonMillis } from "@/domain/money";
+import { parseJetonInput, parseWholeJetons, type JetonMillis } from "@/domain/money";
 import type { BlackjackPayoutRule } from "@/domain/blackjack/payouts";
 import { BLACKJACK_TABLE_DEFAULTS, parseMaxBoxesPerPlayer } from "@/domain/blackjack/settings";
-import { publishTable } from "@/application/realtime/bus";
+import { collectInviteEmails } from "@/domain/invitations/email";
+import type { Prisma } from "@prisma/client";
 
 function parseOptionalJetons(value: string | undefined): JetonMillis | null {
   if (!value || value.trim() === "") return null;
   return parseJetonInput(value);
+}
+
+export async function creditStartingJetonsOnce(
+  tx: Prisma.TransactionClient,
+  input: {
+    tableId: string;
+    memberId: string;
+    userId: string;
+    actorId: string;
+    startingJetonsPerPlayerMillis: bigint;
+    isBankDealer: boolean;
+  },
+): Promise<void> {
+  if (input.isBankDealer) {
+    await tx.tableMember.update({
+      where: { id: input.memberId },
+      data: { startingJetonsCredited: true },
+    });
+    return;
+  }
+  const member = await tx.tableMember.findUniqueOrThrow({ where: { id: input.memberId } });
+  if (member.startingJetonsCredited) return;
+  const ledgerKey = `starting-jetons:${input.tableId}:${input.userId}`;
+  const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey: ledgerKey } });
+  if (existing) {
+    await tx.tableMember.update({
+      where: { id: input.memberId },
+      data: { startingJetonsCredited: true },
+    });
+    return;
+  }
+  const amount = input.startingJetonsPerPlayerMillis;
+  if (amount <= 0n) {
+    await tx.tableMember.update({
+      where: { id: input.memberId },
+      data: { startingJetonsCredited: true },
+    });
+    return;
+  }
+  const { before, after } = await creditTableAvailable(tx, input.memberId, amount);
+  await appendLedger(tx, {
+    playerId: input.userId,
+    actorId: input.actorId,
+    tableId: input.tableId,
+    transactionType: "INITIAL_ALLOCATION",
+    amountMillis: amount,
+    balanceBeforeMillis: before,
+    balanceAfterMillis: after,
+    idempotencyKey: ledgerKey,
+    description: "Starting jetons per player",
+  });
+  await tx.tableMember.update({
+    where: { id: input.memberId },
+    data: { startingJetonsCredited: true },
+  });
 }
 
 export async function createTable(input: {
@@ -21,6 +79,9 @@ export async function createTable(input: {
   game?: string;
   bankDealerId?: string;
   startingAllocation?: string;
+  startingJetonsPerPlayer?: string;
+  emails?: string[];
+  origin?: string;
   minBet?: string;
   maxBet?: string;
   blackjackPayout?: BlackjackPayoutRule;
@@ -34,9 +95,11 @@ export async function createTable(input: {
   if (input.game && !isPlayableGame(input.game)) {
     throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
   }
+  const emails = collectInviteEmails(input.emails ?? []);
   return withIdempotency(input.actorId, input.idempotencyKey, "createTable", input, async () => {
     const bankDealerId = input.bankDealerId ?? input.actorId;
-    const starting = input.startingAllocation ? parseJetonInput(input.startingAllocation) : 0n;
+    const perPlayerRaw = input.startingJetonsPerPlayer ?? input.startingAllocation ?? BLACKJACK_TABLE_DEFAULTS.startingAllocation;
+    const startingJetonsPerPlayerMillis = parseWholeJetons(perPlayerRaw);
     const minBet = parseOptionalJetons(input.minBet);
     const maxBet = parseOptionalJetons(input.maxBet);
     if (minBet !== null && maxBet !== null && minBet > maxBet) {
@@ -58,6 +121,7 @@ export async function createTable(input: {
           blackjackPayout,
           maxBoxesPerPlayer,
           insuranceEnabled,
+          startingJetonsPerPlayerMillis,
           bankMayDistributeJetons: input.bankMayDistributeJetons ?? true,
           currentPhase: "TABLE_SETUP",
           status: "SETUP",
@@ -70,7 +134,8 @@ export async function createTable(input: {
           userId: input.actorId,
           isOwner: true,
           isBankDealer: bankDealerId === input.actorId,
-          availableMillis: bankDealerId === input.actorId ? starting : 0n,
+          availableMillis: 0n,
+          startingJetonsCredited: true,
         },
       });
 
@@ -81,26 +146,9 @@ export async function createTable(input: {
             userId: bankDealerId,
             isOwner: false,
             isBankDealer: true,
-            availableMillis: starting,
+            availableMillis: 0n,
+            startingJetonsCredited: true,
           },
-        });
-      }
-
-      if (starting > 0n) {
-        const recipientId = bankDealerId === input.actorId ? input.actorId : bankDealerId;
-        const member = await tx.tableMember.findUniqueOrThrow({
-          where: { tableId_userId: { tableId: created.id, userId: recipientId } },
-        });
-        await appendLedger(tx, {
-          playerId: recipientId,
-          actorId: input.actorId,
-          tableId: created.id,
-          transactionType: "INITIAL_ALLOCATION",
-          amountMillis: starting,
-          balanceBeforeMillis: 0n,
-          balanceAfterMillis: starting,
-          idempotencyKey: `${input.idempotencyKey}:ledger:${member.id}`,
-          description: `Starting table allocation of ${starting.toString()} millijetons`,
         });
       }
 
@@ -114,8 +162,39 @@ export async function createTable(input: {
         },
       });
 
+      for (const email of emails) {
+        await tx.invitation.create({
+          data: {
+            tableId: created.id,
+            kind: "EMAIL",
+            email,
+            token: randomToken(),
+            expiresAt: hoursFromNow(48),
+            createdById: input.actorId,
+          },
+        });
+      }
+
       return created;
     });
+
+    if (input.origin) {
+      const invites = await prisma.invitation.findMany({
+        where: { tableId: table.id, kind: "EMAIL", revokedAt: null },
+      });
+      for (const invite of invites) {
+        if (!invite.email) continue;
+        try {
+          await sendInvitationEmail({
+            to: invite.email,
+            tableName: table.name,
+            url: `${input.origin}/join/${invite.token}`,
+          });
+        } catch {
+          console.error("[jetonbro-command] command=createTable table=" + table.id + " actor=" + input.actorId + " phase=TABLE_SETUP code=INVITE_EMAIL_FAILED");
+        }
+      }
+    }
 
     publishTable(table.id);
     return { tableId: table.id };
