@@ -1,0 +1,11 @@
+{
+  "name": "jetonbro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JetonBro live table companion for virtual jetons used alongside physical games.",
+  "scripts": {
+    "guardrails": "node scripts/check-guardrails.mjs",
+    "pretest": "npm run guardrails",
+    "prebuild": "npm run guardrails"
+  }
+}

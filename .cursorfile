@@ -1,0 +1,80 @@
+# JetonBro mandatory Cursor operating rules
+
+Cursor must read this entire file before planning, editing, running commands, or answering any implementation request in this repository.
+
+After every accepted change, Cursor must update this file when the change affects architecture, invariants, state transitions, accounting, permissions, commands, deployment, or the current implementation status.
+
+Cursor must never silently weaken, bypass, delete, or contradict a rule in this file. If a request conflicts with a rule, stop and explain the conflict before editing.
+
+## Product boundary
+
+JetonBro tracks virtual jetons used alongside physical games. Physical cards, physical money, hand evaluation, dealing, randomness, and payment processing are always outside the application.
+
+Blackjack is the only implemented game until its full two-device flow is accepted. Poker and Zilch are future games, not reasons to build a generic rules engine now.
+
+## Mandatory invariants
+
+1. The server is authoritative for every balance and phase.
+2. Every balance mutation creates an immutable ledger entry.
+3. Every value-changing command is transactional and idempotent.
+4. Ordinary bets and Insurance are separate locked-value accounts.
+5. Normal box settlement never settles Insurance.
+6. Insurance settlement never settles a normal box.
+7. A round cannot complete while any box or Insurance bet remains unresolved.
+8. A Player sees only their own boxes and balance.
+9. A Player sees all their own open boxes together.
+10. The permanent Player bottom area always shows their available value and jetons in every phase.
+11. The Bank sees all active boxes.
+12. The Bank phase label and transition action remain near the top.
+13. Cards and real money are never represented, stored, transferred, or inferred.
+
+## Blackjack phase sequence
+
+`TABLE_SETUP -> BETTING -> PLAYING -> PAYOUT -> ROUND_COMPLETE -> BETTING`
+
+No backward transitions and no phase skipping.
+
+## Design architecture
+
+- `classic` is the first and default skin.
+- Game/domain logic must not import skin components or CSS.
+- Skins must not contain permissions, accounting, phase rules, or payout calculations.
+- Build shared semantic slots first, then render those slots through the active skin.
+- A future skin must be replaceable without changing domain tests.
+- Do not create per-skin copies of pages or game logic.
+
+Recommended skin boundary:
+
+```text
+src/ui/core/                 semantic screen composition
+src/ui/skins/classic/        Classic components, tokens and styles
+src/ui/skins/registry.ts     typed skin selection
+```
+
+## Change discipline
+
+Before editing:
+
+1. Read this file.
+2. Read the files and tests directly affected.
+3. State the existing invariant or behavior being changed.
+4. Keep the change within one vertical slice.
+
+After editing:
+
+1. Run focused tests.
+2. Run the full test suite and production build before declaring a slice complete.
+3. Render the affected 390x844 mobile states.
+4. Verify at 320x700.
+5. Update this file and the changelog when architectural facts or status changed.
+6. Report exact results and genuine limitations.
+
+Do not claim completion from code inspection alone.
+
+## Current status
+
+- Repository: genesis / not yet implemented
+- Current game: Blackjack MVP
+- Current skin: Classic
+- Accepted references: `design/reference/classic/`
+- Next milestone: Phase 0 table setup and invitation flow

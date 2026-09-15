@@ -1,0 +1,14 @@
+---
+description: Read and obey the JetonBro root operating contract before any work
+alwaysApply: true
+---
+
+# JetonBro operating contract
+
+Before planning, editing, running commands, or responding to any implementation request, read the root `.cursorfile` completely.
+
+Treat `.cursorfile` as the living operating contract for this repository.
+
+After every accepted change, update `.cursorfile` if the change affects architecture, product boundaries, state transitions, accounting rules, permissions, data ownership, skin structure, testing requirements, deployment commands, current implementation status, or the next agreed milestone.
+
+Never silently bypass, weaken, delete, or contradict `.cursorfile`. If a requested change conflicts with it, stop and explain the conflict before editing.
