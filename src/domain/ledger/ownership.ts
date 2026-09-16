@@ -100,4 +100,52 @@ export const VALUE_OWNERSHIP: ValueMove[] = [
     to: "PLAYER_POCKET",
     notes: "TABLE_TRANSFER_OUT then TABLE_TRANSFER_IN into the destination table AVAILABLE.",
   },
+  {
+    operation: "Fund Limited Bank",
+    from: BANK_VIRTUAL_RESERVE,
+    to: "BANK_AVAILABLE",
+    notes: "Table-specific bankroll minted once. Not a Player pocket.",
+  },
+  {
+    operation: "Reserve Bank exposure",
+    from: "BANK_AVAILABLE",
+    to: "BANK_LOCKED_EXPOSURE",
+    notes: "Maximum configured box or Insurance profit liability.",
+  },
+  {
+    operation: "Release unused Bank exposure",
+    from: "BANK_LOCKED_EXPOSURE",
+    to: "BANK_AVAILABLE",
+    notes: "Unused reserved profit returns after settlement or retract.",
+  },
+  {
+    operation: "Limited Bank takes a lost stake",
+    from: "LOCKED_BET",
+    to: "BANK_AVAILABLE",
+    notes: "Player loss credits the Limited Bank. Reserved exposure is released.",
+  },
+  {
+    operation: "Limited Bank pays a win",
+    from: "BANK_LOCKED_EXPOSURE",
+    to: "AVAILABLE",
+    notes: "Profit paid from reserved exposure. Player is credited once by BET_WIN_RETURN / BLACKJACK_RETURN / INSURANCE_WIN_RETURN. BANK_PAYOUT is the Bank-side exposure consumption, not a second Player credit. Remaining exposure returns to BANK_AVAILABLE.",
+  },
+  {
+    operation: "Limited Bank takes Insurance loss",
+    from: "LOCKED_INSURANCE",
+    to: "BANK_AVAILABLE",
+    notes: "Insurance stake absorbed independently of the box. Reserved Insurance exposure is released.",
+  },
+  {
+    operation: "Increase Limited Bank",
+    from: BANK_VIRTUAL_RESERVE,
+    to: "BANK_AVAILABLE",
+    notes: "Explicit BANK_FUNDING_ADJUSTMENT mint. Does not credit a Player.",
+  },
+  {
+    operation: "Decrease Limited Bank",
+    from: "BANK_AVAILABLE",
+    to: BANK_VIRTUAL_RESERVE,
+    notes: "Explicit BANK_FUNDING_ADJUSTMENT burn. Blocked while BANK_LOCKED_EXPOSURE > 0. Cannot go negative.",
+  },
 ];

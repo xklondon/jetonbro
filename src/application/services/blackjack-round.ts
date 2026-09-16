@@ -4,6 +4,19 @@ import { publishTable } from "@/application/realtime/bus";
 import { appendLedger, creditTableAvailable } from "@/application/services/ledger";
 import { requireMember, creditStartingJetonsOnce } from "@/application/services/tables";
 import {
+  applyBankFundingMode,
+  parseBankFunding,
+  parseCardAssist,
+  reserveInsuranceExposure,
+  reserveSplitExposure,
+  roundHasLockedStake,
+  settleLimitedBankBox,
+  settleLimitedBankInsurance,
+  syncBoxExposure,
+} from "@/application/services/bankroll";
+import { mutateHand, ranksFromJson, suggestedBoxOutcome, suggestedInsuranceResolution } from "@/application/services/card-hands";
+import { evaluateHand } from "@/domain/blackjack/cards";
+import {
   insuranceMaxMillis,
   insuranceReturnMillis,
   ordinaryReturnMillis,
@@ -399,6 +412,17 @@ export async function placeOrRetractBet(input: {
       const delta = nextLocked - box.lockedBetMillis;
       if (delta === 0n) return;
       assertBetLimits(nextLocked, table.minBetMillis, table.maxBetMillis);
+      if (delta > 0n) {
+        await syncBoxExposure(tx, {
+          table,
+          actorId: input.actorId,
+          boxId: box.id,
+          currentReserved: box.exposureReservedMillis,
+          nextStake: nextLocked,
+          idempotencyKey: input.idempotencyKey,
+          label: `box ${box.boxNumber}`,
+        });
+      }
       const { before, after } = await creditTableAvailable(tx, member.id, -delta);
       await tx.bettingBox.update({
         where: { id: box.id },
@@ -423,6 +447,17 @@ export async function placeOrRetractBet(input: {
             ? `Locked ${formatJetons(delta)} jetons on box ${box.boxNumber}`
             : `Returned ${formatJetons(-delta)} jetons from box ${box.boxNumber}`,
       });
+      if (delta < 0n) {
+        await syncBoxExposure(tx, {
+          table,
+          actorId: input.actorId,
+          boxId: box.id,
+          currentReserved: box.exposureReservedMillis,
+          nextStake: nextLocked,
+          idempotencyKey: input.idempotencyKey,
+          label: `box ${box.boxNumber}`,
+        });
+      }
     });
     publishTable(input.tableId);
     return { ok: true };
@@ -550,6 +585,15 @@ export async function doubleBox(input: { actorId: string; tableId: string; boxId
         throw new DomainError("NO_STAKE", "There is no stake to double.");
       }
       const additional = box.lockedBetMillis;
+      await syncBoxExposure(tx, {
+        table,
+        actorId: input.actorId,
+        boxId: box.id,
+        currentReserved: box.exposureReservedMillis,
+        nextStake: box.lockedBetMillis + additional,
+        idempotencyKey: input.idempotencyKey,
+        label: `doubled box ${box.boxNumber}`,
+      });
       const member = await lockMember(tx, table.id, input.actorId);
       const { before, after } = await creditTableAvailable(tx, member.id, -additional);
       await tx.bettingBox.update({
@@ -591,8 +635,6 @@ export async function splitBox(input: { actorId: string; tableId: string; boxId:
         throw new DomainError("NO_STAKE", "There is no stake to split.");
       }
       const stake = box.lockedBetMillis;
-      const member = await lockMember(tx, table.id, input.actorId);
-      const { before, after } = await creditTableAvailable(tx, member.id, -stake);
       const number = nextBoxNumber(table.currentRound!.boxes, input.actorId);
       const created = await tx.bettingBox.create({
         data: {
@@ -606,6 +648,16 @@ export async function splitBox(input: { actorId: string; tableId: string; boxId:
           isSplitOffshoot: true,
         },
       });
+      await reserveSplitExposure(tx, {
+        table,
+        actorId: input.actorId,
+        boxId: created.id,
+        stake,
+        idempotencyKey: input.idempotencyKey,
+        label: `split box ${number}`,
+      });
+      const member = await lockMember(tx, table.id, input.actorId);
+      const { before, after } = await creditTableAvailable(tx, member.id, -stake);
       await appendLedger(tx, {
         playerId: input.actorId,
         actorId: input.actorId,
@@ -701,8 +753,6 @@ export async function buyInsurance(input: {
       if (amount > max) {
         throw new DomainError("INSURANCE_MAX", `Insurance cannot exceed ${formatJetons(max)} jetons.`);
       }
-      const member = await lockMember(tx, table.id, input.actorId);
-      const { before, after } = await creditTableAvailable(tx, member.id, -amount);
       const insurance = await tx.insuranceBet.create({
         data: {
           roundId: table.currentRound.id,
@@ -711,6 +761,16 @@ export async function buyInsurance(input: {
           amountMillis: amount,
         },
       });
+      await reserveInsuranceExposure(tx, {
+        table,
+        actorId: input.actorId,
+        insuranceBetId: insurance.id,
+        insuranceStake: amount,
+        idempotencyKey: input.idempotencyKey,
+        label: `Insurance on box ${box.boxNumber}`,
+      });
+      const member = await lockMember(tx, table.id, input.actorId);
+      const { before, after } = await creditTableAvailable(tx, member.id, -amount);
       await appendLedger(tx, {
         playerId: input.actorId,
         actorId: input.actorId,
@@ -729,6 +789,183 @@ export async function buyInsurance(input: {
     publishTable(input.tableId);
     return { ok: true };
   });
+}
+
+async function settleBoxInTx(
+  tx: Tx,
+  input: {
+    table: Awaited<ReturnType<typeof loadTableForUpdate>>;
+    actorId: string;
+    box: NonNullable<Awaited<ReturnType<typeof loadTableForUpdate>>["currentRound"]>["boxes"][number];
+    outcome: BoxOutcome;
+    idempotencyKey: string;
+  },
+) {
+  const { table, box } = input;
+  const updated = await tx.bettingBox.updateMany({
+    where: { id: box.id, settledKey: null },
+    data: {
+      outcome: input.outcome,
+      settledAt: new Date(),
+      settledKey: box.id,
+      returnedMillis: ordinaryReturnMillis(box.lockedBetMillis, input.outcome, table.blackjackPayout),
+    },
+  });
+  if (updated.count !== 1) {
+    throw new ConflictError("This box has already been settled.");
+  }
+  const returned = ordinaryReturnMillis(box.lockedBetMillis, input.outcome, table.blackjackPayout);
+  const member = await lockMember(tx, table.id, box.playerId);
+  const { before, after } = await creditTableAvailable(tx, member.id, returned);
+  await tx.bettingBox.update({
+    where: { id: box.id },
+    data: { lockedBetMillis: 0n },
+  });
+  await appendLedger(tx, {
+    playerId: box.playerId,
+    actorId: input.actorId,
+    tableId: table.id,
+    roundId: table.currentRound!.id,
+    boxId: box.id,
+    transactionType: outcomeLedgerType(input.outcome),
+    amountMillis: input.outcome === "LOST" ? box.lockedBetMillis : returned,
+    balanceBeforeMillis: before,
+    balanceAfterMillis: after,
+    idempotencyKey: `${input.idempotencyKey}:ledger`,
+    description: `Box ${box.boxNumber} ${input.outcome.toLowerCase()} · return ${formatJetons(returned)}`,
+  });
+  await settleLimitedBankBox(tx, {
+    table,
+    actorId: input.actorId,
+    boxId: box.id,
+    stake: box.lockedBetMillis,
+    reserved: box.exposureReservedMillis,
+    outcome: input.outcome,
+    idempotencyKey: input.idempotencyKey,
+    label: `box ${box.boxNumber}`,
+  });
+}
+
+async function settleInsuranceInTx(
+  tx: Tx,
+  input: {
+    table: Awaited<ReturnType<typeof loadTableForUpdate>>;
+    actorId: string;
+    resolution: InsuranceResolution;
+    idempotencyKey: string;
+  },
+) {
+  const round = input.table.currentRound;
+  if (!round) throw new ConflictError("No open round.");
+  if (round.insuranceWindow === "SETTLED") {
+    throw new ConflictError("Insurance is already settled.");
+  }
+  if (round.insuranceBets.length === 0) {
+    await tx.round.update({
+      where: { id: round.id },
+      data: {
+        insuranceWindow: "SETTLED",
+        insuranceResolution: input.resolution,
+      },
+    });
+    return;
+  }
+  for (const bet of round.insuranceBets) {
+    const returned = insuranceReturnMillis(bet.amountMillis, input.resolution);
+    const updated = await tx.insuranceBet.updateMany({
+      where: { id: bet.id, settledKey: null },
+      data: {
+        resolution: input.resolution,
+        returnedMillis: returned,
+        settledAt: new Date(),
+        settledKey: bet.id,
+      },
+    });
+    if (updated.count !== 1) continue;
+    const member = await lockMember(tx, input.table.id, bet.playerId);
+    const { before, after } = await creditTableAvailable(tx, member.id, returned);
+    await appendLedger(tx, {
+      playerId: bet.playerId,
+      actorId: input.actorId,
+      tableId: input.table.id,
+      roundId: round.id,
+      boxId: bet.boxId,
+      insuranceBetId: bet.id,
+      transactionType: input.resolution === "DEALER_BLACKJACK" ? "INSURANCE_WIN_RETURN" : "INSURANCE_LOSS",
+      amountMillis: input.resolution === "DEALER_BLACKJACK" ? returned : bet.amountMillis,
+      balanceBeforeMillis: before,
+      balanceAfterMillis: after,
+      idempotencyKey: `${input.idempotencyKey}:ledger:${bet.id}`,
+      description:
+        input.resolution === "DEALER_BLACKJACK"
+          ? `Insurance won · return ${formatJetons(returned)}`
+          : "Insurance lost",
+    });
+    await settleLimitedBankInsurance(tx, {
+      table: input.table,
+      actorId: input.actorId,
+      insuranceBetId: bet.id,
+      boxId: bet.boxId,
+      stake: bet.amountMillis,
+      reserved: bet.exposureReservedMillis,
+      resolution: input.resolution,
+      idempotencyKey: `${input.idempotencyKey}:${bet.id}`,
+    });
+  }
+  await tx.round.update({
+    where: { id: round.id },
+    data: {
+      insuranceWindow: "SETTLED",
+      insuranceResolution: input.resolution,
+    },
+  });
+}
+
+function handIsComplete(ranks: unknown, completedAt: Date | null, isSplitOffshoot = false): boolean {
+  if (completedAt) return true;
+  const parsed = ranksFromJson(ranks);
+  return parsed.length > 0 && evaluateHand(parsed, isSplitOffshoot).bust;
+}
+
+async function autoSettleCompleteHands(
+  tx: Tx,
+  table: Awaited<ReturnType<typeof loadTableForUpdate>>,
+  actorId: string,
+  idempotencyKey: string,
+) {
+  const round = table.currentRound;
+  if (!round || table.cardAssist !== "AUTO") return;
+  const dealerRanks = ranksFromJson(round.dealerRanks);
+  const dealerDone = handIsComplete(round.dealerRanks, round.dealerCompletedAt);
+  if (dealerDone) {
+    for (const box of round.boxes.filter((item) => !item.removedAt && !item.settledKey)) {
+      if (!handIsComplete(box.ranks, box.handCompletedAt, box.isSplitOffshoot)) continue;
+      const outcome = suggestedBoxOutcome(ranksFromJson(box.ranks), dealerRanks, box.isSplitOffshoot);
+      if (!outcome) continue;
+      await settleBoxInTx(tx, {
+        table,
+        actorId,
+        box,
+        outcome,
+        idempotencyKey: `${idempotencyKey}:auto:${box.id}`,
+      });
+    }
+  }
+  if (dealerRanks.length >= 2 && round.insuranceWindow !== "SETTLED") {
+    const resolution = suggestedInsuranceResolution(dealerRanks);
+    if (resolution) {
+      try {
+        await settleInsuranceInTx(tx, {
+          table,
+          actorId,
+          resolution,
+          idempotencyKey: `${idempotencyKey}:auto-insurance`,
+        });
+      } catch (error) {
+        if (!(error instanceof ConflictError)) throw error;
+      }
+    }
+  }
 }
 
 export async function enterPayout(input: { actorId: string; tableId: string; idempotencyKey: string }) {
@@ -763,6 +1000,9 @@ export async function enterPayout(input: { actorId: string; tableId: string; ide
         where: { id: table.id },
         data: { currentPhase: "PAYOUT" },
       });
+      table.currentPhase = "PAYOUT";
+      if (table.currentRound) table.currentRound.phase = "PAYOUT";
+      await autoSettleCompleteHands(tx, table, input.actorId, input.idempotencyKey);
       logPhaseCommand({
         command: "enterPayout",
         actorId: input.actorId,
@@ -773,6 +1013,7 @@ export async function enterPayout(input: { actorId: string; tableId: string; ide
         code: "PAYOUT",
       });
     });
+    await maybeCompleteRound(input.tableId);
     publishTable(input.tableId);
     return { ok: true, phase: "PAYOUT" as const };
   });
@@ -792,37 +1033,12 @@ export async function settleBox(input: {
       requirePhase(table.currentPhase, "PAYOUT");
       const box = table.currentRound?.boxes.find((item) => item.id === input.boxId && !item.removedAt);
       if (!box) throw new NotFoundError("Box not found.");
-      const updated = await tx.bettingBox.updateMany({
-        where: { id: box.id, settledKey: null },
-        data: {
-          outcome: input.outcome,
-          settledAt: new Date(),
-          settledKey: box.id,
-          returnedMillis: ordinaryReturnMillis(box.lockedBetMillis, input.outcome, table.blackjackPayout),
-        },
-      });
-      if (updated.count !== 1) {
-        throw new ConflictError("This box has already been settled.");
-      }
-      const returned = ordinaryReturnMillis(box.lockedBetMillis, input.outcome, table.blackjackPayout);
-      const member = await lockMember(tx, table.id, box.playerId);
-      const { before, after } = await creditTableAvailable(tx, member.id, returned);
-      await tx.bettingBox.update({
-        where: { id: box.id },
-        data: { lockedBetMillis: 0n },
-      });
-      await appendLedger(tx, {
-        playerId: box.playerId,
+      await settleBoxInTx(tx, {
+        table,
         actorId: input.actorId,
-        tableId: table.id,
-        roundId: table.currentRound!.id,
-        boxId: box.id,
-        transactionType: outcomeLedgerType(input.outcome),
-        amountMillis: input.outcome === "LOST" ? box.lockedBetMillis : returned,
-        balanceBeforeMillis: before,
-        balanceAfterMillis: after,
-        idempotencyKey: `${input.idempotencyKey}:ledger`,
-        description: `Box ${box.boxNumber} ${input.outcome.toLowerCase()} · return ${formatJetons(returned)}`,
+        box,
+        outcome: input.outcome,
+        idempotencyKey: input.idempotencyKey,
       });
     });
     await maybeCompleteRound(input.tableId);
@@ -842,62 +1058,158 @@ export async function settleInsurance(input: {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
       requirePhase(table.currentPhase, "PAYOUT");
-      const round = table.currentRound;
-      if (!round) throw new ConflictError("No open round.");
-      if (round.insuranceWindow === "SETTLED") {
-        throw new ConflictError("Insurance is already settled.");
-      }
-      if (round.insuranceBets.length === 0) {
-        await tx.round.update({
-          where: { id: round.id },
-          data: {
-            insuranceWindow: "SETTLED",
-            insuranceResolution: input.resolution,
-          },
-        });
-        return;
-      }
-      for (const bet of round.insuranceBets) {
-        const returned = insuranceReturnMillis(bet.amountMillis, input.resolution);
-        const updated = await tx.insuranceBet.updateMany({
-          where: { id: bet.id, settledKey: null },
-          data: {
-            resolution: input.resolution,
-            returnedMillis: returned,
-            settledAt: new Date(),
-            settledKey: bet.id,
-          },
-        });
-        if (updated.count !== 1) continue;
-        const member = await lockMember(tx, table.id, bet.playerId);
-        const { before, after } = await creditTableAvailable(tx, member.id, returned);
-        await appendLedger(tx, {
-          playerId: bet.playerId,
-          actorId: input.actorId,
-          tableId: table.id,
-          roundId: round.id,
-          boxId: bet.boxId,
-          insuranceBetId: bet.id,
-          transactionType: input.resolution === "DEALER_BLACKJACK" ? "INSURANCE_WIN_RETURN" : "INSURANCE_LOSS",
-          amountMillis: input.resolution === "DEALER_BLACKJACK" ? returned : bet.amountMillis,
-          balanceBeforeMillis: before,
-          balanceAfterMillis: after,
-          idempotencyKey: `${input.idempotencyKey}:ledger:${bet.id}`,
-          description:
-            input.resolution === "DEALER_BLACKJACK"
-              ? `Insurance won · return ${formatJetons(returned)}`
-              : "Insurance lost",
-        });
-      }
-      await tx.round.update({
-        where: { id: round.id },
-        data: {
-          insuranceWindow: "SETTLED",
-          insuranceResolution: input.resolution,
-        },
+      await settleInsuranceInTx(tx, {
+        table,
+        actorId: input.actorId,
+        resolution: input.resolution,
+        idempotencyKey: input.idempotencyKey,
       });
     });
     await maybeCompleteRound(input.tableId);
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
+export async function mutateCards(input: {
+  actorId: string;
+  tableId: string;
+  idempotencyKey: string;
+  boxId?: string;
+  dealer?: boolean;
+  action: "ADD" | "REMOVE" | "COMPLETE" | "REOPEN" | "CLEAR";
+  rank?: string;
+  index?: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "mutateCards", input, async () => {
+    await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      await mutateHand(tx, {
+        actorId: input.actorId,
+        table,
+        boxId: input.boxId,
+        dealer: input.dealer,
+        action: input.action,
+        rank: input.rank,
+        index: input.index === undefined ? undefined : Number.parseInt(input.index, 10),
+      });
+    });
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
+export async function applyCardOutcome(input: {
+  actorId: string;
+  tableId: string;
+  boxId: string;
+  idempotencyKey: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "applyCardOutcome", input, async () => {
+    await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      requirePhase(table.currentPhase, "PAYOUT");
+      const round = table.currentRound;
+      if (!round) throw new ConflictError("No open round.");
+      const box = round.boxes.find((item) => item.id === input.boxId && !item.removedAt);
+      if (!box) throw new NotFoundError("Box not found.");
+      if (!handIsComplete(box.ranks, box.handCompletedAt, box.isSplitOffshoot) || !handIsComplete(round.dealerRanks, round.dealerCompletedAt)) {
+        throw new DomainError("HAND_INCOMPLETE", "Complete both hands before applying the suggestion.");
+      }
+      const outcome = suggestedBoxOutcome(ranksFromJson(box.ranks), ranksFromJson(round.dealerRanks), box.isSplitOffshoot);
+      if (!outcome) {
+        throw new DomainError("NO_SUGGESTION", "There is not enough card information to apply.");
+      }
+      await settleBoxInTx(tx, {
+        table,
+        actorId: input.actorId,
+        box,
+        outcome,
+        idempotencyKey: input.idempotencyKey,
+      });
+    });
+    await maybeCompleteRound(input.tableId);
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
+export async function applyInsuranceSuggestion(input: {
+  actorId: string;
+  tableId: string;
+  idempotencyKey: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "applyInsuranceSuggestion", input, async () => {
+    await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      requirePhase(table.currentPhase, "PAYOUT");
+      const resolution = suggestedInsuranceResolution(ranksFromJson(table.currentRound?.dealerRanks));
+      if (!resolution) {
+        throw new DomainError("NO_SUGGESTION", "Enter the Dealer’s first two cards before applying Insurance.");
+      }
+      await settleInsuranceInTx(tx, {
+        table,
+        actorId: input.actorId,
+        resolution,
+        idempotencyKey: input.idempotencyKey,
+      });
+    });
+    await maybeCompleteRound(input.tableId);
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
+export async function setCardAssist(input: {
+  actorId: string;
+  tableId: string;
+  cardAssist: string;
+  idempotencyKey: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "setCardAssist", input, async () => {
+    await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
+        throw new DomainError("CARDS_LOCKED", "Card Assist can only change during TABLE SETUP or unstaked BETTING.");
+      }
+      if (table.currentPhase === "BETTING" && roundHasLockedStake(table.currentRound)) {
+        throw new DomainError("CARDS_LOCKED", "Card Assist is locked after a stake is placed.");
+      }
+      await tx.table.update({
+        where: { id: table.id },
+        data: { cardAssist: parseCardAssist(input.cardAssist, table.cardAssist) },
+      });
+    });
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
+export async function setBankFunding(input: {
+  actorId: string;
+  tableId: string;
+  bankFundingMode: string;
+  startingBank?: string;
+  idempotencyKey: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "setBankFunding", input, async () => {
+    await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
+        throw new DomainError("FUNDING_LOCKED", "Funding mode can only change during TABLE SETUP or unstaked BETTING.");
+      }
+      await applyBankFundingMode(tx, {
+        table,
+        actorId: input.actorId,
+        mode: parseBankFunding(input.bankFundingMode, table.bankFundingMode),
+        startingBank: input.startingBank,
+        idempotencyKey: input.idempotencyKey,
+      });
+    });
     publishTable(input.tableId);
     return { ok: true };
   });

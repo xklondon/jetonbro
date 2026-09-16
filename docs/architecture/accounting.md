@@ -10,6 +10,10 @@ Player-visible conservation is:
 
 That sum plus the Bank virtual reserve is conserved for every command. The reserve itself is unbounded.
 
+Limited Bank table conservation, excluding only explicit `BANK_VIRTUAL_RESERVE` funding or funding adjustment, is:
+
+`AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE`
+
 ## Buckets
 
 | Bucket | Meaning |
@@ -17,7 +21,9 @@ That sum plus the Bank virtual reserve is conserved for every command. The reser
 | AVAILABLE | `TableMember.availableMillis` |
 | LOCKED_BET | `BettingBox.lockedBetMillis` |
 | LOCKED_INSURANCE | `InsuranceBet.amountMillis` until Insurance is settled |
-| BANK_VIRTUAL_RESERVE | Unlimited Bank source/sink. Not stored as a row. |
+| BANK_VIRTUAL_RESERVE | Unlimited Open Bank source/sink. Not stored as a row. |
+| BANK_AVAILABLE | Limited Bank spendable bankroll (`Table.bankAvailableMillis`) |
+| BANK_LOCKED_EXPOSURE | Limited Bank reserved maximum profit (`Table.bankLockedExposureMillis`) |
 | PLAYER_POCKET | `PlayerAccount.globalAvailableMillis` when leaving a table |
 
 ## Payouts
@@ -50,9 +56,17 @@ Profit is paid by the Bank virtual reserve. Total return is what is credited to 
 | Player gets Blackjack | LOCKED_BET consumed; BANK_VIRTUAL_RESERVE pays 1.5× or 1.2× | AVAILABLE receives 2.5× or 2.2× stake |
 | Insurance wins | LOCKED_INSURANCE consumed; BANK_VIRTUAL_RESERVE pays 2× | AVAILABLE receives 3× Insurance stake |
 | Insurance loses | LOCKED_INSURANCE | BANK_VIRTUAL_RESERVE |
+| Fund Limited Bank | BANK_VIRTUAL_RESERVE | BANK_AVAILABLE |
+| Reserve Bank exposure | BANK_AVAILABLE | BANK_LOCKED_EXPOSURE |
+| Release unused Bank exposure | BANK_LOCKED_EXPOSURE | BANK_AVAILABLE |
+| Limited Bank takes a lost stake | LOCKED_BET | BANK_AVAILABLE |
+| Limited Bank pays a win | BANK_LOCKED_EXPOSURE | AVAILABLE (Player is credited once by BET_WIN_RETURN / BLACKJACK_RETURN; BANK_PAYOUT is the Bank-side exposure consumption) |
+| Limited Bank takes Insurance loss | LOCKED_INSURANCE | BANK_AVAILABLE |
+| Increase Limited Bank | BANK_VIRTUAL_RESERVE | BANK_AVAILABLE |
+| Decrease Limited Bank | BANK_AVAILABLE | BANK_VIRTUAL_RESERVE |
 | Next round | AVAILABLE | AVAILABLE (unchanged) |
 | Another table | AVAILABLE | PLAYER_POCKET, then destination AVAILABLE |
 
 Box settlement never writes Insurance rows. Insurance settlement never writes box outcomes.
 
-Ledger entries are append-only and required for every balance change.
+Ledger entries are append-only and required for every balance change. Player settlement writes one Player-side row (`playerId` set): `BET_WIN_RETURN`, `BET_PUSH_RETURN`, `BET_LOSS`, `BLACKJACK_RETURN`, `INSURANCE_WIN_RETURN`, or `INSURANCE_LOSS`. Limited Bank writes matching Bank-side rows in the same transaction (`playerId` null): `BANK_PAYOUT` consumes reserved exposure; `BANK_STAKE_TAKE` credits `BANK_AVAILABLE` with a lost stake; `BANK_EXPOSURE_RESERVED` / `BANK_EXPOSURE_RELEASED` move value between `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE`. `BANK_PAYOUT` is never a second Player credit. Each of those rows has its own idempotency key, exact source and destination in the description, and exact millijeton amount.

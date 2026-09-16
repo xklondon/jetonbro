@@ -31,6 +31,11 @@ import {
   startBetting,
   startNextRound,
   scheduleNextRound,
+  mutateCards,
+  applyCardOutcome,
+  applyInsuranceSuggestion,
+  setCardAssist,
+  setBankFunding,
 } from "@/application/services/blackjack-round";
 import { BOX_OUTCOMES } from "@/domain/blackjack/payouts";
 import { INSURANCE_RESOLUTIONS } from "@/domain/blackjack/payouts";
@@ -157,6 +162,9 @@ async function dispatch(
         emails: String(p.emails ?? "")
           .split(/[,\s]+/)
           .filter(Boolean),
+        cardAssist: p.cardAssist ? String(p.cardAssist) : undefined,
+        bankFundingMode: p.bankFundingMode ? String(p.bankFundingMode) : undefined,
+        startingBank: p.startingBank ? String(p.startingBank) : undefined,
       });
     case "abandonDraft":
       return abandonDraft(ctx);
@@ -195,6 +203,58 @@ async function dispatch(
         insuranceEnabled: p.insuranceEnabled === undefined ? undefined : p.insuranceEnabled === true || p.insuranceEnabled === "true",
         bankMayDistributeJetons: p.bankMayDistributeJetons === undefined ? undefined : Boolean(p.bankMayDistributeJetons),
         game: p.game ? String(p.game) : undefined,
+        cardAssist: p.cardAssist ? String(p.cardAssist) : undefined,
+        bankFundingMode: p.bankFundingMode ? String(p.bankFundingMode) : undefined,
+        startingBank: p.startingBank ? String(p.startingBank) : undefined,
+      });
+    case "addCard":
+      return mutateCards({
+        ...ctx,
+        boxId: p.boxId ? String(p.boxId) : undefined,
+        dealer: p.dealer === true || p.dealer === "true",
+        action: "ADD",
+        rank: String(p.rank ?? ""),
+      });
+    case "removeCard":
+      return mutateCards({
+        ...ctx,
+        boxId: p.boxId ? String(p.boxId) : undefined,
+        dealer: p.dealer === true || p.dealer === "true",
+        action: "REMOVE",
+        index: p.index === undefined ? undefined : String(p.index),
+      });
+    case "completeHand":
+      return mutateCards({
+        ...ctx,
+        boxId: p.boxId ? String(p.boxId) : undefined,
+        dealer: p.dealer === true || p.dealer === "true",
+        action: "COMPLETE",
+      });
+    case "reopenHand":
+      return mutateCards({
+        ...ctx,
+        boxId: p.boxId ? String(p.boxId) : undefined,
+        dealer: p.dealer === true || p.dealer === "true",
+        action: "REOPEN",
+      });
+    case "clearHand":
+      return mutateCards({
+        ...ctx,
+        boxId: p.boxId ? String(p.boxId) : undefined,
+        dealer: p.dealer === true || p.dealer === "true",
+        action: "CLEAR",
+      });
+    case "applyCardOutcome":
+      return applyCardOutcome({ ...ctx, boxId: String(p.boxId) });
+    case "applyInsuranceSuggestion":
+      return applyInsuranceSuggestion(ctx);
+    case "setCardAssist":
+      return setCardAssist({ ...ctx, cardAssist: String(p.cardAssist ?? "") });
+    case "setBankFunding":
+      return setBankFunding({
+        ...ctx,
+        bankFundingMode: String(p.bankFundingMode ?? ""),
+        startingBank: p.startingBank ? String(p.startingBank) : undefined,
       });
     case "saveTable":
       return saveTable(ctx);

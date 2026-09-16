@@ -40,6 +40,7 @@ const view: PlayerTableView = {
       outcome: null,
       returned: null,
       payoutActions: [],
+      hand: { ranks: [], complete: false, label: "", suggestedOutcome: null, canEdit: true },
     },
     {
       id: "2",
@@ -57,6 +58,7 @@ const view: PlayerTableView = {
       outcome: null,
       returned: null,
       payoutActions: [],
+      hand: { ranks: [], complete: false, label: "", suggestedOutcome: null, canEdit: true },
     },
   ],
 };
@@ -78,6 +80,7 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("Insurance");
   expect(html).toContain("Double");
   expect(html).toContain("Split");
+  expect(html).toContain("+ ADD CARDS");
   expect(html.indexOf("Insurance")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).toContain("selected");
 });

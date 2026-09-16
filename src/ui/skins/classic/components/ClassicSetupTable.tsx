@@ -76,6 +76,45 @@ export function ClassicSetupTable({
           OPEN BETTING
         </button>
         <p className="muted phase-hint">OPEN BETTING starts Betting.</p>
+        {view.setupCompleted ? (
+          <>
+            <div className="field-label">CARD ASSIST</div>
+            <div className="setting-row">
+              {(["OFF", "CONFIRM", "AUTO"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={(view.cardAssist ?? "OFF") === mode ? "active" : ""}
+                  onClick={() => onCommand("setCardAssist", { cardAssist: mode })}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+            <div className="field-label">BANK FUNDING</div>
+            <div className="setting-row">
+              <button
+                type="button"
+                className={(view.bankFundingMode ?? "OPEN") === "OPEN" ? "active" : ""}
+                onClick={() => onCommand("setBankFunding", { bankFundingMode: "OPEN" })}
+              >
+                OPEN BANK
+              </button>
+              <button
+                type="button"
+                className={view.bankFundingMode === "LIMITED" ? "active" : ""}
+                onClick={() =>
+                  onCommand("setBankFunding", {
+                    bankFundingMode: "LIMITED",
+                    startingBank: view.startingBank?.label || "500",
+                  })
+                }
+              >
+                LIMITED BANK
+              </button>
+            </div>
+          </>
+        ) : null}
         {!view.canStartBetting && view.startBlockedReason ? (
           <p className="muted" style={{ textAlign: "center", marginTop: 6 }}>
             {view.startBlockedReason}
@@ -169,6 +208,9 @@ export function ClassicSetupTable({
                   name: fields.name,
                   startingJetonsPerPlayer: fields.startingJetonsPerPlayer,
                   emails: fields.emails.filter(Boolean).join(","),
+                  cardAssist: fields.cardAssist ?? "OFF",
+                  bankFundingMode: fields.bankFundingMode ?? "OPEN",
+                  startingBank: fields.startingBank ?? "",
                 });
               }}
             />

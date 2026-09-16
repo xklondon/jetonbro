@@ -5,6 +5,9 @@ export const BLACKJACK_TABLE_DEFAULTS = {
   maxBoxesPerPlayer: 3,
   insuranceEnabled: true,
   startingAllocation: "100",
+  cardAssist: "OFF" as const,
+  bankFundingMode: "OPEN" as const,
+  startingBank: "500",
 } as const;
 
 export const MAX_BOXES_PER_PLAYER_MIN = 1;

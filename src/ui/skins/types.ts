@@ -56,6 +56,9 @@ export type JetonBroSkin = {
       game: "BLACKJACK";
       startingJetonsPerPlayer: string;
       emails: string[];
+      cardAssist?: string;
+      bankFundingMode?: string;
+      startingBank?: string;
     }) => Promise<void>;
     embedded?: boolean;
     joinUrl?: string | null;

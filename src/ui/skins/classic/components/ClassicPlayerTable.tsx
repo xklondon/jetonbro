@@ -6,6 +6,8 @@ import { PhoneShell } from "./PhoneShell";
 import { FeltBox } from "./FeltBox";
 import { DealCountdown } from "./DealCountdown";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
+import { CardEntryPanel } from "./CardEntryPanel";
+import { BankrollPanel } from "./BankrollPanel";
 import {
   selectInsuranceCelebration,
   selectOutcomeCelebration,
@@ -108,6 +110,18 @@ export function ClassicPlayerTable({
       </main>
       <footer className="dock player-dock">
         {notice ? <div className="error">{notice}</div> : null}
+        {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
+        <BankrollPanel bankroll={view.bankroll} />
+        {view.phase === "PLAYING" ? (
+          <CardEntryPanel
+            hand={selected?.hand}
+            completeLabel="HAND COMPLETE"
+            onAdd={(rank) => selected && onCommand("addCard", { boxId: selected.id, rank })}
+            onRemove={(index) => selected && onCommand("removeCard", { boxId: selected.id, index: String(index) })}
+            onComplete={() => selected && onCommand("completeHand", { boxId: selected.id })}
+            onReopen={() => selected && onCommand("reopenHand", { boxId: selected.id })}
+          />
+        ) : null}
         {view.actions.bet ? (
           <div className="exact">
             <input
@@ -121,6 +135,7 @@ export function ClassicPlayerTable({
             <button
               className="gold-button"
               type="button"
+              disabled={!selected || !exact || selected.coverage?.bet === false}
               onClick={() => {
                 if (!selected || !exact) return;
                 onCommand("placeBet", { boxId: selected.id, amount: exact, mode: "SET" });
@@ -165,7 +180,7 @@ export function ClassicPlayerTable({
             <div className="play-controls">
               <button
                 type="button"
-                disabled={!view.actions.insurance || !selected}
+                disabled={!view.actions.insurance || !selected || selected.coverage?.insurance === false}
                 onClick={() =>
                   selected &&
                   onCommand("buyInsurance", {
@@ -179,14 +194,14 @@ export function ClassicPlayerTable({
               <button
                 type="button"
                 className="primary"
-                disabled={!view.actions.double || !selected}
+                disabled={!view.actions.double || !selected || selected.coverage?.double === false}
                 onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
               >
                 Double
               </button>
               <button
                 type="button"
-                disabled={!view.actions.split || !selected}
+                disabled={!view.actions.split || !selected || selected.coverage?.split === false}
                 onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
               >
                 Split
@@ -212,7 +227,7 @@ export function ClassicPlayerTable({
             <button
               key={denom}
               type="button"
-              disabled={!view.actions.bet || !selected}
+              disabled={!view.actions.bet || !selected || selected.coverage?.bet === false}
               aria-label={`Add ${denom} jetons`}
               style={drag ? { touchAction: "none" } : undefined}
               onPointerDown={(event) => {

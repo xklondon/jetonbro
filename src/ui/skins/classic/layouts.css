@@ -815,3 +815,108 @@
     transform: none;
   }
 }
+
+.classic-skin .card-assist {
+  margin: 0 0 8px;
+}
+
+.classic-skin .card-assist-title,
+.classic-skin .hand-total,
+.classic-skin .bankroll-line {
+  color: var(--ivory);
+  font-size: 12px;
+}
+
+.classic-skin .add-cards,
+.classic-skin .card-assist-actions button,
+.classic-skin .rank-tray button,
+.classic-skin .funding-toggle button,
+.classic-skin .setting-row button {
+  border: 1px solid rgba(223, 189, 105, 0.32);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 8px;
+  padding: 8px 6px;
+}
+
+.classic-skin .add-cards {
+  width: 100%;
+}
+
+.classic-skin .entered-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.classic-skin .tactile-card {
+  width: 28px;
+  height: 38px;
+  border-radius: 4px;
+  border: 1px solid #d7c48a;
+  background: #f4ead5;
+  color: #30250d;
+  font: 12px Georgia, serif;
+}
+
+.classic-skin .rank-tray {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.classic-skin .rank-tray button {
+  padding: 6px 0;
+  font-size: 11px;
+}
+
+.classic-skin .card-assist-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.classic-skin .card-assist-actions .primary {
+  background: var(--gold);
+  color: #30250d;
+}
+
+.classic-skin .bankroll-panel {
+  margin: 6px 0 8px;
+  color: var(--ivory);
+  font-size: 12px;
+}
+
+.classic-skin .bankroll-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.classic-skin .setting-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.classic-skin .setting-row button.active,
+.classic-skin .funding-toggle button.active {
+  background: var(--gold);
+  color: #30250d;
+}
+
+.classic-skin .apply-suggestion {
+  width: 100%;
+  margin: 4px 0 6px;
+  background: var(--gold);
+  color: #30250d;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px;
+}
+

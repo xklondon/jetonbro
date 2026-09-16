@@ -15,6 +15,12 @@ export const LEDGER_TRANSACTION_TYPES = [
   "INSURANCE_LOSS",
   "TABLE_TRANSFER_IN",
   "TABLE_TRANSFER_OUT",
+  "BANK_FUNDING",
+  "BANK_FUNDING_ADJUSTMENT",
+  "BANK_EXPOSURE_RESERVED",
+  "BANK_EXPOSURE_RELEASED",
+  "BANK_STAKE_TAKE",
+  "BANK_PAYOUT",
 ] as const;
 
 export type LedgerTransactionType = (typeof LEDGER_TRANSACTION_TYPES)[number];
@@ -24,6 +30,8 @@ export const ACCOUNTING_BUCKETS = [
   "LOCKED_BET",
   "LOCKED_INSURANCE",
   "SETTLED",
+  "BANK_AVAILABLE",
+  "BANK_LOCKED_EXPOSURE",
 ] as const;
 
 export type AccountingBucket = (typeof ACCOUNTING_BUCKETS)[number];

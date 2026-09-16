@@ -7,7 +7,7 @@ type Tx = Prisma.TransactionClient;
 export async function appendLedger(
   tx: Tx,
   input: {
-    playerId: string;
+    playerId?: string | null;
     actorId: string;
     tableId?: string | null;
     roundId?: string | null;
@@ -23,7 +23,7 @@ export async function appendLedger(
 ): Promise<void> {
   await tx.ledgerEntry.create({
     data: {
-      playerId: input.playerId,
+      playerId: input.playerId ?? null,
       actorId: input.actorId,
       tableId: input.tableId ?? null,
       roundId: input.roundId ?? null,
@@ -81,4 +81,44 @@ export async function creditPlayerPocket(
     data: { globalAvailableMillis: after },
   });
   return { before: account.globalAvailableMillis, after };
+}
+
+export async function creditBankAvailable(
+  tx: Tx,
+  tableId: string,
+  amount: bigint,
+): Promise<{ before: bigint; after: bigint }> {
+  const table = await tx.table.findUniqueOrThrow({ where: { id: tableId } });
+  if (amount === 0n) {
+    return { before: table.bankAvailableMillis, after: table.bankAvailableMillis };
+  }
+  const after = table.bankAvailableMillis + amount;
+  if (after < 0n) {
+    throw new DomainError("BANK_CANNOT_COVER", "The Bank cannot cover this bet");
+  }
+  await tx.table.update({
+    where: { id: tableId },
+    data: { bankAvailableMillis: after },
+  });
+  return { before: table.bankAvailableMillis, after };
+}
+
+export async function creditBankExposure(
+  tx: Tx,
+  tableId: string,
+  amount: bigint,
+): Promise<{ before: bigint; after: bigint }> {
+  const table = await tx.table.findUniqueOrThrow({ where: { id: tableId } });
+  if (amount === 0n) {
+    return { before: table.bankLockedExposureMillis, after: table.bankLockedExposureMillis };
+  }
+  const after = table.bankLockedExposureMillis + amount;
+  if (after < 0n) {
+    throw new DomainError("BANK_CANNOT_COVER", "The Bank cannot cover this bet");
+  }
+  await tx.table.update({
+    where: { id: tableId },
+    data: { bankLockedExposureMillis: after },
+  });
+  return { before: table.bankLockedExposureMillis, after };
 }

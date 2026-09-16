@@ -26,7 +26,7 @@ Blackjack is the only implemented game until its full two-device flow is accepte
 10. The permanent Player bottom area always shows their available value and jetons in every phase.
 11. The Bank sees all active boxes.
 12. The Bank phase label and transition action remain near the top.
-13. Cards and real money are never represented, stored, transferred, or inferred.
+13. Physical cards, real money, dealing, shuffling, suits, decks, and card randomness remain outside the application. Optional rank records may be stored as assistance only; they never replace the physical table and never block play.
 
 ## Blackjack phase sequence
 
@@ -42,7 +42,8 @@ Insurance is a Bank-triggered window during PLAYING, not a phase. It is settled 
 - AVAILABLE is `TableMember.availableMillis`.
 - LOCKED_BET is `BettingBox.lockedBetMillis`.
 - LOCKED_INSURANCE is `InsuranceBet.amountMillis` until Insurance is settled.
-- BANK_VIRTUAL_RESERVE is unlimited and not stored as a balance. It is the source of minted table jetons and payout profit, and the sink of lost ordinary and Insurance stakes.
+- BANK_VIRTUAL_RESERVE is unlimited and not stored as a balance. In Open Bank it is the source of minted table jetons and payout profit, and the sink of lost ordinary and Insurance stakes.
+- Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Initial funding is `BANK_VIRTUAL_RESERVE → BANK_AVAILABLE` once. Before a Player stake is accepted, the Bank reserves maximum configured box profit exposure (`1.5×` for 3:2, `1.2×` for 6:5). Insurance reserves `2×` Insurance stake independently. Settlement consumes or releases that reserved exposure in the same transaction as the Player ledger. The Player is credited exactly once by the existing `BET_*` / `BLACKJACK_RETURN` / `INSURANCE_*` entry. `BANK_PAYOUT` and `BANK_STAKE_TAKE` are Bank-side legs (`playerId` null), never a second Player credit. Insufficient coverage rejects the Player action without debiting them.
 - Commands that change value require an idempotency key and write at least one ledger entry in the same transaction.
 - Ordinary payouts: win profit 1× / return 2×; push profit 0 / return 1×; loss return 0; Blackjack 3:2 profit 1.5× / return 2.5×; Blackjack 6:5 profit 1.2× / return 2.2×.
 - Insurance 2:1: profit 2× Insurance stake / return 3× Insurance stake. Settled independently of the box.
@@ -50,8 +51,8 @@ Insurance is a Bank-triggered window during PLAYING, not a phase. It is settled 
 ## Permissions
 
 - Owner: create table, invite, add/remove players before a round, assign Bank/Dealer, distribute jetons, save table, close table and transport remaining AVAILABLE to `PLAYER_POCKET`, or permanently delete an unused empty draft. Dealer reassignment does not transfer ownership.
-- Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next round.
-- Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open.
+- Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next round. Optionally enter/correct ranks on any Player box and the Dealer hand during PLAYING. May toggle Open/Limited Bank during unstaked BETTING. May change Card Assist during TABLE_SETUP or unstaked BETTING.
+- Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open. Optionally enter/correct ranks on their own selected box during PLAYING. Never edit another Player’s box or the Dealer hand.
 
 ## Design architecture
 
@@ -146,7 +147,7 @@ Full acceptance means:
 - Current game: Blackjack MVP
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
-- Bank accounting: unlimited virtual reserve (`BANK_VIRTUAL_RESERVE`), not a stored Bank balance
+- Bank accounting: Open Bank uses unlimited `BANK_VIRTUAL_RESERVE`. Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Card Assist defaults to `OFF`. Optional rank records and Limited Bank accounting are accepted: Player credited once per settlement; `BANK_PAYOUT` / `BANK_STAKE_TAKE` are Bank-side; table value `AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE` is conserved except explicit `BANK_VIRTUAL_RESERVE` funding.
 - Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true), and `startingJetonsPerPlayerMillis` are server-authoritative
 - Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack
 - Authenticated home: compact open-table rows show table name, game, phase, Bank/Dealer name, current Players, player/box counts, and `RETURN TO TABLE`. The owner sees every Player’s table balance; a non-owner sees Player names and only their own balance. The owner overflow shows `DELETE TABLE` on an empty draft, or `SAVE TABLE` and `CLOSE TABLE & SAVE BALANCES` on a started table. It does not also offer `CLOSE & REMOVE TABLE`.
@@ -155,7 +156,8 @@ Full acceptance means:
 - Next round: after every box and required Insurance stake is settled, the Bank uses `NEXT ROUND NOW` or `NEXT ROUND IN 7 SECONDS`. The seven-second option stores `Round.nextRoundDeadlineAt` (not `bettingCloseDeadlineAt`). Refresh resumes that deadline. At zero, or on `NEXT ROUND NOW`, the table opens exactly one new BETTING round. A PAYOUT snapshot that already has every required settlement settled can enable next-round. A blocked restart returns `NEXT_ROUND_BLOCKED`.
 - Dealer PAYOUT: compact vertical player list. Each box has its own horizontal result rail, left to right: `LOST`, `STAND OFF` (PUSH), `BLACKJACK`, `WON`. Swipe left LOST, swipe right WON, double-tap STAND OFF/PUSH; BLACKJACK is button-only. Gestures settle only that box. Labels come from `suggestedPayout`. Insurance is independent of box swipes.
 - Player celebrations use the settlement ID/box state as the dedupe key: Blackjack always plays the strong overlay once after confirmed settlement; a win sometimes plays the strong overlay and otherwise stays on the row; push is a calm return; loss is restrained Tough Luck. The Dealer keeps compact row confirmation only. Reduced motion disables overlays. Polling, SSE duplication, and refresh must not replay them.
-- Owner SAVE TABLE sets `Table.pausedAt` and keeps membership, table balances, and ledger history. `CLOSE TABLE & SAVE BALANCES` is owner-only. Empty drafts (`TABLE_SETUP`, no joined Players, no ledger, no staked rounds) may be hard-deleted with unused invitations/tokens (`DELETE TABLE`). A started table is never hard-deleted: `CLOSE TABLE & SAVE BALANCES` requires `ROUND_COMPLETE` or `TABLE_SETUP` with no locked Bet/Insurance, transfers AVAILABLE to `PLAYER_POCKET` exactly once via the existing close-table transaction (`TABLE_TRANSFER_OUT`), archives the table, removes it from Open Tables, and keeps ledger/round history. Locked funds return `LOCKED_FUNDS`. Later joins write `TABLE_TRANSFER_IN`. The Bank virtual reserve is not stored or transported. Dealer reassignment does not transfer ownership.
+- Owner SAVE TABLE sets `Table.pausedAt` and keeps membership, table balances, Card Assist, funding mode, Limited Bank buckets, optional rank records, and ledger history. `CLOSE TABLE & SAVE BALANCES` is owner-only. Empty drafts (`TABLE_SETUP`, no joined Players, no ledger, no staked rounds) may be hard-deleted with unused invitations/tokens (`DELETE TABLE`). A started table is never hard-deleted: `CLOSE TABLE & SAVE BALANCES` requires `ROUND_COMPLETE` or `TABLE_SETUP` with no locked Bet/Insurance and no Bank exposure, transfers Player AVAILABLE to `PLAYER_POCKET` exactly once via the existing close-table transaction (`TABLE_TRANSFER_OUT`), archives the table including remaining Limited Bank history, removes it from Open Tables, and keeps ledger/round/card history. Locked funds or Bank exposure return `LOCKED_FUNDS`. Later joins write `TABLE_TRANSFER_IN`. Open Bank virtual reserve is not stored or transported into a Player pocket. Dealer reassignment does not transfer ownership.
+- Player is credited exactly once per settlement by the existing `BET_*` / `BLACKJACK_RETURN` / `INSURANCE_*` ledger row. `BANK_PAYOUT` and `BANK_STAKE_TAKE` are Bank-side legs (`playerId` null) in the same transaction.
 - Verification: lightweight local changes use guardrails, affected Vitest, and `next build`. Full Playwright, screenshots, commit, push, and Railway deploy only for ledger/auth/phase/migration work or an accepted release batch
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
 - Email delivery: Resend HTTP API. Magic-link sign-in works on production

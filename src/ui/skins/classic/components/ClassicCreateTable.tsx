@@ -11,6 +11,9 @@ export type CreateTableFields = {
   game: "BLACKJACK";
   startingJetonsPerPlayer: string;
   emails: string[];
+  cardAssist?: string;
+  bankFundingMode?: string;
+  startingBank?: string;
 };
 
 export function ClassicCreateTable({
@@ -38,6 +41,9 @@ export function ClassicCreateTable({
     defaultStartingJetons ?? BLACKJACK_TABLE_DEFAULTS.startingAllocation,
   );
   const extraInitial = (initialEmails ?? []).filter((email) => email.trim());
+  const [cardAssist, setCardAssist] = useState<"OFF" | "CONFIRM" | "AUTO">("OFF");
+  const [bankFundingMode, setBankFundingMode] = useState<"OPEN" | "LIMITED">("OPEN");
+  const [startingBank, setStartingBank] = useState<string>(BLACKJACK_TABLE_DEFAULTS.startingBank);
   const [emails, setEmails] = useState<string[]>(extraInitial.length ? extraInitial : [""]);
   const [pending, setPending] = useState(false);
   const [qrData, setQrData] = useState<string | null>(null);
@@ -77,6 +83,9 @@ export function ClassicCreateTable({
             game,
             startingJetonsPerPlayer,
             emails,
+            cardAssist,
+            bankFundingMode,
+            startingBank,
           });
         } finally {
           setPending(false);
@@ -103,6 +112,39 @@ export function ClassicCreateTable({
             onChange={(event) => setStartingJetonsPerPlayer(event.target.value)}
           />
         </label>
+        <div>
+          <div className="field-label">CARD ASSIST</div>
+          <div className="setting-row">
+            {(["OFF", "CONFIRM", "AUTO"] as const).map((mode) => (
+              <button key={mode} type="button" className={cardAssist === mode ? "active" : ""} onClick={() => setCardAssist(mode)}>
+                {mode}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="field-label">BANK FUNDING</div>
+          <div className="setting-row">
+            <button type="button" className={bankFundingMode === "OPEN" ? "active" : ""} onClick={() => setBankFundingMode("OPEN")}>
+              OPEN BANK
+            </button>
+            <button type="button" className={bankFundingMode === "LIMITED" ? "active" : ""} onClick={() => setBankFundingMode("LIMITED")}>
+              LIMITED BANK
+            </button>
+          </div>
+          {bankFundingMode === "LIMITED" ? (
+            <label>
+              Starting Bank jetons
+              <input
+                name="startingBank"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={startingBank}
+                onChange={(event) => setStartingBank(event.target.value)}
+              />
+            </label>
+          ) : null}
+        </div>
         {joinUrl ? (
           <div className="qr-panel setup-qr" data-join-url={joinUrl} aria-label="Shared table join QR code">
             <div className="qr-kicker">SCAN TO JOIN TABLE</div>

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Optional Blackjack cards and Limited Bank
+
+- Physical cards stay authoritative. Rank-only assistance is optional during PLAYING, never required to deal or settle, and never includes suits, decks, dealing, shuffling, or randomness.
+- Card Assist `OFF` (default) shows totals and suggestions only. `CONFIRM` requires Dealer Apply in PAYOUT. `AUTO` settles complete valid boxes only when entering PAYOUT. Incomplete boxes stay manual. Split two-card 21 is ordinary 21.
+- Open Bank keeps the unlimited virtual reserve. Limited Bank stores `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` with ledger-backed funding, exposure reservation, and settlement. Player settlement credits the Player exactly once; `BANK_PAYOUT` / `BANK_STAKE_TAKE` are Bank-side legs in the same transaction. `BANK_EXPOSURE_RESERVED` records `BANK_LOCKED_EXPOSURE` before/after. Accounting acceptance is complete.
+
 ### Table management and Blackjack payout rail
 
 - Authenticated home uses compact open-table rows: name, game, phase, Dealer, Player names, owner-visible balances, player/box counts, and `RETURN TO TABLE`. Non-owners see names and only their own balance. The owner overflow shows `DELETE TABLE` on an unused draft, or `SAVE TABLE` and `CLOSE TABLE & SAVE BALANCES` on a started table.

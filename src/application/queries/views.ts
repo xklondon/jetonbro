@@ -19,6 +19,25 @@ export type PayoutActionView = {
   swipeLabel?: string;
 };
 
+export type HandView = {
+  ranks: string[];
+  complete: boolean;
+  label: string;
+  suggestedOutcome: BoxOutcome | null;
+  suggestedInsurance?: "DEALER_BLACKJACK" | "NO_DEALER_BLACKJACK" | null;
+  canEdit: boolean;
+};
+
+export type BankrollView = {
+  mode: "OPEN" | "LIMITED";
+  available: MoneyView;
+  reserved: MoneyView;
+  total: MoneyView;
+  canToggle: boolean;
+  lockedReason: string | null;
+  canCoverMore: boolean;
+};
+
 export type BoxView = {
   id: string;
   playerId: string;
@@ -36,6 +55,8 @@ export type BoxView = {
   returned: MoneyView | null;
   settledKey?: string | null;
   payoutActions: PayoutActionView[];
+  hand?: HandView;
+  coverage?: { bet: boolean; double: boolean; split: boolean; insurance: boolean };
 };
 
 export type MemberView = {
@@ -114,6 +135,10 @@ export type PlayerTableView = {
   insuranceWindowOpen: boolean;
   bettingCloseDeadlineAt: string | null;
   nextRoundDeadlineAt: string | null;
+  cardAssist?: "OFF" | "CONFIRM" | "AUTO";
+  bankroll?: BankrollView;
+  dealerHand?: HandView;
+  bankLimitReached?: boolean;
 };
 
 export type BankTableView = {
@@ -139,6 +164,10 @@ export type BankTableView = {
   tableStatus: "SETUP" | "ACTIVE" | "ARCHIVED";
   paused: boolean;
   closePreview: CloseTablePreview | null;
+  cardAssist?: "OFF" | "CONFIRM" | "AUTO";
+  bankroll?: BankrollView;
+  dealerHand?: HandView;
+  insuranceSuggestion?: "DEALER_BLACKJACK" | "NO_DEALER_BLACKJACK" | null;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";
@@ -175,6 +204,9 @@ export type SetupTableView = {
   tableStatus: "SETUP" | "ACTIVE" | "ARCHIVED";
   paused: boolean;
   closePreview: CloseTablePreview | null;
+  cardAssist?: "OFF" | "CONFIRM" | "AUTO";
+  bankFundingMode?: "OPEN" | "LIMITED";
+  startingBank?: MoneyView | null;
 };
 
 export type WaitingTableView = {

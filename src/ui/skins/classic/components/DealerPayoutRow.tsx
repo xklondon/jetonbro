@@ -17,10 +17,12 @@ export function DealerPayoutRow({
   box,
   payoutEnabled,
   onSettle,
+  onApply,
 }: {
   box: BoxView;
   payoutEnabled: boolean;
   onSettle: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
+  onApply?: () => void;
 }) {
   const [dx, setDx] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -122,9 +124,16 @@ export function DealerPayoutRow({
             : "Unresolved"}
           {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
           {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
+          {box.hand?.label ? <div className="muted">{box.hand.label}</div> : null}
+          {box.hand?.suggestedOutcome ? <div className="muted">Suggested {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}</div> : null}
         </div>
       </div>
       </div>
+      {unresolved && onApply && box.hand?.suggestedOutcome ? (
+        <button type="button" className="apply-suggestion" onClick={onApply}>
+          APPLY {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}
+        </button>
+      ) : null}
       {unresolved ? (
         <div className="payout-access" role="group" aria-label={`Settle ${box.label}`}>
           {railActions.map((action) => (

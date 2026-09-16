@@ -5,6 +5,8 @@ import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
 import { alignTablePhase, ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
+import { boxCoverageOk, insuranceCoverageOk, roundHasLockedStake } from "@/application/services/bankroll";
+import { handView, ranksFromJson, suggestedBoxOutcome, suggestedInsuranceResolution } from "@/application/services/card-hands";
 import type {
   BankPlayerGroupView,
   BankTableView,
@@ -81,9 +83,20 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   const qr = table.invitations.find((invite) => invite.kind === "QR" && !invite.revokedAt);
   const joinUrl = isOwner || isBank ? (qr ? `${origin}/join/${qr.token}` : null) : null;
 
+  const dealerRanks = ranksFromJson(table.currentRound?.dealerRanks);
+  const dealerHand = handView(table.currentRound?.dealerRanks, false, table.currentRound?.dealerCompletedAt ?? null);
+  const insuranceSuggestion = suggestedInsuranceResolution(dealerRanks);
+
   const boxes: BoxView[] = (table.currentRound?.boxes ?? []).map((box) => {
     const player = table.members.find((member) => member.userId === box.playerId)?.user;
     const insurance = table.currentRound?.insuranceBets.find((bet) => bet.boxId === box.id);
+    const playerHand = handView(box.ranks, box.isSplitOffshoot, box.handCompletedAt);
+    const showHand = isBank || box.playerId === viewerId;
+    const bothComplete = playerHand.complete && dealerHand.complete;
+    const suggested = bothComplete
+      ? suggestedBoxOutcome(playerHand.ranks, dealerRanks, box.isSplitOffshoot)
+      : null;
+    const nextBet = (box.lockedBetMillis || 0n) + 5000n;
     return {
       id: box.id,
       playerId: box.playerId,
@@ -109,6 +122,21 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       returned: box.returnedMillis !== null ? money(box.returnedMillis) : null,
       settledKey: box.settledKey,
       payoutActions: payoutActions(box.lockedBetMillis || box.originalStakeMillis, table.blackjackPayout),
+      hand: showHand
+        ? {
+            ranks: playerHand.ranks,
+            complete: playerHand.complete,
+            label: playerHand.label,
+            suggestedOutcome: suggested,
+            canEdit: table.currentPhase === "PLAYING" && !box.settledAt && (isBank || box.playerId === viewerId),
+          }
+        : undefined,
+      coverage: {
+        bet: boxCoverageOk(table, box.exposureReservedMillis, nextBet),
+        double: boxCoverageOk(table, box.exposureReservedMillis, box.lockedBetMillis * 2n),
+        split: boxCoverageOk(table, 0n, box.lockedBetMillis),
+        insurance: insuranceCoverageOk(table, insuranceMaxMillis(box.originalStakeMillis || box.lockedBetMillis)),
+      },
     };
   });
 
@@ -200,6 +228,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           maxBoxesPerPlayer: table.maxBoxesPerPlayer,
           insuranceEnabled: table.insuranceEnabled,
           bankMayDistributeJetons: table.bankMayDistributeJetons,
+          cardAssist: table.cardAssist,
+          bankFundingMode: table.bankFundingMode,
+          startingBank: table.startingBankMillis !== null ? money(table.startingBankMillis) : money(table.bankAvailableMillis),
           canStartBetting: Boolean(table.bankDealerId) && table.members.some((member) => member.userId !== table.bankDealerId),
           startBlockedReason: !table.bankDealerId
             ? "Assign a Bank/Dealer"
@@ -253,7 +284,26 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     isOwner &&
     !tableClosed &&
     !anyLocked &&
+    table.bankLockedExposureMillis === 0n &&
     (table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
+  const fundingLocked = roundHasLockedStake(table.currentRound) || table.bankLockedExposureMillis > 0n;
+  const bankroll = {
+    mode: table.bankFundingMode,
+    available: money(table.bankAvailableMillis),
+    reserved: money(table.bankLockedExposureMillis),
+    total: money(table.bankAvailableMillis + table.bankLockedExposureMillis),
+    canToggle: isBank && table.currentPhase === "BETTING" && !fundingLocked,
+    lockedReason: fundingLocked ? "Funding mode is locked for this round" : null,
+    canCoverMore: table.bankFundingMode !== "LIMITED" || table.bankAvailableMillis > 0n,
+  };
+  const dealerHandView = {
+    ranks: dealerHand.ranks,
+    complete: dealerHand.complete,
+    label: dealerHand.label,
+    suggestedOutcome: null,
+    suggestedInsurance: insuranceSuggestion,
+    canEdit: isBank && table.currentPhase === "PLAYING",
+  };
 
   const players: BankPlayerGroupView[] = playerMembers.map((member) => {
     const playerBoxes = boxes.filter((box) => box.playerId === member.userId);
@@ -311,6 +361,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             split: table.currentPhase === "PLAYING",
             insurance: table.currentPhase === "PLAYING" && insuranceOpen && table.insuranceEnabled,
           },
+          cardAssist: table.cardAssist,
+          bankroll,
+          dealerHand: dealerHandView,
+          bankLimitReached: table.bankFundingMode === "LIMITED" && !bankroll.canCoverMore,
         }
       : table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
         ? null
@@ -389,6 +443,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         tableStatus: table.status,
         paused: table.pausedAt !== null,
         closePreview: isOwner ? closePreview : null,
+        cardAssist: table.cardAssist,
+        bankroll,
+        dealerHand: dealerHandView,
+        insuranceSuggestion,
       }
     : null;
 

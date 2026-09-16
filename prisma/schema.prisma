@@ -53,6 +53,17 @@ enum InsuranceResolution {
   NO_DEALER_BLACKJACK
 }
 
+enum CardAssistMode {
+  OFF
+  CONFIRM
+  AUTO
+}
+
+enum BankFundingMode {
+  OPEN
+  LIMITED
+}
+
 enum LedgerTransactionType {
   INITIAL_ALLOCATION
   BANK_DISTRIBUTION
@@ -70,6 +81,12 @@ enum LedgerTransactionType {
   INSURANCE_LOSS
   TABLE_TRANSFER_IN
   TABLE_TRANSFER_OUT
+  BANK_FUNDING
+  BANK_FUNDING_ADJUSTMENT
+  BANK_EXPOSURE_RESERVED
+  BANK_EXPOSURE_RELEASED
+  BANK_STAKE_TAKE
+  BANK_PAYOUT
 }
 
 model User {
@@ -151,6 +168,11 @@ model Table {
   insuranceEnabled        Boolean             @default(true)
   startingJetonsPerPlayerMillis BigInt        @default(100000)
   bankMayDistributeJetons Boolean             @default(true)
+  cardAssist              CardAssistMode      @default(OFF)
+  bankFundingMode         BankFundingMode     @default(OPEN)
+  bankAvailableMillis     BigInt              @default(0)
+  bankLockedExposureMillis BigInt             @default(0)
+  startingBankMillis      BigInt?
   currentPhase            RoundPhase          @default(TABLE_SETUP)
   currentRoundId          String?             @unique
   joinEnabled             Boolean             @default(true)
@@ -217,6 +239,8 @@ model Round {
   nextRoundDeadlineAt       DateTime?
   payoutEnteredAt           DateTime?
   completedAt         DateTime?
+  dealerRanks         Json                   @default("[]")
+  dealerCompletedAt   DateTime?
 
   table         Table          @relation("TableRounds", fields: [tableId], references: [id], onDelete: Cascade)
   currentFor    Table?         @relation("CurrentRound")
@@ -243,6 +267,9 @@ model BettingBox {
   returnedMillis      BigInt?
   settledAt           DateTime?
   settledKey          String?     @unique
+  ranks               Json        @default("[]")
+  handCompletedAt     DateTime?
+  exposureReservedMillis BigInt   @default(0)
 
   round         Round          @relation(fields: [roundId], references: [id], onDelete: Cascade)
   player        User           @relation(fields: [playerId], references: [id])
@@ -265,6 +292,7 @@ model InsuranceBet {
   settledAt      DateTime?
   settledKey     String?              @unique
   createdAt      DateTime             @default(now())
+  exposureReservedMillis BigInt       @default(0)
 
   round         Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
   player        User         @relation(fields: [playerId], references: [id])
@@ -276,7 +304,7 @@ model InsuranceBet {
 
 model LedgerEntry {
   id                  String                 @id @default(cuid())
-  playerId            String
+  playerId            String?
   tableId             String?
   roundId             String?
   boxId               String?
@@ -290,7 +318,7 @@ model LedgerEntry {
   idempotencyKey      String                 @unique
   description         String
 
-  player       User          @relation("LedgerPlayer", fields: [playerId], references: [id])
+  player       User?         @relation("LedgerPlayer", fields: [playerId], references: [id])
   actor        User          @relation("LedgerActor", fields: [actorId], references: [id])
   table        Table?        @relation(fields: [tableId], references: [id])
   round        Round?        @relation(fields: [roundId], references: [id])

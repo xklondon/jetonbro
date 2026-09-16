@@ -31,7 +31,8 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   browser,
 }) => {
   test.setTimeout(120_000);
-  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:3000" });
+  const origin = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
   const ownerEmail = uniqueEmail("qr-bank");
   await openAs(context, page, ownerEmail, "Alex");
   await page.setViewportSize({ width: 390, height: 844 });

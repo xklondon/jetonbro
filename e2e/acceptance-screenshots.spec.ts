@@ -93,7 +93,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: /Win/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "WON" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Dealer Blackjack" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-payout-unresolved-390x844.png") });
 

@@ -9,6 +9,7 @@ import { isPlayableGame } from "@/domain/games";
 import { parseJetonInput, parseWholeJetons, type JetonMillis } from "@/domain/money";
 import type { BlackjackPayoutRule } from "@/domain/blackjack/payouts";
 import { BLACKJACK_TABLE_DEFAULTS, parseMaxBoxesPerPlayer } from "@/domain/blackjack/settings";
+import { applyBankFundingMode, parseBankFunding, parseCardAssist } from "@/application/services/bankroll";
 import { collectInviteEmails } from "@/domain/invitations/email";
 import { Prisma } from "@prisma/client";
 
@@ -104,6 +105,9 @@ export async function createTable(input: {
   maxBoxesPerPlayer?: number | string;
   insuranceEnabled?: boolean;
   bankMayDistributeJetons?: boolean;
+  cardAssist?: string;
+  bankFundingMode?: string;
+  startingBank?: string;
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
@@ -139,6 +143,8 @@ export async function createTable(input: {
           insuranceEnabled,
           startingJetonsPerPlayerMillis,
           bankMayDistributeJetons: input.bankMayDistributeJetons ?? true,
+          cardAssist: parseCardAssist(input.cardAssist),
+          bankFundingMode: parseBankFunding(input.bankFundingMode),
           currentPhase: "TABLE_SETUP",
           status: "SETUP",
         },
@@ -188,6 +194,16 @@ export async function createTable(input: {
             expiresAt: hoursFromNow(48),
             createdById: input.actorId,
           },
+        });
+      }
+
+      if (parseBankFunding(input.bankFundingMode) === "LIMITED") {
+        await applyBankFundingMode(tx, {
+          table: { ...created, currentRound: null },
+          actorId: input.actorId,
+          mode: "LIMITED",
+          startingBank: input.startingBank,
+          idempotencyKey: input.idempotencyKey,
         });
       }
 
@@ -246,6 +262,9 @@ export async function finalizeSetup(input: {
   startingJetonsPerPlayer?: string;
   emails?: string[];
   origin?: string;
+  cardAssist?: string;
+  bankFundingMode?: string;
+  startingBank?: string;
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
@@ -275,8 +294,22 @@ export async function finalizeSetup(input: {
           name: input.name.trim(),
           startingJetonsPerPlayerMillis,
           setupCompletedAt: table.setupCompletedAt ?? new Date(),
+          cardAssist: input.cardAssist ? parseCardAssist(input.cardAssist, table.cardAssist) : undefined,
         },
       });
+      if (input.bankFundingMode || input.startingBank) {
+        const fresh = await tx.table.findUniqueOrThrow({
+          where: { id: table.id },
+          include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
+        });
+        await applyBankFundingMode(tx, {
+          table: fresh,
+          actorId: input.actorId,
+          mode: parseBankFunding(input.bankFundingMode, fresh.bankFundingMode),
+          startingBank: input.startingBank,
+          idempotencyKey: input.idempotencyKey,
+        });
+      }
       for (const email of newEmails) {
         const created = await tx.invitation.create({
           data: {
@@ -429,10 +462,12 @@ export async function closeTable(input: { actorId: string; tableId: string; idem
     const boxes = table.currentRound?.boxes.filter((box) => !box.removedAt) ?? [];
     const lockedBoxes = boxes.filter((box) => box.lockedBetMillis > 0n && !box.settledKey);
     const lockedInsurance = table.currentRound?.insuranceBets.filter((bet) => !bet.settledKey) ?? [];
-    if (lockedBoxes.length > 0 || lockedInsurance.length > 0) {
+    if (lockedBoxes.length > 0 || lockedInsurance.length > 0 || table.bankLockedExposureMillis > 0n) {
       throw new DomainError(
         "LOCKED_FUNDS",
-        "This table still has locked bets or Insurance. Settle every locked position before closing.",
+        table.bankLockedExposureMillis > 0n
+          ? "This table still has reserved Bank exposure. Settle every locked position before closing."
+          : "This table still has locked bets or Insurance. Settle every locked position before closing.",
       );
     }
     if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
@@ -552,6 +587,9 @@ export async function updateTableSettings(input: {
   insuranceEnabled?: boolean;
   bankMayDistributeJetons?: boolean;
   game?: string;
+  cardAssist?: string;
+  bankFundingMode?: string;
+  startingBank?: string;
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "updateTableSettings", input, async () => {
     const table = await requireOwnerOrBank(input.tableId, input.actorId);
@@ -563,16 +601,32 @@ export async function updateTableSettings(input: {
         throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
       }
     }
-    await prisma.table.update({
-      where: { id: input.tableId },
-      data: {
-        minBetMillis: parseOptionalJetons(input.minBet),
-        maxBetMillis: parseOptionalJetons(input.maxBet),
-        blackjackPayout: input.blackjackPayout,
-        maxBoxesPerPlayer: input.maxBoxesPerPlayer === undefined ? undefined : parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer),
-        insuranceEnabled: input.insuranceEnabled,
-        bankMayDistributeJetons: input.bankMayDistributeJetons,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.table.update({
+        where: { id: input.tableId },
+        data: {
+          minBetMillis: parseOptionalJetons(input.minBet),
+          maxBetMillis: parseOptionalJetons(input.maxBet),
+          blackjackPayout: input.blackjackPayout,
+          maxBoxesPerPlayer: input.maxBoxesPerPlayer === undefined ? undefined : parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer),
+          insuranceEnabled: input.insuranceEnabled,
+          bankMayDistributeJetons: input.bankMayDistributeJetons,
+          cardAssist: input.cardAssist ? parseCardAssist(input.cardAssist, table.cardAssist) : undefined,
+        },
+      });
+      if (input.bankFundingMode || input.startingBank) {
+        const fresh = await tx.table.findUniqueOrThrow({
+          where: { id: input.tableId },
+          include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
+        });
+        await applyBankFundingMode(tx, {
+          table: fresh,
+          actorId: input.actorId,
+          mode: parseBankFunding(input.bankFundingMode, fresh.bankFundingMode),
+          startingBank: input.startingBank,
+          idempotencyKey: input.idempotencyKey,
+        });
+      }
     });
     publishTable(input.tableId);
     return { ok: true };
