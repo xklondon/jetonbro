@@ -154,7 +154,7 @@ export function ClassicCreateTable({
       </div>
       <div className="setup-sheet-actions">
         <button className="gold-button" type="submit" disabled={pending}>
-          {pending ? "Setting up table" : "SET UP TABLE"}
+          {pending ? "Creating table" : "CREATE TABLE"}
         </button>
         {embedded ? (
           <button className="text-link" type="button" onClick={onBack}>

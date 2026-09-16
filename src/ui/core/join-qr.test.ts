@@ -7,7 +7,7 @@ import { isBlockedOrigin } from "@/application/auth-urls";
 import jsQR from "jsqr";
 import { PNG } from "pngjs";
 
-test("setup mask puts the shared QR above email invite and SET UP TABLE", () => {
+test("setup mask puts the shared QR above email invite and CREATE TABLE", () => {
   const joinUrl = "http://127.0.0.1:3000/join/shared-token";
   const html = renderToStaticMarkup(
     createElement(ClassicCreateTable, {
@@ -21,7 +21,7 @@ test("setup mask puts the shared QR above email invite and SET UP TABLE", () => 
   expect(html).toContain(`data-join-url="${joinUrl}"`);
   expect(html.indexOf("SCAN TO JOIN TABLE")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
   expect(html.indexOf("COPY LINK")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
-  expect(html.indexOf("setup-sheet-body")).toBeLessThan(html.indexOf("SET UP TABLE"));
+  expect(html.indexOf("setup-sheet-body")).toBeLessThan(html.indexOf("CREATE TABLE"));
   expect(isBlockedOrigin(joinUrl, "test")).toBe(false);
 });
 

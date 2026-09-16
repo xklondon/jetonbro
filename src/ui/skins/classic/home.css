@@ -108,15 +108,75 @@
 .classic-skin .home-table-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   background: rgba(7, 28, 24, 0.72);
   border: 1px solid rgba(223, 189, 105, 0.28);
   border-radius: 12px;
-  padding: 10px;
+  padding: 8px 10px;
+}
+
+.classic-skin .home-table-row-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.classic-skin .home-table-menu {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(16, 36, 31, 0.9);
+  color: var(--ivory);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.classic-skin .home-table-meta,
+.classic-skin .home-table-counts {
+  font-size: 11px;
+}
+
+.classic-skin .home-table-players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+
+.classic-skin .home-table-players li {
+  display: flex;
+  gap: 6px;
+}
+
+.classic-skin .home-table-overflow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.classic-skin .home-table-overflow button {
+  width: 100%;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.classic-skin .home-table-overflow button.danger {
+  color: #ffd0d0;
 }
 
 .classic-skin .home-table-card .gold-button {
   width: 100%;
+  padding: 8px;
 }
 
 .classic-skin .create-table-form label,

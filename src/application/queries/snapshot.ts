@@ -41,6 +41,8 @@ function payoutActions(
   return suggestedPayouts(stake, rule).map((item) => ({
     outcome: item.outcome,
     label: item.buttonLabel,
+    title: item.railTitle,
+    returnLine: item.railReturn,
     swipeLabel: item.swipeLabel,
   }));
 }
@@ -105,6 +107,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         : null,
       outcome: box.outcome,
       returned: box.returnedMillis !== null ? money(box.returnedMillis) : null,
+      settledKey: box.settledKey,
       payoutActions: payoutActions(box.lockedBetMillis || box.originalStakeMillis, table.blackjackPayout),
     };
   });

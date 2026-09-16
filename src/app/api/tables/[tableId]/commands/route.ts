@@ -6,6 +6,7 @@ import {
   abandonDraft,
   assignBankDealer,
   closeTable,
+  deleteTable,
   distributeJetons,
   finalizeSetup,
   removeMember,
@@ -97,7 +98,7 @@ async function dispatch(
   command: string,
   ctx: { actorId: string; tableId: string; idempotencyKey: string; origin: string; ip: string; payload: Record<string, unknown> },
 ) {
-  if (command !== "closeTable") {
+  if (command !== "closeTable" && command !== "deleteTable") {
     const table = await prisma.table.findUnique({ where: { id: ctx.tableId }, select: { status: true } });
     if (table?.status === "ARCHIVED") {
       throw new DomainError("TABLE_CLOSED", "This table is closed.");
@@ -199,6 +200,8 @@ async function dispatch(
       return saveTable(ctx);
     case "closeTable":
       return closeTable(ctx);
+    case "deleteTable":
+      return deleteTable(ctx);
     default:
       throw new DomainError("UNKNOWN_COMMAND", "Unknown table command.");
   }

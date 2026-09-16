@@ -42,6 +42,21 @@ export function HomeClient({
     router.push(`/tables/${data.tableId}`);
   }
 
+  async function onTableCommand(tableId: string, command: "saveTable" | "closeTable" | "deleteTable") {
+    const response = await fetch(`/api/tables/${tableId}/commands`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ command, idempotencyKey: crypto.randomUUID() }),
+    });
+    const data = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      setNotice(data.error ?? "This action could not be completed.");
+      return;
+    }
+    setNotice(null);
+    router.refresh();
+  }
+
   return (
     <skin.Home
       displayName={displayName}
@@ -51,6 +66,7 @@ export function HomeClient({
       onCreateTable={onCreateTable}
       onJoinTable={(destination) => router.push(destination)}
       onOpenTable={(tableId) => router.push(`/tables/${tableId}`)}
+      onTableCommand={onTableCommand}
     />
   );
 }

@@ -44,12 +44,16 @@ export function ClassicPlayerTable({
   const reducedMotion =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const [celebration, setCelebration] = useState<OutcomeCelebration | null>(null);
-  const seenOutcomes = useRef(new Set(view.boxes.filter((box) => box.outcome).map((box) => `${box.id}:${box.outcome}`)));
+  const seenOutcomes = useRef(
+    new Set(
+      view.boxes.filter((box) => box.outcome).map((box) => `${box.settledKey ?? box.id}:${box.outcome}`),
+    ),
+  );
   const seenInsurance = useRef(new Set(view.boxes.filter((box) => box.insuranceResult).map((box) => box.id)));
 
   useEffect(() => {
     for (const box of view.boxes) {
-      const key = box.outcome ? `${box.id}:${box.outcome}` : null;
+      const key = box.outcome ? `${box.settledKey ?? box.id}:${box.outcome}` : null;
       if (key && !seenOutcomes.current.has(key)) {
         seenOutcomes.current.add(key);
         const next = selectOutcomeCelebration(key, box.outcome!, reducedMotion, "player", box.returned?.label);

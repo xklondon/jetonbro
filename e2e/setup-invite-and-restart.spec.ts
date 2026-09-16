@@ -46,7 +46,7 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   await expect(emailBox).toBeVisible();
   const qrBox = await page.locator(".setup-qr img").boundingBox();
   const copyBox = await page.getByRole("button", { name: "COPY LINK" }).boundingBox();
-  const setupBox = await page.getByRole("button", { name: "SET UP TABLE" }).boundingBox();
+  const setupBox = await page.getByRole("button", { name: "CREATE TABLE" }).boundingBox();
   expect(qrBox).toBeTruthy();
   expect(copyBox).toBeTruthy();
   expect(setupBox).toBeTruthy();
@@ -84,7 +84,7 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill("100");
-  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await page.getByRole("button", { name: "CREATE TABLE" }).click();
   const joinPath = new URL(data.setup!.joinUrl!).pathname;
 
   const samContext = await browser.newContext();
@@ -133,7 +133,7 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
     .get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`)
     .then((response) => response.json())) as { bank?: { boxes: { id: string }[] } };
   for (const box of payout.bank?.boxes ?? []) {
-    await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /Push/ }).click({ force: true });
+    await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /STAND OFF/ }).click({ force: true });
   }
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
 

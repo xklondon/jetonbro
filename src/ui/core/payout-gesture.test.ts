@@ -18,18 +18,26 @@ test("horizontal lock starts only after a clear sideways move", () => {
 });
 
 test("player celebrations overlay and reduced motion is testable", () => {
-  const win = selectOutcomeCelebration("box-1:WON", "WON", false, "player", "50");
-  const again = selectOutcomeCelebration("box-1:WON", "WON", false, "player", "50");
-  expect(win).toEqual(again);
-  expect(win.overlay).toBe(true);
-  expect(win.copy).toMatch(/WINNER!|NICE ONE!/);
-  expect(win.copy).toContain("50");
-  const dealer = selectOutcomeCelebration("box-1:WON", "WON", false, "dealer", "50");
+  const blackjack = selectOutcomeCelebration("box-1:BLACKJACK", "BLACKJACK", false, "player", "62.5");
+  expect(blackjack.overlay).toBe(true);
+  expect(blackjack.kind).toBe("shimmer");
+  const dealer = selectOutcomeCelebration("box-1:BLACKJACK", "BLACKJACK", false, "dealer", "62.5");
   expect(dealer.overlay).toBe(false);
   const quiet = selectOutcomeCelebration("box-1:WON", "WON", true, "player", "50");
   expect(quiet.overlay).toBe(false);
   const push = selectOutcomeCelebration("box-2:PUSH", "PUSH", false, "player");
   expect(push.copy).toContain("PUSH");
+  let strongWin: ReturnType<typeof selectOutcomeCelebration> | null = null;
+  let rowWin: ReturnType<typeof selectOutcomeCelebration> | null = null;
+  for (let index = 0; index < 40 && (!strongWin || !rowWin); index += 1) {
+    const next = selectOutcomeCelebration(`win-seed-${index}:WON`, "WON", false, "player", "50");
+    if (next.overlay) strongWin = next;
+    else rowWin = next;
+  }
+  expect(strongWin?.overlay).toBe(true);
+  expect(strongWin?.kind).toBe("rain");
+  expect(rowWin?.overlay).toBe(false);
+  expect(rowWin?.kind).toBe("row");
 });
 
 test("celebration overlay is decorative and hidden from assistive tech", () => {

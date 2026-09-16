@@ -54,7 +54,6 @@ export function selectOutcomeCelebration(
     };
   }
 
-  const n = hashSeed(seed) % 2;
   if (outcome === "PUSH") {
     return { kind: "return", copy: PUSH_COPY, overlay: true };
   }
@@ -64,8 +63,10 @@ export function selectOutcomeCelebration(
   if (outcome === "BLACKJACK") {
     return { kind: "shimmer", copy: `BLACKJACK${returned}`, overlay: true };
   }
-  const copy = `${WIN_COPY[n] ?? WIN_COPY[0]}${returned}`;
-  return { kind: n === 0 ? "rain" : "notes", copy, overlay: true };
+  const hash = hashSeed(seed);
+  const strong = hash % 2 === 0;
+  const copy = `${WIN_COPY[hash % 2] ?? WIN_COPY[0]}${returned}`;
+  return { kind: strong ? "rain" : "row", copy, overlay: strong };
 }
 
 export function selectInsuranceCelebration(

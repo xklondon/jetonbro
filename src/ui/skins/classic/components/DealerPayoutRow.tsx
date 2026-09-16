@@ -3,7 +3,15 @@
 import { useRef, useState } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
+import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import { isHorizontalPayoutGesture, payoutSwipeOutcome } from "@/ui/core/payout-gesture";
+
+const RAIL_TITLE: Record<BoxOutcome, string> = {
+  LOST: "LOST",
+  PUSH: "STAND OFF",
+  BLACKJACK: "BLACKJACK",
+  WON: "WON",
+};
 
 export function DealerPayoutRow({
   box,
@@ -23,6 +31,9 @@ export function DealerPayoutRow({
   const winAction = box.payoutActions.find((action) => action.outcome === "WON");
   const lossAction = box.payoutActions.find((action) => action.outcome === "LOST");
   const unresolved = payoutEnabled && !box.outcome && !submitted;
+  const railActions = PAYOUT_RAIL_ORDER.map(
+    (outcome) => box.payoutActions.find((action) => action.outcome === outcome) ?? { outcome, label: RAIL_TITLE[outcome], title: RAIL_TITLE[outcome] },
+  );
 
   function settle(outcome: BoxView["payoutActions"][number]["outcome"]) {
     if (!unresolved) return;
@@ -107,7 +118,7 @@ export function DealerPayoutRow({
         </span>
         <div className="payout-state">
           {box.outcome
-            ? `${box.outcome === "WON" ? "Win" : box.outcome === "PUSH" ? "Push" : box.outcome === "LOST" ? "Loss" : "Blackjack"}${box.returned ? ` · ${box.returned.label}` : ""}`
+            ? `${box.outcome === "WON" ? "Won" : box.outcome === "PUSH" ? "Stand off" : box.outcome === "LOST" ? "Lost" : "Blackjack"}${box.returned ? ` · ${box.returned.label}` : ""}`
             : "Unresolved"}
           {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
           {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
@@ -116,14 +127,15 @@ export function DealerPayoutRow({
       </div>
       {unresolved ? (
         <div className="payout-access" role="group" aria-label={`Settle ${box.label}`}>
-          {box.payoutActions.map((action) => (
+          {railActions.map((action) => (
             <button
               key={action.outcome}
               type="button"
               className={action.outcome.toLowerCase()}
               onClick={() => settle(action.outcome)}
             >
-              {action.label}
+              <span className="rail-title">{action.title ?? RAIL_TITLE[action.outcome]}</span>
+              {action.returnLine ? <span className="rail-return">{action.returnLine}</span> : null}
             </button>
           ))}
         </div>

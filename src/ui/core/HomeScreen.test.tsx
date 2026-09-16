@@ -11,7 +11,34 @@ import {
   markWelcomeCelebrationPlayed,
   shouldPlayWelcomeCelebration,
 } from "@/ui/core/welcome-celebration";
+import type { HomeTableCard } from "@/application/queries/home";
 import type { SetupTableView } from "@/application/queries/views";
+
+const homeCard = (overrides: Partial<HomeTableCard> = {}): HomeTableCard => ({
+  id: "t1",
+  name: "Salon table",
+  game: "Blackjack",
+  phase: "TABLE_SETUP",
+  playerCount: 1,
+  boxCount: 0,
+  bankName: "Alex",
+  role: "Bank / Dealer",
+  updatedAt: new Date().toISOString(),
+  saved: false,
+  closed: false,
+  isOwner: true,
+  players: [{ userId: "sam", name: "Sam", available: { millis: "100000", label: "100" }, locked: { millis: "0", label: "0" }, isBankDealer: false }],
+  canSave: true,
+  canClose: true,
+  canDeleteDraft: false,
+  closeBlockedReason: null,
+  closePreview: {
+    kind: "archive",
+    confirmation: "Save each Player’s remaining jetons",
+    players: [{ name: "Sam", available: "100", locked: "0" }],
+  },
+  ...overrides,
+});
 
 const homeProps = {
   displayName: "Alex",
@@ -103,24 +130,57 @@ test("existing tables remain on the compact home", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicHome, {
       ...homeProps,
-      tables: [
-        {
-          id: "t1",
-          name: "Salon table",
-          game: "Blackjack",
-          phase: "TABLE_SETUP",
-          playerCount: 2,
-          role: "Bank / Dealer",
-        },
-      ],
+      tables: [homeCard()],
     }),
   );
   expect(html).toContain("CREATE NEW TABLE");
   expect(html).toContain("Salon table");
   expect(html).toContain("RETURN TO TABLE");
+  expect(html).toContain("Dealer · Alex");
+  expect(html).toContain("Sam");
+  expect(html).toContain("100");
+  expect(html).toContain("home-table-row");
+  expect(html).toContain("1 player");
+  expect(html).toContain("0 boxes");
 });
 
-test("single setup mask includes invites, QR actions and SET UP TABLE", () => {
+test("owner home card shows player balances and table menu", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicHome, { ...homeProps, tables: [homeCard()] }),
+  );
+  expect(html).toContain("Table menu");
+  expect(html).toContain("Sam");
+  expect(html).toContain("100");
+});
+
+test("non-owner home card hides other player balances", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicHome, {
+      ...homeProps,
+      tables: [
+        homeCard({
+          isOwner: false,
+          role: "Player",
+          canSave: false,
+          canClose: false,
+          canDeleteDraft: false,
+          closePreview: null,
+          players: [
+            { userId: "sam", name: "Sam", available: { millis: "100000", label: "100" }, locked: null, isBankDealer: false },
+            { userId: "jo", name: "Jo", available: null, locked: null, isBankDealer: false },
+          ],
+        }),
+      ],
+    }),
+  );
+  expect(html).toContain("Sam");
+  expect(html).toContain("Jo");
+  expect(html).toContain("100");
+  expect(html).not.toContain("Table menu");
+  expect(html).not.toContain("SAVE TABLE");
+});
+
+test("single setup mask includes invites, QR actions and CREATE TABLE", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicCreateTable, {
       defaultTableName: "Alex's table",
@@ -130,7 +190,7 @@ test("single setup mask includes invites, QR actions and SET UP TABLE", () => {
     }),
   );
   expect(html).toMatch(/Alex(&#x27;|')s table/);
-  expect(html).toContain("SET UP TABLE");
+  expect(html).toContain("CREATE TABLE");
   expect(html).not.toContain("START TABLE");
   expect(html).toContain("SCAN TO JOIN TABLE");
   expect(html).toContain("OR INVITE BY EMAIL");
@@ -140,7 +200,7 @@ test("single setup mask includes invites, QR actions and SET UP TABLE", () => {
   expect(html).toContain("SHARE");
   expect(html.indexOf("SCAN TO JOIN TABLE")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
   expect(html.indexOf("COPY LINK")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
-  expect(html.indexOf("OR INVITE BY EMAIL")).toBeLessThan(html.indexOf("SET UP TABLE"));
+  expect(html.indexOf("OR INVITE BY EMAIL")).toBeLessThan(html.indexOf("CREATE TABLE"));
   expect(html).not.toContain("Maximum boxes per player");
 });
 
@@ -151,7 +211,7 @@ test("setup mask sits over the dealer table and shows the shared QR", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("SET UP TABLE");
+  expect(html).toContain("CREATE TABLE");
   expect(html).toContain("CURRENT PHASE:");
   expect(html).toContain("TABLE SETUP");
   expect(html).toContain("DEALER · Alex");
@@ -164,7 +224,7 @@ test("setup mask sits over the dealer table and shows the shared QR", () => {
   expect(html).not.toContain("waiting-room");
 });
 
-test("SET UP TABLE reveals dealer table seats, compact QR and OPEN BETTING", () => {
+test("CREATE TABLE reveals dealer table seats, compact QR and OPEN BETTING", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({
@@ -180,6 +240,7 @@ test("SET UP TABLE reveals dealer table seats, compact QR and OPEN BETTING", () 
     }),
   );
   expect(html).not.toContain("SET UP TABLE");
+  expect(html).not.toContain("CREATE TABLE");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
   expect(html).not.toContain("Waiting for players");

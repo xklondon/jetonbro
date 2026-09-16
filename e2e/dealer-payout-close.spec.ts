@@ -87,10 +87,10 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   expect(joBoxes.length).toBe(1);
 
   await swipeRow(page, samBoxes[0]!.id, "right");
-  await expect(page.locator(`[data-box-id="${samBoxes[0]!.id}"]`)).toContainText(/Win/i, { timeout: 10_000 });
+  await expect(page.locator(`[data-box-id="${samBoxes[0]!.id}"]`)).toContainText(/Won/i, { timeout: 10_000 });
   await swipeRow(page, samBoxes[1]!.id, "left");
-  await expect(page.locator(`[data-box-id="${samBoxes[1]!.id}"]`)).toContainText(/Loss/i, { timeout: 10_000 });
-  await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: /Push/ }).click();
+  await expect(page.locator(`[data-box-id="${samBoxes[1]!.id}"]`)).toContainText(/Lost/i, { timeout: 10_000 });
+  await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: /STAND OFF/ }).click();
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
   await page.getByRole("button", { name: "No Blackjack" }).click();
 
@@ -118,7 +118,7 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   const second = (await tableSnapshot(page)) as { bank?: { players: { boxes: { id: string }[] }[] } };
   for (const player of second.bank?.players ?? []) {
     for (const box of player.boxes) {
-      await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /Push/ }).click({ force: true });
+      await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /STAND OFF/ }).click({ force: true });
     }
   }
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled();

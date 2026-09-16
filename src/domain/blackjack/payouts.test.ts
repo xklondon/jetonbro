@@ -9,6 +9,7 @@ import {
   ordinaryProfitMillis,
   ordinaryReturnMillis,
   suggestedPayout,
+  suggestedPayouts,
 } from "./payouts";
 import { jeton } from "../money";
 
@@ -51,10 +52,18 @@ test("Blackjack 3:2: profit 1.5× stake, total return 2.5× stake, 25 returns 62
 test("suggestedPayout labels come from ordinaryReturnMillis", () => {
   const stake = jeton(25);
   expect(suggestedPayout(stake, "WON", "THREE_TWO").buttonLabel).toContain("50");
+  expect(suggestedPayout(stake, "WON", "THREE_TWO").railTitle).toBe("WON");
   expect(suggestedPayout(stake, "WON", "THREE_TWO").swipeLabel).toBe("WIN +50");
+  expect(suggestedPayout(stake, "PUSH", "THREE_TWO").railTitle).toBe("STAND OFF");
   expect(suggestedPayout(stake, "PUSH", "THREE_TWO").returnMillis).toBe(jeton(25));
   expect(suggestedPayout(stake, "LOST", "THREE_TWO").swipeLabel).toBe("LOSS · 0");
   expect(suggestedPayout(stake, "BLACKJACK", "THREE_TWO").returnMillis).toBe(jeton("62.5"));
+  expect(suggestedPayouts(stake, "THREE_TWO").map((item) => item.outcome)).toEqual([
+    "LOST",
+    "PUSH",
+    "BLACKJACK",
+    "WON",
+  ]);
 });
 
 test("Blackjack 6:5: profit 1.2× stake, total return 2.2× stake", () => {

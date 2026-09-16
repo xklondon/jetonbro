@@ -7,6 +7,9 @@ export type BlackjackPayoutRule = (typeof PAYOUT_RULES)[number];
 export const BOX_OUTCOMES = ["WON", "PUSH", "LOST", "BLACKJACK"] as const;
 export type BoxOutcome = (typeof BOX_OUTCOMES)[number];
 
+/** Accessible payout rail, left to right. PUSH is shown as STAND OFF. */
+export const PAYOUT_RAIL_ORDER: BoxOutcome[] = ["LOST", "PUSH", "BLACKJACK", "WON"];
+
 export const INSURANCE_RESOLUTIONS = ["DEALER_BLACKJACK", "NO_DEALER_BLACKJACK"] as const;
 export type InsuranceResolution = (typeof INSURANCE_RESOLUTIONS)[number];
 
@@ -90,13 +93,15 @@ export type SuggestedPayout = {
   returnMillis: JetonMillis;
   swipeLabel: string;
   buttonLabel: string;
+  railTitle: string;
+  railReturn: string;
 };
 
-const OUTCOME_BUTTON: Record<BoxOutcome, string> = {
-  WON: "Win",
-  PUSH: "Push",
-  LOST: "Lose",
-  BLACKJACK: "Blackjack",
+const RAIL_TITLE: Record<BoxOutcome, string> = {
+  WON: "WON",
+  PUSH: "STAND OFF",
+  LOST: "LOST",
+  BLACKJACK: "BLACKJACK",
 };
 
 /** Authoritative labels for a box stake. Skins must not recompute returns. */
@@ -107,16 +112,19 @@ export function suggestedPayout(
 ): SuggestedPayout {
   const returnMillis = ordinaryReturnMillis(lockedStake, outcome, rule);
   const returned = formatJetons(returnMillis);
+  const railTitle = RAIL_TITLE[outcome];
   return {
     outcome,
     returnMillis,
-    swipeLabel: outcome === "LOST" ? "LOSS · 0" : outcome === "WON" ? `WIN +${returned}` : `${OUTCOME_BUTTON[outcome]} · return ${returned}`,
-    buttonLabel: `${OUTCOME_BUTTON[outcome]} · return ${returned}`,
+    swipeLabel: outcome === "LOST" ? "LOSS · 0" : outcome === "WON" ? `WIN +${returned}` : `${railTitle} · return ${returned}`,
+    buttonLabel: `${railTitle} · return ${returned}`,
+    railTitle,
+    railReturn: returned,
   };
 }
 
 export function suggestedPayouts(lockedStake: JetonMillis, rule: BlackjackPayoutRule): SuggestedPayout[] {
-  return BOX_OUTCOMES.map((outcome) => suggestedPayout(lockedStake, outcome, rule));
+  return PAYOUT_RAIL_ORDER.map((outcome) => suggestedPayout(lockedStake, outcome, rule));
 }
 
 export function outcomeLedgerType(outcome: BoxOutcome) {

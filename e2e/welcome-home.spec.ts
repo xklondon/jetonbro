@@ -21,7 +21,7 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   await page.getByRole("button", { name: "CREATE A TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\//);
   const draftUrl = page.url();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeEnabled();
   await expect(page.getByRole("button", { name: /Poker/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: /Zilch/ })).toBeDisabled();
@@ -36,17 +36,17 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
 
   await page.reload();
   await expect(page).toHaveURL(draftUrl);
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await expect(page.locator(".setup-mask").getByAltText("Shared table join QR code")).toBeVisible();
 
   await page.goto("/");
   await page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ }).click();
   await expect(page).toHaveURL(draftUrl);
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
 
   await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill("0");
-  await page.getByRole("button", { name: "SET UP TABLE" }).click();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toHaveCount(0);
+  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
@@ -75,7 +75,7 @@ test("welcome animation is non-blocking, session-limited and respects reduced mo
   await page.goto("/");
   await expect(page.locator(".welcome-celebration")).toBeVisible();
   await page.getByRole("button", { name: "CREATE A TABLE" }).click();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
 
   await page.goto("/");
   await expect(page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ })).toBeVisible();

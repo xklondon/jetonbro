@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Table management and Blackjack payout rail
+
+- Authenticated home uses compact open-table rows: name, game, phase, Dealer, Player names, owner-visible balances, player/box counts, and `RETURN TO TABLE`. Non-owners see names and only their own balance. The owner overflow shows `DELETE TABLE` on an unused draft, or `SAVE TABLE` and `CLOSE TABLE & SAVE BALANCES` on a started table.
+- Empty unused `TABLE_SETUP` drafts may be permanently deleted. Started tables are archived through the existing close-table transaction, never hard-deleted. Locked Bet or Insurance blocks close/remove with `LOCKED_FUNDS`. Confirmation states whether the action is draft deletion or historical archival.
+- The setup mask bottom action is `CREATE TABLE`. It still finalizes the existing draft and reveals the real `TABLE_SETUP` table.
+- Dealer PAYOUT uses one horizontal result rail per box: `LOST`, `STAND OFF`, `BLACKJACK`, `WON`. Swipe left/right and double-tap still settle only that box. Blackjack always celebrates on the affected Player once; the Dealer keeps compact confirmation.
+
 ### Phase sequence repair
 
 - `DEAL CARDS NOW` is idempotent once PLAYING, always clears `bettingCloseDeadlineAt`, and uses locked bets only. A leftover `originalStakeMillis` cannot enable Deal.
@@ -13,7 +20,7 @@
 
 ### Setup invites, next-round restart, and Player celebrations
 
-- The setup mask shows compact game tiles, table name and starting jetons, then the full shared QR (`SCAN TO JOIN TABLE`, `COPY LINK`, `SHARE`), then a compact `OR INVITE BY EMAIL` row. `SET UP TABLE` stays sticky. The QR is no longer clipped under the form.
+- The setup mask shows compact game tiles, table name and starting jetons, then the full shared QR (`SCAN TO JOIN TABLE`, `COPY LINK`, `SHARE`), then a compact `OR INVITE BY EMAIL` row. `CREATE TABLE` stays sticky. The QR is no longer clipped under the form.
 - `NEXT ROUND NOW` is enabled once every box and required Insurance stake is settled, including a PAYOUT snapshot that already shows those settlements. A blocked restart returns `NEXT_ROUND_BLOCKED` instead of a generic phase conflict. Round logs include table, round, actor, phase, unresolved counts, deadline, and a stable code.
 - Major win/loss/push/Blackjack celebrations play on the affected Player device after a confirmed snapshot. The Dealer keeps compact row confirmation only.
 
@@ -27,7 +34,7 @@
 ### Table setup and betting
 
 - `CREATE A TABLE` immediately creates or reuses one `TABLE_SETUP` draft and opens `/tables/{tableId}` with a single setup mask over the real Dealer table. The mask already shows the shared table QR.
-- `SET UP TABLE` finalizes name, starting jetons, and invitations, then closes the mask. There is no separate waiting-room page.
+- `CREATE TABLE` finalizes name, starting jetons, and invitations, then closes the mask. There is no separate waiting-room page.
 - During `TABLE_SETUP` the Dealer table shows `CURRENT PHASE: TABLE SETUP`, player boxes for Invited/Joined/Ready, a compact QR overlay, `+ PLAYER`, and `OPEN BETTING`. `OPEN BETTING` is enabled after the first Player joins and is the `TABLE_SETUP → BETTING` command.
 - During BETTING the Bank can `DEAL CARDS NOW` or `DEAL IN 7 SECONDS`. The seven-second option stores `Round.bettingCloseDeadlineAt`; refresh resumes from that deadline and the close happens once.
 - Repeated create clicks reuse the same empty draft. Refresh returns to that draft and QR. Finalizing is idempotent. An unused draft can be abandoned only before another Player joins.
@@ -39,7 +46,7 @@
 
 - Empty authenticated home is a welcome screen with game cards, `CREATE A TABLE`, and `JOIN A TABLE`.
 - First landing of a browser session plays a short decorative jeton rain that never blocks actions, runs once per session, and is skipped when `prefers-reduced-motion` is set.
-- Existing tables appear as cards with game, phase, player count, role, and `RETURN TO TABLE`.
+- Existing tables appear as compact rows with game, phase, Dealer, Players, owner-visible balances, counts, and `RETURN TO TABLE`.
 - Create-table is one Classic setup mask on the Dealer table: Blackjack is selectable; Poker and Zilch show `Coming later`. Blackjack settings use domain defaults and persist `maxBoxesPerPlayer` and `insuranceEnabled`.
 - Creator becomes Bank/Dealer on the real table route immediately. Betting does not start automatically.
 - Auth.js redirects and magic-link URLs are rewritten onto `AUTH_URL`. Localhost and `*.railway.internal` origins are never kept in production callbacks. Invitation `/join/{token}` destinations are preserved.

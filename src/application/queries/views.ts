@@ -14,6 +14,8 @@ export type ChipView = {
 export type PayoutActionView = {
   outcome: BoxOutcome;
   label: string;
+  title?: string;
+  returnLine?: string;
   swipeLabel?: string;
 };
 
@@ -32,6 +34,7 @@ export type BoxView = {
   insuranceResult: string | null;
   outcome: BoxOutcome | null;
   returned: MoneyView | null;
+  settledKey?: string | null;
   payoutActions: PayoutActionView[];
 };
 

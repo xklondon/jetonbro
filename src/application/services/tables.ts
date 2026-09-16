@@ -430,10 +430,16 @@ export async function closeTable(input: { actorId: string; tableId: string; idem
     const lockedBoxes = boxes.filter((box) => box.lockedBetMillis > 0n && !box.settledKey);
     const lockedInsurance = table.currentRound?.insuranceBets.filter((bet) => !bet.settledKey) ?? [];
     if (lockedBoxes.length > 0 || lockedInsurance.length > 0) {
-      throw new ConflictError("Close the table only after every locked position is settled.");
+      throw new DomainError(
+        "LOCKED_FUNDS",
+        "This table still has locked bets or Insurance. Settle every locked position before closing.",
+      );
     }
     if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
-      throw new ConflictError("Close the table only when the round is complete.");
+      throw new DomainError(
+        "CLOSE_BLOCKED",
+        "Close the table only during TABLE SETUP or after the round is complete, with no locked funds.",
+      );
     }
     try {
     await prisma.$transaction(async (tx) => {
@@ -479,6 +485,59 @@ export async function closeTable(input: { actorId: string; tableId: string; idem
     }
     publishTable(table.id);
     return { ok: true, closed: true };
+  });
+}
+
+export async function isEmptyDraftTable(tableId: string): Promise<boolean> {
+  const table = await prisma.table.findUnique({
+    where: { id: tableId },
+    include: {
+      members: { where: { leftAt: null } },
+      rounds: { include: { boxes: true } },
+      _count: { select: { ledgerEntries: true } },
+    },
+  });
+  if (!table) return false;
+  if (table.currentPhase !== "TABLE_SETUP") return false;
+  const joinedPlayers = table.members.filter(
+    (member) => !member.isBankDealer && member.userId !== table.bankDealerId,
+  );
+  if (joinedPlayers.length > 0) return false;
+  if (table._count.ledgerEntries > 0) return false;
+  const hasStakes = table.rounds.some((round) =>
+    round.boxes.some((box) => box.lockedBetMillis > 0n || box.originalStakeMillis > 0n),
+  );
+  return !hasStakes;
+}
+
+export async function deleteTable(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "deleteTable", input, async () => {
+    const table = await prisma.table.findUnique({ where: { id: input.tableId } });
+    if (!table) {
+      return { ok: true, deleted: true, archived: false };
+    }
+    if (table.ownerId !== input.actorId) {
+      throw new ForbiddenError("Only the table owner can do that.");
+    }
+    if (table.status === "ARCHIVED") {
+      return { ok: true, deleted: false, archived: true };
+    }
+    if (await isEmptyDraftTable(table.id)) {
+      await prisma.$transaction(async (tx) => {
+        await tx.table.update({
+          where: { id: table.id },
+          data: { currentRoundId: null },
+        });
+        await tx.table.delete({ where: { id: table.id } });
+      });
+      return { ok: true, deleted: true, archived: false };
+    }
+    const closed = await closeTable({
+      actorId: input.actorId,
+      tableId: input.tableId,
+      idempotencyKey: `${input.idempotencyKey}:close`,
+    });
+    return { ...closed, deleted: false, archived: true };
   });
 }
 

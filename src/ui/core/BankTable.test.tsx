@@ -20,10 +20,10 @@ const box = (overrides: Partial<BoxView> = {}): BoxView => ({
   outcome: null,
   returned: null,
   payoutActions: [
-    { outcome: "WON", label: "Win · return 50", swipeLabel: "WIN +50" },
-    { outcome: "PUSH", label: "Push · return 25", swipeLabel: "Push · return 25" },
-    { outcome: "LOST", label: "Lose · return 0", swipeLabel: "LOSS · 0" },
-    { outcome: "BLACKJACK", label: "Blackjack · return 62.5", swipeLabel: "Blackjack · return 62.5" },
+    { outcome: "LOST", label: "LOST · return 0", title: "LOST", returnLine: "0", swipeLabel: "LOSS · 0" },
+    { outcome: "PUSH", label: "STAND OFF · return 25", title: "STAND OFF", returnLine: "25", swipeLabel: "STAND OFF · return 25" },
+    { outcome: "BLACKJACK", label: "BLACKJACK · return 62.5", title: "BLACKJACK", returnLine: "62.5", swipeLabel: "BLACKJACK · return 62.5" },
+    { outcome: "WON", label: "WON · return 50", title: "WON", returnLine: "50", swipeLabel: "WIN +50" },
   ],
   ...overrides,
 });
@@ -192,8 +192,12 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).toContain("Box 2");
   expect(html).toContain("WIN +50");
   expect(html).toContain("LOSS · 0");
-  expect(html).toContain("Push · return 25");
-  expect(html).toContain("Blackjack · return 62.5");
+  expect(html).toContain("LOST");
+  expect(html).toContain("STAND OFF");
+  expect(html).toContain("WON");
+  expect(html.indexOf("rail-title\">LOST")).toBeLessThan(html.indexOf("rail-title\">STAND OFF"));
+  expect(html.indexOf("rail-title\">STAND OFF")).toBeLessThan(html.indexOf("rail-title\">BLACKJACK"));
+  expect(html.indexOf("rail-title\">BLACKJACK")).toBeLessThan(html.indexOf("rail-title\">WON"));
   expect(html).toContain("Dealer Blackjack");
   expect(html).not.toContain("Deal cards");
   expect(html).toMatch(/<button[^>]*disabled[^>]*>NEXT ROUND NOW/);
@@ -240,6 +244,6 @@ test("resolved boxes keep row state without payout controls", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("Win · 50");
+  expect(html).toContain("Won · 50");
   expect(html).not.toContain("payout-access");
 });

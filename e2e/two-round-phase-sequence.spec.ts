@@ -26,7 +26,7 @@ async function playOneRound(bank: Page, player: Page) {
   await player.reload();
   const snap = (await tableSnapshot(bank)) as { bank?: { boxes: { id: string }[] } };
   for (const box of snap.bank?.boxes ?? []) {
-    await bank.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /Push/ }).click({ force: true });
+    await bank.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /STAND OFF/ }).click({ force: true });
   }
   await expect(bank.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
 }
@@ -74,7 +74,7 @@ test("two browsers complete two full rounds through the production command path"
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   const second = (await tableSnapshot(page)) as { bank?: { boxes: { id: string }[] } };
   for (const box of second.bank?.boxes ?? []) {
-    await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /Push/ }).click({ force: true });
+    await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /STAND OFF/ }).click({ force: true });
   }
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
   await page.reload();

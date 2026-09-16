@@ -26,7 +26,7 @@ export async function openSetupSheet(page: Page) {
   await expect(create).toBeVisible();
   await create.click();
   await expect(page).toHaveURL(/\/tables\//);
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeVisible();
   await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
   await expect(page.locator(".setup-mask").getByLabel("Starting jetons per player")).toBeVisible();
@@ -45,13 +45,13 @@ export async function createBlackjackTable(
   if (options?.email) {
     await page.locator(".setup-mask").getByLabel("Player email").fill(options.email);
   }
-  await page.getByRole("button", { name: "SET UP TABLE" }).click();
+  await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "+ PLAYER" })).toBeVisible();
   await expect(page.getByRole("button", { name: "QR" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "SET UP TABLE" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
 }
 
@@ -67,6 +67,30 @@ export async function noHorizontalOverflow(page: Page) {
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
   );
   expect(overflow).toBe(false);
+}
+
+export async function swipePayoutRow(page: Page, boxId: string, direction: "right" | "left") {
+  const inner = page.locator(`[data-box-id="${boxId}"] .payout-row-inner`);
+  await expect(inner).toBeVisible();
+  const box = await inner.boundingBox();
+  if (!box) throw new Error("missing payout row");
+  const y = box.y + box.height / 2;
+  const x = box.x + box.width / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + (direction === "right" ? 120 : -120), y, { steps: 12 });
+  await page.mouse.up();
+}
+
+export async function doubleTapPayoutRow(page: Page, boxId: string) {
+  const inner = page.locator(`[data-box-id="${boxId}"] .payout-row-inner`);
+  await expect(inner).toBeVisible();
+  const box = await inner.boundingBox();
+  if (!box) throw new Error("missing payout row");
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.click(x, y);
+  await page.mouse.click(x, y);
 }
 
 export function uniqueEmail(prefix: string) {
