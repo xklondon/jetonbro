@@ -100,7 +100,7 @@ export function ClassicHome({
                     <div>
                       <strong>{table.name}</strong>
                       <div className="muted">
-                        {table.game} · {table.saved ? "SAVED" : phaseLabel(table.phase)}
+                        {table.headline ?? `${table.game} · ${table.saved ? "SAVED" : phaseLabel(table.phase)}`}
                       </div>
                     </div>
                     {table.isOwner ? (

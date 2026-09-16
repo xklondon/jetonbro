@@ -20,11 +20,16 @@ export function ClassicBankTable({
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
 }) {
-  const [sheet, setSheet] = useState<"player" | "jetons" | "menu" | "close" | "funding" | null>(null);
+  const [sheet, setSheet] = useState<"player" | "jetons" | "menu" | "close" | "funding" | "game" | "poker" | null>(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [startingBank, setStartingBank] = useState(view.bankroll?.available.label || "500");
+  const [smallBlind, setSmallBlind] = useState("5");
+  const [bigBlind, setBigBlind] = useState("10");
+  const showUtilities =
+    (view.phase === "BETTING" && (Boolean(view.actions.addPlayer) || Boolean(view.actions.giveJetons) || Boolean(view.actions.switchGame))) ||
+    (view.phase === "ROUND_COMPLETE" && Boolean(view.actions.switchGame));
   const memberIdDefault = members[0]?.userId ?? "";
   const [memberId, setMemberId] = useState(memberIdDefault);
   const showInsurance = view.phase === "PLAYING" || view.phase === "PAYOUT" || view.insurance.count > 0;
@@ -43,27 +48,6 @@ export function ClassicBankTable({
           </div>
           <DealCountdown deadline={view.bettingCloseDeadlineAt} />
           <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
-          <BankrollPanel
-            bankroll={view.bankroll}
-            manage={view.phase === "BETTING"}
-            onToggle={(mode) => {
-              if (mode === "LIMITED") setSheet("funding");
-              else onCommand("setBankFunding", { bankFundingMode: "OPEN" });
-            }}
-          />
-          {view.phase === "BETTING" && view.bankroll ? (
-            <button
-              type="button"
-              className="funding-compact"
-              disabled={!view.bankroll.canToggle}
-              onClick={() => {
-                if (view.bankroll?.mode === "OPEN") setSheet("funding");
-                else onCommand("setBankFunding", { bankFundingMode: "OPEN" });
-              }}
-            >
-              {view.bankroll.mode === "LIMITED" ? `LIMITED · ${view.bankroll.available.label}` : "OPEN BANK"}
-            </button>
-          ) : null}
           {view.phase === "PLAYING" ? (
             <CardEntryPanel
               title="Dealer"
@@ -79,6 +63,9 @@ export function ClassicBankTable({
           ) : null}
           {view.phase === "BETTING" ? (
             <>
+              {view.waitingForFirstBet || !view.hasValidBet ? (
+                <p className="waiting-first-bet">WAITING FOR THE FIRST BET</p>
+              ) : null}
               <div className="deal-actions">
                 <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
                   DEAL CARDS NOW
@@ -87,7 +74,9 @@ export function ClassicBankTable({
                   DEAL IN 7 SECONDS
                 </button>
               </div>
-              <p className="muted phase-hint">DEAL CARDS NOW closes Betting and starts Playing.</p>
+              {view.hasValidBet ? (
+                <p className="muted phase-hint">DEAL CARDS NOW closes Betting and starts Playing.</p>
+              ) : null}
             </>
           ) : showNextRound ? (
             <>
@@ -241,7 +230,21 @@ export function ClassicBankTable({
             <strong>{view.lockedOrdinary.label}</strong>
           </div>
         </div>
-        {view.actions.addPlayer || view.actions.giveJetons ? (
+        {showUtilities ? (
+          <div className="dealer-tools betting-utilities">
+            {view.actions.switchGame ? (
+              <button type="button" onClick={() => setSheet("game")}>
+                SWITCH GAME
+              </button>
+            ) : null}
+            <button type="button" onClick={() => setSheet("player")}>
+              + PLAYER
+            </button>
+            <button type="button" onClick={() => setSheet("jetons")}>
+              GIVE JETONS
+            </button>
+          </div>
+        ) : view.actions.addPlayer || view.actions.giveJetons ? (
           <div className="dealer-tools">
             <button type="button" onClick={() => setSheet("player")}>
               ＋ Add player
@@ -257,9 +260,81 @@ export function ClassicBankTable({
               : "Cards stay at the physical table"}
           </div>
         )}
+        {view.phase === "BETTING" ? (
+          <BankrollPanel
+            bankroll={view.bankroll}
+            manage
+            onToggle={(mode) => {
+              if (mode === "LIMITED") setSheet("funding");
+              else onCommand("setBankFunding", { bankFundingMode: "OPEN" });
+            }}
+          />
+        ) : null}
       </footer>
       <div className={`sheet${sheet ? " open" : ""}`}>
         <div className="sheet-panel">
+          {sheet === "game" ? (
+            <>
+              <h3>Switch game</h3>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("switchGame", { game: "BLACKJACK" });
+                  setSheet(null);
+                }}
+              >
+                Blackjack
+              </button>
+              <button className="gold-button" type="button" onClick={() => setSheet("poker")}>
+                Texas Hold’em
+              </button>
+              <button type="button" disabled>
+                Zilch — Coming later
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "poker" ? (
+            <>
+              <h3>Texas Hold’em</h3>
+              <label>
+                Small blind
+                <input value={smallBlind} onChange={(event) => setSmallBlind(event.target.value)} aria-label="Small blind" />
+              </label>
+              <label>
+                Big blind
+                <input value={bigBlind} onChange={(event) => setBigBlind(event.target.value)} aria-label="Big blind" />
+              </label>
+              <p className="muted">Dealer button follows the Player order below after you confirm.</p>
+              {members.map((member, index) => (
+                <div className="member-row" key={member.userId}>
+                  <strong>
+                    {index + 1}. {member.name}
+                  </strong>
+                </div>
+              ))}
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("startTexasHoldem", {
+                    smallBlind,
+                    bigBlind,
+                    seatOrder: members.map((member) => member.userId).join(","),
+                  });
+                  setSheet(null);
+                }}
+              >
+                START TEXAS HOLD’EM
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("game")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
           {sheet === "funding" ? (
             <>
               <h3>Limited Bank</h3>

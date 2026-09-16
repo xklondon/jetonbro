@@ -1,6 +1,6 @@
 "use client";
 
-import { GAME_CATALOG } from "@/domain/games";
+import { GAME_CATALOG, type GameId } from "@/domain/games";
 
 const SUITS: Record<string, string> = {
   BLACKJACK: "♠",
@@ -10,17 +10,17 @@ const SUITS: Record<string, string> = {
 
 export function ClassicGameCards({
   selectedId,
-  onSelectBlackjack,
+  onSelect,
   compact,
 }: {
   selectedId: string | null;
-  onSelectBlackjack: () => void;
+  onSelect: (gameId: GameId) => void;
   compact?: boolean;
 }) {
   return (
     <div className={`game-pick${compact ? " compact" : ""}`}>
       {GAME_CATALOG.map((game) => {
-        const available = game.available && game.id === "BLACKJACK";
+        const available = game.available;
         return (
           <button
             key={game.id}
@@ -30,7 +30,7 @@ export function ClassicGameCards({
             aria-disabled={!available}
             aria-pressed={available ? selectedId === game.id : undefined}
             onClick={() => {
-              if (available) onSelectBlackjack();
+              if (available) onSelect(game.id);
             }}
           >
             <span className="game-card-suit" aria-hidden="true">

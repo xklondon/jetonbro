@@ -1,5 +1,6 @@
 import { prisma } from "@/application/db";
 import { formatJetons } from "@/domain/money";
+import { pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
 
 export type HomeMoney = {
   millis: string;
@@ -25,6 +26,7 @@ export type HomeTableCard = {
   name: string;
   game: string;
   phase: string;
+  headline: string;
   playerCount: number;
   boxCount: number;
   bankName: string;
@@ -45,21 +47,21 @@ const PHASE_RANK: Record<string, number> = {
   PLAYING: 0,
   PAYOUT: 1,
   BETTING: 2,
+  PRE_FLOP: 2,
+  FLOP: 2,
+  TURN: 2,
+  RIVER: 2,
+  SHOWDOWN: 1,
   ROUND_COMPLETE: 3,
+  HAND_COMPLETE: 3,
   TABLE_SETUP: 4,
+  POKER_SETUP: 4,
 };
 
 function roleLabel(isBankDealer: boolean, isOwner: boolean): string {
   if (isBankDealer) return "Bank / Dealer";
   if (isOwner) return "Owner";
   return "Player";
-}
-
-function gameLabel(game: string): string {
-  if (game === "BLACKJACK") return "Blackjack";
-  if (game === "POKER") return "Poker";
-  if (game === "ZILCH") return "Zilch";
-  return game;
 }
 
 function displayName(user: { name: string | null; email: string }): string {
@@ -79,6 +81,7 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
           bankDealer: { select: { name: true, email: true } },
           members: { where: { leftAt: null }, include: { user: { select: { name: true, email: true } } } },
           currentRound: { include: { boxes: true, insuranceBets: true } },
+          currentPokerHand: { include: { participants: true } },
           rounds: { select: { boxes: { select: { lockedBetMillis: true, originalStakeMillis: true } } } },
           _count: { select: { ledgerEntries: true } },
         },
@@ -90,8 +93,9 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
       const table = membership.table;
       const isOwner = table.ownerId === userId;
       const isBank = table.bankDealerId === userId;
-      const playerMembers = table.members.filter(
-        (member) => !member.isBankDealer && member.userId !== table.bankDealerId,
+      const pokerSeated = table.game === "POKER";
+      const playerMembers = table.members.filter((member) =>
+        pokerSeated ? true : !member.isBankDealer && member.userId !== table.bankDealerId,
       );
       const boxes = (table.currentRound?.boxes ?? []).filter((box) => !box.removedAt);
       const lockedByPlayer = new Map<string, bigint>();
@@ -102,9 +106,21 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         if (bet.settledKey) continue;
         lockedByPlayer.set(bet.playerId, (lockedByPlayer.get(bet.playerId) ?? 0n) + bet.amountMillis);
       }
+      for (const participant of table.currentPokerHand?.participants ?? []) {
+        if (participant.lockedMillis <= 0n) continue;
+        lockedByPlayer.set(participant.playerId, (lockedByPlayer.get(participant.playerId) ?? 0n) + participant.lockedMillis);
+      }
       const anyLocked = [...lockedByPlayer.values()].some((value) => value > 0n);
+      const active = projectActiveGame({
+        game: table.game,
+        blackjackPhase: table.currentPhase,
+        pokerPhase: table.currentPokerHand?.phase ?? (table.game === "POKER" ? "POKER_SETUP" : null),
+        pausedAt: table.pausedAt,
+      });
+      const pokerBlocked = table.game === "POKER" && (anyLocked || pokerHandIsOpen(table.currentPokerHand?.phase));
       const emptyDraft =
         table.currentPhase === "TABLE_SETUP" &&
+        table.game !== "POKER" &&
         playerMembers.length === 0 &&
         table._count.ledgerEntries === 0 &&
         !table.rounds.some((round) =>
@@ -113,7 +129,10 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
       const canClose =
         isOwner &&
         !anyLocked &&
-        (table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
+        !pokerBlocked &&
+        (table.game === "POKER"
+          ? active.phase === "POKER_SETUP" || active.phase === "HAND_COMPLETE"
+          : table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
       const players: HomePlayerLine[] = playerMembers.map((member) => {
         const showBalance = isOwner || member.userId === userId;
         return {
@@ -121,7 +140,7 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
           name: displayName(member.user),
           available: showBalance ? money(member.availableMillis) : null,
           locked: isOwner ? money(lockedByPlayer.get(member.userId) ?? 0n) : null,
-          isBankDealer: false,
+          isBankDealer: member.isBankDealer,
         };
       });
       const closePreview: HomeClosePreview | null = isOwner
@@ -141,8 +160,9 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
       return {
         id: table.id,
         name: table.name,
-        game: gameLabel(table.game),
-        phase: table.pausedAt ? "SAVED" : table.currentPhase,
+        game: active.gameLabel,
+        phase: active.phase,
+        headline: active.headline,
         playerCount: playerMembers.length,
         boxCount: boxes.length,
         bankName: table.bankDealer ? displayName(table.bankDealer) : "Unassigned",
@@ -152,15 +172,21 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         closed: false,
         isOwner,
         players,
-        canSave: isOwner && !emptyDraft,
+        canSave: isOwner && !emptyDraft && !pokerBlocked,
         canClose,
         canDeleteDraft: isOwner && emptyDraft,
         closeBlockedReason: isOwner
-          ? anyLocked
-            ? "This table still has locked bets or Insurance. Settle every locked position before closing."
-            : table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE"
-              ? "Close the table only during TABLE SETUP or after the round is complete."
-              : null
+          ? anyLocked || pokerBlocked
+            ? table.game === "POKER"
+              ? "Finish or clear the current hand before closing."
+              : "This table still has locked bets or Insurance. Settle every locked position before closing."
+            : table.game === "POKER"
+              ? active.phase !== "POKER_SETUP" && active.phase !== "HAND_COMPLETE"
+                ? "Finish or clear the current hand before closing."
+                : null
+              : table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE"
+                ? "Close the table only during TABLE SETUP or after the round is complete."
+                : null
           : null,
         closePreview,
       };

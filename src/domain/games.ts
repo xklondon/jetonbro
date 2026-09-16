@@ -1,5 +1,5 @@
-export const ENABLED_GAMES = ["BLACKJACK"] as const;
-export const FUTURE_GAMES = ["POKER", "ZILCH"] as const;
+export const ENABLED_GAMES = ["BLACKJACK", "POKER"] as const;
+export const FUTURE_GAMES = ["ZILCH"] as const;
 
 export type EnabledGame = (typeof ENABLED_GAMES)[number];
 export type FutureGame = (typeof FUTURE_GAMES)[number];
@@ -15,10 +15,10 @@ export const GAME_CATALOG = [
   },
   {
     id: "POKER" as const,
-    label: "Poker",
+    label: "Texas Hold’em",
     tagline: "Pots and positions.",
-    available: false,
-    comingLater: "Coming later",
+    available: true,
+    comingLater: null,
   },
   {
     id: "ZILCH" as const,

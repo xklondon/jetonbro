@@ -24,6 +24,14 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    {
+      name: "firefox-poker",
+      testMatch: /poker-and-betting\.spec\.ts/,
+      use: {
+        browserName: "firefox",
+        viewport: { width: 390, height: 844 },
+      },
+    },
   ],
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? undefined

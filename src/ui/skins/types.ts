@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { HomeTableCard } from "@/application/queries/home";
-import type { BankTableView, MemberView, PlayerTableView, SetupTableView, WaitingTableView } from "@/application/queries/views";
+import type { BankTableView, MemberView, PlayerTableView, PokerTableView, SetupTableView, WaitingTableView } from "@/application/queries/views";
 
 export type CommandHandler = (command: string, payload?: Record<string, string>) => void;
 
@@ -28,6 +28,17 @@ export type JetonBroSkin = {
   WaitingTable: ComponentType<{
     view: WaitingTableView;
   }>;
+  PokerDealer: ComponentType<{
+    view: PokerTableView;
+    members: MemberView[];
+    onCommand: CommandHandler;
+    notice?: string | null;
+  }>;
+  PokerPlayer: ComponentType<{
+    view: PokerTableView;
+    onCommand: CommandHandler;
+    notice?: string | null;
+  }>;
   Entry: ComponentType<{
     title: string;
     copy: string;
@@ -53,12 +64,15 @@ export type JetonBroSkin = {
     onBack: () => void;
     onCreate: (fields: {
       name: string;
-      game: "BLACKJACK";
+      game: "BLACKJACK" | "POKER";
       startingJetonsPerPlayer: string;
       emails: string[];
       cardAssist?: string;
       bankFundingMode?: string;
       startingBank?: string;
+      smallBlind?: string;
+      bigBlind?: string;
+      seatOrder?: string;
     }) => Promise<void>;
     embedded?: boolean;
     joinUrl?: string | null;

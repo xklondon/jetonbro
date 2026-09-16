@@ -49,6 +49,10 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   await addJetons(samPage, "10");
   await joPage.reload();
   await addJetons(joPage, "25");
+  await expect.poll(async () => {
+    const snap = (await tableSnapshot(page)) as { bank?: { players: { name: string; boxes: unknown[] }[] } };
+    return snap.bank?.players.find((player) => player.name === "Jo")?.boxes.length ?? 0;
+  }).toBe(1);
 
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();

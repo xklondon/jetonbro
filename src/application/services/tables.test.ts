@@ -80,16 +80,30 @@ describeDb("create table home journey", () => {
     ).rejects.toMatchObject({ code: "DUPLICATE_EMAIL" });
   });
 
-  test("Poker cannot be created", async () => {
+  test("Poker can be created and opens POKER_SETUP without a Blackjack round", async () => {
     const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
-    await expect(
-      createTable({
-        actorId: owner.id,
-        idempotencyKey: randomUUID(),
-        name: "Poker night",
-        game: "POKER",
-      }),
-    ).rejects.toBeInstanceOf(DomainError);
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Poker night",
+      game: "POKER",
+      startingJetonsPerPlayer: "100",
+      smallBlind: "5",
+      bigBlind: "10",
+    });
+    const table = await prisma.table.findUniqueOrThrow({ where: { id: created.tableId } });
+    expect(table.game).toBe("POKER");
+    expect(table.currentRoundId).toBeNull();
+    expect(table.currentPokerHandId).toBeNull();
+    const snapshot = await loadSnapshot(created.tableId, owner.id);
+    expect(snapshot.game).toBe("POKER");
+    expect(snapshot.phase).toBe("POKER_SETUP");
+    expect(snapshot.headline).toBe("Texas Hold’em · POKER SETUP");
+    expect(snapshot.poker?.phase).toBe("POKER_SETUP");
+    expect(snapshot.bank).toBeNull();
+    expect(snapshot.player).toBeNull();
+    expect(snapshot.setup).toBeNull();
+    expect(await prisma.round.count({ where: { tableId: created.tableId } })).toBe(0);
   });
 
   test("join credits starting jetons once and betting moves AVAILABLE to LOCKED_BET", async () => {

@@ -36,6 +36,7 @@ export function emptyBuckets(): Record<AccountingBucket, JetonMillis> {
     SETTLED: 0n,
     BANK_AVAILABLE: 0n,
     BANK_LOCKED_EXPOSURE: 0n,
+    LOCKED_POKER: 0n,
   };
 }
 
@@ -62,6 +63,9 @@ export function bucketForLockType(type: LedgerTransactionType): AccountingBucket
     case "BANK_EXPOSURE_RESERVED":
     case "BANK_EXPOSURE_RELEASED":
       return "BANK_LOCKED_EXPOSURE";
+    case "POKER_BLIND_LOCKED":
+    case "POKER_WAGER_LOCKED":
+      return "LOCKED_POKER";
     default:
       return "AVAILABLE";
   }

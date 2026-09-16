@@ -14,7 +14,7 @@ import type { Prisma } from "@prisma/client";
 type Tx = Prisma.TransactionClient;
 
 export const BANK_CANNOT_COVER = "The Bank cannot cover this bet";
-export const FUNDING_LOCKED = "Funding mode is locked for this round";
+export const FUNDING_LOCKED = "Funding is locked for this round";
 
 type FundedTable = {
   id: string;

@@ -70,6 +70,15 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
     tableStatus: "ACTIVE",
     paused: false,
     closePreview: null,
+    bankroll: {
+      mode: "OPEN",
+      available: { millis: "0", label: "0" },
+      reserved: { millis: "0", label: "0" },
+      total: { millis: "0", label: "0" },
+      canToggle: true,
+      lockedReason: null,
+      canCoverMore: true,
+    },
     actions: {
       dealCards: true,
       scheduleDeal: true,
@@ -85,6 +94,7 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
       changeBank: true,
       saveTable: true,
       closeTable: false,
+      switchGame: false,
     },
     insuranceSettleActions: [
       { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
@@ -105,6 +115,53 @@ test("Bank betting keeps deal controls at the top", () => {
   expect(html).toContain("DEAL CARDS NOW closes Betting and starts Playing.");
   expect(html.indexOf("CURRENT PHASE:")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
   expect(html.indexOf("DEAL CARDS NOW")).toBeLessThan(html.indexOf("ON TABLE"));
+});
+
+test("Bank betting shows waiting copy until the first locked bet", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicBankTable, {
+      view: bankView({
+        hasValidBet: false,
+        waitingForFirstBet: true,
+        actions: { ...bankView({}).actions, dealCards: false, scheduleDeal: false, switchGame: true },
+      }),
+      members,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("WAITING FOR THE FIRST BET");
+  expect(html).toContain("OPEN BANK");
+  expect(html).toContain("LIMITED BANK");
+  expect(html).toContain("Unlimited");
+  expect(html).toContain("SWITCH GAME");
+  expect(html).toContain("+ PLAYER");
+  expect(html).toContain("GIVE JETONS");
+  expect(html).toMatch(/<button[^>]*disabled[^>]*>DEAL CARDS NOW/);
+});
+
+test("funding toggle stays visible but locked after a stake exists", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicBankTable, {
+      view: bankView({
+        bankroll: {
+          mode: "LIMITED",
+          available: { millis: "462500", label: "462.5" },
+          reserved: { millis: "37500", label: "37.5" },
+          total: { millis: "500000", label: "500" },
+          canToggle: false,
+          lockedReason: "Funding is locked for this round",
+          canCoverMore: true,
+        },
+      }),
+      members,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("OPEN BANK");
+  expect(html).toContain("LIMITED BANK");
+  expect(html).toContain("462.5 available · 37.5 reserved");
+  expect(html).toContain("Funding is locked for this round");
+  expect(html).toMatch(/funding-switch[^>]*disabled/);
 });
 
 test("Bank playing shows an open Insurance window as a side pot", () => {
@@ -130,6 +187,7 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
           changeBank: false,
           saveTable: true,
           closeTable: false,
+          switchGame: false,
         },
       }),
       members,
@@ -178,6 +236,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
           changeBank: false,
           saveTable: true,
           closeTable: false,
+          switchGame: false,
         },
       }),
       members,
@@ -238,6 +297,7 @@ test("resolved boxes keep row state without payout controls", () => {
           changeBank: false,
           saveTable: true,
           closeTable: false,
+          switchGame: false,
         },
       }),
       members,

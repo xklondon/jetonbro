@@ -17,7 +17,9 @@ export function ClassicSetupTable({
   const [emails, setEmails] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState<"menu" | "close" | null>(null);
+  const [menuOpen, setMenuOpen] = useState<"menu" | "close" | "game" | "poker" | null>(null);
+  const [smallBlind, setSmallBlind] = useState("5");
+  const [bigBlind, setBigBlind] = useState("10");
   const [qrData, setQrData] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const playerSeats = view.seats.filter((seat) => seat.status !== "Bank / Dealer");
@@ -66,6 +68,11 @@ export function ClassicSetupTable({
           <button type="button" onClick={() => setAddOpen(true)}>
             + PLAYER
           </button>
+          {view.canSwitchGame ? (
+            <button type="button" onClick={() => setMenuOpen("game")}>
+              SWITCH GAME
+            </button>
+          ) : null}
         </div>
         <button
           className="gold-button"
@@ -202,6 +209,7 @@ export function ClassicSetupTable({
               initialEmails={initialEmails}
               joinUrl={view.joinUrl}
               notice={notice}
+              members={view.members.map((member) => ({ userId: member.userId, name: member.name }))}
               onBack={() => void onCommand("abandonDraft")}
               onCreate={async (fields) => {
                 await onCommand("finalizeSetup", {
@@ -211,6 +219,10 @@ export function ClassicSetupTable({
                   cardAssist: fields.cardAssist ?? "OFF",
                   bankFundingMode: fields.bankFundingMode ?? "OPEN",
                   startingBank: fields.startingBank ?? "",
+                  game: fields.game,
+                  smallBlind: fields.smallBlind ?? "",
+                  bigBlind: fields.bigBlind ?? "",
+                  seatOrder: fields.seatOrder ?? "",
                 });
               }}
             />
@@ -255,6 +267,61 @@ export function ClassicSetupTable({
                 Confirm close
               </button>
               <button className="text-link" type="button" onClick={() => setMenuOpen("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {menuOpen === "game" ? (
+            <>
+              <h3>Switch game</h3>
+              <button className="gold-button" type="button" onClick={() => { onCommand("switchGame", { game: "BLACKJACK" }); setMenuOpen(null); }}>
+                Blackjack
+              </button>
+              <button className="gold-button" type="button" onClick={() => setMenuOpen("poker")}>
+                Texas Hold’em
+              </button>
+              <button type="button" disabled>
+                Zilch — Coming later
+              </button>
+              <button className="text-link" type="button" onClick={() => setMenuOpen(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {menuOpen === "poker" ? (
+            <>
+              <h3>Texas Hold’em</h3>
+              <label>
+                Small blind
+                <input value={smallBlind} onChange={(event) => setSmallBlind(event.target.value)} aria-label="Small blind" />
+              </label>
+              <label>
+                Big blind
+                <input value={bigBlind} onChange={(event) => setBigBlind(event.target.value)} aria-label="Big blind" />
+              </label>
+              <p className="muted">Dealer button follows the Player order below after you confirm.</p>
+              {view.members.map((member, index) => (
+                <div className="member-row" key={member.userId}>
+                  <strong>
+                    {index + 1}. {member.name}
+                  </strong>
+                </div>
+              ))}
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("startTexasHoldem", {
+                    smallBlind,
+                    bigBlind,
+                    seatOrder: view.members.map((member) => member.userId).join(","),
+                  });
+                  setMenuOpen(null);
+                }}
+              >
+                START TEXAS HOLD’EM
+              </button>
+              <button className="text-link" type="button" onClick={() => setMenuOpen("game")}>
                 Cancel
               </button>
             </>

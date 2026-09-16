@@ -5,8 +5,11 @@ import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
 import { alignTablePhase, ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
-import { boxCoverageOk, insuranceCoverageOk, roundHasLockedStake } from "@/application/services/bankroll";
+import { ensureNextPokerHandIfDue } from "@/application/services/poker-hand";
+import { buildPokerView } from "./poker-snapshot";
+import { boxCoverageOk, FUNDING_LOCKED, insuranceCoverageOk, roundHasLockedStake } from "@/application/services/bankroll";
 import { handView, ranksFromJson, suggestedBoxOutcome, suggestedInsuranceResolution } from "@/application/services/card-hands";
+import { pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
 import type {
   BankPlayerGroupView,
   BankTableView,
@@ -58,6 +61,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   await alignTablePhase(tableId);
   await ensureBettingClosedIfDue(tableId);
   await ensureNextRoundIfDue(tableId);
+  await ensureNextPokerHandIfDue(tableId);
   const table = await prisma.table.findUnique({
     where: { id: tableId },
     include: {
@@ -65,6 +69,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       bankDealer: true,
       members: { where: { leftAt: null }, include: { user: true } },
       invitations: { orderBy: { createdAt: "desc" } },
+      currentPokerHand: {
+        include: {
+          participants: { include: { player: true } },
+          pots: { orderBy: { index: "asc" } },
+        },
+      },
+      pokerSeats: { orderBy: { orderIndex: "asc" } },
       currentRound: {
         include: {
           boxes: { where: { removedAt: null }, orderBy: { boxNumber: "asc" } },
@@ -152,11 +163,15 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         table.currentRound?.insuranceBets
           .filter((bet) => bet.playerId === member.userId && !bet.settledKey)
           .reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
+      const lockedPoker =
+        table.currentPokerHand?.participants
+          .filter((item) => item.playerId === member.userId)
+          .reduce((sum, item) => sum + item.lockedMillis, 0n) ?? 0n;
       return {
         userId: member.userId,
         name: displayName(member.user),
         available: money(member.availableMillis),
-        locked: money(lockedBet + lockedIns),
+        locked: money(lockedBet + lockedIns + lockedPoker),
       };
     }),
   };
@@ -242,6 +257,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           tableStatus: table.status,
           paused: table.pausedAt !== null,
           closePreview: isOwner ? closePreview : null,
+          canSwitchGame: isOwner && table.status !== "ARCHIVED",
         }
       : null;
 
@@ -280,12 +296,22 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   );
   const tableClosed = table.status === "ARCHIVED";
   const anyLocked = closePreview.players.some((player) => BigInt(player.locked.millis) > 0n);
+  const activeGame = projectActiveGame({
+    game: table.game,
+    blackjackPhase: table.currentPhase,
+    pokerPhase: table.currentPokerHand?.phase ?? (table.game === "POKER" ? "POKER_SETUP" : null),
+    pausedAt: table.pausedAt,
+  });
+  const pokerOpen = table.game === "POKER" && pokerHandIsOpen(table.currentPokerHand?.phase);
   const canCloseTable =
     isOwner &&
     !tableClosed &&
     !anyLocked &&
     table.bankLockedExposureMillis === 0n &&
-    (table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
+    !pokerOpen &&
+    (table.game === "POKER"
+      ? activeGame.phase === "POKER_SETUP" || activeGame.phase === "HAND_COMPLETE"
+      : table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
   const fundingLocked = roundHasLockedStake(table.currentRound) || table.bankLockedExposureMillis > 0n;
   const bankroll = {
     mode: table.bankFundingMode,
@@ -293,7 +319,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     reserved: money(table.bankLockedExposureMillis),
     total: money(table.bankAvailableMillis + table.bankLockedExposureMillis),
     canToggle: isBank && table.currentPhase === "BETTING" && !fundingLocked,
-    lockedReason: fundingLocked ? "Funding mode is locked for this round" : null,
+    lockedReason: fundingLocked ? FUNDING_LOCKED : null,
     canCoverMore: table.bankFundingMode !== "LIMITED" || table.bankAvailableMillis > 0n,
   };
   const dealerHandView = {
@@ -429,8 +455,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           addPlayer: table.currentPhase === "BETTING" && !tableClosed,
           giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
           changeBank: table.currentPhase === "BETTING" && isOwner && !tableClosed,
-          saveTable: isOwner && !tableClosed,
+          saveTable: isOwner && !tableClosed && !pokerOpen && !anyLocked,
           closeTable: canCloseTable,
+          switchGame: isOwner && !fundingLocked && !pokerOpen && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
         },
         insuranceSettleActions: [
           { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
@@ -447,6 +474,11 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         bankroll,
         dealerHand: dealerHandView,
         insuranceSuggestion,
+        canSwitchGame: isOwner && !fundingLocked && !pokerOpen && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+        switchBlockedReason: fundingLocked || pokerOpen || table.currentPhase === "PLAYING" || table.currentPhase === "PAYOUT"
+          ? "Finish or clear the current hand before switching games"
+          : null,
+        waitingForFirstBet: table.currentPhase === "BETTING" && !hasValidBet,
       }
     : null;
 
@@ -454,15 +486,36 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     bank.primaryAction = { id: "nextHand", label: "NEXT ROUND NOW", enabled: canNextHand && !tableClosed };
   }
 
+  const poker =
+    table.game === "POKER"
+      ? buildPokerView({
+          tableName: table.name,
+          isOwner,
+          viewerId,
+          smallBlind: table.pokerSmallBlindMillis,
+          bigBlind: table.pokerBigBlindMillis,
+          members: table.members,
+          seats: table.pokerSeats,
+          hand: table.currentPokerHand,
+          tableClosed,
+        })
+      : null;
+  const blackjack = table.game === "BLACKJACK";
+
   return {
     tableId: table.id,
     viewerId,
     viewerName: displayName(viewer.user),
     isOwner,
     isBank,
-    phase: table.currentPhase,
-    revision: table.updatedAt.getTime(), // database Table.updatedAt, not client time
-    roundNumber: table.currentRound?.number ?? 0,
+    game: activeGame.game,
+    gameLabel: activeGame.gameLabel,
+    phase: activeGame.phase,
+    phaseLabel: activeGame.phaseLabel,
+    headline: activeGame.headline,
+    revision: table.updatedAt.getTime(),
+    roundNumber: poker ? poker.handNumber : table.currentRound?.number ?? 0,
+    turnNumber: poker?.turnNumber ?? 0,
     roundId: table.currentRound?.id ?? null,
     tableClosed,
     members: table.members.map((member) => ({
@@ -473,19 +526,22 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       isBankDealer: member.isBankDealer,
       available: isOwner || isBank || member.userId === viewerId ? money(member.availableMillis) : null,
     })),
-    setup,
-    waiting: waiting ?? (table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
-      ? {
-          role: "WAITING",
-          phase: "TABLE_SETUP",
-          tableName: table.name,
-          game: "Blackjack",
-          available: money(viewer.availableMillis),
-          copy: "Waiting for the Bank to open betting",
-        }
-      : null),
-    player,
-    bank,
+    setup: blackjack ? setup : null,
+    waiting: blackjack
+      ? waiting ?? (table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
+        ? {
+            role: "WAITING",
+            phase: "TABLE_SETUP",
+            tableName: table.name,
+            game: "Blackjack",
+            available: money(viewer.availableMillis),
+            copy: "Waiting for the Bank to open betting",
+          }
+        : null)
+      : null,
+    player: blackjack ? player : null,
+    bank: blackjack ? bank : null,
+    poker,
   };
 }
 

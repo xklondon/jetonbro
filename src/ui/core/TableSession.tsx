@@ -113,6 +113,12 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     [snapshot],
   );
 
+  if (snapshot.poker) {
+    if (snapshot.poker.role === "POKER_DEALER") {
+      return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={notice} />;
+    }
+    return <skin.PokerPlayer view={snapshot.poker} onCommand={onCommand} notice={notice} />;
+  }
   if (snapshot.setup) {
     return <skin.SetupTable view={snapshot.setup} onCommand={onCommand} notice={notice} />;
   }

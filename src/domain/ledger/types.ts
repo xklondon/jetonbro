@@ -21,6 +21,10 @@ export const LEDGER_TRANSACTION_TYPES = [
   "BANK_EXPOSURE_RELEASED",
   "BANK_STAKE_TAKE",
   "BANK_PAYOUT",
+  "POKER_BLIND_LOCKED",
+  "POKER_WAGER_LOCKED",
+  "POKER_UNCALLED_RETURN",
+  "POKER_POT_AWARD",
 ] as const;
 
 export type LedgerTransactionType = (typeof LEDGER_TRANSACTION_TYPES)[number];
@@ -32,6 +36,7 @@ export const ACCOUNTING_BUCKETS = [
   "SETTLED",
   "BANK_AVAILABLE",
   "BANK_LOCKED_EXPOSURE",
+  "LOCKED_POKER",
 ] as const;
 
 export type AccountingBucket = (typeof ACCOUNTING_BUCKETS)[number];

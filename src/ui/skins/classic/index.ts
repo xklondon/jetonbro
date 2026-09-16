@@ -12,6 +12,8 @@ import { ClassicWaitingTable } from "./components/ClassicWaitingTable";
 import { ClassicEntry } from "./components/ClassicEntry";
 import { ClassicHome } from "./components/ClassicHome";
 import { ClassicCreateTable } from "./components/ClassicCreateTable";
+import { ClassicPokerDealer } from "./components/ClassicPokerDealer";
+import { ClassicPokerPlayer } from "./components/ClassicPokerPlayer";
 import type { JetonBroSkin } from "../types";
 
 export const classicSkin: JetonBroSkin = {
@@ -21,6 +23,8 @@ export const classicSkin: JetonBroSkin = {
   BankTable: ClassicBankTable,
   SetupTable: ClassicSetupTable,
   WaitingTable: ClassicWaitingTable,
+  PokerDealer: ClassicPokerDealer,
+  PokerPlayer: ClassicPokerPlayer,
   Entry: ClassicEntry,
   Home: ClassicHome,
   CreateTable: ClassicCreateTable,

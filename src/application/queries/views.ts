@@ -121,6 +121,7 @@ export type BankPermittedActions = {
   changeBank: boolean;
   saveTable: boolean;
   closeTable: boolean;
+  switchGame: boolean;
 };
 
 export type PlayerTableView = {
@@ -168,6 +169,9 @@ export type BankTableView = {
   bankroll?: BankrollView;
   dealerHand?: HandView;
   insuranceSuggestion?: "DEALER_BLACKJACK" | "NO_DEALER_BLACKJACK" | null;
+  canSwitchGame?: boolean;
+  switchBlockedReason?: string | null;
+  waitingForFirstBet?: boolean;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";
@@ -207,6 +211,77 @@ export type SetupTableView = {
   cardAssist?: "OFF" | "CONFIRM" | "AUTO";
   bankFundingMode?: "OPEN" | "LIMITED";
   startingBank?: MoneyView | null;
+  canSwitchGame?: boolean;
+};
+
+export type PokerLegalActionView = {
+  type: "FOLD" | "CHECK" | "CALL" | "BET" | "RAISE" | "ALL_IN";
+  amount: MoneyView;
+  raiseTo?: MoneyView;
+  label: string;
+};
+
+export type PokerSeatView = {
+  userId: string;
+  name: string;
+  available: MoneyView;
+  contribution: MoneyView;
+  streetContribution: MoneyView;
+  toCall: MoneyView;
+  status: "ACTIVE" | "FOLDED" | "ALL_IN" | "WAITING";
+  isDealer: boolean;
+  isSmallBlind: boolean;
+  isBigBlind: boolean;
+  isActor: boolean;
+  sittingOut: boolean;
+  orderIndex: number;
+};
+
+export type PokerPotView = {
+  index: number;
+  amount: MoneyView;
+  cap: MoneyView;
+  eligiblePlayerIds: string[];
+  winnerPlayerIds: string[];
+};
+
+export type PokerTableView = {
+  role: "POKER_DEALER" | "POKER_PLAYER";
+  phase: string;
+  phaseLabel: string;
+  headline: string;
+  tableName: string;
+  copy: string;
+  isOwner: boolean;
+  pot: MoneyView;
+  toCall: MoneyView;
+  contribution: MoneyView;
+  available: MoneyView;
+  smallBlind: MoneyView;
+  bigBlind: MoneyView;
+  seats: PokerSeatView[];
+  pots: PokerPotView[];
+  legalActions: PokerLegalActionView[];
+  currentActorName: string | null;
+  currentActorId: string | null;
+  waitingCopy: string | null;
+  winners: { userId: string; name: string; amount: MoneyView }[];
+  canDealStreet: boolean;
+  nextStreetLabel: string | null;
+  canAward: boolean;
+  canNextHand: boolean;
+  canScheduleNextHand: boolean;
+  nextHandDeadlineAt: string | null;
+  canSwitchGame: boolean;
+  switchBlockedReason: string | null;
+  canAddPlayer: boolean;
+  canGiveJetons: boolean;
+  canReorderSeats: boolean;
+  streetComplete: boolean;
+  allInRunout: boolean;
+  turnNumber: number;
+  handNumber: number;
+  viewerId: string;
 };
 
 export type WaitingTableView = {
@@ -224,9 +299,14 @@ export type ClientSnapshot = {
   viewerName: string;
   isOwner: boolean;
   isBank: boolean;
-  phase: RoundPhase;
+  game: "BLACKJACK" | "POKER";
+  gameLabel?: string;
+  phase: RoundPhase | string;
+  phaseLabel?: string;
+  headline?: string;
   revision?: number;
   roundNumber?: number;
+  turnNumber?: number;
   roundId?: string | null;
   tableClosed: boolean;
   members: MemberView[];
@@ -234,4 +314,5 @@ export type ClientSnapshot = {
   waiting: WaitingTableView | null;
   player: PlayerTableView | null;
   bank: BankTableView | null;
+  poker: PokerTableView | null;
 };

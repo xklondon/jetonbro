@@ -9,6 +9,7 @@ import {
   parseCardAssist,
   reserveInsuranceExposure,
   reserveSplitExposure,
+  FUNDING_LOCKED,
   roundHasLockedStake,
   settleLimitedBankBox,
   settleLimitedBankInsurance,
@@ -45,6 +46,9 @@ async function loadTableForUpdate(tx: Tx, tableId: string) {
     },
   });
   if (!table) throw new NotFoundError("Table not found.");
+  if (table.game !== "BLACKJACK") {
+    throw new DomainError("GAME_CONFLICT", "This command is only available during Blackjack.");
+  }
   if (table.status === "ARCHIVED") {
     throw new DomainError("TABLE_CLOSED", "This table is closed.");
   }
@@ -179,6 +183,8 @@ async function transitionBettingToPlaying(
 }
 
 export async function ensureBettingClosedIfDue(tableId: string): Promise<boolean> {
+  const peek = await prisma.table.findUnique({ where: { id: tableId }, select: { game: true } });
+  if (peek?.game !== "BLACKJACK") return false;
   const closed = await prisma.$transaction(async (tx) => {
     const table = await loadTableForUpdate(tx, tableId);
     if (table.currentPhase !== "BETTING" || !table.currentRound?.bettingCloseDeadlineAt) {
@@ -1202,6 +1208,9 @@ export async function setBankFunding(input: {
       if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
         throw new DomainError("FUNDING_LOCKED", "Funding mode can only change during TABLE SETUP or unstaked BETTING.");
       }
+      if (table.currentPhase === "BETTING" && roundHasLockedStake(table.currentRound)) {
+        throw new DomainError("FUNDING_LOCKED", FUNDING_LOCKED);
+      }
       await applyBankFundingMode(tx, {
         table,
         actorId: input.actorId,
@@ -1323,7 +1332,7 @@ export async function alignTablePhase(tableId: string): Promise<void> {
       where: { id: tableId },
       include: { currentRound: true },
     });
-    if (!table || table.status === "ARCHIVED" || !table.currentRound) return;
+    if (!table || table.status === "ARCHIVED" || table.game !== "BLACKJACK" || !table.currentRound) return;
     if (table.currentPhase === table.currentRound.phase) return;
     logPhaseCommand({
       command: "alignTablePhase",
@@ -1347,7 +1356,7 @@ export async function ensureNextRoundIfDue(tableId: string): Promise<boolean> {
     where: { id: tableId },
     include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
   });
-  if (!table || table.status === "ARCHIVED") return false;
+  if (!table || table.status === "ARCHIVED" || table.game !== "BLACKJACK") return false;
   if (table.currentPhase !== "ROUND_COMPLETE" || !table.currentRound?.nextRoundDeadlineAt) {
     return false;
   }

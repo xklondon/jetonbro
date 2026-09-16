@@ -9,6 +9,7 @@ datasource db {
 
 enum GameId {
   BLACKJACK
+  POKER
 }
 
 enum TableStatus {
@@ -64,6 +65,32 @@ enum BankFundingMode {
   LIMITED
 }
 
+enum PokerHandPhase {
+  POKER_SETUP
+  PRE_FLOP
+  FLOP
+  TURN
+  RIVER
+  SHOWDOWN
+  HAND_COMPLETE
+}
+
+enum PokerParticipantStatus {
+  ACTIVE
+  FOLDED
+  ALL_IN
+}
+
+enum PokerActionType {
+  BLIND
+  FOLD
+  CHECK
+  CALL
+  BET
+  RAISE
+  ALL_IN
+}
+
 enum LedgerTransactionType {
   INITIAL_ALLOCATION
   BANK_DISTRIBUTION
@@ -87,6 +114,10 @@ enum LedgerTransactionType {
   BANK_EXPOSURE_RELEASED
   BANK_STAKE_TAKE
   BANK_PAYOUT
+  POKER_BLIND_LOCKED
+  POKER_WAGER_LOCKED
+  POKER_UNCALLED_RETURN
+  POKER_POT_AWARD
 }
 
 model User {
@@ -108,6 +139,9 @@ model User {
   ledgerAsActor      LedgerEntry[]        @relation("LedgerActor")
   boxes              BettingBox[]
   insuranceBets      InsuranceBet[]
+  pokerSeats         PokerSeat[]
+  pokerParticipants  PokerParticipant[]
+  pokerActions       PokerAction[]
   idempotency        IdempotencyRecord[]
   playerAccount      PlayerAccount?
 }
@@ -175,6 +209,9 @@ model Table {
   startingBankMillis      BigInt?
   currentPhase            RoundPhase          @default(TABLE_SETUP)
   currentRoundId          String?             @unique
+  currentPokerHandId      String?             @unique
+  pokerSmallBlindMillis   BigInt              @default(5000)
+  pokerBigBlindMillis     BigInt              @default(10000)
   joinEnabled             Boolean             @default(true)
   setupCompletedAt        DateTime?
   pausedAt                DateTime?
@@ -184,11 +221,14 @@ model Table {
 
   owner         User           @relation("TableOwner", fields: [ownerId], references: [id])
   bankDealer    User?          @relation("TableBank", fields: [bankDealerId], references: [id])
-  currentRound  Round?         @relation("CurrentRound", fields: [currentRoundId], references: [id], onDelete: SetNull)
-  members       TableMember[]
-  invitations   Invitation[]
-  rounds        Round[]        @relation("TableRounds")
-  ledgerEntries LedgerEntry[]
+  currentRound     Round?         @relation("CurrentRound", fields: [currentRoundId], references: [id], onDelete: SetNull)
+  currentPokerHand PokerHand?     @relation("CurrentPokerHand", fields: [currentPokerHandId], references: [id], onDelete: SetNull)
+  members          TableMember[]
+  invitations      Invitation[]
+  rounds           Round[]        @relation("TableRounds")
+  pokerSeats       PokerSeat[]
+  pokerHands       PokerHand[]    @relation("TablePokerHands")
+  ledgerEntries    LedgerEntry[]
 }
 
 model TableMember {
@@ -281,6 +321,99 @@ model BettingBox {
   @@unique([roundId, playerId, boxNumber])
 }
 
+model PokerSeat {
+  id         String  @id @default(cuid())
+  tableId    String
+  playerId   String
+  orderIndex Int
+  sittingOut Boolean @default(false)
+
+  table  Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  player User  @relation(fields: [playerId], references: [id])
+
+  @@unique([tableId, playerId])
+  @@unique([tableId, orderIndex])
+}
+
+model PokerHand {
+  id                    String         @id @default(cuid())
+  tableId               String
+  number                Int
+  phase                 PokerHandPhase
+  dealerPlayerId        String
+  smallBlindPlayerId    String
+  bigBlindPlayerId      String
+  currentActorPlayerId  String?
+  streetWagerMillis     BigInt         @default(0)
+  lastRaiseSizeMillis   BigInt         @default(0)
+  lastAggressorPlayerId String?
+  actionCount           Int            @default(0)
+  settledKey            String?        @unique
+  nextHandDeadlineAt    DateTime?
+  createdAt             DateTime       @default(now())
+  completedAt           DateTime?
+  awardSummary          Json?
+
+  table         Table              @relation("TablePokerHands", fields: [tableId], references: [id], onDelete: Cascade)
+  currentFor    Table?             @relation("CurrentPokerHand")
+  participants  PokerParticipant[]
+  pots          PokerPot[]
+  actions       PokerAction[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([tableId, number])
+}
+
+model PokerParticipant {
+  id                       String                 @id @default(cuid())
+  handId                   String
+  playerId                 String
+  seatOrder                Int
+  status                   PokerParticipantStatus @default(ACTIVE)
+  streetContributionMillis BigInt                 @default(0)
+  totalContributionMillis  BigInt                 @default(0)
+  lockedMillis             BigInt                 @default(0)
+  hasActedThisStreet       Boolean                @default(false)
+  isDealer                 Boolean                @default(false)
+  isSmallBlind             Boolean                @default(false)
+  isBigBlind               Boolean                @default(false)
+
+  hand   PokerHand @relation(fields: [handId], references: [id], onDelete: Cascade)
+  player User      @relation(fields: [playerId], references: [id])
+
+  @@unique([handId, playerId])
+}
+
+model PokerPot {
+  id                 String @id @default(cuid())
+  handId             String
+  index              Int
+  capMillis          BigInt
+  amountMillis       BigInt
+  eligiblePlayerIds  Json
+  winnerPlayerIds    Json?
+  awarded            Boolean @default(false)
+
+  hand PokerHand @relation(fields: [handId], references: [id], onDelete: Cascade)
+
+  @@unique([handId, index])
+}
+
+model PokerAction {
+  id           String          @id @default(cuid())
+  handId       String
+  playerId     String
+  street       PokerHandPhase
+  type         PokerActionType
+  amountMillis BigInt          @default(0)
+  sequence     Int
+  createdAt    DateTime        @default(now())
+  idempotencyKey String        @unique
+
+  hand   PokerHand @relation(fields: [handId], references: [id], onDelete: Cascade)
+  player User      @relation(fields: [playerId], references: [id])
+}
+
 model InsuranceBet {
   id             String               @id @default(cuid())
   roundId        String
@@ -309,6 +442,7 @@ model LedgerEntry {
   roundId             String?
   boxId               String?
   insuranceBetId      String?
+  pokerHandId         String?
   transactionType     LedgerTransactionType
   amountMillis        BigInt
   balanceBeforeMillis BigInt
@@ -324,6 +458,7 @@ model LedgerEntry {
   round        Round?        @relation(fields: [roundId], references: [id])
   box          BettingBox?   @relation(fields: [boxId], references: [id])
   insuranceBet InsuranceBet? @relation(fields: [insuranceBetId], references: [id])
+  pokerHand    PokerHand?    @relation(fields: [pokerHandId], references: [id])
 
   @@index([playerId, timestamp])
   @@index([tableId, timestamp])

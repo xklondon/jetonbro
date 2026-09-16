@@ -47,7 +47,7 @@ test("two player sessions join a table and open betting", async ({ page, context
 
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText(/CURRENT PHASE/i)).toBeVisible();
-  await page.getByRole("button", { name: /Give jetons/ }).click();
+  await page.getByRole("button", { name: "GIVE JETONS" }).click();
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("100");
   await page.getByRole("button", { name: "Confirm" }).click();

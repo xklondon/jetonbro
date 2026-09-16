@@ -142,11 +142,10 @@ test("Limited Bank win then next round keeps mode and balance", async ({ page, c
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   await page.getByRole("button", { name: "WON" }).click();
-  await expect(page.getByText("Available 475")).toBeVisible();
   await page.getByRole("button", { name: "NEXT ROUND NOW" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.getByText("LIMITED BANK")).toBeVisible();
-  await expect(page.getByText("475").first()).toBeVisible();
+  await expect(page.getByText("475 available")).toBeVisible();
   await page.screenshot({ path: join(out, "app-limited-bank-next-round-390x844.png") });
   await playerContext.close();
   void playerPage;

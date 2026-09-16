@@ -11,7 +11,7 @@ Add the following instruction to Cursor project rules as the first mandatory rul
 - Add `npm run guardrails` to validate required project files, prohibited dependencies, and architectural boundaries.
 - Run `npm run guardrails` before tests and build in CI.
 - Keep `classic` as a replaceable visual skin, not a fork of the application.
-- Domain services and tests must run without importing any skin.
+- Required initial structure includes `src/domain/poker/` for Texas Hold’em.
 - No new game, action, balance mutation, phase, or payout type may be added without updating `.cursorfile` first.
 
 ## Required initial structure
@@ -39,5 +39,5 @@ The first implementation slice must verify:
 - Domain files do not import `src/ui/skins/`.
 - UI skin files do not import database access directly.
 - No payment, crypto, card-dealing, RNG, or hand-evaluation package is introduced.
-- Blackjack is the only enabled game identifier.
+- Blackjack and Texas Hold’em are the enabled game identifiers. Zilch remains coming later.
 - Tests and build cannot run in CI until the guardrail check passes.

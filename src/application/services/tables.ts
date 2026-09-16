@@ -10,7 +10,9 @@ import { parseJetonInput, parseWholeJetons, type JetonMillis } from "@/domain/mo
 import type { BlackjackPayoutRule } from "@/domain/blackjack/payouts";
 import { BLACKJACK_TABLE_DEFAULTS, parseMaxBoxesPerPlayer } from "@/domain/blackjack/settings";
 import { applyBankFundingMode, parseBankFunding, parseCardAssist } from "@/application/services/bankroll";
+import { dropPokerSeat, ensurePokerSeat, replacePokerSeats } from "@/application/services/poker-seats";
 import { collectInviteEmails } from "@/domain/invitations/email";
+import { pokerHandIsOpen } from "@/domain/tables/active-game";
 import { Prisma } from "@prisma/client";
 
 function isOpenDraftConflict(error: unknown): boolean {
@@ -43,9 +45,10 @@ export async function creditStartingJetonsOnce(
     actorId: string;
     startingJetonsPerPlayerMillis: bigint;
     isBankDealer: boolean;
+    game?: string;
   },
 ): Promise<void> {
-  if (input.isBankDealer) {
+  if (input.isBankDealer && input.game !== "POKER") {
     await tx.tableMember.update({
       where: { id: input.memberId },
       data: { startingJetonsCredited: true },
@@ -108,9 +111,14 @@ export async function createTable(input: {
   cardAssist?: string;
   bankFundingMode?: string;
   startingBank?: string;
+  smallBlind?: string;
+  bigBlind?: string;
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
+  }
+  if (input.game && input.game !== "BLACKJACK" && input.game !== "POKER") {
+    throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
   }
   if (input.game && !isPlayableGame(input.game)) {
     throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
@@ -128,12 +136,18 @@ export async function createTable(input: {
     const maxBoxesPerPlayer = parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer);
     const insuranceEnabled = input.insuranceEnabled ?? BLACKJACK_TABLE_DEFAULTS.insuranceEnabled;
     const blackjackPayout = input.blackjackPayout ?? BLACKJACK_TABLE_DEFAULTS.blackjackPayout;
+    const game = input.game === "POKER" ? "POKER" : "BLACKJACK";
+    const smallBlindMillis = input.smallBlind ? parseWholeJetons(input.smallBlind, "Small blind") : 5000n;
+    const bigBlindMillis = input.bigBlind ? parseWholeJetons(input.bigBlind, "Big blind") : 10000n;
+    if (game === "POKER" && (smallBlindMillis <= 0n || bigBlindMillis <= 0n || smallBlindMillis > bigBlindMillis)) {
+      throw new DomainError("INVALID_AMOUNT", "Big blind must be greater than small blind.");
+    }
 
     const table = await prisma.$transaction(async (tx) => {
       const created = await tx.table.create({
         data: {
           name: input.name.trim(),
-          game: "BLACKJACK",
+          game,
           ownerId: input.actorId,
           bankDealerId,
           minBetMillis: minBet,
@@ -145,19 +159,22 @@ export async function createTable(input: {
           bankMayDistributeJetons: input.bankMayDistributeJetons ?? true,
           cardAssist: parseCardAssist(input.cardAssist),
           bankFundingMode: parseBankFunding(input.bankFundingMode),
+          pokerSmallBlindMillis: smallBlindMillis,
+          pokerBigBlindMillis: bigBlindMillis,
           currentPhase: "TABLE_SETUP",
           status: "SETUP",
+          setupCompletedAt: game === "POKER" ? new Date() : undefined,
         },
       });
 
-      await tx.tableMember.create({
+      const ownerMember = await tx.tableMember.create({
         data: {
           tableId: created.id,
           userId: input.actorId,
           isOwner: true,
           isBankDealer: bankDealerId === input.actorId,
           availableMillis: 0n,
-          startingJetonsCredited: true,
+          startingJetonsCredited: game !== "POKER",
         },
       });
 
@@ -171,6 +188,19 @@ export async function createTable(input: {
             availableMillis: 0n,
             startingJetonsCredited: true,
           },
+        });
+      }
+
+      if (game === "POKER") {
+        await ensurePokerSeat(tx, created.id, input.actorId);
+        await creditStartingJetonsOnce(tx, {
+          tableId: created.id,
+          memberId: ownerMember.id,
+          userId: input.actorId,
+          actorId: input.actorId,
+          startingJetonsPerPlayerMillis,
+          isBankDealer: false,
+          game: "POKER",
         });
       }
 
@@ -197,7 +227,7 @@ export async function createTable(input: {
         });
       }
 
-      if (parseBankFunding(input.bankFundingMode) === "LIMITED") {
+      if (game !== "POKER" && parseBankFunding(input.bankFundingMode) === "LIMITED") {
         await applyBankFundingMode(tx, {
           table: { ...created, currentRound: null },
           actorId: input.actorId,
@@ -265,9 +295,16 @@ export async function finalizeSetup(input: {
   cardAssist?: string;
   bankFundingMode?: string;
   startingBank?: string;
+  game?: string;
+  smallBlind?: string;
+  bigBlind?: string;
+  seatOrder?: string[];
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
+  }
+  if (input.game && input.game !== "BLACKJACK" && input.game !== "POKER") {
+    throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
   }
   const emails = collectInviteEmails(input.emails ?? []);
   const startingJetonsPerPlayerMillis = parseWholeJetons(
@@ -277,6 +314,12 @@ export async function finalizeSetup(input: {
     const table = await requireOwnerOrBank(input.tableId, input.actorId);
     if (table.currentPhase !== "TABLE_SETUP") {
       throw new ConflictError("Table setup can only be finished during TABLE_SETUP.");
+    }
+    const game = input.game === "POKER" ? "POKER" : "BLACKJACK";
+    const smallBlindMillis = input.smallBlind ? parseWholeJetons(input.smallBlind, "Small blind") : table.pokerSmallBlindMillis;
+    const bigBlindMillis = input.bigBlind ? parseWholeJetons(input.bigBlind, "Big blind") : table.pokerBigBlindMillis;
+    if (game === "POKER" && (smallBlindMillis <= 0n || bigBlindMillis <= 0n || smallBlindMillis > bigBlindMillis)) {
+      throw new DomainError("INVALID_AMOUNT", "Big blind must be greater than small blind.");
     }
     const existingInvites = await prisma.invitation.findMany({
       where: { tableId: table.id, kind: "EMAIL" },
@@ -292,12 +335,17 @@ export async function finalizeSetup(input: {
         where: { id: table.id },
         data: {
           name: input.name.trim(),
+          game,
           startingJetonsPerPlayerMillis,
           setupCompletedAt: table.setupCompletedAt ?? new Date(),
           cardAssist: input.cardAssist ? parseCardAssist(input.cardAssist, table.cardAssist) : undefined,
+          pokerSmallBlindMillis: game === "POKER" ? smallBlindMillis : undefined,
+          pokerBigBlindMillis: game === "POKER" ? bigBlindMillis : undefined,
+          currentPokerHandId: game === "POKER" ? null : undefined,
+          updatedAt: new Date(),
         },
       });
-      if (input.bankFundingMode || input.startingBank) {
+      if (game !== "POKER" && (input.bankFundingMode || input.startingBank)) {
         const fresh = await tx.table.findUniqueOrThrow({
           where: { id: table.id },
           include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
@@ -309,6 +357,35 @@ export async function finalizeSetup(input: {
           startingBank: input.startingBank,
           idempotencyKey: input.idempotencyKey,
         });
+      }
+      if (game === "POKER") {
+        const members = await tx.tableMember.findMany({ where: { tableId: table.id, leftAt: null } });
+        const memberIds = members.map((member) => member.userId);
+        const requested = (input.seatOrder ?? []).filter((id) => memberIds.includes(id));
+        const remainder = memberIds.filter((id) => !requested.includes(id));
+        await replacePokerSeats(
+          tx,
+          table.id,
+          requested.length > 0
+            ? [...requested, ...remainder]
+            : [table.ownerId, ...memberIds.filter((id) => id !== table.ownerId)],
+        );
+        const ownerMember = members.find((member) => member.userId === table.ownerId);
+        if (ownerMember) {
+          await tx.tableMember.update({
+            where: { id: ownerMember.id },
+            data: { startingJetonsCredited: false },
+          });
+          await creditStartingJetonsOnce(tx, {
+            tableId: table.id,
+            memberId: ownerMember.id,
+            userId: table.ownerId,
+            actorId: input.actorId,
+            startingJetonsPerPlayerMillis,
+            isBankDealer: false,
+            game: "POKER",
+          });
+        }
       }
       for (const email of newEmails) {
         const created = await tx.invitation.create({
@@ -398,11 +475,21 @@ export async function requireOwnerOrBank(tableId: string, userId: string) {
   return table;
 }
 
+function pokerValueBlocked(table: {
+  game: string;
+  currentPokerHand: { phase: string; participants: { lockedMillis: bigint }[] } | null;
+}): boolean {
+  if (table.game !== "POKER") return false;
+  const locked = table.currentPokerHand?.participants.some((item) => item.lockedMillis > 0n) ?? false;
+  return locked || pokerHandIsOpen(table.currentPokerHand?.phase);
+}
+
 export async function requireOwner(tableId: string, userId: string) {
   const table = await prisma.table.findUnique({
     where: { id: tableId },
     include: {
       currentRound: { include: { boxes: true, insuranceBets: true } },
+      currentPokerHand: { include: { participants: true } },
       members: { where: { leftAt: null } },
     },
   });
@@ -444,6 +531,9 @@ export async function saveTable(input: { actorId: string; tableId: string; idemp
     if (table.status === "ARCHIVED") {
       throw new DomainError("TABLE_CLOSED", "This table is closed.");
     }
+    if (pokerValueBlocked(table)) {
+      throw new DomainError("LOCKED_FUNDS", "Finish or clear the current hand before saving.");
+    }
     await prisma.table.update({
       where: { id: table.id },
       data: { pausedAt: table.pausedAt ?? new Date() },
@@ -462,15 +552,27 @@ export async function closeTable(input: { actorId: string; tableId: string; idem
     const boxes = table.currentRound?.boxes.filter((box) => !box.removedAt) ?? [];
     const lockedBoxes = boxes.filter((box) => box.lockedBetMillis > 0n && !box.settledKey);
     const lockedInsurance = table.currentRound?.insuranceBets.filter((bet) => !bet.settledKey) ?? [];
-    if (lockedBoxes.length > 0 || lockedInsurance.length > 0 || table.bankLockedExposureMillis > 0n) {
+    const lockedPokerValue =
+      table.game === "POKER" &&
+      (table.currentPokerHand?.participants.some((item) => item.lockedMillis > 0n) ?? false);
+    const lockedPoker =
+      lockedPokerValue || (table.game === "POKER" && pokerHandIsOpen(table.currentPokerHand?.phase));
+    if (lockedBoxes.length > 0 || lockedInsurance.length > 0 || table.bankLockedExposureMillis > 0n || lockedPoker) {
       throw new DomainError(
         "LOCKED_FUNDS",
-        table.bankLockedExposureMillis > 0n
+        table.game === "POKER"
+          ? "Finish or clear the current hand before closing."
+          : table.bankLockedExposureMillis > 0n
           ? "This table still has reserved Bank exposure. Settle every locked position before closing."
           : "This table still has locked bets or Insurance. Settle every locked position before closing.",
       );
     }
-    if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
+    if (table.game === "POKER") {
+      const pokerPhase = table.currentPokerHand?.phase ?? "POKER_SETUP";
+      if (pokerPhase !== "POKER_SETUP" && pokerPhase !== "HAND_COMPLETE") {
+        throw new DomainError("LOCKED_FUNDS", "Finish or clear the current hand before closing.");
+      }
+    } else if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
       throw new DomainError(
         "CLOSE_BLOCKED",
         "Close the table only during TABLE SETUP or after the round is complete, with no locked funds.",
@@ -485,7 +587,7 @@ export async function closeTable(input: { actorId: string; tableId: string; idem
         where: { tableId: table.id, leftAt: null },
       });
       for (const member of members) {
-        if (member.isBankDealer) continue;
+        if (member.isBankDealer && table.game !== "POKER") continue;
         const amount = member.availableMillis;
         const ledgerKey = `close-table:${table.id}:${member.userId}`;
         const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey: ledgerKey } });
@@ -686,7 +788,15 @@ export async function distributeJetons(input: {
   }
   return withIdempotency(input.actorId, input.idempotencyKey, "distributeJetons", input, async () => {
     const table = await requireOwnerOrBank(input.tableId, input.actorId);
-    if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
+    if (table.game === "POKER") {
+      const hand = table.currentPokerHandId
+        ? await prisma.pokerHand.findUnique({ where: { id: table.currentPokerHandId } })
+        : null;
+      const pokerPhase = hand?.phase ?? "POKER_SETUP";
+      if (pokerPhase !== "POKER_SETUP" && pokerPhase !== "HAND_COMPLETE") {
+        throw new ConflictError("Jetons can only be distributed between hands.");
+      }
+    } else if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
       throw new ConflictError("Jetons can only be distributed before cards are dealt.");
     }
     if (
@@ -767,26 +877,38 @@ export async function removeMember(input: {
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "removeMember", input, async () => {
     const table = await requireOwnerOrBank(input.tableId, input.actorId);
-    if (table.currentPhase !== "TABLE_SETUP") {
+    if (table.game === "POKER") {
+      const hand = table.currentPokerHandId
+        ? await prisma.pokerHand.findUnique({ where: { id: table.currentPokerHandId } })
+        : null;
+      if (pokerHandIsOpen(hand?.phase ?? "POKER_SETUP")) {
+        throw new ConflictError("Players can only be removed between hands.");
+      }
+    } else if (table.currentPhase !== "TABLE_SETUP") {
       throw new ConflictError("Players can only be removed before a round starts.");
     }
     if (input.userId === table.ownerId) {
       throw new DomainError("CANNOT_REMOVE_OWNER", "The table owner cannot be removed.");
     }
-    await prisma.tableMember.updateMany({
-      where: { tableId: input.tableId, userId: input.userId, leftAt: null },
-      data: { leftAt: new Date() },
+    await prisma.$transaction(async (tx) => {
+      await tx.tableMember.updateMany({
+        where: { tableId: input.tableId, userId: input.userId, leftAt: null },
+        data: { leftAt: new Date() },
+      });
+      if (table.game === "POKER") {
+        await dropPokerSeat(tx, input.tableId, input.userId);
+      }
+      if (table.bankDealerId === input.userId) {
+        await tx.table.update({
+          where: { id: input.tableId },
+          data: { bankDealerId: table.ownerId },
+        });
+        await tx.tableMember.updateMany({
+          where: { tableId: input.tableId, userId: table.ownerId },
+          data: { isBankDealer: true },
+        });
+      }
     });
-    if (table.bankDealerId === input.userId) {
-      await prisma.table.update({
-        where: { id: input.tableId },
-        data: { bankDealerId: table.ownerId },
-      });
-      await prisma.tableMember.updateMany({
-        where: { tableId: input.tableId, userId: table.ownerId },
-        data: { isBankDealer: true },
-      });
-    }
     publishTable(input.tableId);
     return { ok: true };
   });

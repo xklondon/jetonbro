@@ -12,32 +12,28 @@ export function BankrollPanel({
   onToggle?: (mode: "OPEN" | "LIMITED") => void;
 }) {
   if (!bankroll) return null;
-  if (bankroll.mode === "OPEN") {
-    return (
-      <div className="bankroll-panel">
-        <div className="bankroll-line">OPEN BANK · Unlimited</div>
-        {manage && onToggle ? (
-          <button type="button" disabled={!bankroll.canToggle} onClick={() => onToggle("LIMITED")}>
-            LIMITED BANK
-          </button>
-        ) : null}
-        {manage && bankroll.lockedReason ? <p className="muted">{bankroll.lockedReason}</p> : null}
-      </div>
-    );
-  }
+  const limited = bankroll.mode === "LIMITED";
   return (
-    <div className="bankroll-panel">
-      <div className="bankroll-line">LIMITED BANK</div>
-      <div className="bankroll-stats">
-        <span>Available {bankroll.available.label}</span>
-        <span>Reserved {bankroll.reserved.label}</span>
-        <span>Total {bankroll.total.label}</span>
-      </div>
-      {manage && onToggle ? (
-        <button type="button" disabled={!bankroll.canToggle} onClick={() => onToggle("OPEN")}>
-          OPEN BANK
+    <div className="bankroll-panel compact-funding">
+      <div className="funding-toggle-row">
+        <span>OPEN BANK</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={limited}
+          className={`funding-switch${limited ? " on" : ""}`}
+          disabled={!manage || !bankroll.canToggle}
+          onClick={() => onToggle?.(limited ? "OPEN" : "LIMITED")}
+        >
+          <span className="funding-knob" />
         </button>
-      ) : null}
+        <span>LIMITED BANK</span>
+      </div>
+      <div className="bankroll-line">
+        {limited
+          ? `${bankroll.available.label} available · ${bankroll.reserved.label} reserved`
+          : "Unlimited"}
+      </div>
       {manage && bankroll.lockedReason ? <p className="muted">{bankroll.lockedReason}</p> : null}
     </div>
   );

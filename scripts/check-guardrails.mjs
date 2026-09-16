@@ -62,6 +62,7 @@ const requiredPaths = [
   "CHANGELOG.md",
   "docs/architecture/CURSOR_GUARDRAILS.md",
   "src/domain/blackjack",
+  "src/domain/poker",
   "src/domain/ledger",
   "src/domain/tables",
   "src/domain/invitations",
@@ -149,9 +150,10 @@ for (const relPath of enabledGameFiles) {
     .split(",")
     .map((part) => part.replace(/['"`]/g, "").trim())
     .filter(Boolean);
-  const disallowed = enabled.filter((game) => game !== "BLACKJACK");
+  const allowed = new Set(["BLACKJACK", "POKER"]);
+  const disallowed = enabled.filter((game) => !allowed.has(game));
   if (disallowed.length > 0) {
-    fail(`Games other than Blackjack are enabled: ${disallowed.join(", ")}`);
+    fail(`Games other than Blackjack and Texas Hold’em are enabled: ${disallowed.join(", ")}`);
   }
   if (!enabled.includes("BLACKJACK")) {
     fail("ENABLED_GAMES must include BLACKJACK.");
@@ -164,8 +166,8 @@ for (const file of srcFiles) {
   if (rel.startsWith("src/domain/") || rel.startsWith("src/application/")) {
     const source = readFileSync(file, "utf8");
     if (
-      /id:\s*["'](POKER|ZILCH)["'][\s\S]{0,120}available:\s*true/.test(source) ||
-      /playable:\s*true[\s\S]{0,80}(POKER|ZILCH)|(POKER|ZILCH)[\s\S]{0,80}playable:\s*true/.test(source)
+      /id:\s*["']ZILCH["'][\s\S]{0,120}available:\s*true/.test(source) ||
+      /playable:\s*true[\s\S]{0,80}ZILCH|ZILCH[\s\S]{0,80}playable:\s*true/.test(source)
     ) {
       fail(`A game other than Blackjack appears enabled in ${rel}`);
     }

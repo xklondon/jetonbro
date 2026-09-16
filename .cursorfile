@@ -10,7 +10,7 @@ Cursor must never silently weaken, bypass, delete, or contradict a rule in this 
 
 JetonBro tracks virtual jetons used alongside physical games. Physical cards, physical money, hand evaluation, dealing, randomness, and payment processing are always outside the application.
 
-Blackjack is the only implemented game until its full two-device flow is accepted. Poker and Zilch are future games, not reasons to build a generic rules engine now.
+Blackjack and Texas Hold’em are implemented as separate domain modules. Zilch remains coming later. Poker must never be folded into the Blackjack rules engine.
 
 ## Mandatory invariants
 
@@ -36,12 +36,19 @@ No backward transitions and no phase skipping.
 
 Insurance is a Bank-triggered window during PLAYING, not a phase. It is settled independently during PAYOUT.
 
+## Texas Hold’em phase sequence
+
+`POKER_SETUP -> PRE_FLOP -> FLOP -> TURN -> RIVER -> SHOWDOWN -> HAND_COMPLETE -> PRE_FLOP`
+
+The Table Owner advances physical-card streets only after the current betting round is complete. If one Player remains, the hand ends immediately without Showdown. Physical cards stay offline; there is no shuffling, dealing, deck, or hand evaluation.
+
 ## Accounting
 
 - Unit: millijetons (`bigint`, 1000 = 1 jeton). Floating-point arithmetic is not used for balances.
 - AVAILABLE is `TableMember.availableMillis`.
 - LOCKED_BET is `BettingBox.lockedBetMillis`.
 - LOCKED_INSURANCE is `InsuranceBet.amountMillis` until Insurance is settled.
+- LOCKED_POKER is `PokerParticipant.lockedMillis` until the hand is awarded. Poker wagers move `AVAILABLE → LOCKED_POKER` and never debit or credit `BANK_VIRTUAL_RESERVE`. Side pots follow all-in contribution levels. Split pots divide equally; millijeton remainder is assigned left of the dealer button.
 - BANK_VIRTUAL_RESERVE is unlimited and not stored as a balance. In Open Bank it is the source of minted table jetons and payout profit, and the sink of lost ordinary and Insurance stakes.
 - Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Initial funding is `BANK_VIRTUAL_RESERVE → BANK_AVAILABLE` once. Before a Player stake is accepted, the Bank reserves maximum configured box profit exposure (`1.5×` for 3:2, `1.2×` for 6:5). Insurance reserves `2×` Insurance stake independently. Settlement consumes or releases that reserved exposure in the same transaction as the Player ledger. The Player is credited exactly once by the existing `BET_*` / `BLACKJACK_RETURN` / `INSURANCE_*` entry. `BANK_PAYOUT` and `BANK_STAKE_TAKE` are Bank-side legs (`playerId` null), never a second Player credit. Insufficient coverage rejects the Player action without debiting them.
 - Commands that change value require an idempotency key and write at least one ledger entry in the same transaction.
@@ -52,7 +59,8 @@ Insurance is a Bank-triggered window during PLAYING, not a phase. It is settled 
 
 - Owner: create table, invite, add/remove players before a round, assign Bank/Dealer, distribute jetons, save table, close table and transport remaining AVAILABLE to `PLAYER_POCKET`, or permanently delete an unused empty draft. Dealer reassignment does not transfer ownership.
 - Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next round. Optionally enter/correct ranks on any Player box and the Dealer hand during PLAYING. May toggle Open/Limited Bank during unstaked BETTING. May change Card Assist during TABLE_SETUP or unstaked BETTING.
-- Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open. Optionally enter/correct ranks on their own selected box during PLAYING. Never edit another Player’s box or the Dealer hand.
+- Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open. Optionally enter/correct ranks on their own selected box during PLAYING. Never edit another Player’s box or the Dealer hand. In Texas Hold’em only the current actor may Fold/Check/Call/Bet/Raise/All-in.
+- Table Owner: may switch games during TABLE_SETUP, unstaked BETTING, ROUND_COMPLETE, POKER_SETUP, or HAND_COMPLETE. Locked Bet, Insurance, Bank exposure, or LOCKED_POKER blocks switching with `Finish or clear the current hand before switching games`. Switching preserves the table, memberships, AVAILABLE, pockets, owner, invitations/QR, and seat order. Limited Bank buckets freeze in place during Poker and restore unchanged on return to Blackjack.
 
 ## Design architecture
 
@@ -85,9 +93,12 @@ src/ui/skins/registry.ts     typed skin selection
 - `AUTH_URL` is the public origin for magic links, invitation URLs, and Auth.js redirects. Production redirects must never use `localhost` or `*.railway.internal`.
 - Successful magic-link login without an invitation lands on authenticated home (`/`). Invitation callbacks stay on `/join/{token}` using the existing EMAIL/QR token model.
 - Creating a table uses domain Blackjack defaults (`THREE_TWO` payout, 3 boxes, Insurance on). The creator is Bank/Dealer and remains in `TABLE_SETUP` until they open betting.
-- `CREATE A TABLE` immediately creates or reuses one `TABLE_SETUP` draft and opens `/tables/{tableId}` with a single setup mask over the real Dealer table. The mask shows compact game tiles, table settings, the complete shared table QR (`SCAN TO JOIN TABLE`, `COPY LINK`, `SHARE`), then compact email invite, with `CREATE TABLE` sticky. There is no separate waiting-room page.
+- `CREATE A TABLE` immediately creates or reuses one `TABLE_SETUP` draft and opens `/tables/{tableId}` with a single setup mask over the real Dealer table. The mask shows compact game tiles (Blackjack, Texas Hold’em, Zilch — Coming later), table settings, the complete shared table QR (`SCAN TO JOIN TABLE`, `COPY LINK`, `SHARE`), then compact email invite, with `CREATE TABLE` sticky. There is no separate waiting-room page.
 - There is one reusable table QR join URL. Multiple authenticated users may redeem it; each user gets one membership. Email invitations stay individually addressed.
-- During `TABLE_SETUP` the Dealer table shows `CURRENT PHASE: TABLE SETUP`, player boxes for Invited/Joined/Ready, a compact QR overlay control, `+ PLAYER`, and `OPEN BETTING`. `OPEN BETTING` is enabled only after a Player has joined and is the `TABLE_SETUP -> BETTING` command.
+- During `TABLE_SETUP` the Dealer table shows `CURRENT PHASE: TABLE SETUP`, player boxes for Invited/Joined/Ready, a compact QR overlay control, `+ PLAYER`, and `OPEN BETTING`. `OPEN BETTING` is enabled only after a Player has joined and is the `TABLE_SETUP -> BETTING` command. Selecting Texas Hold’em on the setup mask and confirming `CREATE TABLE` finalizes the draft as Poker and opens `POKER_SETUP` with no Blackjack round. Poker setup shows small/big blinds, invitations, starting jetons, and a numbered dealer rotation order. The Table Owner reorders active Poker seats with Move up / Move down during `POKER_SETUP` and `HAND_COMPLETE`; the Dealer button rotates through that stored order. Seat order cannot change during an active hand (`SEATS_LOCKED`).
+- Shared surfaces project the active game with `projectActiveGame`: Blackjack uses the Round phase; Poker uses the PokerHand phase. Home cards, table headers, SSE snapshot ordering, reconnect, save/close eligibility, and owner controls never show a stale Blackjack `Table.currentPhase` while Poker is active. Examples: `Texas Hold’em · PRE-FLOP`, `Texas Hold’em · SHOWDOWN`, `Texas Hold’em · HAND COMPLETE`. Closing or saving a Poker table is blocked while `LOCKED_POKER` exists or an active hand is unsettled.
+- Next Poker hand: after `HAND_COMPLETE` the owner uses `NEXT HAND NOW` or `NEXT HAND IN 7 SECONDS`. The seven-second option stores `PokerHand.nextHandDeadlineAt`. Refresh resumes that deadline. At zero, or on `NEXT HAND NOW`, the table rotates the dealer once, posts SB/BB once, and opens exactly one `PRE_FLOP` hand. Duplicate commands cannot create a second hand or post blinds twice.
+- The current Poker actor’s seat uses a pulsing gold highlight (`prefers-reduced-motion` uses a static strong outline). Their screen says `YOUR TURN`; other screens say `Waiting for {name}`.
 - During BETTING the Bank may `DEAL CARDS NOW` or `DEAL IN 7 SECONDS`. Both require at least one valid locked player bet (`lockedBetMillis > 0`). Display leftover `originalStakeMillis` does not enable Deal. The seven-second option stores `Round.bettingCloseDeadlineAt` and closes betting exactly once at that deadline. Clients display the same countdown from that deadline. `DEAL CARDS NOW` atomically clears that deadline and enters PLAYING exactly once. A repeated Deal while already PLAYING returns the current snapshot. A Deal sent from the wrong phase returns `PHASE_CONFLICT` and the client refreshes.
 - Table stores `startingJetonsPerPlayerMillis`. When an invited user becomes a joined member, that membership is credited once (`starting-jetons:{tableId}:{userId}` plus `TableMember.startingJetonsCredited`). The Bank may later add more with the existing Bank-only control. The Bank is not a betting player.
 - Redeem/join retries are idempotent: they do not create a second membership or credit starting jetons twice.
@@ -143,23 +154,24 @@ Full acceptance means:
 
 ## Current status
 
-- Repository: Blackjack MVP with authenticated welcome / create-table journey
-- Current game: Blackjack MVP
+- Repository: Blackjack MVP and Texas Hold’em MVP with authenticated welcome / create-table journey
+- Current game: Blackjack MVP and Texas Hold’em MVP
+- Next milestone: Zilch remains coming later
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
-- Bank accounting: Open Bank uses unlimited `BANK_VIRTUAL_RESERVE`. Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Card Assist defaults to `OFF`. Optional rank records and Limited Bank accounting are accepted: Player credited once per settlement; `BANK_PAYOUT` / `BANK_STAKE_TAKE` are Bank-side; table value `AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE` is conserved except explicit `BANK_VIRTUAL_RESERVE` funding.
+- Bank accounting: Open Bank uses unlimited `BANK_VIRTUAL_RESERVE`. Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Poker locks `LOCKED_POKER` from Player AVAILABLE and never touches Bank buckets. Card Assist defaults to `OFF`. Optional rank records and Limited Bank accounting are accepted: Player credited once per settlement; `BANK_PAYOUT` / `BANK_STAKE_TAKE` are Bank-side; table value `AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + LOCKED_POKER + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE` is conserved except explicit `BANK_VIRTUAL_RESERVE` funding. Limited Bank buckets freeze in place while Texas Hold’em is active.
 - Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true), and `startingJetonsPerPlayerMillis` are server-authoritative
-- Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack
-- Authenticated home: compact open-table rows show table name, game, phase, Bank/Dealer name, current Players, player/box counts, and `RETURN TO TABLE`. The owner sees every Player’s table balance; a non-owner sees Player names and only their own balance. The owner overflow shows `DELETE TABLE` on an empty draft, or `SAVE TABLE` and `CLOSE TABLE & SAVE BALANCES` on a started table. It does not also offer `CLOSE & REMOVE TABLE`.
+- Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack. The Poker table owner is a seated Player and receives the starting allocation.
+- Authenticated home: compact open-table rows show table name, game, phase, Bank/Dealer name, current Players, player/box counts, and `RETURN TO TABLE`. While Poker is active the row shows the projected Hold’em headline, never a leftover Blackjack round phase. The owner sees every Player’s table balance; a non-owner sees Player names and only their own balance. The owner overflow shows `DELETE TABLE` on an empty draft, or `SAVE TABLE` and `CLOSE TABLE & SAVE BALANCES` on a started table. It does not also offer `CLOSE & REMOVE TABLE`.
 - Dealer `TABLE_SETUP`: after `CREATE TABLE`, the real table surface is visible immediately. Compact QR overlay and `+ PLAYER` stay in the top controls. No permanent centre QR / waiting-room page. `CREATE TABLE` finalizes the existing draft; it does not add a second setup step.
 - Betting close: `Round.bettingCloseDeadlineAt` is the server-authoritative 7-second deal deadline
 - Next round: after every box and required Insurance stake is settled, the Bank uses `NEXT ROUND NOW` or `NEXT ROUND IN 7 SECONDS`. The seven-second option stores `Round.nextRoundDeadlineAt` (not `bettingCloseDeadlineAt`). Refresh resumes that deadline. At zero, or on `NEXT ROUND NOW`, the table opens exactly one new BETTING round. A PAYOUT snapshot that already has every required settlement settled can enable next-round. A blocked restart returns `NEXT_ROUND_BLOCKED`.
 - Dealer PAYOUT: compact vertical player list. Each box has its own horizontal result rail, left to right: `LOST`, `STAND OFF` (PUSH), `BLACKJACK`, `WON`. Swipe left LOST, swipe right WON, double-tap STAND OFF/PUSH; BLACKJACK is button-only. Gestures settle only that box. Labels come from `suggestedPayout`. Insurance is independent of box swipes.
 - Player celebrations use the settlement ID/box state as the dedupe key: Blackjack always plays the strong overlay once after confirmed settlement; a win sometimes plays the strong overlay and otherwise stays on the row; push is a calm return; loss is restrained Tough Luck. The Dealer keeps compact row confirmation only. Reduced motion disables overlays. Polling, SSE duplication, and refresh must not replay them.
-- Owner SAVE TABLE sets `Table.pausedAt` and keeps membership, table balances, Card Assist, funding mode, Limited Bank buckets, optional rank records, and ledger history. `CLOSE TABLE & SAVE BALANCES` is owner-only. Empty drafts (`TABLE_SETUP`, no joined Players, no ledger, no staked rounds) may be hard-deleted with unused invitations/tokens (`DELETE TABLE`). A started table is never hard-deleted: `CLOSE TABLE & SAVE BALANCES` requires `ROUND_COMPLETE` or `TABLE_SETUP` with no locked Bet/Insurance and no Bank exposure, transfers Player AVAILABLE to `PLAYER_POCKET` exactly once via the existing close-table transaction (`TABLE_TRANSFER_OUT`), archives the table including remaining Limited Bank history, removes it from Open Tables, and keeps ledger/round/card history. Locked funds or Bank exposure return `LOCKED_FUNDS`. Later joins write `TABLE_TRANSFER_IN`. Open Bank virtual reserve is not stored or transported into a Player pocket. Dealer reassignment does not transfer ownership.
+- Owner SAVE TABLE sets `Table.pausedAt` and keeps membership, table balances, Card Assist, funding mode, Limited Bank buckets, optional rank records, and ledger history. `CLOSE TABLE & SAVE BALANCES` is owner-only. Empty drafts (`TABLE_SETUP`, no joined Players, no ledger, no staked rounds) may be hard-deleted with unused invitations/tokens (`DELETE TABLE`). A started table is never hard-deleted: `CLOSE TABLE & SAVE BALANCES` requires `ROUND_COMPLETE` or `TABLE_SETUP` with no locked Bet/Insurance and no Bank exposure, or Poker `POKER_SETUP` / `HAND_COMPLETE` with no `LOCKED_POKER` and no unsettled hand. It transfers Player AVAILABLE to `PLAYER_POCKET` exactly once via the existing close-table transaction (`TABLE_TRANSFER_OUT`), archives the table including remaining Limited Bank history, removes it from Open Tables, and keeps ledger/round/card history. Locked funds, Bank exposure, or an active Poker hand return `LOCKED_FUNDS`. Later joins write `TABLE_TRANSFER_IN`. Open Bank virtual reserve is not stored or transported into a Player pocket. Dealer reassignment does not transfer ownership.
 - Player is credited exactly once per settlement by the existing `BET_*` / `BLACKJACK_RETURN` / `INSURANCE_*` ledger row. `BANK_PAYOUT` and `BANK_STAKE_TAKE` are Bank-side legs (`playerId` null) in the same transaction.
 - Verification: lightweight local changes use guardrails, affected Vitest, and `next build`. Full Playwright, screenshots, commit, push, and Railway deploy only for ledger/auth/phase/migration work or an accepted release batch
 - Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
 - Email delivery: Resend HTTP API. Magic-link sign-in works on production
 - Phase commands: `OPEN BETTING` starts Betting; `DEAL CARDS NOW` closes Betting and starts Playing; `PAYOUT PHASE` moves Playing to Payout; `NEXT ROUND NOW` starts the next Betting round. Wrong-phase clicks return `PHASE_CONFLICT` or `NEXT_ROUND_BLOCKED` instead of a silent no-op
-- Next milestone: change-game UX after accepted close/archive transport
+- Next milestone: Zilch remains coming later

@@ -24,7 +24,7 @@ Limited Bank table conservation, excluding only explicit `BANK_VIRTUAL_RESERVE` 
 | BANK_VIRTUAL_RESERVE | Unlimited Open Bank source/sink. Not stored as a row. |
 | BANK_AVAILABLE | Limited Bank spendable bankroll (`Table.bankAvailableMillis`) |
 | BANK_LOCKED_EXPOSURE | Limited Bank reserved maximum profit (`Table.bankLockedExposureMillis`) |
-| PLAYER_POCKET | `PlayerAccount.globalAvailableMillis` when leaving a table |
+| LOCKED_POKER | Poker street/pot contributions until awarded (`PokerParticipant.lockedMillis`) |
 
 ## Payouts
 
@@ -63,10 +63,14 @@ Profit is paid by the Bank virtual reserve. Total return is what is credited to 
 | Limited Bank pays a win | BANK_LOCKED_EXPOSURE | AVAILABLE (Player is credited once by BET_WIN_RETURN / BLACKJACK_RETURN; BANK_PAYOUT is the Bank-side exposure consumption) |
 | Limited Bank takes Insurance loss | LOCKED_INSURANCE | BANK_AVAILABLE |
 | Increase Limited Bank | BANK_VIRTUAL_RESERVE | BANK_AVAILABLE |
-| Decrease Limited Bank | BANK_AVAILABLE | BANK_VIRTUAL_RESERVE |
+| Player posts a Poker blind or wager | AVAILABLE | LOCKED_POKER |
+| Uncalled Poker wager returns | LOCKED_POKER | AVAILABLE |
+| Poker pot is awarded | LOCKED_POKER | AVAILABLE |
 | Next round | AVAILABLE | AVAILABLE (unchanged) |
 | Another table | AVAILABLE | PLAYER_POCKET, then destination AVAILABLE |
 
 Box settlement never writes Insurance rows. Insurance settlement never writes box outcomes.
 
 Ledger entries are append-only and required for every balance change. Player settlement writes one Player-side row (`playerId` set): `BET_WIN_RETURN`, `BET_PUSH_RETURN`, `BET_LOSS`, `BLACKJACK_RETURN`, `INSURANCE_WIN_RETURN`, or `INSURANCE_LOSS`. Limited Bank writes matching Bank-side rows in the same transaction (`playerId` null): `BANK_PAYOUT` consumes reserved exposure; `BANK_STAKE_TAKE` credits `BANK_AVAILABLE` with a lost stake; `BANK_EXPOSURE_RESERVED` / `BANK_EXPOSURE_RELEASED` move value between `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE`. `BANK_PAYOUT` is never a second Player credit. Each of those rows has its own idempotency key, exact source and destination in the description, and exact millijeton amount.
+
+Table-wide conservation is `AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + LOCKED_POKER + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE`, plus Player pockets outside the table. Poker never mints or burns `BANK_VIRTUAL_RESERVE`. Limited Bank buckets freeze unchanged while Texas Hold’em is active.

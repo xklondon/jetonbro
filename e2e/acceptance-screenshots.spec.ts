@@ -33,7 +33,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
-  await page.getByRole("button", { name: /Give jetons/ }).click();
+  await page.getByRole("button", { name: "GIVE JETONS" }).click();
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("200");
   await page.getByRole("button", { name: "Confirm" }).click();

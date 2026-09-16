@@ -19,6 +19,8 @@ const schema = z.object({
   maxBoxesPerPlayer: z.number().int().min(1).max(8).optional(),
   insuranceEnabled: z.boolean().optional(),
   bankMayDistributeJetons: z.boolean().optional(),
+  smallBlind: z.string().optional(),
+  bigBlind: z.string().optional(),
   idempotencyKey: z.string().min(8),
 });
 
@@ -52,6 +54,8 @@ export async function POST(request: Request) {
       maxBoxesPerPlayer: body.maxBoxesPerPlayer ?? BLACKJACK_TABLE_DEFAULTS.maxBoxesPerPlayer,
       insuranceEnabled: body.insuranceEnabled ?? BLACKJACK_TABLE_DEFAULTS.insuranceEnabled,
       bankMayDistributeJetons: body.bankMayDistributeJetons,
+      smallBlind: body.smallBlind,
+      bigBlind: body.bigBlind,
       idempotencyKey: body.idempotencyKey,
     });
     return NextResponse.json(result);

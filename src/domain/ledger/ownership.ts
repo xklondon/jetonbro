@@ -148,4 +148,22 @@ export const VALUE_OWNERSHIP: ValueMove[] = [
     to: BANK_VIRTUAL_RESERVE,
     notes: "Explicit BANK_FUNDING_ADJUSTMENT burn. Blocked while BANK_LOCKED_EXPOSURE > 0. Cannot go negative.",
   },
+  {
+    operation: "Player posts a Poker blind or wager",
+    from: "AVAILABLE",
+    to: "LOCKED_POKER",
+    notes: "Street contributions stay locked in the pot. Poker never touches BANK_VIRTUAL_RESERVE.",
+  },
+  {
+    operation: "Uncalled Poker wager returns",
+    from: "LOCKED_POKER",
+    to: "AVAILABLE",
+    notes: "Only the extra unmatched chips return. Remaining pot stays locked.",
+  },
+  {
+    operation: "Poker pot is awarded",
+    from: "LOCKED_POKER",
+    to: "AVAILABLE",
+    notes: "Eligible winners are credited from locked pot contributions. Remainder chips go left of the dealer. No Bank mint.",
+  },
 ];

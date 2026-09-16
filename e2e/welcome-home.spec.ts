@@ -23,7 +23,7 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   const draftUrl = page.url();
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeEnabled();
-  await expect(page.getByRole("button", { name: /Poker/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Texas Hold/ })).toBeEnabled();
   await expect(page.getByRole("button", { name: /Zilch/ })).toBeDisabled();
   await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
   await expect(page.locator(".setup-mask").getByLabel("Table name")).toHaveValue("Alex's table");

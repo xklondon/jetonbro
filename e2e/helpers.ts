@@ -34,6 +34,37 @@ export async function openSetupSheet(page: Page) {
   await expect(page.locator(".setup-mask").getByText("SCAN TO JOIN TABLE")).toBeVisible();
 }
 
+export async function createPokerTable(
+  page: Page,
+  name: string,
+  options?: { starting?: string; smallBlind?: string; bigBlind?: string },
+) {
+  await openSetupSheet(page);
+  await page.getByRole("button", { name: /Texas Hold/ }).click();
+  await expect(page.getByLabel("Small blind")).toBeVisible();
+  await expect(page.getByLabel("Big blind")).toBeVisible();
+  await expect(page.getByLabel("Dealer rotation order")).toBeVisible();
+  await page.locator(".setup-mask").getByLabel("Table name").fill(name);
+  await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
+  if (options?.smallBlind) {
+    await page.getByLabel("Small blind").fill(options.smallBlind);
+  }
+  if (options?.bigBlind) {
+    await page.getByLabel("Big blind").fill(options.bigBlind);
+  }
+  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TEXAS HOLD’EM" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
+}
+
+export async function setupJoinUrl(page: Page) {
+  await expect(page.locator(".setup-mask [data-join-url]")).toBeVisible();
+  return page.locator(".setup-mask [data-join-url]").getAttribute("data-join-url");
+}
+
 export async function createBlackjackTable(
   page: Page,
   name: string,

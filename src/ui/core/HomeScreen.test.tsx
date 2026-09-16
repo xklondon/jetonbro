@@ -19,6 +19,7 @@ const homeCard = (overrides: Partial<HomeTableCard> = {}): HomeTableCard => ({
   name: "Salon table",
   game: "Blackjack",
   phase: "TABLE_SETUP",
+  headline: "Blackjack · TABLE SETUP",
   playerCount: 1,
   boxCount: 0,
   bankName: "Alex",
@@ -113,16 +114,17 @@ test("empty authenticated home shows create and join", () => {
   expect(html).toContain("JOIN A TABLE");
 });
 
-test("Blackjack is selectable while Poker and Zilch are not", () => {
+test("Blackjack and Texas Hold’em are selectable while Zilch is not", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicGameCards, {
       selectedId: "BLACKJACK",
-      onSelectBlackjack: () => undefined,
+      onSelect: () => undefined,
     }),
   );
   expect(html).toContain("Blackjack");
+  expect(html).toContain("Texas Hold’em");
   expect(html).toContain("Coming later");
-  expect((html.match(/aria-disabled="true"/g) ?? []).length).toBe(2);
+  expect((html.match(/aria-disabled="true"/g) ?? []).length).toBe(1);
   expect(html).toContain('aria-pressed="true"');
 });
 

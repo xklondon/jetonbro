@@ -36,3 +36,15 @@ test("insurance moves AVAILABLE into LOCKED_INSURANCE, not LOCKED_BET", () => {
   expect(afterInsurance.LOCKED_BET).toBe(jeton(25));
   expect(afterInsurance.LOCKED_INSURANCE).toBe(jeton(10));
 });
+
+test("poker wagers move AVAILABLE into LOCKED_POKER", () => {
+  const started = { ...emptyBuckets(), AVAILABLE: jeton(100) };
+  const afterBlind = moveBetweenBuckets(started, {
+    from: "AVAILABLE",
+    to: "LOCKED_POKER",
+    amount: jeton(10),
+  });
+  expect(afterBlind.AVAILABLE).toBe(jeton(90));
+  expect(afterBlind.LOCKED_POKER).toBe(jeton(10));
+  expect(afterBlind.LOCKED_BET).toBe(0n);
+});

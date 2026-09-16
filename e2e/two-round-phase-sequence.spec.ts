@@ -15,6 +15,7 @@ async function playOneRound(bank: Page, player: Page) {
   await addJetons(player, "25");
   await expect(player.getByText("25").first()).toBeVisible();
   await expect(bank.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
+  await expect(bank.getByText("DEAL CARDS NOW closes Betting and starts Playing.")).toBeVisible();
   await bank.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(bank.getByText("PLAYING", { exact: true })).toBeVisible();
   await expect(player.getByText("PLAYING").or(player.getByText("Cards are in play").or(player.getByText("YOUR JETONS")))).toBeVisible();
@@ -54,7 +55,7 @@ test("two browsers complete two full rounds through the production command path"
   await page.reload();
   await playerPage.reload();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
-  await expect(page.getByText("DEAL CARDS NOW closes Betting and starts Playing.")).toBeVisible();
+  await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
 
   await playOneRound(page, playerPage);
   await page.getByRole("button", { name: "NEXT ROUND NOW" }).click();

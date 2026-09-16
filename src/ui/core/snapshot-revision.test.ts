@@ -53,3 +53,18 @@ test("prefers the newer round when timestamps match", () => {
     ),
   ).toBe(false);
 });
+
+test("a lower Poker turn cannot reverse the current actor or street", () => {
+  expect(
+    shouldApplySnapshot(
+      { revision: 400, phase: "FLOP", roundNumber: 2, turnNumber: 4 },
+      { revision: 400, phase: "PRE_FLOP", roundNumber: 2, turnNumber: 1 },
+    ),
+  ).toBe(false);
+  expect(
+    shouldApplySnapshot(
+      { revision: 400, phase: "PRE_FLOP", roundNumber: 2, turnNumber: 1 },
+      { revision: 400, phase: "FLOP", roundNumber: 2, turnNumber: 4 },
+    ),
+  ).toBe(true);
+});

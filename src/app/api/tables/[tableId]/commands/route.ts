@@ -37,6 +37,17 @@ import {
   setCardAssist,
   setBankFunding,
 } from "@/application/services/blackjack-round";
+import { switchGame } from "@/application/services/switch-game";
+import {
+  advancePokerStreet,
+  awardPokerPots,
+  configurePoker,
+  pokerAct,
+  scheduleNextPokerHand,
+  setPokerWinners,
+  startNextPokerHand,
+  startTexasHoldem,
+} from "@/application/services/poker-hand";
 import { BOX_OUTCOMES } from "@/domain/blackjack/payouts";
 import { INSURANCE_RESOLUTIONS } from "@/domain/blackjack/payouts";
 import { publicOrigin } from "@/application/auth-urls";
@@ -87,8 +98,13 @@ export async function POST(
     return NextResponse.json(result ?? { ok: true });
   } catch (error) {
     const phase = await prisma.table
-      .findUnique({ where: { id: tableId }, select: { currentPhase: true } })
-      .then((row) => row?.currentPhase)
+      .findUnique({
+        where: { id: tableId },
+        select: { currentPhase: true, game: true, currentPokerHand: { select: { phase: true } } },
+      })
+      .then((row) =>
+        row?.game === "POKER" ? (row.currentPokerHand?.phase ?? "POKER_SETUP") : row?.currentPhase,
+      )
       .catch(() => undefined);
     const code = error instanceof DomainError ? error.code : "UNEXPECTED";
     logCommandFailure({ command, tableId, actorId, phase, code });
@@ -165,6 +181,10 @@ async function dispatch(
         cardAssist: p.cardAssist ? String(p.cardAssist) : undefined,
         bankFundingMode: p.bankFundingMode ? String(p.bankFundingMode) : undefined,
         startingBank: p.startingBank ? String(p.startingBank) : undefined,
+        game: p.game ? String(p.game) : undefined,
+        smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
+        bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
+        seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
       });
     case "abandonDraft":
       return abandonDraft(ctx);
@@ -256,6 +276,50 @@ async function dispatch(
         bankFundingMode: String(p.bankFundingMode ?? ""),
         startingBank: p.startingBank ? String(p.startingBank) : undefined,
       });
+    case "switchGame":
+      return switchGame({
+        ...ctx,
+        game: String(p.game ?? ""),
+        smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
+        bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
+        seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
+      });
+    case "configurePoker":
+      return configurePoker({
+        ...ctx,
+        smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
+        bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
+        seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",") : undefined,
+      });
+    case "startTexasHoldem":
+      return startTexasHoldem({
+        ...ctx,
+        smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
+        bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
+        seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",") : undefined,
+      });
+    case "pokerAct":
+      return pokerAct({
+        ...ctx,
+        type: String(p.type ?? "") as "FOLD" | "CHECK" | "CALL" | "BET" | "RAISE" | "ALL_IN",
+        amount: p.amount ? String(p.amount) : undefined,
+      });
+    case "advancePokerStreet":
+      return advancePokerStreet(ctx);
+    case "setPokerWinners":
+      return setPokerWinners({
+        ...ctx,
+        pots: JSON.parse(String(p.pots ?? "[]")) as { index: number; winnerIds: string[] }[],
+      });
+    case "awardPokerPots":
+      return awardPokerPots({
+        ...ctx,
+        pots: p.pots ? (JSON.parse(String(p.pots)) as { index: number; winnerIds: string[] }[]) : undefined,
+      });
+    case "startNextPokerHand":
+      return startNextPokerHand(ctx);
+    case "scheduleNextPokerHand":
+      return scheduleNextPokerHand(ctx);
     case "saveTable":
       return saveTable(ctx);
     case "closeTable":

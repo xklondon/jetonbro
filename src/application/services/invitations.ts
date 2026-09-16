@@ -5,6 +5,7 @@ import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
 import { requireOwnerOrBank, creditStartingJetonsOnce, transferPocketIntoTable } from "@/application/services/tables";
+import { ensurePokerSeat } from "@/application/services/poker-seats";
 import { DomainError, NotFoundError } from "@/domain/errors";
 import { assertInvitationUsable } from "@/domain/invitations/types";
 
@@ -128,6 +129,7 @@ export async function joinWithToken(input: { userId: string; token: string; user
           actorId: input.userId,
           startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
           isBankDealer: false,
+          game: table.game,
         });
         await transferPocketIntoTable(tx, {
           tableId: table.id,
@@ -135,6 +137,9 @@ export async function joinWithToken(input: { userId: string; token: string; user
           userId: input.userId,
           actorId: input.userId,
         });
+      }
+      if (table.game === "POKER") {
+        await ensurePokerSeat(tx, table.id, input.userId);
       }
       return;
     }
@@ -175,6 +180,7 @@ export async function joinWithToken(input: { userId: string; token: string; user
         actorId: input.userId,
         startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
         isBankDealer: false,
+        game: table.game,
       });
       await transferPocketIntoTable(tx, {
         tableId: table.id,
@@ -182,6 +188,9 @@ export async function joinWithToken(input: { userId: string; token: string; user
         userId: input.userId,
         actorId: input.userId,
       });
+    }
+    if (member && table.game === "POKER") {
+      await ensurePokerSeat(tx, table.id, input.userId);
     }
   });
   publishTable(table.id);
@@ -223,7 +232,11 @@ export async function addPlayerManually(input: {
           actorId: input.actorId,
           startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
           isBankDealer: table.bankDealerId === existingUser.id,
+          game: table.game,
         });
+        if (table.game === "POKER") {
+          await ensurePokerSeat(tx, table.id, existingUser.id);
+        }
       });
       if (input.name && !existingUser.name) {
         await prisma.user.update({ where: { id: existingUser.id }, data: { name: input.name } });

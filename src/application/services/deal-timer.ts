@@ -5,6 +5,7 @@
 const globalDeal = globalThis as typeof globalThis & {
   __jetonbroDealTimers?: Map<string, ReturnType<typeof setTimeout>>;
   __jetonbroNextRoundTimers?: Map<string, ReturnType<typeof setTimeout>>;
+  __jetonbroNextHandTimers?: Map<string, ReturnType<typeof setTimeout>>;
 };
 
 function timers(): Map<string, ReturnType<typeof setTimeout>> {
@@ -59,4 +60,33 @@ export function scheduleNextRoundTimer(
     void start(tableId);
   }, delay);
   nextRoundTimers().set(tableId, handle);
+}
+
+function nextHandTimers(): Map<string, ReturnType<typeof setTimeout>> {
+  if (!globalDeal.__jetonbroNextHandTimers) {
+    globalDeal.__jetonbroNextHandTimers = new Map();
+  }
+  return globalDeal.__jetonbroNextHandTimers;
+}
+
+export function clearNextHandTimer(tableId: string): void {
+  const existing = nextHandTimers().get(tableId);
+  if (existing) {
+    clearTimeout(existing);
+    nextHandTimers().delete(tableId);
+  }
+}
+
+export function scheduleNextHandTimer(
+  tableId: string,
+  deadline: Date,
+  start: (tableId: string) => Promise<void>,
+): void {
+  clearNextHandTimer(tableId);
+  const delay = Math.max(0, deadline.getTime() - Date.now()) + 25;
+  const handle = setTimeout(() => {
+    nextHandTimers().delete(tableId);
+    void start(tableId);
+  }, delay);
+  nextHandTimers().set(tableId, handle);
 }
