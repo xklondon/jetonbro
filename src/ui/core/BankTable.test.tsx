@@ -199,6 +199,8 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
   expect(html).toContain("PAYOUT PHASE moves Playing to Payout.");
   expect(html).toContain("INSURANCE SIDE POT · OPEN · 1 bet");
   expect(html).not.toContain("Deal cards");
+  expect(html).not.toContain("OPEN BANK");
+  expect(html).not.toContain("LIMITED BANK");
 });
 
 test("Bank payout keeps next hand locked while boxes and Insurance are unresolved", () => {
@@ -262,6 +264,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).toMatch(/<button[^>]*disabled[^>]*>NEXT ROUND NOW/);
   expect(html).not.toContain("outcome-celebration");
   expect(html).not.toContain("WINNER!");
+  expect(html).not.toContain("OPEN BANK");
 });
 
 test("resolved boxes keep row state without payout controls", () => {

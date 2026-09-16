@@ -6,9 +6,9 @@
 
 - The Create Table mask selects Blackjack, Texas Hold’em, or Zilch — Coming later. Confirming Poker opens `POKER_SETUP` with no Blackjack round. The Table Owner reorders seats with Move up / Move down; the Dealer button follows that stored order. `NEXT HAND NOW` / `NEXT HAND IN 7 SECONDS` use `PokerHand.nextHandDeadlineAt`. Shared UI projects the active Poker hand phase (`Texas Hold’em · PRE-FLOP`) instead of a leftover Blackjack round phase. Save/close is blocked while `LOCKED_POKER` exists or a hand is unsettled. The current actor is marked `YOUR TURN`.
 - Blackjack Deal stays blocked until a locked bet exists and shows `WAITING FOR THE FIRST BET`.
-- Limited Bank on the Betting screen is one compact Open/Limited toggle. Funding stays locked after any stake or exposure.
+- Limited Bank on the Betting screen is one compact Open/Limited toggle, visible and usable only by the Bank/Dealer during BETTING. Players never see that toggle.
 - The Table Owner can switch to Texas Hold’em when no value is locked. Memberships, AVAILABLE balances, invitations, and frozen Limited Bank buckets are preserved. Zilch stays coming later.
-- Texas Hold’em is a separate `src/domain/poker` module with blinds, actor-only actions, side pots, Showdown awards, and no digital cards.
+- Texas Hold’em is a separate `src/domain/poker` module with blinds, actor-only actions, side pots, Showdown awards, and no digital cards. The Poker dealer is a seated Player with the same bottom jeton tray as Blackjack; tap and drag/drop onto the pot send `pokerAct`. Owner street buttons (`DEAL FLOP` / `DEAL TURN` / `DEAL RIVER` / `SHOWDOWN`) stay visible and enable only when the betting street is complete.
 
 ### Optional Blackjack cards and Limited Bank
 

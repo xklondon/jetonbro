@@ -647,7 +647,10 @@
   border-radius: 10px;
   margin-bottom: 6px;
   background: rgba(7, 28, 24, 0.72);
-  touch-action: pan-y;
+}
+.classic-skin .payout-row.is-unresolved,
+.classic-skin .payout-row.is-unresolved .payout-row-inner {
+  touch-action: none;
 }
 
 .classic-skin .payout-swipe {

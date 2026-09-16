@@ -101,27 +101,67 @@ export async function noHorizontalOverflow(page: Page) {
 }
 
 export async function swipePayoutRow(page: Page, boxId: string, direction: "right" | "left") {
-  const inner = page.locator(`[data-box-id="${boxId}"] .payout-row-inner`);
+  const inner = page.locator(`[data-box-id="${boxId}"] [data-payout-gesture], [data-box-id="${boxId}"] .payout-row-inner`);
   await expect(inner).toBeVisible();
   const box = await inner.boundingBox();
   if (!box) throw new Error("missing payout row");
   const y = box.y + box.height / 2;
   const x = box.x + box.width / 2;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  await page.mouse.move(x + (direction === "right" ? 120 : -120), y, { steps: 12 });
-  await page.mouse.up();
+  const dx = direction === "right" ? 120 : -120;
+  await pointerSwipe(page, inner, x, y, x + dx, y);
 }
 
 export async function doubleTapPayoutRow(page: Page, boxId: string) {
-  const inner = page.locator(`[data-box-id="${boxId}"] .payout-row-inner`);
+  const inner = page.locator(`[data-box-id="${boxId}"] [data-payout-gesture], [data-box-id="${boxId}"] .payout-row-inner`);
   await expect(inner).toBeVisible();
   const box = await inner.boundingBox();
   if (!box) throw new Error("missing payout row");
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
+  const hasTouch = await page.evaluate(() => navigator.maxTouchPoints > 0);
+  if (hasTouch) {
+    await page.touchscreen.tap(x, y);
+    await page.touchscreen.tap(x, y);
+    return;
+  }
   await page.mouse.click(x, y);
   await page.mouse.click(x, y);
+}
+
+async function pointerSwipe(page: Page, locator: ReturnType<Page["locator"]>, x1: number, y1: number, x2: number, y2: number) {
+  const hasTouch = await page.evaluate(() => navigator.maxTouchPoints > 0);
+  if (hasTouch) {
+    await locator.evaluate(
+      (el, pts) => {
+        const fire = (type: string, x: number, y: number, buttons: number) => {
+          el.dispatchEvent(
+            new PointerEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              composed: true,
+              pointerId: 1,
+              pointerType: "touch",
+              isPrimary: true,
+              clientX: x,
+              clientY: y,
+              buttons,
+              pressure: buttons ? 1 : 0,
+            }),
+          );
+        };
+        fire("pointerdown", pts.x1, pts.y1, 1);
+        fire("pointermove", (pts.x1 + pts.x2) / 2, pts.y1, 1);
+        fire("pointermove", pts.x2, pts.y2, 1);
+        fire("pointerup", pts.x2, pts.y2, 0);
+      },
+      { x1, y1, x2, y2 },
+    );
+    return;
+  }
+  await page.mouse.move(x1, y1);
+  await page.mouse.down();
+  await page.mouse.move(x2, y2, { steps: 12 });
+  await page.mouse.up();
 }
 
 export function uniqueEmail(prefix: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
@@ -29,6 +29,7 @@ export function DealerPayoutRow({
   const origin = useRef<{ x: number; y: number } | null>(null);
   const lastTap = useRef(0);
   const locking = useRef(false);
+  const ignoreClickUntil = useRef(0);
   const chips = chipsFromMillis(box.bet.millis);
   const winAction = box.payoutActions.find((action) => action.outcome === "WON");
   const lossAction = box.payoutActions.find((action) => action.outcome === "LOST");
@@ -39,13 +40,59 @@ export function DealerPayoutRow({
 
   function settle(outcome: BoxView["payoutActions"][number]["outcome"]) {
     if (!unresolved) return;
+    ignoreClickUntil.current = Date.now() + 400;
     setSubmitted(true);
     onSettle(outcome);
   }
 
+  function onRowPointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (!unresolved) return;
+    origin.current = { x: event.clientX, y: event.clientY };
+    locking.current = false;
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Capture is best-effort; touch-action:none keeps the gesture on this row.
+    }
+  }
+
+  function onRowPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (!origin.current || !unresolved) return;
+    const nextDx = event.clientX - origin.current.x;
+    const nextDy = event.clientY - origin.current.y;
+    if (isHorizontalPayoutGesture(nextDx, nextDy)) {
+      locking.current = true;
+      setDx(Math.max(-120, Math.min(120, nextDx)));
+    }
+  }
+
+  function onRowPointerUp(event: PointerEvent<HTMLDivElement>) {
+    if (!origin.current || !unresolved) {
+      origin.current = null;
+      return;
+    }
+    const nextDx = event.clientX - origin.current.x;
+    const nextDy = event.clientY - origin.current.y;
+    origin.current = null;
+    const outcome = payoutSwipeOutcome(nextDx, nextDy);
+    setDx(0);
+    locking.current = false;
+    if (outcome) {
+      settle(outcome);
+      return;
+    }
+    const now = Date.now();
+    if (now - lastTap.current < 400) {
+      lastTap.current = 0;
+      settle("PUSH");
+      return;
+    }
+    lastTap.current = now;
+  }
+
   return (
     <div
-      className={`payout-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${locking.current ? " is-swiping" : ""}`}
+      className={`payout-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : ""}${locking.current ? " is-swiping" : ""}`}
       data-box-id={box.id}
       data-payout-row="true"
     >
@@ -62,72 +109,41 @@ export function DealerPayoutRow({
         ) : null}
         <div
           className="payout-row-inner"
-        style={{ transform: unresolved && dx ? `translateX(${dx}px)` : undefined }}
-        onPointerDown={(event) => {
-          if (!unresolved) return;
-          origin.current = { x: event.clientX, y: event.clientY };
-          locking.current = false;
-          (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-        }}
-        onPointerMove={(event) => {
-          if (!origin.current || !unresolved) return;
-          const nextDx = event.clientX - origin.current.x;
-          const nextDy = event.clientY - origin.current.y;
-          if (isHorizontalPayoutGesture(nextDx, nextDy)) {
-            locking.current = true;
-            setDx(Math.max(-120, Math.min(120, nextDx)));
-          }
-        }}
-        onPointerUp={(event) => {
-          if (!origin.current || !unresolved) {
+          data-payout-gesture="true"
+          style={{
+            transform: unresolved && dx ? `translateX(${dx}px)` : undefined,
+            touchAction: unresolved ? "none" : undefined,
+          }}
+          onPointerDown={onRowPointerDown}
+          onPointerMove={onRowPointerMove}
+          onPointerUp={onRowPointerUp}
+          onPointerCancel={() => {
             origin.current = null;
-            return;
-          }
-          const nextDx = event.clientX - origin.current.x;
-          const nextDy = event.clientY - origin.current.y;
-          origin.current = null;
-          const outcome = payoutSwipeOutcome(nextDx, nextDy);
-          setDx(0);
-          locking.current = false;
-          if (outcome) {
-            settle(outcome);
-            return;
-          }
-          const now = Date.now();
-          if (now - lastTap.current < 320) {
-            lastTap.current = 0;
-            settle("PUSH");
-            return;
-          }
-          lastTap.current = now;
-        }}
-        onPointerCancel={() => {
-          origin.current = null;
-          locking.current = false;
-          setDx(0);
-        }}
-      >
-        <div>
-          <strong>{box.label}</strong>
-          <div className="muted">Stake {box.bet.label}</div>
+            locking.current = false;
+            setDx(0);
+          }}
+        >
+          <div>
+            <strong>{box.label}</strong>
+            <div className="muted">Stake {box.bet.label}</div>
+          </div>
+          <span className="chip-pile compact">
+            {chips.map((chip, index) => (
+              <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
+                {chip.label}
+              </span>
+            ))}
+          </span>
+          <div className="payout-state">
+            {box.outcome
+              ? `${box.outcome === "WON" ? "Won" : box.outcome === "PUSH" ? "Stand off" : box.outcome === "LOST" ? "Lost" : "Blackjack"}${box.returned ? ` · ${box.returned.label}` : ""}`
+              : "Unresolved"}
+            {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
+            {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
+            {box.hand?.label ? <div className="muted">{box.hand.label}</div> : null}
+            {box.hand?.suggestedOutcome ? <div className="muted">Suggested {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}</div> : null}
+          </div>
         </div>
-        <span className="chip-pile compact">
-          {chips.map((chip, index) => (
-            <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
-              {chip.label}
-            </span>
-          ))}
-        </span>
-        <div className="payout-state">
-          {box.outcome
-            ? `${box.outcome === "WON" ? "Won" : box.outcome === "PUSH" ? "Stand off" : box.outcome === "LOST" ? "Lost" : "Blackjack"}${box.returned ? ` · ${box.returned.label}` : ""}`
-            : "Unresolved"}
-          {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
-          {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
-          {box.hand?.label ? <div className="muted">{box.hand.label}</div> : null}
-          {box.hand?.suggestedOutcome ? <div className="muted">Suggested {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}</div> : null}
-        </div>
-      </div>
       </div>
       {unresolved && onApply && box.hand?.suggestedOutcome ? (
         <button type="button" className="apply-suggestion" onClick={onApply}>
@@ -141,7 +157,10 @@ export function DealerPayoutRow({
               key={action.outcome}
               type="button"
               className={action.outcome.toLowerCase()}
-              onClick={() => settle(action.outcome)}
+              onClick={() => {
+                if (Date.now() < ignoreClickUntil.current) return;
+                settle(action.outcome);
+              }}
             >
               <span className="rail-title">{action.title ?? RAIL_TITLE[action.outcome]}</span>
               {action.returnLine ? <span className="rail-return">{action.returnLine}</span> : null}

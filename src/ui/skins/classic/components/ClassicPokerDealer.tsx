@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { MemberView, PokerTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
+import { PokerPlayerDock } from "./PokerPlayerDock";
 
 export function ClassicPokerDealer({
   view,
@@ -52,8 +53,13 @@ export function ClassicPokerDealer({
               START TEXAS HOLD’EM
             </button>
           ) : null}
-          {view.canDealStreet && view.nextStreetLabel ? (
-            <button type="button" className="gold-button" onClick={() => onCommand("advancePokerStreet")}>
+          {view.nextStreetLabel ? (
+            <button
+              type="button"
+              className="gold-button"
+              disabled={!view.canDealStreet}
+              onClick={() => onCommand("advancePokerStreet")}
+            >
               {view.nextStreetLabel}
             </button>
           ) : null}
@@ -73,9 +79,17 @@ export function ClassicPokerDealer({
             </div>
           ) : null}
         </div>
+        {view.waitingCopy ? (
+          <div
+            className={`poker-turn-banner${view.waitingCopy === "YOUR TURN" ? " is-you" : ""}`}
+            data-turn-state={view.waitingCopy === "YOUR TURN" ? "you" : "waiting"}
+          >
+            {view.waitingCopy}
+          </div>
+        ) : null}
       </div>
       <main className="felt poker-felt">
-        <div className="poker-pot">
+        <div className="poker-pot" data-drop-pot="pot">
           <small>POT</small>
           <strong>{view.pot.label}</strong>
           <div className="muted">
@@ -160,18 +174,8 @@ export function ClassicPokerDealer({
           ))}
         </div>
       </main>
-      <footer className="dock dealer-dock">
-        {notice ? <div className="error">{notice}</div> : null}
-        {view.legalActions.length > 0 ? (
-          <div className="poker-actions">
-            {view.legalActions.map((action) => (
-              <button key={action.type} type="button" onClick={() => onCommand("pokerAct", { type: action.type, amount: action.raiseTo?.label ?? action.amount.label })}>
-                {action.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        {view.waitingCopy ? <div className="payout-wait">{view.waitingCopy}</div> : null}
+      <footer className="dock player-dock">
+        <PokerPlayerDock view={view} onCommand={onCommand} notice={notice} />
         <div className="dealer-tools betting-utilities">
           {view.canSwitchGame ? (
             <button type="button" onClick={() => setSheet("game")}>

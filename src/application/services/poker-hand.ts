@@ -453,6 +453,14 @@ async function afterAction(
         ),
     );
   });
+  if (!next) {
+    await tx.pokerHand.update({
+      where: { id: hand.id },
+      data: { currentActorPlayerId: null, actionCount: { increment: 1 } },
+    });
+    await rebuildPots(tx, hand.id);
+    return;
+  }
   await tx.pokerHand.update({
     where: { id: hand.id },
     data: { currentActorPlayerId: next, actionCount: { increment: 1 } },

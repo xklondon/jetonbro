@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import type { PokerTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
-import { chipsFromMillis } from "./chips";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
+import { PokerPlayerDock } from "./PokerPlayerDock";
 
 export function ClassicPokerPlayer({
   view,
@@ -15,8 +14,6 @@ export function ClassicPokerPlayer({
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
 }) {
-  const [raiseTo, setRaiseTo] = useState(view.legalActions.find((action) => action.raiseTo)?.raiseTo?.label ?? "");
-  const raiseAction = view.legalActions.find((action) => action.type === "RAISE" || action.type === "BET");
   const selfWon = view.phase === "HAND_COMPLETE" && view.winners.some((winner) => winner.userId === view.viewerId);
 
   return (
@@ -31,7 +28,7 @@ export function ClassicPokerPlayer({
         </div>
       ) : null}
       <main className="felt poker-felt">
-        <div className="poker-pot">
+        <div className="poker-pot" data-drop-pot="pot">
           <small>POT</small>
           <strong>{view.pot.label}</strong>
           <div className="muted">To call {view.toCall.label}</div>
@@ -65,61 +62,8 @@ export function ClassicPokerPlayer({
           ))}
         </div>
       </main>
-      <footer className="dock">
-        {notice ? <div className="error">{notice}</div> : null}
-        {view.waitingCopy ? <div className="muted">{view.waitingCopy}</div> : null}
-        {view.legalActions.length > 0 ? (
-          <div className="poker-actions">
-            {raiseAction ? (
-              <div className="chip-pile compact">
-                {["5", "10", "25", "50"].map((label) => (
-                  <button key={label} type="button" className={`chip c${label}`} onClick={() => setRaiseTo(label)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {view.legalActions.map((action) =>
-              action.type === "BET" || action.type === "RAISE" ? (
-                <div key={action.type} className="raise-row">
-                  <input
-                    aria-label="Raise to"
-                    value={raiseTo}
-                    onChange={(event) => setRaiseTo(event.target.value)}
-                    placeholder={action.raiseTo?.label ?? "Amount"}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onCommand("pokerAct", { type: action.type, amount: raiseTo || action.raiseTo?.label || action.amount.label })}
-                  >
-                    {action.label}
-                  </button>
-                </div>
-              ) : (
-                <button key={action.type} type="button" onClick={() => onCommand("pokerAct", { type: action.type })}>
-                  {action.label}
-                </button>
-              ),
-            )}
-          </div>
-        ) : null}
-        <div className="dock-top">
-          <div>
-            <small>YOUR JETONS</small>
-            <strong>{view.available.label}</strong>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <small>IN POT</small>
-            <strong>{view.contribution.label}</strong>
-          </div>
-        </div>
-        <div className="chip-pile compact">
-          {chipsFromMillis(view.available.millis).map((chip, index) => (
-            <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
-              {chip.label}
-            </span>
-          ))}
-        </div>
+      <footer className="dock player-dock">
+        <PokerPlayerDock view={view} onCommand={onCommand} notice={notice} />
       </footer>
       {selfWon ? (
         <OutcomeCelebrationOverlay celebration={{ kind: "rain", copy: "WINNER!", overlay: true }} />

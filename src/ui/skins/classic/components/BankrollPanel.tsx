@@ -11,7 +11,7 @@ export function BankrollPanel({
   manage?: boolean;
   onToggle?: (mode: "OPEN" | "LIMITED") => void;
 }) {
-  if (!bankroll) return null;
+  if (!bankroll || !manage) return null;
   const limited = bankroll.mode === "LIMITED";
   return (
     <div className="bankroll-panel compact-funding">

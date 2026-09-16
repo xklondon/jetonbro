@@ -335,4 +335,59 @@ describeDb("Texas Hold’em and game switching", () => {
     expect(pots[1]?.eligiblePlayerIds).toEqual(expect.arrayContaining([owner.id, jo.id]));
     expect(pots[1]?.eligiblePlayerIds).not.toContain(sam.id);
   });
+
+  test("P1 action offers P2 legal actions, blinds post once, and DEAL FLOP waits for a matched street", async () => {
+    const { owner, sam, jo, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
+    });
+    const blinds = await prisma.ledgerEntry.findMany({
+      where: { tableId, transactionType: "POKER_BLIND_LOCKED" },
+    });
+    expect(blinds).toHaveLength(2);
+    const ownerSnap = await loadSnapshot(tableId, owner.id);
+    expect(ownerSnap.poker?.role).toBe("POKER_DEALER");
+    expect(ownerSnap.poker?.currentActorId).toBe(owner.id);
+    expect(ownerSnap.poker?.legalActions.map((action) => action.type)).toEqual(
+      expect.arrayContaining(["FOLD", "CALL", "RAISE", "ALL_IN"]),
+    );
+    expect(ownerSnap.poker?.canDealStreet).toBe(false);
+    expect(ownerSnap.poker?.nextStreetLabel).toBe("DEAL FLOP");
+    expect(ownerSnap.poker?.seats.find((seat) => seat.userId === owner.id)?.isDealer).toBe(true);
+    expect(ownerSnap.poker?.seats.find((seat) => seat.userId === sam.id)?.isSmallBlind).toBe(true);
+    expect(ownerSnap.poker?.seats.find((seat) => seat.userId === jo.id)?.isBigBlind).toBe(true);
+    expect(ownerSnap.poker?.seats.find((seat) => seat.userId === sam.id)?.available.label).toBe("95");
+    expect(ownerSnap.poker?.seats.find((seat) => seat.userId === jo.id)?.available.label).toBe("90");
+    expect(ownerSnap.poker?.available.label).toBe("100");
+
+    await pokerAct({ actorId: owner.id, tableId, type: "CALL", idempotencyKey: key() });
+    const samSnap = await loadSnapshot(tableId, sam.id);
+    expect(samSnap.poker?.currentActorId).toBe(sam.id);
+    expect(samSnap.poker?.waitingCopy).toBe("YOUR TURN");
+    expect(samSnap.poker?.legalActions.map((action) => action.type)).toEqual(
+      expect.arrayContaining(["FOLD", "CALL", "RAISE", "ALL_IN"]),
+    );
+    const ownerWaiting = await loadSnapshot(tableId, owner.id);
+    expect(ownerWaiting.poker?.legalActions).toEqual([]);
+    expect(ownerWaiting.poker?.waitingCopy).toMatch(/^Waiting for /);
+    expect(ownerWaiting.poker?.canDealStreet).toBe(false);
+    await expect(pokerAct({ actorId: owner.id, tableId, type: "FOLD", idempotencyKey: key() })).rejects.toMatchObject({
+      code: "TURN_CONFLICT",
+    });
+
+    await pokerAct({ actorId: sam.id, tableId, type: "CALL", idempotencyKey: key() });
+    await pokerAct({ actorId: jo.id, tableId, type: "CHECK", idempotencyKey: key() });
+    const matched = await loadSnapshot(tableId, owner.id);
+    expect(matched.poker?.streetComplete).toBe(true);
+    expect(matched.poker?.canDealStreet).toBe(true);
+    expect(matched.poker?.currentActorId).toBeNull();
+    const samMatched = await loadSnapshot(tableId, sam.id);
+    expect(samMatched.poker?.canDealStreet).toBe(false);
+    expect(samMatched.poker?.legalActions).toEqual([]);
+  });
 });

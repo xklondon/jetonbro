@@ -83,6 +83,36 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("+ ADD CARDS");
   expect(html.indexOf("Insurance")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).toContain("selected");
+  expect(html).not.toContain("OPEN BANK");
+  expect(html).not.toContain("LIMITED BANK");
+});
+
+test("player never sees the Open/Limited Bank toggle even when a bankroll snapshot is present", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: {
+        ...view,
+        phase: "BETTING",
+        actions: { ...view.actions, bet: true, retract: true, addBox: true, double: false, split: false, insurance: false },
+        bankroll: {
+          mode: "OPEN",
+          available: { millis: "0", label: "0" },
+          reserved: { millis: "0", label: "0" },
+          total: { millis: "0", label: "0" },
+          canToggle: false,
+          lockedReason: null,
+          canCoverMore: true,
+        },
+      },
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("YOUR JETONS");
+  expect(html).not.toContain("OPEN BANK");
+  expect(html).not.toContain("LIMITED BANK");
+  expect(html).not.toContain("funding-switch");
 });
 
 test("player betting keeps the permanent jeton dock below exact-amount controls", () => {

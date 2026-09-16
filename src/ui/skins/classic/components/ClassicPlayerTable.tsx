@@ -7,14 +7,12 @@ import { FeltBox } from "./FeltBox";
 import { DealCountdown } from "./DealCountdown";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { CardEntryPanel } from "./CardEntryPanel";
-import { BankrollPanel } from "./BankrollPanel";
+import { JetonTray } from "./JetonTray";
 import {
   selectInsuranceCelebration,
   selectOutcomeCelebration,
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
-
-const DENOMS = ["5", "10", "25", "50"] as const;
 
 export function ClassicPlayerTable({
   view,
@@ -32,10 +30,6 @@ export function ClassicPlayerTable({
   const [exact, setExact] = useState("");
   const [insuranceAmount, setInsuranceAmount] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ denom: string; x: number; y: number } | null>(null);
-  const skipClick = useRef(false);
-  const origin = useRef<{ x: number; y: number } | null>(null);
-  const draggingDenom = useRef<string | null>(null);
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const boxClass = useMemo(() => {
     if (view.boxes.length >= 4) return "player-boxes scroll";
@@ -73,11 +67,6 @@ export function ClassicPlayerTable({
     }
   }, [view.boxes, reducedMotion]);
 
-  function boxAtPoint(x: number, y: number): string | null {
-    const el = document.elementFromPoint(x, y);
-    return el?.closest("[data-drop-box]")?.getAttribute("data-drop-box") ?? null;
-  }
-
   function place(amount: string, boxId: string) {
     onCommand("placeBet", { boxId, amount, mode: "ADD" });
   }
@@ -111,7 +100,6 @@ export function ClassicPlayerTable({
       <footer className="dock player-dock">
         {notice ? <div className="error">{notice}</div> : null}
         {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
-        <BankrollPanel bankroll={view.bankroll} />
         {view.phase === "PLAYING" ? (
           <CardEntryPanel
             hand={selected?.hand}
@@ -222,70 +210,19 @@ export function ClassicPlayerTable({
             <strong>{view.available.label}</strong>
           </div>
         </div>
-        <div className="jetons">
-          {DENOMS.map((denom) => (
-            <button
-              key={denom}
-              type="button"
-              disabled={!view.actions.bet || !selected || selected.coverage?.bet === false}
-              aria-label={`Add ${denom} jetons`}
-              style={drag ? { touchAction: "none" } : undefined}
-              onPointerDown={(event) => {
-                if (!view.actions.bet) return;
-                event.currentTarget.setPointerCapture(event.pointerId);
-                skipClick.current = false;
-                origin.current = { x: event.clientX, y: event.clientY };
-                draggingDenom.current = denom;
-                setDrag({ denom, x: event.clientX, y: event.clientY });
-              }}
-              onPointerMove={(event) => {
-                if (draggingDenom.current !== denom || !origin.current) return;
-                const dist = Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y);
-                if (dist > 8) skipClick.current = true;
-                setDrag({ denom, x: event.clientX, y: event.clientY });
-                setHoverBoxId(boxAtPoint(event.clientX, event.clientY));
-              }}
-              onPointerUp={(event) => {
-                const target = boxAtPoint(event.clientX, event.clientY);
-                const dragged = skipClick.current;
-                draggingDenom.current = null;
-                origin.current = null;
-                setDrag(null);
-                setHoverBoxId(null);
-                if (dragged && target) {
-                  place(denom, target);
-                }
-              }}
-              onPointerCancel={() => {
-                draggingDenom.current = null;
-                origin.current = null;
-                setDrag(null);
-                setHoverBoxId(null);
-              }}
-              onClick={() => {
-                if (skipClick.current) {
-                  skipClick.current = false;
-                  return;
-                }
-                if (selected) place(denom, selected.id);
-              }}
-            >
-              <span className={`chip c${denom}${drag?.denom === denom && !reducedMotion ? " chip-lift" : ""}`}>
-                {denom}
-              </span>
-            </button>
-          ))}
-        </div>
+        <JetonTray
+          enabled={Boolean(view.actions.bet && selected && selected.coverage?.bet !== false)}
+          dropSelector="[data-drop-box]"
+          onTap={(amount) => {
+            if (selected) place(amount, selected.id);
+          }}
+          onDrop={(amount, targetId) => {
+            setHoverBoxId(null);
+            place(amount, targetId);
+          }}
+          onHover={setHoverBoxId}
+        />
       </footer>
-      {drag ? (
-        <div
-          className={`drag-ghost chip c${drag.denom}${reducedMotion ? "" : " settling"}`}
-          style={{ left: drag.x, top: drag.y }}
-          aria-hidden="true"
-        >
-          {drag.denom}
-        </div>
-      ) : null}
     </PhoneShell>
   );
 }

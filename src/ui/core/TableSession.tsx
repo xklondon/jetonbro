@@ -16,9 +16,11 @@ async function sendCommand(tableId: string, command: string, payload: Record<str
       ...payload,
     }),
   });
-  const data = (await response.json()) as { error?: string; abandoned?: boolean };
+  const data = (await response.json()) as { error?: string; code?: string; abandoned?: boolean };
   if (!response.ok) {
-    throw new Error(data.error ?? "This action could not be completed.");
+    const error = new Error(data.error ?? "This action could not be completed.");
+    error.name = data.code ?? "CommandError";
+    throw error;
   }
   return data;
 }
@@ -99,7 +101,8 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       }
       await refreshSnapshot();
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Something went wrong.");
+      const code = error instanceof Error ? error.name : "";
+      setNotice(code === "TURN_CONFLICT" ? "TURN_CONFLICT" : error instanceof Error ? error.message : "Something went wrong.");
       try {
         await refreshSnapshot();
       } catch {
