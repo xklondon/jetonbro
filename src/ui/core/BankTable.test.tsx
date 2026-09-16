@@ -102,6 +102,7 @@ test("Bank betting keeps deal controls at the top", () => {
   expect(html).toContain("BETTING");
   expect(html).toContain("DEAL CARDS NOW");
   expect(html).toContain("DEAL IN 7 SECONDS");
+  expect(html).toContain("DEAL CARDS NOW closes Betting and starts Playing.");
   expect(html.indexOf("CURRENT PHASE:")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
   expect(html.indexOf("DEAL CARDS NOW")).toBeLessThan(html.indexOf("ON TABLE"));
 });
@@ -112,7 +113,7 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
       view: bankView({
         phase: "PLAYING",
         phaseLabel: "PLAYING",
-        primaryAction: { id: "payoutPhase", label: "Payout phase", enabled: true },
+        primaryAction: { id: "payoutPhase", label: "PAYOUT PHASE", enabled: true },
         insurance: { window: "OPEN", total: { millis: "12500", label: "12.5" }, count: 1, resolution: null },
         actions: {
           dealCards: false,
@@ -136,7 +137,8 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
     }),
   );
   expect(html).toContain("PLAYING");
-  expect(html).toContain("Payout phase");
+  expect(html).toContain("PAYOUT PHASE");
+  expect(html).toContain("PAYOUT PHASE moves Playing to Payout.");
   expect(html).toContain("INSURANCE SIDE POT · OPEN · 1 bet");
   expect(html).not.toContain("Deal cards");
 });

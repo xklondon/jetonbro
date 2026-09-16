@@ -40,37 +40,46 @@ export function ClassicBankTable({
           <DealCountdown deadline={view.bettingCloseDeadlineAt} />
           <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
           {view.phase === "BETTING" ? (
-            <div className="deal-actions">
-              <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
-                DEAL CARDS NOW
-              </button>
-              <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
-                DEAL IN 7 SECONDS
-              </button>
-            </div>
+            <>
+              <div className="deal-actions">
+                <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
+                  DEAL CARDS NOW
+                </button>
+                <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
+                  DEAL IN 7 SECONDS
+                </button>
+              </div>
+              <p className="muted phase-hint">DEAL CARDS NOW closes Betting and starts Playing.</p>
+            </>
           ) : showNextRound ? (
-            <div className="deal-actions">
-              <button type="button" disabled={!view.actions.nextHand} onClick={() => onCommand("startNextRound")}>
-                NEXT ROUND NOW
-              </button>
+            <>
+              <div className="deal-actions">
+                <button type="button" disabled={!view.actions.nextHand} onClick={() => onCommand("startNextRound")}>
+                  NEXT ROUND NOW
+                </button>
+                <button
+                  type="button"
+                  disabled={!view.actions.scheduleNextRound}
+                  onClick={() => onCommand("scheduleNextRound")}
+                >
+                  NEXT ROUND IN 7 SECONDS
+                </button>
+              </div>
+              <p className="muted phase-hint">NEXT ROUND NOW starts the next Betting round.</p>
+            </>
+          ) : (
+            <>
               <button
                 type="button"
-                disabled={!view.actions.scheduleNextRound}
-                onClick={() => onCommand("scheduleNextRound")}
+                disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
+                onClick={() => {
+                  if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
+                }}
               >
-                NEXT ROUND IN 7 SECONDS
+                PAYOUT PHASE
               </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
-              onClick={() => {
-                if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
-              }}
-            >
-              {view.primaryAction.label}
-            </button>
+              <p className="muted phase-hint">PAYOUT PHASE moves Playing to Payout.</p>
+            </>
           )}
         </div>
       </div>

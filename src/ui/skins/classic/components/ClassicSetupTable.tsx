@@ -75,6 +75,7 @@ export function ClassicSetupTable({
         >
           OPEN BETTING
         </button>
+        <p className="muted phase-hint">OPEN BETTING starts Betting.</p>
         {!view.canStartBetting && view.startBlockedReason ? (
           <p className="muted" style={{ textAlign: "center", marginTop: 6 }}>
             {view.startBlockedReason}

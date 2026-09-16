@@ -4,7 +4,7 @@ import { formatJetons } from "@/domain/money";
 import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
-import { ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
+import { alignTablePhase, ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
 import type {
   BankPlayerGroupView,
   BankTableView,
@@ -51,6 +51,7 @@ function boxLabelForPlayer(box: { displayLabel: string; boxNumber: number; isSpl
 }
 
 export async function loadSnapshot(tableId: string, viewerId: string): Promise<ClientSnapshot> {
+  await alignTablePhase(tableId);
   await ensureBettingClosedIfDue(tableId);
   await ensureNextRoundIfDue(tableId);
   const table = await prisma.table.findUnique({
@@ -318,7 +319,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   const insuranceTotal =
     table.currentRound?.insuranceBets.reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
 
-  const hasValidBet = boxes.some((box) => BigInt(box.bet.millis) > 0n);
+  const hasValidBet = (table.currentRound?.boxes ?? []).some(
+    (box) => !box.removedAt && box.lockedBetMillis > 0n,
+  );
   const deadline = table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null;
   const countdownActive = Boolean(
     table.currentPhase === "BETTING" &&
@@ -338,7 +341,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           table.currentPhase === "BETTING"
             ? { id: "dealCards", label: "DEAL CARDS NOW", enabled: hasValidBet && !tableClosed }
             : table.currentPhase === "PLAYING"
-              ? { id: "payoutPhase", label: "Payout phase", enabled: !tableClosed }
+              ? { id: "payoutPhase", label: "PAYOUT PHASE", enabled: !tableClosed }
               : { id: "nextHand", label: "NEXT ROUND NOW", enabled: canNextHand && !tableClosed },
         boxes,
         players,
@@ -397,6 +400,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     isOwner,
     isBank,
     phase: table.currentPhase,
+    revision: table.updatedAt.getTime(), // database Table.updatedAt, not client time
+    roundNumber: table.currentRound?.number ?? 0,
+    roundId: table.currentRound?.id ?? null,
     tableClosed,
     members: table.members.map((member) => ({
       userId: member.userId,

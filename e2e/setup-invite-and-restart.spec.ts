@@ -128,7 +128,7 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
   await expect(samPage.getByText("75", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
-  await page.getByRole("button", { name: "Payout phase" }).click();
+  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   const payout = (await page.request
     .get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`)
     .then((response) => response.json())) as { bank?: { boxes: { id: string }[] } };

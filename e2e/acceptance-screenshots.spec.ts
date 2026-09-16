@@ -66,7 +66,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.screenshot({ path: join(out, "app-bank-betting-390x844.png") });
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Payout phase" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "PAYOUT PHASE" })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
 
   await alexPage.reload();
@@ -89,7 +89,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.screenshot({ path: join(out, "app-bank-playing-insurance-390x844.png") });
 
   await page.getByRole("button", { name: "Close Insurance" }).click();
-  await page.getByRole("button", { name: "Payout phase" }).click();
+  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();

@@ -13,12 +13,12 @@ import {
 } from "@/domain/blackjack/payouts";
 import { assertTransition } from "@/domain/blackjack/transitions";
 import { DEAL_COUNTDOWN_MS } from "@/domain/blackjack/deal";
-import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@/domain/errors";
+import { ConflictError, DomainError, ForbiddenError, NotFoundError, PhaseConflictError } from "@/domain/errors";
 import { formatJetons, parseJetonInput } from "@/domain/money";
 import type { Prisma } from "@prisma/client";
 import { clearDealTimer, clearNextRoundTimer, scheduleDealTimer, scheduleNextRoundTimer } from "@/application/services/deal-timer";
 import { NEXT_ROUND_COUNTDOWN_MS } from "@/domain/blackjack/next-round";
-import { logRoundEvent } from "@/application/command-log";
+import { logPhaseCommand, logRoundEvent } from "@/application/command-log";
 
 type Tx = Prisma.TransactionClient;
 
@@ -35,6 +35,23 @@ async function loadTableForUpdate(tx: Tx, tableId: string) {
   if (table.status === "ARCHIVED") {
     throw new DomainError("TABLE_CLOSED", "This table is closed.");
   }
+  if (table.currentRound && table.currentPhase !== table.currentRound.phase) {
+    logPhaseCommand({
+      command: "alignTablePhase",
+      tableId: table.id,
+      roundId: table.currentRound.id,
+      actorId: "system",
+      requested: table.currentRound.phase,
+      phase: table.currentPhase,
+      roundStatus: table.currentRound.phase,
+      code: "PHASE_ALIGNED",
+    });
+    await tx.table.update({
+      where: { id: table.id },
+      data: { currentPhase: table.currentRound.phase },
+    });
+    table.currentPhase = table.currentRound.phase;
+  }
   return table;
 }
 
@@ -44,9 +61,9 @@ function requireBank(table: { bankDealerId: string | null }, actorId: string) {
   }
 }
 
-function requirePhase(actual: string, expected: string) {
+function requirePhase(actual: string, expected: string, action = "This action") {
   if (actual !== expected) {
-    throw new ConflictError(`This action is only available during ${expected}.`);
+    throw new PhaseConflictError(action, actual, expected);
   }
 }
 
@@ -82,6 +99,42 @@ function assertBetLimits(
 
 function hasValidBet(boxes: { removedAt: Date | null; lockedBetMillis: bigint }[]): boolean {
   return boxes.some((box) => !box.removedAt && box.lockedBetMillis > 0n);
+}
+
+function liveBoxes(table: { currentRound?: { boxes: { removedAt: Date | null; lockedBetMillis: bigint }[] } | null }) {
+  return table.currentRound?.boxes.filter((box) => !box.removedAt) ?? [];
+}
+
+function phaseEvidence(
+  table: {
+    id: string;
+    currentPhase: string;
+    currentRound?: {
+      id: string;
+      phase: string;
+      boxes: { removedAt: Date | null; lockedBetMillis: bigint; settledKey: string | null }[];
+      insuranceBets: { settledKey: string | null }[];
+      insuranceWindow: string;
+      bettingCloseDeadlineAt: Date | null;
+      nextRoundDeadlineAt: Date | null;
+    } | null;
+  },
+) {
+  const boxes = liveBoxes(table);
+  const blockers = table.currentRound
+    ? roundBlockers(table.currentRound)
+    : { unresolvedBoxes: 0, unresolvedInsurance: 0 };
+  return {
+    tableId: table.id,
+    roundId: table.currentRound?.id ?? null,
+    phase: table.currentPhase,
+    roundStatus: table.currentRound?.phase ?? null,
+    betCount: boxes.filter((box) => box.lockedBetMillis > 0n).length,
+    unresolvedBoxes: blockers.unresolvedBoxes,
+    unresolvedInsurance: blockers.unresolvedInsurance,
+    bettingDeadline: table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null,
+    nextRoundDeadline: table.currentRound?.nextRoundDeadlineAt?.toISOString() ?? null,
+  };
 }
 
 async function transitionBettingToPlaying(
@@ -132,13 +185,41 @@ export async function ensureBettingClosedIfDue(tableId: string): Promise<boolean
 
 export async function startBetting(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "startBetting", input, async () => {
-    await prisma.$transaction(async (tx) => {
+    const opened = await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
-      if (table.currentPhase === "BETTING") {
-        return;
+      const evidence = phaseEvidence(table);
+      if (table.currentPhase === "BETTING" && table.currentRound?.phase === "BETTING") {
+        logPhaseCommand({
+          command: "startBetting",
+          actorId: input.actorId,
+          requested: "BETTING",
+          ...evidence,
+          code: "ALREADY_BETTING",
+        });
+        return { created: false, roundId: table.currentRound.id };
       }
-      assertTransition(table.currentPhase, "BETTING");
+      const orphanedBetting = table.currentPhase === "BETTING" && !table.currentRound;
+      if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE" && !orphanedBetting) {
+        logPhaseCommand({
+          command: "startBetting",
+          actorId: input.actorId,
+          requested: "BETTING",
+          ...evidence,
+          code: "PHASE_CONFLICT",
+        });
+        throw new PhaseConflictError("OPEN BETTING", table.currentPhase, "TABLE_SETUP or ROUND_COMPLETE");
+      }
+      if (!orphanedBetting) {
+        assertTransition(table.currentPhase, "BETTING");
+      }
+      logPhaseCommand({
+        command: "startBetting",
+        actorId: input.actorId,
+        requested: "BETTING",
+        ...evidence,
+        code: "OPENING_BETTING",
+      });
       if (!table.bankDealerId) {
         throw new DomainError("NO_BANK", "Assign a Bank/Dealer before opening betting.");
       }
@@ -194,10 +275,21 @@ export async function startBetting(input: { actorId: string; tableId: string; id
           pausedAt: null,
         },
       });
+      return { created: true, roundId: round.id };
     });
     clearNextRoundTimer(input.tableId);
     publishTable(input.tableId);
-    return { ok: true };
+    logPhaseCommand({
+      command: "startBetting",
+      tableId: input.tableId,
+      roundId: opened.roundId,
+      actorId: input.actorId,
+      requested: "BETTING",
+      phase: "BETTING",
+      roundStatus: "BETTING",
+      code: opened.created ? "BETTING" : "ALREADY_BETTING",
+    });
+    return { ok: true, phase: "BETTING" as const, roundId: opened.roundId };
   });
 }
 
@@ -206,7 +298,7 @@ export async function addBox(input: { actorId: string; tableId: string; idempote
     await requireMember(input.tableId, input.actorId);
     const boxId = await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
-      requirePhase(table.currentPhase, "BETTING");
+      requirePhase(table.currentPhase, "BETTING", "Adding a box");
       if (!table.currentRound) throw new ConflictError("Betting is not open.");
       if (table.bankDealerId === input.actorId && table.members.length > 1) {
         throw new ForbiddenError("The Bank/Dealer does not open betting boxes.");
@@ -237,7 +329,7 @@ export async function removeBox(input: { actorId: string; tableId: string; boxId
   return withIdempotency(input.actorId, input.idempotencyKey, "removeBox", input, async () => {
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
-      requirePhase(table.currentPhase, "BETTING");
+      requirePhase(table.currentPhase, "BETTING", "Removing a box");
       const box = table.currentRound?.boxes.find((item) => item.id === input.boxId);
       if (!box || box.playerId !== input.actorId) {
         throw new ForbiddenError("You can only remove your own empty box.");
@@ -275,7 +367,7 @@ export async function placeOrRetractBet(input: {
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       if (table.currentPhase !== "BETTING") {
-        throw new ConflictError("Betting is not open yet");
+        throw new PhaseConflictError("Betting", table.currentPhase, "BETTING");
       }
       const deadline = table.currentRound?.bettingCloseDeadlineAt;
       if (deadline && deadline.getTime() <= Date.now()) {
@@ -342,7 +434,7 @@ export async function scheduleDeal(input: { actorId: string; tableId: string; id
     const result = await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
-      requirePhase(table.currentPhase, "BETTING");
+      requirePhase(table.currentPhase, "BETTING", "DEAL IN 7 SECONDS");
       const round = table.currentRound;
       if (!round) throw new ConflictError("No open round.");
       if (!hasValidBet(round.boxes)) {
@@ -362,31 +454,83 @@ export async function scheduleDeal(input: { actorId: string; tableId: string; id
       await ensureBettingClosedIfDue(tableId);
     });
     publishTable(input.tableId);
+    logPhaseCommand({
+      command: "scheduleDeal",
+      tableId: input.tableId,
+      actorId: input.actorId,
+      requested: "BETTING_CLOSE",
+      phase: "BETTING",
+      roundStatus: "BETTING",
+      bettingDeadline: result.deadline,
+      code: "DEAL_SCHEDULED",
+    });
     return result;
   });
 }
 
 export async function dealCards(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "dealCards", input, async () => {
-    await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
-      if (table.currentPhase === "PLAYING") {
-        return;
+      const evidence = phaseEvidence(table);
+      if (table.currentPhase === "PLAYING" && table.currentRound?.phase === "PLAYING") {
+        logPhaseCommand({
+          command: "dealCards",
+          actorId: input.actorId,
+          requested: "PLAYING",
+          ...evidence,
+          code: "ALREADY_PLAYING",
+        });
+        return { already: true, roundId: table.currentRound.id };
       }
-      requirePhase(table.currentPhase, "BETTING");
-      if (!table.currentRound) throw new ConflictError("No open round.");
+      if (table.currentPhase !== "BETTING" || table.currentRound?.phase !== "BETTING") {
+        logPhaseCommand({
+          command: "dealCards",
+          actorId: input.actorId,
+          requested: "PLAYING",
+          ...evidence,
+          code: "PHASE_CONFLICT",
+        });
+        throw new PhaseConflictError("DEAL CARDS NOW", table.currentPhase, "BETTING");
+      }
+      if (!table.currentRound) throw new DomainError("NO_ROUND", "No open betting round.");
       if (!hasValidBet(table.currentRound.boxes)) {
+        logPhaseCommand({
+          command: "dealCards",
+          actorId: input.actorId,
+          requested: "PLAYING",
+          ...evidence,
+          code: "NO_BETS",
+        });
         throw new DomainError("NO_BETS", "At least one player must place a bet first.");
       }
       const moved = await transitionBettingToPlaying(tx, table);
       if (!moved) {
+        logPhaseCommand({
+          command: "dealCards",
+          actorId: input.actorId,
+          requested: "PLAYING",
+          ...evidence,
+          code: "NO_BETS",
+        });
         throw new DomainError("NO_BETS", "At least one player must place a bet first.");
       }
+      logPhaseCommand({
+        command: "dealCards",
+        actorId: input.actorId,
+        requested: "PLAYING",
+        ...evidence,
+        phase: "PLAYING",
+        roundStatus: "PLAYING",
+        bettingDeadline: null,
+        code: "PLAYING",
+      });
+      return { already: false, roundId: table.currentRound.id };
     });
     clearDealTimer(input.tableId);
     publishTable(input.tableId);
-    return { ok: true };
+    return { ok: true, phase: "PLAYING" as const, roundId: result.roundId };
   });
 }
 
@@ -592,7 +736,18 @@ export async function enterPayout(input: { actorId: string; tableId: string; ide
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
       requireBank(table, input.actorId);
-      requirePhase(table.currentPhase, "PLAYING");
+      const evidence = phaseEvidence(table);
+      if (table.currentPhase === "PAYOUT" && table.currentRound?.phase === "PAYOUT") {
+        logPhaseCommand({
+          command: "enterPayout",
+          actorId: input.actorId,
+          requested: "PAYOUT",
+          ...evidence,
+          code: "ALREADY_PAYOUT",
+        });
+        return;
+      }
+      requirePhase(table.currentPhase, "PLAYING", "PAYOUT PHASE");
       assertTransition("PLAYING", "PAYOUT");
       if (table.currentRound?.insuranceWindow === "OPEN") {
         await tx.round.update({
@@ -608,9 +763,18 @@ export async function enterPayout(input: { actorId: string; tableId: string; ide
         where: { id: table.id },
         data: { currentPhase: "PAYOUT" },
       });
+      logPhaseCommand({
+        command: "enterPayout",
+        actorId: input.actorId,
+        requested: "PAYOUT",
+        ...evidence,
+        phase: "PAYOUT",
+        roundStatus: "PAYOUT",
+        code: "PAYOUT",
+      });
     });
     publishTable(input.tableId);
-    return { ok: true };
+    return { ok: true, phase: "PAYOUT" as const };
   });
 }
 
@@ -742,18 +906,19 @@ export async function settleInsurance(input: {
 export async function startNextRound(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "startNextRound", input, async () => {
     await maybeCompleteRound(input.tableId);
-    const table = await prisma.table.findUnique({
-      where: { id: input.tableId },
-      include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
-    });
-    if (!table) throw new NotFoundError("Table not found.");
-    if (table.status === "ARCHIVED") {
-      throw new DomainError("TABLE_CLOSED", "This table is closed.");
-    }
+    const table = await prisma.$transaction(async (tx) => loadTableForUpdate(tx, input.tableId));
     requireBank(table, input.actorId);
+    const evidence = phaseEvidence(table);
     const blockers = table.currentRound
       ? roundBlockers(table.currentRound)
       : { unresolvedBoxes: 0, unresolvedInsurance: 0 };
+    logPhaseCommand({
+      command: "startNextRound",
+      actorId: input.actorId,
+      requested: "BETTING",
+      ...evidence,
+      code: table.currentPhase === "BETTING" ? "ALREADY_BETTING" : table.currentPhase,
+    });
     logRoundEvent({
       event: "startNextRound",
       tableId: input.tableId,
@@ -765,23 +930,31 @@ export async function startNextRound(input: { actorId: string; tableId: string; 
       deadline: table.currentRound?.nextRoundDeadlineAt?.toISOString() ?? null,
       code: table.currentPhase === "BETTING" ? "ALREADY_BETTING" : table.currentPhase,
     });
-    if (table.currentPhase === "BETTING") {
-      return { ok: true };
+    if (table.currentPhase === "BETTING" && table.currentRound?.phase === "BETTING") {
+      return { ok: true, phase: "BETTING" as const, roundId: table.currentRound.id };
     }
     if (table.currentPhase !== "ROUND_COMPLETE") {
+      const code = "NEXT_ROUND_BLOCKED";
+      logPhaseCommand({
+        command: "startNextRound",
+        actorId: input.actorId,
+        requested: "BETTING",
+        ...evidence,
+        code,
+      });
       throw new DomainError(
-        "NEXT_ROUND_BLOCKED",
+        code,
         blockers.unresolvedInsurance > 0
           ? "Settle Insurance independently before starting the next round."
           : blockers.unresolvedBoxes > 0
             ? "Settle every remaining box before starting the next round."
-            : "The round is not ready to restart yet.",
+            : `NEXT ROUND NOW is only available after the round is complete. The table is currently in ${table.currentPhase}.`,
       );
     }
     assertTransition("ROUND_COMPLETE", "BETTING");
     clearNextRoundTimer(input.tableId);
-    await startBetting({ ...input, idempotencyKey: `${input.idempotencyKey}:betting` });
-    return { ok: true };
+    const started = await startBetting({ ...input, idempotencyKey: `${input.idempotencyKey}:betting` });
+    return { ok: true, phase: "BETTING" as const, roundId: started.roundId };
   });
 }
 
@@ -828,6 +1001,32 @@ export async function scheduleNextRound(input: { actorId: string; tableId: strin
     });
     publishTable(input.tableId);
     return result;
+  });
+}
+
+export async function alignTablePhase(tableId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Table" WHERE id = ${tableId} FOR UPDATE`;
+    const table = await tx.table.findUnique({
+      where: { id: tableId },
+      include: { currentRound: true },
+    });
+    if (!table || table.status === "ARCHIVED" || !table.currentRound) return;
+    if (table.currentPhase === table.currentRound.phase) return;
+    logPhaseCommand({
+      command: "alignTablePhase",
+      tableId,
+      roundId: table.currentRound.id,
+      actorId: "system",
+      requested: table.currentRound.phase,
+      phase: table.currentPhase,
+      roundStatus: table.currentRound.phase,
+      code: "PHASE_ALIGNED",
+    });
+    await tx.table.update({
+      where: { id: table.id },
+      data: { currentPhase: table.currentRound.phase },
+    });
   });
 }
 

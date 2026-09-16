@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ClientSnapshot } from "@/application/queries/views";
 import { getSkin } from "@/ui/skins/registry";
+import { shouldApplySnapshot } from "@/ui/core/snapshot-revision";
 
 async function sendCommand(tableId: string, command: string, payload: Record<string, string> = {}) {
   const response = await fetch(`/api/tables/${tableId}/commands`, {
@@ -29,18 +30,41 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(initial.player?.boxes[0]?.id ?? null);
 
+  const applySnapshot = useCallback((next: ClientSnapshot) => {
+    if (!next.tableId) return;
+    setSnapshot((current) => (shouldApplySnapshot(current, next) ? next : current));
+  }, []);
+
+  const refreshSnapshot = useCallback(async () => {
+    const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
+    if (!response.ok) {
+      const failed = (await response.json()) as { error?: string };
+      throw new Error(failed.error ?? "Could not refresh the table.");
+    }
+    const next = (await response.json()) as ClientSnapshot;
+    if (!next.tableId) {
+      throw new Error("Could not refresh the table.");
+    }
+    applySnapshot(next);
+    return next;
+  }, [applySnapshot, snapshot.tableId]);
+
   useEffect(() => {
     let cancelled = false;
     async function refresh() {
-      const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
-      if (!response.ok || cancelled) return;
-      const next = (await response.json()) as ClientSnapshot;
-      if (next.tableId) setSnapshot(next);
+      try {
+        const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
+        if (!response.ok || cancelled) return;
+        const next = (await response.json()) as ClientSnapshot;
+        if (!cancelled) applySnapshot(next);
+      } catch {
+        // Poll fallback is best-effort; the next tick or SSE will retry.
+      }
     }
     const source = new EventSource(`/api/tables/${snapshot.tableId}/stream`);
     source.onmessage = (event) => {
       const next = JSON.parse(event.data) as ClientSnapshot;
-      setSnapshot(next);
+      applySnapshot(next);
     };
     source.onerror = () => {
       void refresh();
@@ -53,7 +77,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       source.close();
       window.clearInterval(poll);
     };
-  }, [snapshot.tableId]);
+  }, [applySnapshot, snapshot.tableId]);
 
   useEffect(() => {
     const ids = new Set((snapshot.player?.boxes ?? []).map((box) => box.id));
@@ -73,18 +97,14 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
         router.push("/");
         return;
       }
-      const refresh = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
-      if (!refresh.ok) {
-        const failed = (await refresh.json()) as { error?: string };
-        throw new Error(failed.error ?? "Could not refresh the table.");
-      }
-      const next = (await refresh.json()) as ClientSnapshot;
-      if (!next.tableId) {
-        throw new Error("Could not refresh the table.");
-      }
-      setSnapshot(next);
+      await refreshSnapshot();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Something went wrong.");
+      try {
+        await refreshSnapshot();
+      } catch {
+        // Keep the domain error visible even if the follow-up refresh fails.
+      }
     }
   };
 

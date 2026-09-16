@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Phase sequence repair
+
+- `DEAL CARDS NOW` is idempotent once PLAYING, always clears `bettingCloseDeadlineAt`, and uses locked bets only. A leftover `originalStakeMillis` cannot enable Deal.
+- `Table.currentPhase` is repaired to match the current `Round.phase`. Orphaned BETTING with no current round can resume through `OPEN BETTING`.
+- Wrong-phase Deal, Open Betting, or Player bet returns `PHASE_CONFLICT` instead of a generic/no-op conflict. The client refreshes its snapshot after every command error.
+- Snapshots carry a server `revision` (`Table.updatedAt`) and `roundNumber`. Clients and SSE compare that database revision, never local clock time. An older in-flight poll/SSE payload cannot replace a newer one.
+- Bank copy states the four transitions: OPEN BETTING starts Betting; DEAL CARDS NOW closes Betting and starts Playing; PAYOUT PHASE moves Playing to Payout; NEXT ROUND NOW starts the next Betting round.
+- Every attempted phase command logs sanitized table/round/actor/phase/deadline evidence and a stable result code.
+
 ### Setup invites, next-round restart, and Player celebrations
 
 - The setup mask shows compact game tiles, table name and starting jetons, then the full shared QR (`SCAN TO JOIN TABLE`, `COPY LINK`, `SHARE`), then a compact `OR INVITE BY EMAIL` row. `SET UP TABLE` stays sticky. The QR is no longer clipped under the form.

@@ -73,7 +73,7 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await samPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await samPage.getByRole("button", { name: "Insurance" }).click();
   await page.getByRole("button", { name: "Close Insurance" }).click();
-  await page.getByRole("button", { name: "Payout phase" }).click();
+  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "NEXT ROUND IN 7 SECONDS" })).toBeDisabled();
@@ -113,7 +113,7 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Payout phase" }).click();
+  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   const second = (await tableSnapshot(page)) as { bank?: { players: { boxes: { id: string }[] }[] } };
   for (const player of second.bank?.players ?? []) {

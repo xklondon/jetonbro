@@ -190,6 +190,9 @@ export type ClientSnapshot = {
   isOwner: boolean;
   isBank: boolean;
   phase: RoundPhase;
+  revision?: number;
+  roundNumber?: number;
+  roundId?: string | null;
   tableClosed: boolean;
   members: MemberView[];
   setup: SetupTableView | null;

@@ -30,3 +30,14 @@ export class ConflictError extends DomainError {
     this.name = "ConflictError";
   }
 }
+
+export class PhaseConflictError extends DomainError {
+  constructor(action: string, actual: string, expected: string) {
+    super(
+      "PHASE_CONFLICT",
+      `${action} is only available during ${expected}. The table is currently in ${actual}.`,
+      409,
+    );
+    this.name = "PhaseConflictError";
+  }
+}

@@ -29,14 +29,16 @@ export async function GET(
   let unsubscribe: () => void = () => undefined;
   const stream = new ReadableStream({
     start(controller) {
+      let sendGeneration = 0;
       const send = async () => {
+        const generation = ++sendGeneration;
         if (request.signal.aborted) return;
         try {
           const snapshot = await loadSnapshot(tableId, viewerId);
-          if (request.signal.aborted) return;
+          if (request.signal.aborted || generation !== sendGeneration) return;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(snapshot)}\n\n`));
         } catch {
-          if (request.signal.aborted) return;
+          if (request.signal.aborted || generation !== sendGeneration) return;
           try {
             controller.enqueue(encoder.encode(`event: error\ndata: {}\n\n`));
           } catch {

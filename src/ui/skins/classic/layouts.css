@@ -73,6 +73,12 @@
   color: var(--gold);
 }
 
+.classic-skin .phase-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .classic-skin .gold-button,
 .classic-skin .bank-phase-control button {
   width: 100%;

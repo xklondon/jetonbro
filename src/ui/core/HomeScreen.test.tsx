@@ -191,6 +191,7 @@ test("SET UP TABLE reveals dealer table seats, compact QR and OPEN BETTING", () 
   expect(html).toContain("+ PLAYER");
   expect(html).toContain(">QR<");
   expect(html).toContain("OPEN BETTING");
+  expect(html).toContain("OPEN BETTING starts Betting.");
 });
 
 test("invited seats render as player boxes and Open Betting stays gated", () => {
