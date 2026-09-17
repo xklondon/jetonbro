@@ -185,21 +185,26 @@ async function transitionBettingToPlaying(
 export async function ensureBettingClosedIfDue(tableId: string): Promise<boolean> {
   const peek = await prisma.table.findUnique({ where: { id: tableId }, select: { game: true } });
   if (peek?.game !== "BLACKJACK") return false;
-  const closed = await prisma.$transaction(async (tx) => {
-    const table = await loadTableForUpdate(tx, tableId);
-    if (table.currentPhase !== "BETTING" || !table.currentRound?.bettingCloseDeadlineAt) {
-      return false;
+  try {
+    const closed = await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, tableId);
+      if (table.currentPhase !== "BETTING" || !table.currentRound?.bettingCloseDeadlineAt) {
+        return false;
+      }
+      if (table.currentRound.bettingCloseDeadlineAt.getTime() > Date.now()) {
+        return false;
+      }
+      return transitionBettingToPlaying(tx, table);
+    });
+    if (closed) {
+      clearDealTimer(tableId);
+      publishTable(tableId);
     }
-    if (table.currentRound.bettingCloseDeadlineAt.getTime() > Date.now()) {
-      return false;
-    }
-    return transitionBettingToPlaying(tx, table);
-  });
-  if (closed) {
-    clearDealTimer(tableId);
-    publishTable(tableId);
+    return closed;
+  } catch (error) {
+    if (error instanceof DomainError && error.code === "GAME_CONFLICT") return false;
+    throw error;
   }
-  return closed;
 }
 
 export async function startBetting(input: { actorId: string; tableId: string; idempotencyKey: string }) {
@@ -1376,11 +1381,16 @@ export async function ensureNextRoundIfDue(tableId: string): Promise<boolean> {
     deadline: table.currentRound.nextRoundDeadlineAt.toISOString(),
     code: "NEXT_ROUND_DUE",
   });
-  await startBetting({
-    actorId: table.bankDealerId,
-    tableId,
-    idempotencyKey: `next-round-due:${tableId}:${table.currentRound.id}`,
-  });
+  try {
+    await startBetting({
+      actorId: table.bankDealerId,
+      tableId,
+      idempotencyKey: `next-round-due:${tableId}:${table.currentRound.id}`,
+    });
+  } catch (error) {
+    if (error instanceof DomainError && error.code === "GAME_CONFLICT") return false;
+    throw error;
+  }
   clearNextRoundTimer(tableId);
   return true;
 }

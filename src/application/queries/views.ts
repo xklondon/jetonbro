@@ -259,6 +259,8 @@ export type PokerTableView = {
   available: MoneyView;
   smallBlind: MoneyView;
   bigBlind: MoneyView;
+  streetWager: MoneyView;
+  viewerStatus: "ACTIVE" | "FOLDED" | "ALL_IN" | "WAITING";
   seats: PokerSeatView[];
   pots: PokerPotView[];
   legalActions: PokerLegalActionView[];

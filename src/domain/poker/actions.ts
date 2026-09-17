@@ -1,4 +1,4 @@
-import type { JetonMillis } from "../money";
+import { formatJetons, type JetonMillis } from "../money";
 
 export const POKER_ACTION_TYPES = ["FOLD", "CHECK", "CALL", "BET", "RAISE", "ALL_IN"] as const;
 export type PokerActionType = (typeof POKER_ACTION_TYPES)[number];
@@ -50,14 +50,14 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
         type: "RAISE",
         amountMillis: maxTo - ctx.streetContributionMillis,
         raiseToMillis: raiseTo < maxTo ? raiseTo : maxTo,
-        label: "RAISE TO",
+        label: "RAISE",
       });
     }
     if (stack > 0n) actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
     return uniqueActions(actions);
   }
   const callAmount = owed < stack ? owed : stack;
-  actions.push({ type: "CALL", amountMillis: callAmount, label: `CALL ${callAmount.toString()}` });
+  actions.push({ type: "CALL", amountMillis: callAmount, label: `CALL ${formatJetons(callAmount)}` });
   if (stack > owed) {
     const raiseTo = minRaiseTo(ctx.streetWagerMillis, ctx.lastRaiseSizeMillis);
     const maxTo = ctx.streetContributionMillis + stack;
@@ -66,7 +66,7 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
         type: "RAISE",
         amountMillis: maxTo - ctx.streetContributionMillis,
         raiseToMillis: raiseTo < maxTo ? raiseTo : maxTo,
-        label: "RAISE TO",
+        label: "RAISE",
       });
     }
     actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });

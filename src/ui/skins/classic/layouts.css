@@ -316,7 +316,141 @@
   background: linear-gradient(180deg, rgba(7, 23, 20, 0.96), var(--night));
   border-top: 1px solid rgba(223, 189, 105, 0.4);
   box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.3);
-  padding: 11px 13px 15px;
+  padding: 8px 13px max(15px, env(safe-area-inset-bottom));
+}
+
+.classic-skin .game-controls {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.classic-skin .owner-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(223, 189, 105, 0.22);
+}
+
+.classic-skin .owner-controls .gold-button {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 148px;
+}
+
+.classic-skin .owner-controls button:not(.gold-button) {
+  flex: 0 1 auto;
+  padding: 6px 8px;
+  font-size: 11px;
+  border: 1px solid rgba(223, 189, 105, 0.32);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 10px;
+}
+
+.classic-skin .owner-street {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.classic-skin .owner-street button:disabled {
+  width: auto;
+  min-width: 168px;
+  border: 1px solid rgba(223, 189, 105, 0.32);
+  background: #10241f;
+  color: rgba(244, 234, 213, 0.72);
+  border-radius: 10px;
+  padding: 10px 16px;
+  opacity: 1;
+}
+
+.classic-skin .owner-street small {
+  color: rgba(244, 234, 213, 0.62);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
+
+.classic-skin .actor-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.classic-skin .actor-actions .actor-primary {
+  width: 100%;
+}
+
+.classic-skin .actor-secondary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.classic-skin .actor-actions button:not(.gold-button) {
+  border: 1px solid rgba(223, 189, 105, 0.32);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 10px;
+  padding: 10px 4px;
+}
+
+.classic-skin .actor-actions button[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.classic-skin .actor-compose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.classic-skin .actor-compose input,
+.classic-skin .actor-compose .gold-button {
+  grid-column: 1 / -1;
+}
+
+.classic-skin .actor-compose input {
+  width: 100%;
+  border: 1px solid rgba(223, 189, 105, 0.4);
+  background: #10241f;
+  color: var(--ivory);
+  border-radius: 10px;
+  padding: 10px;
+  font: 20px Georgia, serif;
+}
+
+.classic-skin .player-wallet {
+  display: grid;
+  gap: 6px;
+}
+
+.classic-skin .wallet-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.classic-skin .wallet-bar small,
+.classic-skin .wallet-available small {
+  display: block;
+  color: rgba(244, 234, 213, 0.65);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.classic-skin .wallet-available {
+  text-align: right;
+}
+
+.classic-skin .wallet-available strong {
+  font: 24px Georgia, serif;
+  color: var(--ivory);
 }
 
 .classic-skin .dock-top {
@@ -477,6 +611,8 @@
   display: none;
   position: absolute;
   inset: 0;
+  grid-row: 1 / -1;
+  grid-column: 1;
   background: rgba(0, 0, 0, 0.57);
   z-index: 5;
   align-items: flex-end;
@@ -995,6 +1131,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-bottom: 8px;
+}
+.classic-skin .poker-seat.is-allin {
+  outline: 1px dashed rgba(223, 189, 105, 0.5);
 }
 .classic-skin .raise-row {
   grid-column: 1 / -1;

@@ -1,6 +1,7 @@
 "use client";
 
 import { PhoneShell } from "./PhoneShell";
+import { PlayerWallet } from "./PlayerWallet";
 import type { WaitingTableView } from "@/application/queries/views";
 
 export function ClassicWaitingTable({ view }: { view: WaitingTableView }) {
@@ -17,23 +18,7 @@ export function ClassicWaitingTable({ view }: { view: WaitingTableView }) {
         </div>
       </main>
       <footer className="dock player-dock">
-        <div className="dock-top">
-          <div>
-            <small>YOUR JETONS</small>
-            <strong>{view.available.label}</strong>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <small>AVAILABLE VALUE</small>
-            <strong>{view.available.label}</strong>
-          </div>
-        </div>
-        <div className="jetons">
-          {["5", "10", "25", "50"].map((denom) => (
-            <span key={denom} className={`chip c${denom}`}>
-              {denom}
-            </span>
-          ))}
-        </div>
+        <PlayerWallet available={view.available} trayEnabled={false} dropSelector="[data-drop-box]" />
       </footer>
     </PhoneShell>
   );

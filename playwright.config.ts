@@ -26,7 +26,7 @@ export default defineConfig({
     },
     {
       name: "firefox-poker",
-      testMatch: /poker-and-betting\.spec\.ts/,
+      testMatch: /poker-.*\.spec\.ts/,
       use: {
         browserName: "firefox",
         viewport: { width: 390, height: 844 },

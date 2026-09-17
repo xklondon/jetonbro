@@ -99,7 +99,7 @@ export function buildPokerView(input: {
             : action.type === "ALL_IN"
               ? "ALL IN"
               : action.type === "RAISE"
-                ? "RAISE TO"
+                ? "RAISE"
                 : action.type,
       }))
     : [];
@@ -182,6 +182,8 @@ export function buildPokerView(input: {
     available: money(viewerMember?.availableMillis ?? 0n),
     smallBlind: money(input.smallBlind),
     bigBlind: money(input.bigBlind),
+    streetWager: money(hand?.streetWagerMillis ?? 0n),
+    viewerStatus: viewerPart?.status ?? "WAITING",
     seats,
     pots: (hand?.pots ?? []).map((pot) => ({
       index: pot.index,
@@ -200,7 +202,7 @@ export function buildPokerView(input: {
       : null,
     winners: awards,
     canDealStreet: Boolean(isOwner && nextStreet && streetComplete && !input.tableClosed && phase !== "SHOWDOWN" && phase !== "HAND_COMPLETE"),
-    nextStreetLabel: nextStreet?.command ?? null,
+    nextStreetLabel: isOwner && nextStreet ? nextStreet.command : null,
     canAward: Boolean(isOwner && phase === "SHOWDOWN" && !hand?.settledKey && !input.tableClosed),
     canNextHand: Boolean(isOwner && phase === "HAND_COMPLETE" && !input.tableClosed),
     canScheduleNextHand: Boolean(isOwner && phase === "HAND_COMPLETE" && !input.tableClosed),

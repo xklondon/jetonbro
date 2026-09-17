@@ -3,14 +3,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 import { ClassicPokerDealer } from "@/ui/skins/classic/components/ClassicPokerDealer";
 import { ClassicPokerPlayer } from "@/ui/skins/classic/components/ClassicPokerPlayer";
-import type { PokerLegalActionView, PokerTableView } from "@/application/queries/views";
+import { ClassicPlayerTable } from "@/ui/skins/classic/components/ClassicPlayerTable";
+import type { PlayerTableView, PokerLegalActionView, PokerTableView } from "@/application/queries/views";
 
 const money = (label: string, millis = `${Number(label) * 1000}`) => ({ millis, label });
 
 const legal: PokerLegalActionView[] = [
   { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
   { type: "CALL", amount: money("10"), label: "CALL 10" },
-  { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE TO" },
+  { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE" },
   { type: "ALL_IN", amount: money("100"), label: "ALL IN" },
 ];
 
@@ -29,6 +30,8 @@ function pokerView(overrides: Partial<PokerTableView> = {}): PokerTableView {
     available: money("100"),
     smallBlind: money("5"),
     bigBlind: money("10"),
+    streetWager: money("10"),
+    viewerStatus: "ACTIVE",
     seats: [
       {
         userId: "owner",
@@ -105,10 +108,13 @@ test("Poker dealer is a seated player with the Blackjack jeton tray and disabled
   expect(html).toContain("Add 25 jetons");
   expect(html).toContain("FOLD");
   expect(html).toContain("CALL 10");
-  expect(html).toContain("RAISE TO");
+  expect(html).toContain("RAISE");
+  expect(html).not.toContain("RAISE TO");
+  expect(html).not.toContain("CONFIRM RAISE");
   expect(html).toContain("ALL IN");
   expect(html).toContain("data-drop-pot");
   expect(html).toContain("SB ·");
+  expect(html).toContain("Waiting for bets to match");
   expect(html).toMatch(/<button[^>]*disabled[^>]*>DEAL FLOP/);
 });
 
@@ -145,7 +151,130 @@ test("the next actor sees legal actions and the waiting player does not", () => 
   );
   expect(waiting).toContain("Waiting for Owner");
   expect(waiting).toContain("YOUR JETONS");
+  expect(waiting).toContain("AVAILABLE");
+  expect(waiting).toContain("data-player-wallet");
   expect(waiting).toContain("Add 25 jetons");
-  expect(waiting).not.toContain(">FOLD<");
-  expect(waiting).not.toContain("CALL 10");
+  expect(waiting).not.toContain("data-actor-controls");
+  expect(waiting).not.toMatch(/>CALL 10</);
+  expect(waiting).not.toContain("data-owner-controls");
+});
+
+test("folded and all-in players keep the wallet but no actor controls", () => {
+  const folded = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        viewerId: "sam",
+        viewerStatus: "FOLDED",
+        legalActions: [],
+        waitingCopy: "Waiting for Owner",
+        seats: pokerView().seats.map((seat) =>
+          seat.userId === "sam" ? { ...seat, status: "FOLDED", isActor: false } : seat,
+        ),
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(folded).toContain("data-player-wallet");
+  expect(folded).toContain("Folded");
+  expect(folded).not.toContain("data-actor-controls");
+  expect(folded).toMatch(/<button[^>]*disabled[^>]*aria-label="Add 5 jetons"/);
+
+  const allIn = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        viewerId: "sam",
+        viewerStatus: "ALL_IN",
+        legalActions: [],
+        waitingCopy: "Waiting for Owner",
+        seats: pokerView().seats.map((seat) =>
+          seat.userId === "sam" ? { ...seat, status: "ALL_IN", isActor: false } : seat,
+        ),
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(allIn).toContain("ALL IN");
+  expect(allIn).not.toContain("data-actor-controls");
+});
+
+test("Blackjack and Poker player wallets share the same tray structure", () => {
+  const pokerWaiting = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({ legalActions: [] }),
+      onCommand: () => undefined,
+    }),
+  );
+  const pokerActor = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        viewerId: "owner",
+        currentActorId: "owner",
+        waitingCopy: "YOUR TURN",
+        legalActions: legal,
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  const blackjack: PlayerTableView = {
+    role: "PLAYER",
+    phase: "BETTING",
+    tableName: "Salon",
+    title: "Place your bets",
+    copy: "Select a box",
+    available: { millis: "75000", label: "75" },
+    insuranceWindowOpen: false,
+    bettingCloseDeadlineAt: null,
+    nextRoundDeadlineAt: null,
+    actions: {
+      bet: true,
+      retract: true,
+      addBox: true,
+      removeEmptyBox: false,
+      double: false,
+      split: false,
+      insurance: false,
+    },
+    boxes: [
+      {
+        id: "1",
+        playerId: "p1",
+        playerName: "Alex",
+        label: "YOUR BOX 1",
+        boxNumber: 1,
+        bet: { millis: "0", label: "0" },
+        originalStake: { millis: "0", label: "0" },
+        isDoubled: false,
+        isSplit: false,
+        insurance: null,
+        insuranceMax: { millis: "0", label: "0" },
+        insuranceResult: null,
+        outcome: null,
+        returned: null,
+        payoutActions: [],
+        hand: { ranks: [], complete: false, label: "", suggestedOutcome: null, canEdit: false },
+      },
+    ],
+  };
+  const bj = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: blackjack,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  for (const html of [pokerWaiting, pokerActor, bj]) {
+    expect(html).toContain("data-player-wallet");
+    expect(html).toContain("Add 25 jetons");
+    expect(html).toContain("YOUR JETONS");
+    expect(html).toContain("AVAILABLE");
+    expect(html).not.toContain("AVAILABLE VALUE");
+    expect(html.indexOf("YOUR JETONS")).toBeLessThan(html.indexOf("AVAILABLE"));
+    expect(html.indexOf("data-player-wallet")).toBeLessThan(html.indexOf("Add 25 jetons"));
+  }
+  expect(pokerActor).toContain("data-game-controls");
+  expect(pokerActor.indexOf("data-game-controls")).toBeLessThan(pokerActor.indexOf("data-player-wallet"));
+  expect(bj).toContain("data-game-controls");
+  expect(bj.indexOf("data-game-controls")).toBeLessThan(bj.indexOf("data-player-wallet"));
+  expect(pokerWaiting).not.toContain("data-actor-controls");
 });

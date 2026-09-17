@@ -40,6 +40,20 @@ async function addJetons(page: Page, amount: "5" | "10" | "25") {
   await page.getByRole("button", { name: `Add ${amount} jetons` }).click({ force: true });
 }
 
+async function dragChipToPot(page: Page, amount: "5" | "10" | "25") {
+  await page.evaluate(() => document.querySelector("nextjs-portal")?.remove());
+  const chip = page.getByRole("button", { name: `Add ${amount} jetons` });
+  const pot = page.locator("[data-drop-pot]");
+  await expect(chip).toBeEnabled({ timeout: 15_000 });
+  const chipBox = await chip.boundingBox();
+  const potBox = await pot.boundingBox();
+  if (!chipBox || !potBox) throw new Error("chip or pot is not visible");
+  await page.mouse.move(chipBox.x + chipBox.width / 2, chipBox.y + chipBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(potBox.x + potBox.width / 2, potBox.y + potBox.height / 2, { steps: 16 });
+  await page.mouse.up();
+}
+
 function pageFor(owner: Page, sam: Page, jo: Page, seats: { userId: string; name: string }[], actorId: string | null) {
   const name = seats.find((seat) => seat.userId === actorId)?.name;
   if (name === "Sam") return sam;
@@ -146,8 +160,16 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await page.getByRole("button", { name: "START TEXAS HOLD’EM" }).click();
   await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("YOUR JETONS")).toBeVisible();
+  await expect(page.locator("[data-player-wallet]")).toBeVisible();
+  await expect(page.locator("[data-owner-controls]")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add 25 jetons" })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL FLOP" })).toBeDisabled();
+  await expect(page.getByText("Waiting for bets to match")).toBeVisible();
+  const feltBox = await page.locator("main.poker-felt").boundingBox();
+  const walletBox = await page.locator("[data-player-wallet]").boundingBox();
+  expect(feltBox && walletBox).toBeTruthy();
+  expect(feltBox!.y + feltBox!.height).toBeLessThanOrEqual(walletBox!.y + 16);
+  expect(walletBox!.y + walletBox!.height).toBeLessThanOrEqual(844);
 
   const preflop = await tableSnapshot(page);
   expect(preflop.poker?.seats.some((seat) => seat.isDealer)).toBe(true);
@@ -174,8 +196,11 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expectYourTurn(secondActor);
   await expect(secondActor.getByRole("button", { name: "FOLD" })).toBeVisible();
   await expect(secondActor.getByRole("button", { name: /^CALL/ }).or(secondActor.getByRole("button", { name: "CHECK" }))).toBeVisible();
-  await expect(secondActor.getByRole("button", { name: "RAISE TO" }).or(secondActor.getByRole("button", { name: "BET" }))).toBeVisible();
+  await expect(secondActor.getByRole("button", { name: "RAISE" }).or(secondActor.getByRole("button", { name: "BET" }))).toBeVisible();
   await expect(secondActor.getByRole("button", { name: "ALL IN" })).toBeVisible();
+  if (secondActor !== page) {
+    await expect(secondActor.getByRole("button", { name: "DEAL FLOP" })).toHaveCount(0);
+  }
   await callOrCheck(secondActor);
 
   await expect
@@ -196,16 +221,28 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await flopActor.reload();
   await expectYourTurn(flopActor);
   await flopActor.evaluate(() => document.querySelector("nextjs-portal")?.remove());
+  await flopActor.getByRole("button", { name: "BET" }).click();
   await flopActor.getByRole("button", { name: "Add 5 jetons" }).click({ force: true });
+  await expect(flopActor.getByLabel("Bet amount")).toBeVisible();
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.pot?.label).toBe(flop.poker?.pot?.label);
+  await flopActor.getByRole("button", { name: "CONFIRM BET" }).click();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.pot?.label).not.toBe(flop.poker?.pot?.label);
 
   const afterTap = await tableSnapshot(page);
   const nextFlop = pageFor(page, samPage, joPage, afterTap.poker!.seats, afterTap.poker!.currentActorId);
   await nextFlop.reload();
-  await expect(nextFlop.getByRole("button", { name: "Add 5 jetons" })).toBeEnabled({ timeout: 15_000 });
-  await nextFlop.evaluate(() => document.querySelector("nextjs-portal")?.remove());
-  await nextFlop.getByRole("button", { name: "Add 5 jetons" }).dragTo(nextFlop.locator("[data-drop-pot]"), { force: true });
-  await expect.poll(async () => (await tableSnapshot(page)).poker?.currentActorId).not.toBe(afterTap.poker?.currentActorId);
+  await expectYourTurn(nextFlop);
+  await expect(nextFlop.getByRole("button", { name: /^CALL/ })).toBeVisible();
+  await nextFlop.getByRole("button", { name: "RAISE" }).click();
+  await expect(nextFlop.getByRole("button", { name: /^CALL/ })).toBeVisible();
+  await expect(nextFlop.getByLabel("Raise to")).toBeVisible();
+  await expect(nextFlop.getByRole("button", { name: "RAISE TO 25" })).toHaveCount(0);
+  await dragChipToPot(nextFlop, "5");
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.currentActorId).toBe(afterTap.poker?.currentActorId);
+  await nextFlop.getByRole("button", { name: "CONFIRM RAISE" }).click();
+  await expect
+    .poll(async () => (await tableSnapshot(page)).poker?.currentActorId, { timeout: 15_000 })
+    .not.toBe(afterTap.poker?.currentActorId);
 
   await samContext.close();
   await joContext.close();

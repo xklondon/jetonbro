@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
 import { createTable, distributeJetons } from "@/application/services/tables";
 import { joinWithToken } from "@/application/services/invitations";
-import { placeOrRetractBet, setBankFunding, startBetting } from "@/application/services/blackjack-round";
+import { placeOrRetractBet, setBankFunding, startBetting, ensureBettingClosedIfDue } from "@/application/services/blackjack-round";
 import { switchGame } from "@/application/services/switch-game";
 import {
   advancePokerStreet,
@@ -389,5 +389,128 @@ describeDb("Texas Hold’em and game switching", () => {
     const samMatched = await loadSnapshot(tableId, sam.id);
     expect(samMatched.poker?.canDealStreet).toBe(false);
     expect(samMatched.poker?.legalActions).toEqual([]);
+    expect(samMatched.poker?.nextStreetLabel).toBeNull();
+  });
+
+  test("folded and all-in players lose actor controls while owner still advances streets", async () => {
+    const { owner, sam, jo, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
+    });
+    await pokerAct({ actorId: owner.id, tableId, type: "FOLD", idempotencyKey: key() });
+    const folded = await loadSnapshot(tableId, owner.id);
+    expect(folded.poker?.viewerStatus).toBe("FOLDED");
+    expect(folded.poker?.legalActions).toEqual([]);
+    expect(folded.poker?.seats.find((seat) => seat.userId === owner.id)?.isDealer).toBe(true);
+    expect(folded.poker?.nextStreetLabel).toBe("DEAL FLOP");
+    expect(folded.poker?.canDealStreet).toBe(false);
+
+    await pokerAct({ actorId: sam.id, tableId, type: "ALL_IN", idempotencyKey: key() });
+    const allInSam = await loadSnapshot(tableId, sam.id);
+    expect(allInSam.poker?.viewerStatus).toBe("ALL_IN");
+    expect(allInSam.poker?.legalActions).toEqual([]);
+    expect(allInSam.poker?.nextStreetLabel).toBeNull();
+    expect(allInSam.poker?.canDealStreet).toBe(false);
+  });
+
+  test("Poker snapshot loading does not run Blackjack close-betting", async () => {
+    const { owner, sam, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id],
+    });
+    await expect(ensureBettingClosedIfDue(tableId)).resolves.toBe(false);
+    await expect(loadSnapshot(tableId, owner.id)).resolves.toMatchObject({ game: "POKER" });
+  });
+
+  test("heads-up snapshots keep actor-only controls on every street", async () => {
+    const { owner, sam, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id],
+    });
+    const setup = await loadSnapshot(tableId, owner.id);
+    expect(setup.poker?.phase).toBe("PRE_FLOP");
+    expect(setup.poker?.legalActions.length).toBeGreaterThan(0);
+    expect((await loadSnapshot(tableId, sam.id)).poker?.legalActions).toEqual([]);
+
+    await pokerAct({ actorId: owner.id, tableId, type: "CALL", idempotencyKey: key() });
+    expect((await loadSnapshot(tableId, sam.id)).poker?.legalActions.map((action) => action.type)).toEqual(
+      expect.arrayContaining(["CHECK"]),
+    );
+    await pokerAct({ actorId: sam.id, tableId, type: "CHECK", idempotencyKey: key() });
+
+    for (const label of ["DEAL FLOP", "DEAL TURN", "DEAL RIVER", "SHOWDOWN"] as const) {
+      const ownerMatched = await loadSnapshot(tableId, owner.id);
+      const samMatched = await loadSnapshot(tableId, sam.id);
+      expect(ownerMatched.poker?.canDealStreet).toBe(true);
+      expect(ownerMatched.poker?.nextStreetLabel).toBe(label);
+      expect(ownerMatched.poker?.legalActions).toEqual([]);
+      expect(samMatched.poker?.canDealStreet).toBe(false);
+      expect(samMatched.poker?.nextStreetLabel).toBeNull();
+      expect(samMatched.poker?.legalActions).toEqual([]);
+      if (label === "SHOWDOWN") break;
+      await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+      const actor = await loadSnapshot(tableId, sam.id);
+      expect(actor.poker?.waitingCopy).toBe("YOUR TURN");
+      expect(actor.poker?.legalActions.map((item) => item.type)).toEqual(expect.arrayContaining(["CHECK"]));
+      expect((await loadSnapshot(tableId, owner.id)).poker?.legalActions).toEqual([]);
+      await pokerAct({ actorId: sam.id, tableId, type: "CHECK", idempotencyKey: key() });
+      await pokerAct({ actorId: owner.id, tableId, type: "CHECK", idempotencyKey: key() });
+    }
+
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const showdown = await loadSnapshot(tableId, owner.id);
+    expect(showdown.poker?.phase).toBe("SHOWDOWN");
+    expect(showdown.poker?.canAward).toBe(true);
+    expect(showdown.poker?.legalActions).toEqual([]);
+    expect((await loadSnapshot(tableId, sam.id)).poker?.canAward).toBe(false);
+  });
+
+  test("minimum bet/raise is enforced except All-In, and duplicate confirmation does not debit twice", async () => {
+    const { owner, sam, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id],
+    });
+    const duplicate = key();
+    await pokerAct({ actorId: owner.id, tableId, type: "CALL", idempotencyKey: duplicate });
+    await pokerAct({ actorId: owner.id, tableId, type: "CALL", idempotencyKey: duplicate });
+    const calls = await prisma.pokerAction.count({ where: { hand: { tableId }, type: "CALL" } });
+    expect(calls).toBe(1);
+    await pokerAct({ actorId: sam.id, tableId, type: "CHECK", idempotencyKey: key() });
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await expect(pokerAct({ actorId: sam.id, tableId, type: "BET", amount: "1", idempotencyKey: key() })).rejects.toMatchObject({
+      code: "ILLEGAL_ACTION",
+    });
+    await pokerAct({ actorId: sam.id, tableId, type: "BET", amount: "10", idempotencyKey: key() });
+    await expect(pokerAct({ actorId: owner.id, tableId, type: "RAISE", amount: "11", idempotencyKey: key() })).rejects.toMatchObject({
+      code: "ILLEGAL_ACTION",
+    });
+    await expect(pokerAct({ actorId: owner.id, tableId, type: "RAISE", amount: "1000", idempotencyKey: key() })).rejects.toMatchObject({
+      code: "INSUFFICIENT_FUNDS",
+    });
+    await pokerAct({ actorId: owner.id, tableId, type: "RAISE", amount: "20", idempotencyKey: key() });
+    const ownerMember = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: owner.id } },
+    });
+    expect(ownerMember.availableMillis).toBeGreaterThan(0n);
   });
 });

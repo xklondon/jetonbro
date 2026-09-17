@@ -8,7 +8,7 @@
 - Blackjack Deal stays blocked until a locked bet exists and shows `WAITING FOR THE FIRST BET`.
 - Limited Bank on the Betting screen is one compact Open/Limited toggle, visible and usable only by the Bank/Dealer during BETTING. Players never see that toggle.
 - The Table Owner can switch to Texas Hold’em when no value is locked. Memberships, AVAILABLE balances, invitations, and frozen Limited Bank buckets are preserved. Zilch stays coming later.
-- Texas Hold’em is a separate `src/domain/poker` module with blinds, actor-only actions, side pots, Showdown awards, and no digital cards. The Poker dealer is a seated Player with the same bottom jeton tray as Blackjack; tap and drag/drop onto the pot send `pokerAct`. Owner street buttons (`DEAL FLOP` / `DEAL TURN` / `DEAL RIVER` / `SHOWDOWN`) stay visible and enable only when the betting street is complete.
+- Texas Hold’em is a separate `src/domain/poker` module with blinds, actor-only actions, side pots, Showdown awards, and no digital cards. Table Owner, rotating Dealer button, and current actor are distinct. CALL stays live while BET/RAISE is composed; chips stage an amount until CONFIRM. Owner street controls sit above the shared Player wallet and stay disabled with `Waiting for bets to match` until the street is complete. Snapshot loads skip Blackjack close-betting while Poker is active so game switches cannot 400 the table.
 
 ### Optional Blackjack cards and Limited Bank
 

@@ -499,25 +499,33 @@ export async function pokerAct(input: {
       const chosen = legal.find((action) => action.type === input.type);
       if (!chosen) throw new DomainError("ILLEGAL_ACTION", "That action is not available now.", 409);
       let pay = chosen.amountMillis;
-      let raiseTo = chosen.raiseToMillis;
       if (input.type === "BET" || input.type === "RAISE") {
         const requested = input.amount ? parseWholeJetons(input.amount, "Bet") : chosen.raiseToMillis ?? chosen.amountMillis;
+        const maxTo = participant.streetContributionMillis + member.availableMillis;
         if (input.type === "BET") {
           if (hand.streetWagerMillis !== participant.streetContributionMillis && hand.streetWagerMillis !== 0n) {
             throw new DomainError("ILLEGAL_ACTION", "Bet is only available when nothing is wagered this street.", 409);
           }
+          const minBet = hand.lastRaiseSizeMillis > 0n ? hand.lastRaiseSizeMillis : table.pokerBigBlindMillis;
+          if (requested > member.availableMillis) {
+            throw new DomainError("INSUFFICIENT_FUNDS", "You do not have enough jetons");
+          }
+          if (requested < minBet && requested < member.availableMillis) {
+            throw new DomainError("ILLEGAL_ACTION", "Bet must meet the minimum unless All In.", 409);
+          }
           pay = requested;
-          if (pay > member.availableMillis) pay = member.availableMillis;
-          raiseTo = participant.streetContributionMillis + pay;
         } else {
-          raiseTo = requested;
+          if (requested > maxTo) {
+            throw new DomainError("INSUFFICIENT_FUNDS", "You do not have enough jetons");
+          }
           const minTo = minRaiseTo(hand.streetWagerMillis, hand.lastRaiseSizeMillis);
-          if (raiseTo < minTo && raiseTo < participant.streetContributionMillis + member.availableMillis) {
+          if (requested < minTo && requested < maxTo) {
             throw new DomainError("ILLEGAL_ACTION", "Raise must meet the minimum legal raise unless All In.", 409);
           }
-          pay = raiseTo - participant.streetContributionMillis;
-          if (pay > member.availableMillis) pay = member.availableMillis;
-          raiseTo = participant.streetContributionMillis + pay;
+          pay = requested - participant.streetContributionMillis;
+          if (pay <= 0n) {
+            throw new DomainError("ILLEGAL_ACTION", "Raise must increase the current bet.", 409);
+          }
         }
       }
       if (input.type === "ALL_IN") pay = member.availableMillis;

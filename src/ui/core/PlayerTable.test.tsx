@@ -75,7 +75,9 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("YOUR BOX 1");
   expect(html).toContain("YOUR BOX 2");
   expect(html).toContain("YOUR JETONS");
-  expect(html).toContain("AVAILABLE VALUE");
+  expect(html).toContain("AVAILABLE");
+  expect(html).toContain("data-player-wallet");
+  expect(html).not.toContain("AVAILABLE VALUE");
   expect(html).toContain("75");
   expect(html).toContain("Insurance");
   expect(html).toContain("Double");

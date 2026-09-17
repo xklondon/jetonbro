@@ -20,14 +20,70 @@ export function JetonTray({
   const [drag, setDrag] = useState<{ denom: string; x: number; y: number } | null>(null);
   const skipClick = useRef(false);
   const origin = useRef<{ x: number; y: number } | null>(null);
-  const draggingDenom = useRef<string | null>(null);
+  const activeDenom = useRef<string | null>(null);
+  const onTapRef = useRef(onTap);
+  const onDropRef = useRef(onDrop);
+  const onHoverRef = useRef(onHover);
+  onTapRef.current = onTap;
+  onDropRef.current = onDrop;
+  onHoverRef.current = onHover;
   const reducedMotion =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function targetAtPoint(x: number, y: number): string | null {
-    const hit = document.elementFromPoint(x, y)?.closest(dropSelector) as HTMLElement | null;
-    if (!hit) return null;
-    return hit.getAttribute("data-drop-box") ?? hit.getAttribute("data-drop-pot");
+    const stack =
+      typeof document.elementsFromPoint === "function"
+        ? document.elementsFromPoint(x, y)
+        : [document.elementFromPoint(x, y)];
+    for (const node of stack) {
+      if (!node) continue;
+      const hit = node.closest(dropSelector) as HTMLElement | null;
+      if (!hit) continue;
+      return hit.getAttribute("data-drop-box") ?? hit.getAttribute("data-drop-pot");
+    }
+    return null;
+  }
+
+  function trackMove(x: number, y: number, denom: string) {
+    if (activeDenom.current !== denom || !origin.current) return;
+    if (Math.hypot(x - origin.current.x, y - origin.current.y) > 8) skipClick.current = true;
+    setDrag({ denom, x, y });
+    onHoverRef.current?.(targetAtPoint(x, y));
+  }
+
+  function finish(x: number, y: number) {
+    const denom = activeDenom.current;
+    const dragged = skipClick.current;
+    const target = targetAtPoint(x, y);
+    activeDenom.current = null;
+    origin.current = null;
+    setDrag(null);
+    onHoverRef.current?.(null);
+    if (denom && dragged && target) onDropRef.current(denom, target);
+  }
+
+  function begin(denom: string, x: number, y: number) {
+    if (!enabled || activeDenom.current) return false;
+    skipClick.current = false;
+    origin.current = { x, y };
+    activeDenom.current = denom;
+    setDrag({ denom, x, y });
+    return true;
+  }
+
+  function bindWindow(kind: "pointer" | "mouse", denom: string) {
+    const move = (event: PointerEvent | MouseEvent) => {
+      trackMove(event.clientX, event.clientY, denom);
+    };
+    const up = (event: PointerEvent | MouseEvent) => {
+      window.removeEventListener(kind === "pointer" ? "pointermove" : "mousemove", move);
+      window.removeEventListener(kind === "pointer" ? "pointerup" : "mouseup", up);
+      if (kind === "pointer") window.removeEventListener("pointercancel", up);
+      finish(event.clientX, event.clientY);
+    };
+    window.addEventListener(kind === "pointer" ? "pointermove" : "mousemove", move);
+    window.addEventListener(kind === "pointer" ? "pointerup" : "mouseup", up);
+    if (kind === "pointer") window.addEventListener("pointercancel", up);
   }
 
   return (
@@ -38,50 +94,32 @@ export function JetonTray({
             key={denom}
             type="button"
             disabled={!enabled}
+            draggable={false}
             aria-label={`Add ${denom} jetons`}
-            style={{ touchAction: "none" }}
+            style={{ touchAction: "none", userSelect: "none" }}
+            onDragStart={(event) => event.preventDefault()}
             onPointerDown={(event) => {
-              if (!enabled) return;
+              if (event.pointerType === "mouse" && event.button !== 0) return;
               try {
                 event.currentTarget.setPointerCapture(event.pointerId);
               } catch {
-                // Synthetic / touch pointers may reject capture; drag still tracks by pointerId.
+                // Window listeners keep the drag alive if capture is rejected.
               }
-              skipClick.current = false;
-              origin.current = { x: event.clientX, y: event.clientY };
-              draggingDenom.current = denom;
-              setDrag({ denom, x: event.clientX, y: event.clientY });
-            }}
-            onPointerMove={(event) => {
-              if (draggingDenom.current !== denom || !origin.current) return;
-              const dist = Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y);
-              if (dist > 8) skipClick.current = true;
-              setDrag({ denom, x: event.clientX, y: event.clientY });
-              onHover?.(targetAtPoint(event.clientX, event.clientY));
-            }}
-            onPointerUp={(event) => {
-              const target = targetAtPoint(event.clientX, event.clientY);
-              const dragged = skipClick.current;
-              draggingDenom.current = null;
-              origin.current = null;
-              setDrag(null);
-              onHover?.(null);
-              if (dragged && target) {
-                onDrop(denom, target);
+              if (begin(denom, event.clientX, event.clientY)) {
+                bindWindow("pointer", denom);
+                bindWindow("mouse", denom);
               }
             }}
-            onPointerCancel={() => {
-              draggingDenom.current = null;
-              origin.current = null;
-              setDrag(null);
-              onHover?.(null);
+            onMouseDown={(event) => {
+              if (event.button !== 0) return;
+              if (begin(denom, event.clientX, event.clientY)) bindWindow("mouse", denom);
             }}
             onClick={() => {
               if (skipClick.current) {
                 skipClick.current = false;
                 return;
               }
-              if (enabled) onTap(denom);
+              if (enabled) onTapRef.current(denom);
             }}
           >
             <span className={`chip c${denom}${drag?.denom === denom && !reducedMotion ? " chip-lift" : ""}`}>

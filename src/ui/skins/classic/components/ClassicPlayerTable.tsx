@@ -7,7 +7,7 @@ import { FeltBox } from "./FeltBox";
 import { DealCountdown } from "./DealCountdown";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { CardEntryPanel } from "./CardEntryPanel";
-import { JetonTray } from "./JetonTray";
+import { PlayerWallet } from "./PlayerWallet";
 import {
   selectInsuranceCelebration,
   selectOutcomeCelebration,
@@ -98,6 +98,7 @@ export function ClassicPlayerTable({
         </div>
       </main>
       <footer className="dock player-dock">
+        <div className="game-controls" data-game-controls="true">
         {notice ? <div className="error">{notice}</div> : null}
         {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
         {view.phase === "PLAYING" ? (
@@ -200,18 +201,10 @@ export function ClassicPlayerTable({
         {view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE" ? (
           <div className="payout-wait">{view.title}</div>
         ) : null}
-        <div className="dock-top">
-          <div>
-            <small>YOUR JETONS</small>
-            <strong>{view.available.label}</strong>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <small>AVAILABLE VALUE</small>
-            <strong>{view.available.label}</strong>
-          </div>
         </div>
-        <JetonTray
-          enabled={Boolean(view.actions.bet && selected && selected.coverage?.bet !== false)}
+        <PlayerWallet
+          available={view.available}
+          trayEnabled={Boolean(view.actions.bet && selected && selected.coverage?.bet !== false)}
           dropSelector="[data-drop-box]"
           onTap={(amount) => {
             if (selected) place(amount, selected.id);
