@@ -345,7 +345,7 @@ export async function configurePoker(input: {
       const table = await loadPokerTable(tx, input.tableId);
       requireOwner(table, input.actorId);
       if (pokerHandIsOpen(table.currentPokerHand?.phase)) {
-        throw new DomainError("SEATS_LOCKED", "Seat order cannot change during a hand.");
+        throw new DomainError("SEATS_LOCKED", "Seat order is locked after the first hand begins.");
       }
       const small = input.smallBlind ? parseWholeJetons(input.smallBlind, "Small blind") : table.pokerSmallBlindMillis;
       const big = input.bigBlind ? parseWholeJetons(input.bigBlind, "Big blind") : table.pokerBigBlindMillis;
@@ -353,6 +353,10 @@ export async function configurePoker(input: {
         throw new DomainError("INVALID_AMOUNT", "Big blind must be greater than small blind.");
       }
       if (input.seatOrder?.length) {
+        const handsStarted = await tx.pokerHand.count({ where: { tableId: table.id } });
+        if (handsStarted > 0) {
+          throw new DomainError("SEATS_LOCKED", "Seat order is locked after the first hand begins.");
+        }
         const current = table.pokerSeats.map((seat) => seat.playerId);
         const ordered = input.seatOrder.filter((id) => current.includes(id));
         const remainder = current.filter((id) => !ordered.includes(id));

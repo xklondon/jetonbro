@@ -5,6 +5,7 @@ import { roundHasLockedStake } from "@/application/services/bankroll";
 import { assertCanSwitchGame, SWITCH_BLOCKED } from "@/domain/tables/switch-game";
 import { isPlayableGame } from "@/domain/games";
 import { DomainError, NotFoundError } from "@/domain/errors";
+import { parseWholeJetons } from "@/domain/money";
 
 export async function switchGame(input: {
   actorId: string;
@@ -52,13 +53,18 @@ export async function switchGame(input: {
         for (const [index, playerId] of order.entries()) {
           await tx.pokerSeat.create({ data: { tableId: table.id, playerId, orderIndex: index } });
         }
+        const small = input.smallBlind ? parseWholeJetons(input.smallBlind, "Small blind") : table.pokerSmallBlindMillis;
+        const big = input.bigBlind ? parseWholeJetons(input.bigBlind, "Big blind") : table.pokerBigBlindMillis;
+        if (small <= 0n || big <= 0n || small > big) {
+          throw new DomainError("INVALID_AMOUNT", "Big blind must be greater than small blind.");
+        }
         await tx.table.update({
           where: { id: table.id },
           data: {
             game: "POKER",
             currentPokerHandId: null,
-            pokerSmallBlindMillis: table.pokerSmallBlindMillis,
-            pokerBigBlindMillis: table.pokerBigBlindMillis,
+            pokerSmallBlindMillis: small,
+            pokerBigBlindMillis: big,
             updatedAt: new Date(),
           },
         });

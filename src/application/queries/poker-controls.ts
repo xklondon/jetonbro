@@ -1,11 +1,13 @@
 import type { PokerLegalActionView, PokerTableView } from "./views";
 
 export type PokerControlLayer = "owner" | "actor";
+export type PokerControlSurface = "dock" | "menu";
 export type PokerComposeKind = "BET" | "RAISE";
 
 export type PokerControl = {
   id: string;
   layer: PokerControlLayer;
+  surface: PokerControlSurface;
   label: string;
   enabled: boolean;
   hint?: string;
@@ -63,7 +65,8 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
     controls.push({
       id: "startHand",
       layer: "owner",
-      label: "START TEXAS HOLD’EM",
+      surface: "dock",
+      label: "DEAL CARDS",
       enabled: view.seats.length >= 2,
     });
   }
@@ -71,34 +74,36 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
     controls.push({
       id: "dealStreet",
       layer: "owner",
+      surface: "dock",
       label: view.nextStreetLabel,
       enabled: view.canDealStreet,
       hint: view.canDealStreet ? undefined : "Waiting for bets to match",
     });
   }
   if (view.isOwner && view.canAward) {
-    controls.push({ id: "assignWinners", layer: "owner", label: "ASSIGN WINNERS", enabled: true });
+    controls.push({ id: "assignWinners", layer: "owner", surface: "dock", label: "ASSIGN WINNERS", enabled: true });
   }
   if (view.isOwner && view.canNextHand) {
-    controls.push({ id: "nextHand", layer: "owner", label: "NEXT HAND NOW", enabled: true });
-    controls.push({ id: "scheduleNextHand", layer: "owner", label: "NEXT HAND IN 7 SECONDS", enabled: true });
+    controls.push({ id: "nextHand", layer: "owner", surface: "dock", label: "NEXT HAND NOW", enabled: true });
+    controls.push({ id: "scheduleNextHand", layer: "owner", surface: "dock", label: "NEXT HAND IN 7 SECONDS", enabled: true });
   }
   if (view.canReorderSeats) {
-    controls.push({ id: "reorderSeats", layer: "owner", label: "Move seats", enabled: true });
+    controls.push({ id: "reorderSeats", layer: "owner", surface: "menu", label: "SEAT ORDER", enabled: true });
   }
   if (view.canAddPlayer) {
-    controls.push({ id: "addPlayer", layer: "owner", label: "+ PLAYER", enabled: true });
+    controls.push({ id: "addPlayer", layer: "owner", surface: "menu", label: "+ PLAYER", enabled: true });
   }
   if (view.canGiveJetons) {
-    controls.push({ id: "giveJetons", layer: "owner", label: "GIVE JETONS", enabled: true });
+    controls.push({ id: "giveJetons", layer: "owner", surface: "menu", label: "GIVE JETONS", enabled: true });
   }
   if (view.canSwitchGame) {
-    controls.push({ id: "switchGame", layer: "owner", label: "SWITCH GAME", enabled: true });
+    controls.push({ id: "switchGame", layer: "owner", surface: "menu", label: "SWITCH GAME", enabled: true });
   }
   for (const action of pokerActorActions(view.legalActions)) {
     controls.push({
       id: action.type.toLowerCase(),
       layer: "actor",
+      surface: "dock",
       label: action.label,
       enabled: true,
     });
@@ -106,8 +111,13 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
   return controls;
 }
 
-export function pokerControlIds(view: PokerTableView, layer?: PokerControlLayer): string[] {
+export function pokerControlIds(
+  view: PokerTableView,
+  layer?: PokerControlLayer,
+  surface?: PokerControlSurface,
+): string[] {
   return pokerControls(view)
     .filter((control) => (layer ? control.layer === layer : true))
+    .filter((control) => (surface ? control.surface === surface : true))
     .map((control) => control.id);
 }

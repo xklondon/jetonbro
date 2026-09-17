@@ -55,7 +55,7 @@ export async function createPokerTable(
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "START TEXAS HOLD’EM" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "DEAL CARDS", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
 }

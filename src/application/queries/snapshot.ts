@@ -76,6 +76,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         },
       },
       pokerSeats: { orderBy: { orderIndex: "asc" } },
+      _count: { select: { pokerHands: true } },
       currentRound: {
         include: {
           boxes: { where: { removedAt: null }, orderBy: { boxNumber: "asc" } },
@@ -498,6 +499,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           seats: table.pokerSeats,
           hand: table.currentPokerHand,
           tableClosed,
+          handsStarted: table._count.pokerHands,
         })
       : null;
   const blackjack = table.game === "BLACKJACK";

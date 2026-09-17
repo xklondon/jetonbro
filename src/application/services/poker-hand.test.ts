@@ -138,6 +138,46 @@ describeDb("Texas Hold’em and game switching", () => {
     expect(after.bank).toBe(before.bank);
   });
 
+  test("switch to Hold’em pauses on POKER_SETUP until DEAL CARDS posts blinds and marks the actor", async () => {
+    const { owner, sam, jo, tableId } = await threePlayerTable();
+    await switchGame({
+      actorId: owner.id,
+      tableId,
+      game: "POKER",
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
+      idempotencyKey: key(),
+    });
+    const setup = await loadSnapshot(tableId, owner.id);
+    expect(setup.poker?.phase).toBe("POKER_SETUP");
+    expect(setup.poker?.canReorderSeats).toBe(true);
+    expect(setup.poker?.currentActorId).toBeNull();
+    expect(setup.poker?.legalActions).toEqual([]);
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+    });
+    const ownerSnap = await loadSnapshot(tableId, owner.id);
+    const samSnap = await loadSnapshot(tableId, sam.id);
+    expect(ownerSnap.poker?.phase).toBe("PRE_FLOP");
+    expect(ownerSnap.poker?.canReorderSeats).toBe(false);
+    expect(samSnap.poker?.canReorderSeats).toBe(false);
+    expect(ownerSnap.poker?.seats).toEqual(samSnap.poker?.seats);
+    expect(ownerSnap.poker?.pot).toEqual(samSnap.poker?.pot);
+    expect(ownerSnap.poker?.currentActorId).toBe(owner.id);
+    expect(ownerSnap.poker?.waitingCopy).toBe("YOUR TURN");
+    expect(samSnap.poker?.waitingCopy).toBe("Waiting for Owner");
+    expect(ownerSnap.poker?.legalActions.some((action) => action.type === "CALL")).toBe(true);
+    expect(samSnap.poker?.legalActions).toEqual([]);
+    const blinds = ownerSnap.poker?.seats ?? [];
+    expect(blinds.find((seat) => seat.isSmallBlind)?.available.label).toBe("95");
+    expect(blinds.find((seat) => seat.isBigBlind)?.available.label).toBe("90");
+  });
+
   test("three-player blinds, actor-only actions, fold-to-one, and next-hand rotation", async () => {
     const { owner, sam, jo, tableId } = await threePlayerTable();
     await startTexasHoldem({

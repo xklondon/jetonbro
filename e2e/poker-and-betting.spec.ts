@@ -101,7 +101,9 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await expect(page.getByRole("button", { name: "Zilch — Coming later" })).toBeDisabled();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await shot(page, "app-poker-setup-sheet-390x844.png");
-  await page.getByRole("button", { name: "START TEXAS HOLD’EM" }).click();
+  await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
+  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "DEAL CARDS", exact: true }).click();
   await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible({ timeout: 15_000 });
   await shot(page, "app-poker-dealer-preflop-390x844.png");
   await samPage.reload();
@@ -269,10 +271,14 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
   );
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
   await expect(page.getByText("Texas Hold’em · POKER SETUP")).toBeVisible();
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("button", { name: "SEAT ORDER" }).click();
   if (joId && samId) {
     await command(page, tableId, "configurePoker", { seatOrder: `${joId},${ownerId},${samId}` });
   }
   await page.reload();
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("button", { name: "SEAT ORDER" }).click();
   await expect(page.getByText("1. Jo")).toBeVisible();
   await expect(page.getByText("2. Owner")).toBeVisible();
   await expect(page.getByText("3. Sam")).toBeVisible();
@@ -282,6 +288,9 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
   await page.reload();
   await samPage.reload();
   await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Menu" }).click();
+  await expect(page.getByRole("button", { name: "SEAT ORDER" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Cancel" }).click();
   const turn = await tableSnapshot(page);
   expect(turn.headline).toBe("Texas Hold’em · PRE-FLOP");
   expect(turn.poker?.seats.some((seat) => seat.isActor)).toBe(true);

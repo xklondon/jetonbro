@@ -320,7 +320,8 @@ export function ClassicBankTable({
                 className="gold-button"
                 type="button"
                 onClick={() => {
-                  onCommand("startTexasHoldem", {
+                  onCommand("switchGame", {
+                    game: "POKER",
                     smallBlind,
                     bigBlind,
                     seatOrder: members.map((member) => member.userId).join(","),
@@ -328,7 +329,7 @@ export function ClassicBankTable({
                   setSheet(null);
                 }}
               >
-                START TEXAS HOLD’EM
+                SWITCH TO TEXAS HOLD’EM
               </button>
               <button className="text-link" type="button" onClick={() => setSheet("game")}>
                 Cancel

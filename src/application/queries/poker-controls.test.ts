@@ -145,7 +145,7 @@ test("owner street control is visible disabled until the street is matched, then
 });
 
 test("role × phase owner controls follow setup, streets, showdown, and next hand", () => {
-  expect(pokerControlIds(view({
+  const setup = view({
     phase: "POKER_SETUP",
     isOwner: true,
     viewerId: "owner",
@@ -153,7 +153,14 @@ test("role × phase owner controls follow setup, streets, showdown, and next han
     canAddPlayer: true,
     canGiveJetons: true,
     canSwitchGame: true,
-  }), "owner")).toEqual(["startHand", "reorderSeats", "addPlayer", "giveJetons", "switchGame"]);
+  });
+  expect(pokerControls(setup).find((control) => control.id === "startHand")).toMatchObject({
+    label: "DEAL CARDS",
+    surface: "dock",
+  });
+  expect(pokerControlIds(setup, "owner")).toEqual(["startHand", "reorderSeats", "addPlayer", "giveJetons", "switchGame"]);
+  expect(pokerControlIds(setup, "owner", "dock")).toEqual(["startHand"]);
+  expect(pokerControlIds(setup, "owner", "menu")).toEqual(["reorderSeats", "addPlayer", "giveJetons", "switchGame"]);
 
   expect(pokerControlIds(view({
     phase: "FLOP",
@@ -180,8 +187,27 @@ test("role × phase owner controls follow setup, streets, showdown, and next han
     canSwitchGame: true,
     canAddPlayer: true,
     canGiveJetons: true,
-    canReorderSeats: true,
-  }), "owner")).toEqual(["nextHand", "scheduleNextHand", "reorderSeats", "addPlayer", "giveJetons", "switchGame"]);
+  }), "owner")).toEqual(["nextHand", "scheduleNextHand", "addPlayer", "giveJetons", "switchGame"]);
+  expect(pokerControlIds(view({
+    phase: "HAND_COMPLETE",
+    isOwner: true,
+    viewerId: "owner",
+    canNextHand: true,
+    canScheduleNextHand: true,
+    canSwitchGame: true,
+    canAddPlayer: true,
+    canGiveJetons: true,
+  }), "owner", "dock")).toEqual(["nextHand", "scheduleNextHand"]);
+  expect(pokerControlIds(view({
+    phase: "HAND_COMPLETE",
+    isOwner: true,
+    viewerId: "owner",
+    canNextHand: true,
+    canScheduleNextHand: true,
+    canSwitchGame: true,
+    canAddPlayer: true,
+    canGiveJetons: true,
+  }), "owner", "menu")).toEqual(["addPlayer", "giveJetons", "switchGame"]);
 });
 
 test("the rotating dealer button does not grant owner street controls", () => {
@@ -339,7 +365,6 @@ test("role × phase matrix is identical for heads-up and 3-player", () => {
       canSwitchGame: true,
       canAddPlayer: true,
       canGiveJetons: true,
-      canReorderSeats: true,
-    }), "owner")).toEqual(["nextHand", "scheduleNextHand", "reorderSeats", "addPlayer", "giveJetons", "switchGame"]);
+    }), "owner")).toEqual(["nextHand", "scheduleNextHand", "addPlayer", "giveJetons", "switchGame"]);
   }
 });

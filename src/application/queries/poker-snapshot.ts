@@ -60,6 +60,7 @@ export function buildPokerView(input: {
   seats: { playerId: string; orderIndex: number; sittingOut: boolean }[];
   hand: Hand | null;
   tableClosed: boolean;
+  handsStarted?: number;
 }): PokerTableView {
   const { hand, viewerId, isOwner } = input;
   const memberById = new Map(input.members.map((member) => [member.userId, member]));
@@ -153,7 +154,7 @@ export function buildPokerView(input: {
     });
   const copy =
     phase === "POKER_SETUP"
-      ? "Set blinds and dealer order, then start Texas Hold’em"
+      ? "Set blinds and dealer order, then DEAL CARDS"
       : phase === "HAND_COMPLETE"
         ? "Hand complete"
         : phase === "SHOWDOWN"
@@ -211,7 +212,12 @@ export function buildPokerView(input: {
     switchBlockedReason: isOwner && pokerHandIsOpen(phase) ? "Finish or clear the current hand before switching games" : null,
     canAddPlayer: Boolean(isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed),
     canGiveJetons: Boolean(isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed),
-    canReorderSeats: Boolean(isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed),
+    canReorderSeats: Boolean(
+      isOwner &&
+        phase === "POKER_SETUP" &&
+        !input.tableClosed &&
+        (input.handsStarted ?? (hand ? 1 : 0)) === 0,
+    ),
     streetComplete: Boolean(streetComplete),
     allInRunout,
     turnNumber: hand?.actionCount ?? 0,

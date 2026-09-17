@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from "react";
 import type { MemberView, PokerTableView } from "@/application/queries/views";
+import { pokerControlIds } from "@/application/queries/poker-controls";
 import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
 import { PokerFelt } from "./PokerFelt";
 import { PokerGameControls } from "./PokerGameControls";
+import { SeatOrderList } from "./SeatOrderList";
+
+type OwnerSheet = "menu" | "seats" | "player" | "jetons" | "game" | "winners" | null;
 
 export function ClassicPokerDealer({
   view,
@@ -18,12 +22,13 @@ export function ClassicPokerDealer({
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
 }) {
-  const [sheet, setSheet] = useState<"player" | "jetons" | "game" | "winners" | null>(null);
+  const [sheet, setSheet] = useState<OwnerSheet>(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
   const [winners, setWinners] = useState<Record<number, string[]>>({});
+  const menuIds = pokerControlIds(view, "owner", "menu");
 
   const winnerPayload = useMemo(
     () =>
@@ -37,7 +42,7 @@ export function ClassicPokerDealer({
   );
 
   return (
-    <PhoneShell rightLabel={`♠ ${view.seats.length}`}>
+    <PhoneShell rightLabel={`♠ ${view.seats.length}`} onMenu={() => setSheet("menu")}>
       <div className="phase-head">
         <strong>{view.tableName}</strong>
         <span>
@@ -53,13 +58,51 @@ export function ClassicPokerDealer({
         ) : null}
         <DealCountdown deadline={view.nextHandDeadlineAt} label="Next hand in" />
       </div>
-      <PokerFelt
-        view={view}
-        onReorder={view.canReorderSeats ? (seatOrder) => onCommand("configurePoker", { seatOrder }) : undefined}
-      />
+      <PokerFelt view={view} />
       <PokerGameControls view={view} onCommand={onCommand} notice={notice} onOwnerSheet={setSheet} />
       <div className={`sheet${sheet ? " open" : ""}`}>
         <div className="sheet-panel">
+          {sheet === "menu" ? (
+            <>
+              <h3>Table</h3>
+              {menuIds.includes("reorderSeats") ? (
+                <button className="gold-button" type="button" onClick={() => setSheet("seats")}>
+                  SEAT ORDER
+                </button>
+              ) : null}
+              {menuIds.includes("addPlayer") ? (
+                <button type="button" onClick={() => setSheet("player")}>
+                  + PLAYER
+                </button>
+              ) : null}
+              {menuIds.includes("giveJetons") ? (
+                <button type="button" onClick={() => setSheet("jetons")}>
+                  GIVE JETONS
+                </button>
+              ) : null}
+              {menuIds.includes("switchGame") ? (
+                <button type="button" onClick={() => setSheet("game")}>
+                  SWITCH GAME
+                </button>
+              ) : null}
+              <button className="text-link" type="button" onClick={() => setSheet(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "seats" ? (
+            <>
+              <h3>Seat order</h3>
+              <p className="muted">Dealer button follows this order after DEAL CARDS. Order locks when the first hand begins.</p>
+              <SeatOrderList
+                seats={view.seats}
+                onReorder={(seatOrder) => onCommand("configurePoker", { seatOrder })}
+              />
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Back
+              </button>
+            </>
+          ) : null}
           {sheet === "game" ? (
             <>
               <h3>Switch game</h3>

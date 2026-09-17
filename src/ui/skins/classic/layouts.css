@@ -1107,10 +1107,55 @@
   font-size: 28px;
   color: var(--gold);
 }
+.classic-skin .poker-pot-chips {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.classic-skin .poker-to-call {
+  margin-top: 6px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.classic-skin .poker-seat.is-dealer {
+  border: 1px solid rgba(223, 189, 105, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.18);
+}
 .classic-skin .poker-seat.is-actor {
   outline: 3px solid var(--gold);
   box-shadow: 0 0 0 3px rgba(223, 189, 105, 0.35);
   animation: actorPulse 1.2s ease-in-out infinite;
+}
+.classic-skin .dealer-badge,
+.classic-skin .blind-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.classic-skin .dealer-badge {
+  background: rgba(223, 189, 105, 0.22);
+  color: var(--gold);
+  border: 1px solid rgba(223, 189, 105, 0.7);
+}
+.classic-skin .blind-badge {
+  border: 1px solid rgba(223, 189, 105, 0.35);
+}
+.classic-skin .poker-seat-markers {
+  margin-top: 4px;
+}
+.classic-skin .poker-seat-status {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 @media (prefers-reduced-motion: reduce) {
   .classic-skin .poker-seat.is-actor {

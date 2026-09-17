@@ -21,10 +21,10 @@ export function PokerGameControls({
   view: PokerTableView;
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
-  onOwnerSheet?: (sheet: "player" | "jetons" | "game" | "winners") => void;
+  onOwnerSheet?: (sheet: "menu" | "seats" | "player" | "jetons" | "game" | "winners") => void;
 }) {
   const layout = pokerActorLayout(view.legalActions);
-  const ownerControls = pokerControls(view).filter((control) => control.layer === "owner" && control.id !== "reorderSeats");
+  const ownerControls = pokerControls(view).filter((control) => control.layer === "owner" && control.surface === "dock");
   const showControls = Boolean(notice || ownerControls.length > 0 || layout.primary || layout.secondary.length > 0);
   const [compose, setCompose] = useState<PokerComposeKind | null>(null);
   const [staged, setStaged] = useState("");
@@ -67,27 +67,6 @@ export function PokerGameControls({
           {ownerControls.length > 0 ? (
             <div className="owner-controls" data-owner-controls="true">
               {ownerControls.map((control) => {
-                if (control.id === "addPlayer") {
-                  return (
-                    <button key={control.id} type="button" onClick={() => onOwnerSheet?.("player")}>
-                      {control.label}
-                    </button>
-                  );
-                }
-                if (control.id === "giveJetons") {
-                  return (
-                    <button key={control.id} type="button" onClick={() => onOwnerSheet?.("jetons")}>
-                      {control.label}
-                    </button>
-                  );
-                }
-                if (control.id === "switchGame") {
-                  return (
-                    <button key={control.id} type="button" onClick={() => onOwnerSheet?.("game")}>
-                      {control.label}
-                    </button>
-                  );
-                }
                 if (control.id === "assignWinners") {
                   return (
                     <button key={control.id} type="button" className="gold-button" onClick={() => onOwnerSheet?.("winners")}>

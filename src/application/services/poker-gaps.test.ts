@@ -120,7 +120,7 @@ describeDb("Batch 3 Poker acceptance gaps", () => {
     expect(snap.setup).toBeNull();
   });
 
-  test("owner can reorder seats between hands and non-owners cannot", async () => {
+  test("owner can reorder seats before the first hand and non-owners cannot", async () => {
     const { owner, sam, jo, tableId } = await directPokerTable();
     await configurePoker({
       actorId: owner.id,
@@ -140,6 +140,20 @@ describeDb("Batch 3 Poker acceptance gaps", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     const unchanged = await prisma.pokerSeat.findMany({ where: { tableId }, orderBy: { orderIndex: "asc" } });
     expect(unchanged.map((seat) => seat.playerId)).toEqual([jo.id, owner.id, sam.id]);
+    await startTexasHoldem({ actorId: owner.id, tableId, idempotencyKey: key(), smallBlind: "5", bigBlind: "10" });
+    await foldOut(tableId, owner.id);
+    await expect(
+      configurePoker({
+        actorId: owner.id,
+        tableId,
+        idempotencyKey: key(),
+        seatOrder: [sam.id, jo.id, owner.id],
+      }),
+    ).rejects.toMatchObject({ code: "SEATS_LOCKED" });
+    const locked = await prisma.pokerSeat.findMany({ where: { tableId }, orderBy: { orderIndex: "asc" } });
+    expect(locked.map((seat) => seat.playerId)).toEqual([jo.id, owner.id, sam.id]);
+    const setup = await loadSnapshot(tableId, owner.id);
+    expect(setup.poker?.canReorderSeats).toBe(false);
   });
 
   test("reordering is blocked during a hand and dealer rotation follows stored order", async () => {

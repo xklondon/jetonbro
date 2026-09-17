@@ -311,7 +311,8 @@ export function ClassicSetupTable({
                 className="gold-button"
                 type="button"
                 onClick={() => {
-                  onCommand("startTexasHoldem", {
+                  onCommand("switchGame", {
+                    game: "POKER",
                     smallBlind,
                     bigBlind,
                     seatOrder: view.members.map((member) => member.userId).join(","),
@@ -319,7 +320,7 @@ export function ClassicSetupTable({
                   setMenuOpen(null);
                 }}
               >
-                START TEXAS HOLD’EM
+                SWITCH TO TEXAS HOLD’EM
               </button>
               <button className="text-link" type="button" onClick={() => setMenuOpen("game")}>
                 Cancel

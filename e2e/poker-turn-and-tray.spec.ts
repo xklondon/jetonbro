@@ -131,14 +131,21 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
     .toBe(1);
 
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
+  await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const snap = await tableSnapshot(page);
+      const sam = snap.bank?.players.find((player) => player.name === "Sam")?.boxes ?? [];
+      const jo = snap.bank?.players.find((player) => player.name === "Jo")?.boxes ?? [];
+      return sam.length >= 2 && jo.length === 1;
+    })
+    .toBe(true);
 
   const payoutSnap = await tableSnapshot(page);
   const samBoxes = payoutSnap.bank?.players.find((player) => player.name === "Sam")?.boxes ?? [];
   const joBoxes = payoutSnap.bank?.players.find((player) => player.name === "Jo")?.boxes ?? [];
-  expect(samBoxes.length).toBeGreaterThanOrEqual(2);
-  expect(joBoxes.length).toBe(1);
 
   await swipePayoutRow(page, samBoxes[0]!.id, "left");
   await swipePayoutRow(page, samBoxes[1]!.id, "right");
@@ -157,7 +164,9 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "SWITCH GAME" }).click();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
-  await page.getByRole("button", { name: "START TEXAS HOLD’EM" }).click();
+  await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
+  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "DEAL CARDS", exact: true }).click();
   await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("YOUR JETONS")).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toBeVisible();
