@@ -82,8 +82,7 @@ export function ClassicPlayerTable({
         <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
       </div>
       <main className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}>
-        <div className="table-rail bj-rail">
-          <div className="table-surface">
+        <div className="table-surface">
             <ClothName name={view.tableName} />
             <div className={boxClass}>
               {view.boxes.map((box) => (
@@ -97,27 +96,29 @@ export function ClassicPlayerTable({
                   onRetractChip={(amount) =>
                     onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
                   }
+                  cardEntry={
+                    view.phase === "PLAYING" ? (
+                      <CardEntryPanel
+                        hand={box.hand}
+                        completeLabel="HAND COMPLETE"
+                        compact
+                        showCards={false}
+                        onAdd={(rank) => onCommand("addCard", { boxId: box.id, rank })}
+                        onRemove={(index) => onCommand("removeCard", { boxId: box.id, index: String(index) })}
+                        onComplete={() => onCommand("completeHand", { boxId: box.id })}
+                        onReopen={() => onCommand("reopenHand", { boxId: box.id })}
+                      />
+                    ) : null
+                  }
                 />
               ))}
             </div>
-          </div>
         </div>
       </main>
       <footer className="dock player-dock">
         <div className="game-controls" data-game-controls="true">
         {notice ? <div className="error">{notice}</div> : null}
         {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
-        {view.phase === "PLAYING" ? (
-          <CardEntryPanel
-            hand={selected?.hand}
-            completeLabel="HAND COMPLETE"
-            showCards={false}
-            onAdd={(rank) => selected && onCommand("addCard", { boxId: selected.id, rank })}
-            onRemove={(index) => selected && onCommand("removeCard", { boxId: selected.id, index: String(index) })}
-            onComplete={() => selected && onCommand("completeHand", { boxId: selected.id })}
-            onReopen={() => selected && onCommand("reopenHand", { boxId: selected.id })}
-          />
-        ) : null}
         {view.actions.bet ? (
           <div className="exact">
             <input

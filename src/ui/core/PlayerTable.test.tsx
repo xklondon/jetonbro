@@ -84,7 +84,10 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("Insurance");
   expect(html).toContain("Double");
   expect(html).toContain("Split");
-  expect(html).toContain("+ ADD CARDS");
+  expect(html).toContain("+ CARDS");
+  expect(html).not.toContain("+ ADD CARDS");
+  expect(html).not.toContain("bj-rail");
+  expect(html).not.toContain("table-rail");
   expect(html.indexOf("Insurance")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).toContain("selected");
   expect(html).not.toContain("OPEN BANK");
@@ -113,6 +116,10 @@ test("entered Blackjack ranks sit inside the betting box above the card controls
   expect(html).toContain("playing-card is-box");
   expect(html.indexOf("data-box-cards")).toBeGreaterThan(html.indexOf("class=\"box"));
   expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("data-game-controls"));
+  expect(html.indexOf("+ CARDS") === -1 || html.indexOf("HAND COMPLETE") > html.indexOf("class=\"box")).toBe(true);
+  expect(html.indexOf("HAND COMPLETE")).toBeGreaterThan(html.indexOf("class=\"box"));
+  expect(html.indexOf("HAND COMPLETE")).toBeLessThan(html.indexOf("data-game-controls"));
+  expect(html).not.toContain("+ ADD CARDS");
 });
 
 

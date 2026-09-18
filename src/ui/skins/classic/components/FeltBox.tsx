@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
 import { PlayingCard } from "./PlayingCard";
@@ -9,24 +10,28 @@ export function FeltBox({
   selected,
   onSelect,
   bank = false,
+  compact = false,
   showOutcomes = false,
   onSettle,
   retractable = false,
   onRetractChip,
   dropHighlight = false,
+  cardEntry,
 }: {
   box: BoxView;
   selected?: boolean;
   onSelect?: () => void;
   bank?: boolean;
+  compact?: boolean;
   showOutcomes?: boolean;
   onSettle?: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
   retractable?: boolean;
   onRetractChip?: (amount: string) => void;
   dropHighlight?: boolean;
+  cardEntry?: ReactNode;
 }) {
   const chips = chipsFromMillis(box.bet.millis);
-  const className = `box${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}`;
+  const className = `box${compact ? " is-compact" : ""}${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}`;
   const content = (
     <>
       <span className="box-name">{box.label}</span>
@@ -76,6 +81,7 @@ export function FeltBox({
         </span>
       ) : null}
       {box.insuranceResult ? <span className="result">{box.insuranceResult}</span> : null}
+      {cardEntry}
       {!box.outcome && !bank ? <span className="hint">{selected ? "Selected" : "Tap to select"}</span> : null}
       {showOutcomes && !box.outcome ? (
         <span className="outcome">
@@ -102,7 +108,9 @@ export function FeltBox({
       <div
         className={className}
         data-drop-box={box.id}
+        data-box-id={box.id}
         role="button"
+        aria-label={box.label}
         tabIndex={0}
         onClick={onSelect}
         onKeyDown={(event) => {
@@ -117,7 +125,7 @@ export function FeltBox({
     );
   }
   return (
-    <div className={className} data-drop-box={box.id}>
+    <div className={className} data-drop-box={box.id} data-box-id={box.id}>
       {content}
     </div>
   );

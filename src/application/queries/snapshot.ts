@@ -452,6 +452,11 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             !tableClosed,
           closeInsurance: table.currentPhase === "PLAYING" && insuranceOpen && !tableClosed,
           settleBoxes: table.currentPhase === "PAYOUT" && !tableClosed,
+          settleDealerWon:
+            isOwner &&
+            table.currentPhase === "PAYOUT" &&
+            !tableClosed &&
+            boxes.some((box) => !box.outcome),
           settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance && !tableClosed,
           addPlayer: table.currentPhase === "BETTING" && !tableClosed,
           giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
@@ -474,6 +479,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         cardAssist: table.cardAssist,
         bankroll,
         dealerHand: dealerHandView,
+        dealerName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
         insuranceSuggestion,
         canSwitchGame: isOwner && !fundingLocked && !pokerOpen && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
         switchBlockedReason: fundingLocked || pokerOpen || table.currentPhase === "PLAYING" || table.currentPhase === "PAYOUT"

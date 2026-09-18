@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Blackjack layout, in-box cards, and DEALER WON
+
+- The Classic Blackjack table is a single phone/felt frame. The nested wood/leather rail from the realistic restyle is gone; decorative pseudo-elements cannot receive pointer events.
+- `ROUND_COMPLETE` (and PAYOUT next-round) shows `NEXT ROUND NOW` and `IN 7 SECONDS` as equal-width compact buttons on one row. Commands and deadlines are unchanged.
+- Optional `+ CARDS` and entered ranks sit inside each Player betting box and a dedicated Dealer box (PLAYING, PAYOUT, ROUND_COMPLETE). The large full-width Add Cards control is gone. Card Assist OFF / CONFIRM / AUTO is unchanged; physical cards stay authoritative.
+- Owner-only `DEALER WON` in PAYOUT settles every currently unresolved active Player box as `LOST` in one transaction using the existing per-box ledger rules. Already-settled boxes and Insurance are untouched. Duplicate submissions are idempotent.
+- Payout swipes bind to the complete unresolved row with Pointer Events and `setPointerCapture`, ignore non-primary pointers, and do not start from outcome buttons.
+
 ### Realistic Classic table visuals
 
 - Blackjack and Texas Hold’em share one CSS table system: emerald felt texture, antique-gold rails, cream serif headings, ivory cards, denomination-coloured jetons, and a matte-black bottom dock.

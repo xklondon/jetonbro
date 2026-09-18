@@ -34,49 +34,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 14px 12px 18px;
-  background:
-    radial-gradient(ellipse at 50% 12%, rgba(255, 236, 190, 0.1), transparent 42%),
-    linear-gradient(180deg, rgba(26, 61, 50, 0.35), transparent 28%),
-    var(--felt);
-  box-shadow: var(--shadow-inset), var(--shadow);
-}
-
-.classic-skin .table-rail.bj-rail {
-  border-radius: 18px 18px 46% 46% / 18px 18px 22% 22%;
-  border: 3px solid var(--gold);
-  outline: 8px solid var(--rail);
-  outline-offset: 0;
-}
-
-.classic-skin .table-rail.bj-rail::after {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  border-radius: inherit;
-  border: 1px dashed var(--gold-line);
-  pointer-events: none;
+  padding: 8px 8px 12px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .classic-skin .table-rail.poker-rail {
   border-radius: 48% / 16%;
-  border: 3px solid var(--gold);
-  box-shadow:
-    0 0 0 9px var(--rail),
-    0 0 0 11px var(--gold-dim),
-    var(--shadow-inset),
-    var(--shadow);
+  border: 1px dashed var(--gold-line);
 }
 
 .classic-skin .table-rail.poker-rail::before,
 .classic-skin .table-rail.poker-rail::after {
   content: "";
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold-dim));
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
 
@@ -96,10 +71,20 @@
   z-index: 1;
   width: 100%;
   min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+
+.classic-skin main.felt:not(.poker-felt)::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px dashed var(--gold-line);
+  border-radius: 14px;
+  pointer-events: none;
 }
 
 .classic-skin .poker-pot-ring {
@@ -168,6 +153,7 @@
 }
 
 .classic-skin .betting-spot {
+  position: relative;
   width: min(72%, 220px);
   margin: 8px auto;
   aspect-ratio: 1;
@@ -191,15 +177,11 @@
   pointer-events: none;
 }
 
-.classic-skin .betting-spot {
-  position: relative;
-}
-
 .classic-skin .payout-row.is-won {
   box-shadow: inset 0 0 0 1px rgba(31, 122, 74, 0.55), 0 0 16px rgba(223, 189, 105, 0.18);
 }
 
-.classic-skin .table-rail .dealer-list {
+.classic-skin .table-surface .dealer-list {
   height: auto;
   max-height: 100%;
   width: 100%;

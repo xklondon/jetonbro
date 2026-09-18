@@ -115,67 +115,75 @@ export async function noHorizontalOverflow(page: Page) {
   expect(overflow).toBe(false);
 }
 
-export async function swipePayoutRow(page: Page, boxId: string, direction: "right" | "left") {
-  const inner = page.locator(`[data-box-id="${boxId}"] [data-payout-gesture], [data-box-id="${boxId}"] .payout-row-inner`);
-  await expect(inner).toBeVisible();
-  const box = await inner.boundingBox();
+export async function swipePayoutRow(
+  page: Page,
+  boxId: string,
+  direction: "right" | "left",
+  distance = 120,
+) {
+  const row = page.locator(`[data-box-id="${boxId}"][data-payout-row], [data-box-id="${boxId}"][data-payout-gesture]`);
+  await expect(row).toBeVisible();
+  const box = await row.boundingBox();
   if (!box) throw new Error("missing payout row");
-  const y = box.y + box.height / 2;
+  const y = box.y + Math.min(28, box.height / 5);
   const x = box.x + box.width / 2;
-  const dx = direction === "right" ? 120 : -120;
-  await pointerSwipe(page, inner, x, y, x + dx, y);
+  const dx = direction === "right" ? distance : -distance;
+  await pointerSwipe(page, row, x, y, x + dx, y);
+}
+
+export async function dragPayoutRow(
+  page: Page,
+  boxId: string,
+  direction: "right" | "left",
+  options?: { distance?: number; release?: boolean },
+) {
+  const row = page.locator(`[data-box-id="${boxId}"][data-payout-row], [data-box-id="${boxId}"][data-payout-gesture]`);
+  await expect(row).toBeVisible();
+  const box = await row.boundingBox();
+  if (!box) throw new Error("missing payout row");
+  const y = box.y + Math.min(28, box.height / 5);
+  const x = box.x + box.width / 2;
+  const dx = direction === "right" ? (options?.distance ?? 90) : -(options?.distance ?? 90);
+  await pointerSwipe(page, row, x, y, x + dx, y, { release: options?.release !== false });
 }
 
 export async function doubleTapPayoutRow(page: Page, boxId: string) {
-  const inner = page.locator(`[data-box-id="${boxId}"] [data-payout-gesture], [data-box-id="${boxId}"] .payout-row-inner`);
+  const inner = page.locator(`[data-box-id="${boxId}"] .payout-row-inner`);
   await expect(inner).toBeVisible();
+  await inner.evaluate((el) => el.scrollIntoView({ block: "center", inline: "nearest" }));
   const box = await inner.boundingBox();
   if (!box) throw new Error("missing payout row");
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
-  const hasTouch = await page.evaluate(() => navigator.maxTouchPoints > 0);
-  if (hasTouch) {
-    await page.touchscreen.tap(x, y);
-    await page.touchscreen.tap(x, y);
-    return;
-  }
-  await page.mouse.click(x, y);
-  await page.mouse.click(x, y);
+  await page.mouse.up().catch(() => undefined);
+  await page.mouse.move(x, y);
+  await page.mouse.click(x, y, { clickCount: 2, delay: 40 });
 }
 
-async function pointerSwipe(page: Page, locator: ReturnType<Page["locator"]>, x1: number, y1: number, x2: number, y2: number) {
-  const hasTouch = await page.evaluate(() => navigator.maxTouchPoints > 0);
-  if (hasTouch) {
-    await locator.evaluate(
-      (el, pts) => {
-        const fire = (type: string, x: number, y: number, buttons: number) => {
-          el.dispatchEvent(
-            new PointerEvent(type, {
-              bubbles: true,
-              cancelable: true,
-              composed: true,
-              pointerId: 1,
-              pointerType: "touch",
-              isPrimary: true,
-              clientX: x,
-              clientY: y,
-              buttons,
-              pressure: buttons ? 1 : 0,
-            }),
-          );
-        };
-        fire("pointerdown", pts.x1, pts.y1, 1);
-        fire("pointermove", (pts.x1 + pts.x2) / 2, pts.y1, 1);
-        fire("pointermove", pts.x2, pts.y2, 1);
-        fire("pointerup", pts.x2, pts.y2, 0);
-      },
-      { x1, y1, x2, y2 },
-    );
-    return;
-  }
+async function pointerSwipe(
+  page: Page,
+  locator: ReturnType<Page["locator"]>,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  options?: { release?: boolean },
+) {
+  await locator.scrollIntoViewIfNeeded();
   await page.mouse.move(x1, y1);
   await page.mouse.down();
-  await page.mouse.move(x2, y2, { steps: 12 });
+  await page.mouse.move((x1 + x2) / 2, y1, { steps: 4 });
+  await page.mouse.move(x2, y2, { steps: 10 });
+  if (options?.release !== false) await page.mouse.up();
+}
+
+export async function releasePayoutDrag(page: Page, boxId: string, direction: "right" | "left", distance = 90) {
+  const row = page.locator(`[data-box-id="${boxId}"][data-payout-row], [data-box-id="${boxId}"][data-payout-gesture]`);
+  const box = await row.boundingBox();
+  if (!box) throw new Error("missing payout row");
+  const y = box.y + Math.min(28, box.height / 5);
+  const x = box.x + box.width / 2 + (direction === "right" ? distance : -distance);
+  await page.mouse.move(x, y);
   await page.mouse.up();
 }
 

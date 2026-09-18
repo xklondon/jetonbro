@@ -65,8 +65,7 @@ export function ClassicSetupTable({
       </div>
       </div>
       <main className="felt setup-felt">
-        <div className="table-rail bj-rail">
-          <div className="table-surface">
+        <div className="table-surface">
         <ClothName name={view.tableName} />
         {notice ? <div className="error">{notice}</div> : null}
         <div className="dealer-spot">DEALER · {view.bankName}</div>
@@ -85,7 +84,6 @@ export function ClassicSetupTable({
             ))
           )}
         </div>
-          </div>
         </div>
       </main>
       <div className={`sheet${qrOpen ? " open" : ""}`}>

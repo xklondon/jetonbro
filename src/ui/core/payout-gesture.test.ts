@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { payoutSwipeOutcome, isHorizontalPayoutGesture } from "./payout-gesture";
+import { payoutSwipeOutcome, isHorizontalPayoutGesture, startPayoutDrag, movePayoutDrag, endPayoutDrag } from "./payout-gesture";
 import { selectOutcomeCelebration } from "./outcome-celebration";
 import { OutcomeCelebrationOverlay } from "@/ui/skins/classic/components/OutcomeCelebration";
 
@@ -15,6 +15,54 @@ test("swipe right is WIN and swipe left is LOSS after the threshold", () => {
 test("horizontal lock starts only after a clear sideways move", () => {
   expect(isHorizontalPayoutGesture(12, 2)).toBe(true);
   expect(isHorizontalPayoutGesture(4, 20)).toBe(false);
+});
+
+function pointer(partial: Partial<Parameters<typeof startPayoutDrag>[0]> & { clientX: number; clientY: number }) {
+  return {
+    isPrimary: true,
+    pointerId: 1,
+    button: 0,
+    fromAction: false,
+    ...partial,
+  };
+}
+
+test("full-row pointer capture path settles left as LOST and right as WON", () => {
+  const start = startPayoutDrag(pointer({ clientX: 200, clientY: 80 }), null);
+  expect(start).not.toBeNull();
+  const left = movePayoutDrag(start!, pointer({ clientX: 110, clientY: 82 }));
+  expect(left.dragging).toBe(true);
+  expect(left.dx).toBeLessThan(0);
+  expect(endPayoutDrag(left, pointer({ clientX: 110, clientY: 82 }), 1_000, 0).outcome).toBe("LOST");
+
+  const rightStart = startPayoutDrag(pointer({ clientX: 200, clientY: 80 }), null)!;
+  const right = movePayoutDrag(rightStart, pointer({ clientX: 290, clientY: 81 }));
+  expect(endPayoutDrag(right, pointer({ clientX: 290, clientY: 81 }), 1_000, 0).outcome).toBe("WON");
+});
+
+test("below-threshold drag snaps back without settling", () => {
+  const start = startPayoutDrag(pointer({ clientX: 200, clientY: 80 }), null)!;
+  const moved = movePayoutDrag(start, pointer({ clientX: 230, clientY: 81 }));
+  const ended = endPayoutDrag(moved, pointer({ clientX: 230, clientY: 81 }), 1_000, 0);
+  expect(ended.outcome).toBeNull();
+  expect(ended.lastTap).toBe(0);
+});
+
+test("a gesture that starts on a result button never begins", () => {
+  expect(startPayoutDrag(pointer({ clientX: 200, clientY: 80, fromAction: true }), null)).toBeNull();
+  expect(startPayoutDrag(pointer({ clientX: 200, clientY: 80, isPrimary: false }), null)).toBeNull();
+  const first = startPayoutDrag(pointer({ clientX: 200, clientY: 80 }), null);
+  expect(startPayoutDrag(pointer({ clientX: 210, clientY: 80, pointerId: 2 }), first)).toBeNull();
+});
+
+test("double tap on the row settles STAND OFF once", () => {
+  const first = startPayoutDrag(pointer({ clientX: 200, clientY: 80 }), null)!;
+  const tap = endPayoutDrag(first, pointer({ clientX: 201, clientY: 80 }), 1_000, 0);
+  expect(tap.outcome).toBeNull();
+  const second = startPayoutDrag(pointer({ clientX: 200, clientY: 80 }), null)!;
+  const dbl = endPayoutDrag(second, pointer({ clientX: 201, clientY: 80 }), 1_250, tap.lastTap);
+  expect(dbl.outcome).toBe("PUSH");
+  expect(dbl.ignoreClick).toBe(true);
 });
 
 test("player celebrations overlay and reduced motion is testable", () => {

@@ -1058,6 +1058,33 @@ export async function settleBox(input: {
   });
 }
 
+export async function settleDealerWon(input: { actorId: string; tableId: string; idempotencyKey: string }) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "settleDealerWon", input, async () => {
+    await prisma.$transaction(async (tx) => {
+      const table = await loadTableForUpdate(tx, input.tableId);
+      requireBank(table, input.actorId);
+      if (table.ownerId !== input.actorId) {
+        throw new ForbiddenError("Only the table owner can do that.");
+      }
+      requirePhase(table.currentPhase, "PAYOUT");
+      const unresolved = (table.currentRound?.boxes ?? []).filter((box) => !box.removedAt && !box.settledKey);
+      if (unresolved.length === 0) return;
+      for (const box of unresolved) {
+        await settleBoxInTx(tx, {
+          table,
+          actorId: input.actorId,
+          box,
+          outcome: "LOST",
+          idempotencyKey: `${input.idempotencyKey}:${box.id}`,
+        });
+      }
+    });
+    await maybeCompleteRound(input.tableId);
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
 export async function settleInsurance(input: {
   actorId: string;
   tableId: string;

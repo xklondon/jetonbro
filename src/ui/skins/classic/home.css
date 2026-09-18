@@ -387,6 +387,13 @@
   height: min(196px, 54vw);
 }
 
+@media (max-width: 360px) {
+  .classic-skin .qr-panel.setup-qr img {
+    width: min(168px, 48vw);
+    height: min(168px, 48vw);
+  }
+}
+
 .classic-skin .qr-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

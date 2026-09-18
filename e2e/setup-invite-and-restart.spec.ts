@@ -143,7 +143,7 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
   await openAs(bankTwoContext, bankTwo, ownerEmail, "Alex");
   await bankTwo.goto(tableUrl);
   await expect(bankTwo.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
-  await page.getByRole("button", { name: "NEXT ROUND IN 7 SECONDS" }).click();
+  await page.getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();
   await page.getByRole("button", { name: "NEXT ROUND NOW" }).click();
   await bankTwo.getByRole("button", { name: "NEXT ROUND NOW" }).click({ force: true }).catch(() => undefined);

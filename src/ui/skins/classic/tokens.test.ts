@@ -18,4 +18,10 @@ test("classic tokens define one emerald, felt, cream, gold and black dock", () =
   expect(layouts).toContain("min-height: var(--control-height)");
   expect(layouts).toContain("border-radius: var(--radius)");
   expect(layouts).not.toContain("#10241f");
+  expect(tokens).toContain("pointer-events: none");
+  const table = readFileSync(join(process.cwd(), "src/ui/skins/classic/table.css"), "utf8");
+  expect(table).not.toContain("outline: 8px solid var(--rail)");
+  expect(table).not.toContain("0 0 0 9px var(--rail)");
+  expect(table).toContain("pointer-events: none");
+  expect(layouts).toContain(".deal-actions.next-round-row");
 });

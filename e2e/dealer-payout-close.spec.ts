@@ -76,7 +76,7 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "NEXT ROUND IN 7 SECONDS" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "IN 7 SECONDS", exact: true })).toBeDisabled();
 
   const payoutSnap = (await tableSnapshot(page)) as {
     bank?: { players: { name: string; boxes: { id: string }[] }[] };
@@ -95,7 +95,7 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await page.getByRole("button", { name: "No Blackjack" }).click();
 
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
-  await page.getByRole("button", { name: "NEXT ROUND IN 7 SECONDS" }).click();
+  await page.getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();
   await page.reload();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();

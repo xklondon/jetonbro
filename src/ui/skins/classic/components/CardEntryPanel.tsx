@@ -10,6 +10,7 @@ export function CardEntryPanel({
   completeLabel,
   canClear,
   showCards = true,
+  compact = false,
   onAdd,
   onRemove,
   onComplete,
@@ -21,6 +22,7 @@ export function CardEntryPanel({
   completeLabel: string;
   canClear?: boolean;
   showCards?: boolean;
+  compact?: boolean;
   onAdd: (rank: string) => void;
   onRemove: (index: number) => void;
   onComplete: () => void;
@@ -36,11 +38,11 @@ export function CardEntryPanel({
   }
 
   return (
-    <div className="card-assist">
+    <div className={`card-assist${compact ? " is-compact" : ""}`}>
       {title ? <div className="card-assist-title">{title}</div> : null}
       {!open && ranks.length === 0 ? (
-        <button type="button" className="add-cards" onClick={() => setOpen(true)} disabled={!canEdit}>
-          + ADD CARDS
+        <button type="button" className={`add-cards${compact ? " is-compact" : ""}`} onClick={() => setOpen(true)} disabled={!canEdit}>
+          + CARDS
         </button>
       ) : (
         <>

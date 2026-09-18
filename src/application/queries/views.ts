@@ -115,6 +115,7 @@ export type BankPermittedActions = {
   openInsurance: boolean;
   closeInsurance: boolean;
   settleBoxes: boolean;
+  settleDealerWon: boolean;
   settleInsurance: boolean;
   addPlayer: boolean;
   giveJetons: boolean;
@@ -168,6 +169,7 @@ export type BankTableView = {
   cardAssist?: "OFF" | "CONFIRM" | "AUTO";
   bankroll?: BankrollView;
   dealerHand?: HandView;
+  dealerName?: string;
   insuranceSuggestion?: "DEALER_BLACKJACK" | "NO_DEALER_BLACKJACK" | null;
   canSwitchGame?: boolean;
   switchBlockedReason?: string | null;

@@ -43,3 +43,8 @@
 .classic-skin *::after {
   box-sizing: border-box;
 }
+
+.classic-skin *::before,
+.classic-skin *::after {
+  pointer-events: none;
+}

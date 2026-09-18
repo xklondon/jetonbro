@@ -48,8 +48,8 @@ test("two browsers complete two full rounds through the production command path"
   await playerPage.goto(joinPath);
   await expect(playerPage.getByText(/Waiting for the Bank/i)).toBeVisible();
 
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await expect(page.getByText("OPEN BETTING starts Betting.")).toBeVisible();
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await page.reload();

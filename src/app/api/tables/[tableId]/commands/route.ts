@@ -26,6 +26,7 @@ import {
   placeOrRetractBet,
   removeBox,
   settleBox,
+  settleDealerWon,
   settleInsurance,
   splitBox,
   startBetting,
@@ -166,6 +167,8 @@ async function dispatch(
       if (!outcome) throw new DomainError("INVALID_OUTCOME", "Choose a valid box result.");
       return settleBox({ ...ctx, boxId: String(p.boxId), outcome });
     }
+    case "settleDealerWon":
+      return settleDealerWon(ctx);
     case "settleInsurance": {
       const resolution = INSURANCE_RESOLUTIONS.find((item) => item === p.resolution);
       if (!resolution) throw new DomainError("INVALID_RESOLUTION", "Choose a valid Insurance result.");

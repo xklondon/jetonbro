@@ -13,6 +13,7 @@ import {
   openInsurance,
   placeOrRetractBet,
   settleBox,
+  settleDealerWon,
   settleInsurance,
   splitBox,
   startBetting,
@@ -341,5 +342,81 @@ describeDb("Blackjack table flow", () => {
       where: { tableId_userId: { tableId, userId: alex.id } },
     });
     expect(member.availableMillis).toBe(100000n);
+  }, 30_000);
+
+  test("DEALER WON settles only unresolved boxes as LOST and never Insurance", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Owner");
+    const alex = await user(`alex-${randomUUID()}@jetonbro.test`, "Alex");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: key(),
+      name: "Dealer won table",
+      startingAllocation: "0",
+    });
+    const tableId = created.tableId;
+    const qr = await prisma.invitation.findFirstOrThrow({
+      where: { tableId, kind: "QR", revokedAt: null },
+    });
+    await joinWithToken({ userId: alex.id, token: qr.token, userEmail: alex.email });
+    await distributeJetons({
+      actorId: owner.id,
+      tableId,
+      userId: alex.id,
+      amount: "100",
+      idempotencyKey: key(),
+    });
+    await startBetting({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const first = (await loadSnapshot(tableId, alex.id)).player!.boxes[0]!;
+    await addBox({ actorId: alex.id, tableId, idempotencyKey: key() });
+    const second = (await loadSnapshot(tableId, alex.id)).player!.boxes.find((item) => item.id !== first.id)!;
+    await placeOrRetractBet({
+      actorId: alex.id,
+      tableId,
+      boxId: first.id,
+      amount: "20",
+      mode: "SET",
+      idempotencyKey: key(),
+    });
+    await placeOrRetractBet({
+      actorId: alex.id,
+      tableId,
+      boxId: second.id,
+      amount: "10",
+      mode: "SET",
+      idempotencyKey: key(),
+    });
+    await dealCards({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await openInsurance({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await buyInsurance({ actorId: alex.id, tableId, boxId: first.id, amount: "10", idempotencyKey: key() });
+    await closeInsurance({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await enterPayout({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await settleBox({
+      actorId: owner.id,
+      tableId,
+      boxId: first.id,
+      outcome: "WON",
+      idempotencyKey: key(),
+    });
+    const dealerKey = key();
+    await settleDealerWon({ actorId: owner.id, tableId, idempotencyKey: dealerKey });
+    await settleDealerWon({ actorId: owner.id, tableId, idempotencyKey: dealerKey });
+    await settleDealerWon({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const won = await prisma.bettingBox.findUniqueOrThrow({ where: { id: first.id } });
+    const lost = await prisma.bettingBox.findUniqueOrThrow({ where: { id: second.id } });
+    const insurance = await prisma.insuranceBet.findFirstOrThrow({ where: { boxId: first.id } });
+    expect(won.outcome).toBe("WON");
+    expect(lost.outcome).toBe("LOST");
+    expect(lost.returnedMillis).toBe(0n);
+    expect(insurance.settledKey).toBeNull();
+    const table = await prisma.table.findUniqueOrThrow({ where: { id: tableId } });
+    expect(table.currentPhase).toBe("PAYOUT");
+    const losses = await prisma.ledgerEntry.count({
+      where: { tableId, boxId: second.id, transactionType: "BET_LOSS" },
+    });
+    expect(losses).toBe(1);
+    const wins = await prisma.ledgerEntry.count({
+      where: { tableId, boxId: first.id, transactionType: "BET_WIN_RETURN" },
+    });
+    expect(wins).toBe(1);
   }, 30_000);
 });

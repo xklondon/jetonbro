@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
-import { isHorizontalPayoutGesture, payoutSwipeOutcome } from "@/ui/core/payout-gesture";
+import { endPayoutDrag, movePayoutDrag, startPayoutDrag, type PayoutDragSession } from "@/ui/core/payout-gesture";
+import { PlayingCard } from "./PlayingCard";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
   LOST: "LOST",
@@ -12,6 +13,18 @@ const RAIL_TITLE: Record<BoxOutcome, string> = {
   BLACKJACK: "BLACKJACK",
   WON: "WON",
 };
+
+function pointerFromEvent(event: PointerEvent<HTMLElement>, fromAction = false) {
+  return {
+    isPrimary: event.isPrimary,
+    pointerId: event.pointerId,
+    pointerType: event.pointerType,
+    button: event.button,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    fromAction,
+  };
+}
 
 export function DealerPayoutRow({
   box,
@@ -25,14 +38,12 @@ export function DealerPayoutRow({
   onApply?: () => void;
 }) {
   const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const origin = useRef<{ x: number; y: number } | null>(null);
+  const session = useRef<PayoutDragSession | null>(null);
   const lastTap = useRef(0);
-  const locking = useRef(false);
   const ignoreClickUntil = useRef(0);
   const chips = chipsFromMillis(box.bet.millis);
-  const winAction = box.payoutActions.find((action) => action.outcome === "WON");
-  const lossAction = box.payoutActions.find((action) => action.outcome === "LOST");
   const unresolved = payoutEnabled && !box.outcome && !submitted;
   const railActions = PAYOUT_RAIL_ORDER.map(
     (outcome) => box.payoutActions.find((action) => action.outcome === outcome) ?? { outcome, label: RAIL_TITLE[outcome], title: RAIL_TITLE[outcome] },
@@ -45,82 +56,100 @@ export function DealerPayoutRow({
     onSettle(outcome);
   }
 
+  function syncSession(next: PayoutDragSession | null) {
+    session.current = next;
+    setDx(next?.dx ?? 0);
+    setDragging(Boolean(next?.dragging));
+  }
+
   function onRowPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (!unresolved) return;
-    origin.current = { x: event.clientX, y: event.clientY };
-    locking.current = false;
+    const fromAction = Boolean((event.target as Element | null)?.closest?.("[data-payout-action]"));
+    const next = startPayoutDrag(pointerFromEvent(event, fromAction), session.current);
+    if (!next) return;
+    syncSession(next);
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
-      // Capture is best-effort; touch-action:none keeps the gesture on this row.
+      // Capture is best-effort; touch-action none while dragging keeps the row in control.
     }
   }
 
   function onRowPointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (!origin.current || !unresolved) return;
-    const nextDx = event.clientX - origin.current.x;
-    const nextDy = event.clientY - origin.current.y;
-    if (isHorizontalPayoutGesture(nextDx, nextDy)) {
-      locking.current = true;
-      setDx(Math.max(-120, Math.min(120, nextDx)));
+    if (!session.current || !unresolved) return;
+    const next = movePayoutDrag(session.current, pointerFromEvent(event));
+    if (next.dragging) event.preventDefault();
+    syncSession(next);
+  }
+
+  function finishPointer(event: PointerEvent<HTMLDivElement>, cancelled: boolean) {
+    const current = session.current;
+    if (!current) return;
+    if (cancelled) {
+      syncSession(null);
+      return;
     }
+    const ended = endPayoutDrag(current, pointerFromEvent(event), Date.now(), lastTap.current);
+    lastTap.current = ended.lastTap;
+    if (ended.ignoreClick) ignoreClickUntil.current = Date.now() + 500;
+    syncSession(null);
+    if (ended.outcome) settle(ended.outcome);
   }
 
   function onRowPointerUp(event: PointerEvent<HTMLDivElement>) {
-    if (!origin.current || !unresolved) {
-      origin.current = null;
-      return;
-    }
-    const nextDx = event.clientX - origin.current.x;
-    const nextDy = event.clientY - origin.current.y;
-    origin.current = null;
-    const outcome = payoutSwipeOutcome(nextDx, nextDy);
-    setDx(0);
-    locking.current = false;
-    if (outcome) {
-      settle(outcome);
-      return;
-    }
-    const now = Date.now();
-    if (now - lastTap.current < 400) {
-      lastTap.current = 0;
-      settle("PUSH");
-      return;
-    }
-    lastTap.current = now;
+    finishPointer(event, false);
   }
+
+  function onRowPointerCancel(event: PointerEvent<HTMLDivElement>) {
+    finishPointer(event, true);
+  }
+
+  function stopActionPointer(event: PointerEvent<HTMLElement>) {
+    event.stopPropagation();
+  }
+
+  const cards: ReactNode =
+    box.hand?.ranks.length ? (
+      <div className="box-cards" data-box-cards="true">
+        {box.hand.ranks.map((rank, index) => (
+          <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />
+        ))}
+      </div>
+    ) : null;
 
   return (
     <div
-      className={`payout-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : ""}${locking.current ? " is-swiping" : ""}`}
+      className={`payout-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : ""}${dragging ? " is-swiping" : ""}`}
       data-box-id={box.id}
       data-payout-row="true"
+      data-payout-gesture={unresolved ? "true" : undefined}
+      style={{ touchAction: unresolved ? (dragging ? "none" : "pan-y") : undefined }}
+      onPointerDown={onRowPointerDown}
+      onPointerMove={onRowPointerMove}
+      onPointerUp={onRowPointerUp}
+      onPointerCancel={onRowPointerCancel}
+      onClick={(event) => {
+        if (Date.now() < ignoreClickUntil.current) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
     >
       <div className="payout-swipe">
         {unresolved ? (
           <>
             <div className="payout-reveal win" aria-hidden="true">
-              {winAction?.swipeLabel ?? "WIN"}
+              WON
             </div>
             <div className="payout-reveal loss" aria-hidden="true">
-              {lossAction?.swipeLabel ?? "LOSS · 0"}
+              LOST
             </div>
           </>
         ) : null}
         <div
           className="payout-row-inner"
-          data-payout-gesture="true"
           style={{
             transform: unresolved && dx ? `translateX(${dx}px)` : undefined,
-            touchAction: unresolved ? "none" : undefined,
-          }}
-          onPointerDown={onRowPointerDown}
-          onPointerMove={onRowPointerMove}
-          onPointerUp={onRowPointerUp}
-          onPointerCancel={() => {
-            origin.current = null;
-            locking.current = false;
-            setDx(0);
           }}
         >
           <div>
@@ -145,8 +174,19 @@ export function DealerPayoutRow({
           </div>
         </div>
       </div>
+      {cards}
       {unresolved && onApply && box.hand?.suggestedOutcome ? (
-        <button type="button" className="apply-suggestion" onClick={onApply}>
+        <button
+          type="button"
+          className="apply-suggestion"
+          data-payout-action="true"
+          onPointerDown={stopActionPointer}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (Date.now() < ignoreClickUntil.current) return;
+            onApply();
+          }}
+        >
           APPLY {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}
         </button>
       ) : null}
@@ -157,7 +197,10 @@ export function DealerPayoutRow({
               key={action.outcome}
               type="button"
               className={action.outcome.toLowerCase()}
-              onClick={() => {
+              data-payout-action="true"
+              onPointerDown={stopActionPointer}
+              onClick={(event) => {
+                event.stopPropagation();
                 if (Date.now() < ignoreClickUntil.current) return;
                 settle(action.outcome);
               }}
