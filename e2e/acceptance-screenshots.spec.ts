@@ -32,6 +32,8 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-table-name]").first()).toHaveText("Acceptance table");
+  await expect(page.locator("body")).not.toContainText("xklondon");
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
   await page.getByRole("button", { name: "GIVE JETONS" }).click();
   await page.locator("select").last().selectOption({ label: "Alex" });
@@ -64,6 +66,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.reload();
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-betting-390x844.png") });
+  await page.screenshot({ path: join(out, "app-blackjack-dealer-betting-390x844.png") });
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "PAYOUT PHASE" })).toBeVisible();
@@ -86,6 +89,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.reload();
   await expect(page.getByText(/INSURANCE SIDE POT · OPEN · 1 bet/)).toBeVisible();
   await alexPage.screenshot({ path: join(out, "app-player-playing-390x844.png") });
+  await alexPage.screenshot({ path: join(out, "app-blackjack-player-playing-390x844.png") });
   await page.screenshot({ path: join(out, "app-bank-playing-insurance-390x844.png") });
 
   await page.getByRole("button", { name: "Close Insurance" }).click();
@@ -96,11 +100,13 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(page.getByRole("button", { name: "WON" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Dealer Blackjack" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-payout-unresolved-390x844.png") });
+  await page.screenshot({ path: join(out, "app-blackjack-dealer-payout-390x844.png") });
 
   await alexPage.reload();
   await expect(alexPage.getByText("Waiting for the Bank", { exact: true }).first()).toBeVisible();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
   await alexPage.screenshot({ path: join(out, "app-player-payout-390x844.png") });
+  await alexPage.screenshot({ path: join(out, "app-blackjack-player-payout-390x844.png") });
   await alexPage.setViewportSize({ width: 320, height: 700 });
   await noHorizontalOverflow(alexPage);
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();

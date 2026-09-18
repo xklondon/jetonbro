@@ -14,7 +14,7 @@
   max-height: 100dvh;
   overflow: hidden;
   overflow-x: hidden;
-  background: radial-gradient(circle at 50% 34%, var(--felt-hi), var(--felt) 48%, var(--emerald));
+  background-color: var(--emerald);
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   position: relative;
@@ -29,15 +29,15 @@
 }
 
 .classic-skin .brand {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   color: var(--gold);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.28em;
 }
 
 .classic-skin .head-button {
   border: 0;
   background: transparent;
-  color: #fff;
+  color: var(--cream);
   padding: 7px;
 }
 
@@ -47,9 +47,9 @@
 }
 
 .classic-skin .phase-head strong {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   color: var(--ivory);
-  font-size: 20px;
+  font-size: 26px;
   display: block;
 }
 
@@ -82,17 +82,34 @@
 .classic-skin .gold-button,
 .classic-skin .bank-phase-control button {
   width: 100%;
-  border: 0;
-  border-radius: 10px;
-  background: var(--gold);
-  color: #30250d;
+  min-height: var(--control-height);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--gold);
   padding: 10px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.classic-skin .gold-button:not(:disabled),
+.classic-skin .bank-phase-control .gold-button:not(:disabled) {
+  border: 0;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-dim));
+  color: var(--gold-ink);
 }
 
 .classic-skin .gold-button:disabled,
 .classic-skin .bank-phase-control button:disabled {
-  opacity: 0.45;
+  opacity: 0.55;
+  background: transparent;
+  border: 1px solid var(--gold-line);
+  color: var(--gold);
+}
+
+.classic-skin .deal-actions {
+  display: grid;
+  gap: 8px;
 }
 
 .classic-skin .bank-phase-control .dealer-tools {
@@ -102,7 +119,7 @@
 .classic-skin .bank-phase-control .dealer-tools button {
   width: 100%;
   border: 1px solid rgba(223, 189, 105, 0.28);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   font-weight: 500;
   padding: 8px 4px;
@@ -112,7 +129,7 @@
   width: 100%;
   text-align: center;
   color: var(--gold);
-  font: 13px Georgia, serif;
+  font: 13px var(--font-display);
   letter-spacing: 0.1em;
   margin-bottom: 8px;
 }
@@ -194,15 +211,16 @@
 
 .classic-skin .box {
   height: 260px;
-  border: 1.5px solid rgba(223, 189, 105, 0.72);
-  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
-  background: rgba(2, 23, 18, 0.13);
+  border: 2px solid var(--gold);
+  border-radius: 46% 46% 18px 18px / 22% 22% 18px 18px;
+  background: rgba(2, 23, 18, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  color: #fff;
+  color: var(--cream);
   padding: 5px;
 }
 
@@ -211,8 +229,8 @@
 }
 
 .classic-skin .box.selected {
-  background: rgba(223, 189, 105, 0.1);
-  box-shadow: 0 0 0 2px var(--gold), inset 0 0 25px rgba(223, 189, 105, 0.07);
+  background: rgba(223, 189, 105, 0.08);
+  box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(223, 189, 105, 0.35), inset 0 0 25px rgba(223, 189, 105, 0.08);
 }
 
 .classic-skin .box-name {
@@ -229,7 +247,7 @@
 }
 
 .classic-skin .amount {
-  font: 31px Georgia, serif;
+  font: 31px var(--font-display);
   color: var(--ivory);
 }
 
@@ -285,24 +303,24 @@
 }
 
 .classic-skin .won {
-  background: var(--gold);
-  color: #30250d;
+  background: var(--outcome-won);
+  color: #e9ffe9;
 }
 
 .classic-skin .push {
-  background: var(--ivory);
+  background: var(--outcome-push);
   color: #21302b;
 }
 
 .classic-skin .lost {
-  background: var(--red);
-  color: #fff;
+  background: var(--outcome-lost);
+  color: #ffe8e8;
 }
 
 .classic-skin .blackjack {
-  background: #10241f;
+  background: var(--outcome-blackjack);
   color: var(--gold);
-  border: 1px solid rgba(223, 189, 105, 0.4) !important;
+  border: 1px solid var(--gold-line) !important;
 }
 
 .classic-skin .result {
@@ -313,9 +331,9 @@
 }
 
 .classic-skin .dock {
-  background: linear-gradient(180deg, rgba(7, 23, 20, 0.96), var(--night));
-  border-top: 1px solid rgba(223, 189, 105, 0.4);
-  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.3);
+  background: var(--dock);
+  border-top: 1px solid var(--gold-line);
+  box-shadow: 0 -16px 32px rgba(0, 0, 0, 0.45);
   padding: 8px 13px max(15px, env(safe-area-inset-bottom));
 }
 
@@ -346,7 +364,7 @@
   padding: 6px 8px;
   font-size: 11px;
   border: 1px solid rgba(223, 189, 105, 0.32);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 10px;
 }
@@ -362,7 +380,7 @@
   width: auto;
   min-width: 168px;
   border: 1px solid rgba(223, 189, 105, 0.32);
-  background: #10241f;
+  background: var(--panel);
   color: rgba(244, 234, 213, 0.72);
   border-radius: 10px;
   padding: 10px 16px;
@@ -392,7 +410,7 @@
 
 .classic-skin .actor-actions button:not(.gold-button) {
   border: 1px solid rgba(223, 189, 105, 0.32);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 10px;
   padding: 10px 4px;
@@ -418,11 +436,11 @@
 .classic-skin .actor-compose input {
   width: 100%;
   border: 1px solid rgba(223, 189, 105, 0.4);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 10px;
   padding: 10px;
-  font: 20px Georgia, serif;
+  font: 20px var(--font-display);
 }
 
 .classic-skin .player-wallet {
@@ -449,7 +467,7 @@
 }
 
 .classic-skin .wallet-available strong {
-  font: 24px Georgia, serif;
+  font: 24px var(--font-display);
   color: var(--ivory);
 }
 
@@ -466,7 +484,7 @@
 }
 
 .classic-skin .dock-top strong {
-  font: 24px Georgia, serif;
+  font: 24px var(--font-display);
   color: var(--ivory);
 }
 
@@ -486,7 +504,7 @@
   flex: 1;
   width: 100%;
   border: 1px solid rgba(223, 189, 105, 0.28);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 10px;
   padding: 10px;
@@ -513,7 +531,7 @@
 
 .classic-skin .play-controls button {
   border: 1px solid rgba(223, 189, 105, 0.32);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 10px;
   padding: 12px 4px;
@@ -547,7 +565,7 @@
 }
 
 .classic-skin .dealer-stats strong {
-  font: 20px Georgia, serif;
+  font: 20px var(--font-display);
   color: var(--ivory);
 }
 
@@ -559,7 +577,7 @@
 
 .classic-skin .dealer-tools button {
   border: 1px solid rgba(223, 189, 105, 0.28);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 10px;
   padding: 9px 4px;
@@ -581,7 +599,7 @@
 }
 
 .classic-skin .pot-head strong {
-  font: 20px Georgia, serif;
+  font: 20px var(--font-display);
 }
 
 .classic-skin .insurance-settle {
@@ -631,7 +649,7 @@
 
 .classic-skin .sheet-panel h3 {
   margin: 0 0 12px;
-  font: 20px Georgia, serif;
+  font: 20px var(--font-display);
   color: var(--ivory);
 }
 
@@ -812,14 +830,14 @@
 
 .classic-skin .payout-reveal.win {
   left: 0;
-  background: #1f6b45;
+  background: var(--outcome-won);
   color: #e8ffe8;
 }
 
 .classic-skin .payout-reveal.loss {
   left: auto;
   right: 0;
-  background: #7a2430;
+  background: var(--outcome-lost);
   color: #ffe8e8;
 }
 
@@ -925,7 +943,7 @@
   pointer-events: none;
   text-align: center;
   color: var(--gold);
-  font: 18px Georgia, serif;
+  font: 18px var(--font-display);
   overflow: hidden;
 }
 
@@ -972,7 +990,7 @@
 .classic-skin .funding-toggle button,
 .classic-skin .setting-row button {
   border: 1px solid rgba(223, 189, 105, 0.32);
-  background: #10241f;
+  background: var(--panel);
   color: var(--ivory);
   border-radius: 8px;
   padding: 8px 6px;
@@ -997,7 +1015,7 @@
   border: 1px solid #d7c48a;
   background: #f4ead5;
   color: #30250d;
-  font: 12px Georgia, serif;
+  font: 12px var(--font-display);
 }
 
 .classic-skin .rank-tray {
@@ -1068,7 +1086,7 @@
   height: 22px;
   border-radius: 99px;
   border: 1px solid rgba(223, 189, 105, 0.5);
-  background: #10241f;
+  background: var(--panel);
   padding: 2px;
 }
 .classic-skin .funding-switch.on {
@@ -1095,12 +1113,13 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  align-items: stretch;
 }
 .classic-skin .poker-pot {
   text-align: center;
-  padding: 12px;
-  border: 1px solid rgba(223, 189, 105, 0.35);
-  border-radius: 16px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
 }
 .classic-skin .poker-pot strong {
   display: block;
@@ -1237,5 +1256,171 @@
   border: 0;
   border-radius: 8px;
   padding: 8px;
+}
+
+.classic-skin .poker-street-rail {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+  margin: 10px 12px 0;
+  padding: 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  position: relative;
+}
+
+.classic-skin .poker-street-rail::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: var(--gold-line);
+}
+
+.classic-skin .rail-stop {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: rgba(244, 234, 213, 0.32);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  position: relative;
+}
+
+.classic-skin .rail-stop::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(223, 189, 105, 0.28);
+  box-shadow: 0 0 0 1px rgba(223, 189, 105, 0.2);
+}
+
+.classic-skin .rail-stop.is-done {
+  color: rgba(244, 234, 213, 0.58);
+}
+
+.classic-skin .rail-stop.is-done::before {
+  background: var(--gold-dim);
+}
+
+.classic-skin .rail-stop.is-current {
+  color: var(--gold);
+}
+
+.classic-skin .rail-stop.is-current::before {
+  width: 12px;
+  height: 12px;
+  background: var(--gold);
+  box-shadow: 0 0 0 4px rgba(223, 189, 105, 0.18);
+}
+
+.classic-skin .rail-join {
+  display: none;
+}
+
+.classic-skin .playing-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #fffaf0, #f3ead6);
+  color: #1b1b1b;
+  border-radius: var(--radius-card);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.32);
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid #e4d7b4;
+}
+
+.classic-skin .playing-card.is-red {
+  color: #b8373f;
+}
+
+.classic-skin .playing-card.is-felt {
+  width: 52px;
+  height: 74px;
+  font-size: 22px;
+}
+
+.classic-skin .playing-card.is-hole {
+  width: 46px;
+  height: 66px;
+  font-size: 20px;
+}
+
+.classic-skin .playing-card.is-box {
+  width: 40px;
+  height: 56px;
+  font-size: 18px;
+}
+
+.classic-skin .playing-card em {
+  font-style: normal;
+  font-size: 0.72em;
+}
+
+.classic-skin .community-cards,
+.classic-skin .hole-cards,
+.classic-skin .box-cards {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.classic-skin .box-cards {
+  position: relative;
+  z-index: 1;
+}
+
+.classic-skin .hole-hidden {
+  color: var(--cream);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.classic-skin .poker-card-picker {
+  margin-top: 8px;
+  text-align: left;
+}
+
+.classic-skin .poker-card-picker .picker-head,
+.classic-skin .poker-card-picker .rank-tray,
+.classic-skin .poker-card-picker .suit-tray {
+  margin-bottom: 6px;
+}
+
+.classic-skin .rank-tray,
+.classic-skin .suit-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.classic-skin .rank-tray button,
+.classic-skin .suit-tray button {
+  min-width: 28px;
+  min-height: 28px;
+  border: 1px solid rgba(223, 189, 105, 0.35);
+  background: var(--panel);
+  color: var(--cream);
+  border-radius: 6px;
+}
+
+.classic-skin .rank-tray button.active,
+.classic-skin .suit-tray button.active {
+  background: var(--gold);
+  color: #30250d;
 }
 

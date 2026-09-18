@@ -2,7 +2,7 @@
 
 import { getSkin } from "@/ui/skins/registry";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { HomeTableCard } from "@/application/queries/home";
 
 export function HomeClient({
@@ -17,29 +17,8 @@ export function HomeClient({
   const skin = getSkin();
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
-  const keyRef = useRef<string>(crypto.randomUUID());
-
   async function onCreateTable() {
-    const response = await fetch("/api/tables", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        draft: true,
-        name: defaultTableName,
-        game: "BLACKJACK",
-        blackjackPayout: "THREE_TWO",
-        maxBoxesPerPlayer: 3,
-        insuranceEnabled: true,
-        bankMayDistributeJetons: true,
-        idempotencyKey: keyRef.current,
-      }),
-    });
-    const data = (await response.json()) as { tableId?: string; error?: string };
-    if (!response.ok || !data.tableId) {
-      setNotice(data.error ?? "Could not create the table.");
-      return;
-    }
-    router.push(`/tables/${data.tableId}`);
+    router.replace("/tables/new");
   }
 
   async function onTableCommand(tableId: string, command: "saveTable" | "closeTable" | "deleteTable") {

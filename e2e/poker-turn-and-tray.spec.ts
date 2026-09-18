@@ -2,6 +2,7 @@ import { expect, test, type Browser, type BrowserContext, type Page } from "@pla
 import {
   createBlackjackTable,
   doubleTapPayoutRow,
+  expectPokerPhase,
   openAs,
   swipePayoutRow,
   uniqueEmail,
@@ -167,7 +168,7 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "DEAL CARDS", exact: true }).click();
-  await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expectPokerPhase(page, "PRE-FLOP");
   await expect(page.getByText("YOUR JETONS")).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toBeVisible();
   await expect(page.locator("[data-owner-controls]")).toBeVisible();
@@ -223,7 +224,7 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect.poll(async () => (await tableSnapshot(page)).poker?.canDealStreet).toBe(true);
   await expect(page.getByRole("button", { name: "DEAL FLOP" })).toBeEnabled();
   await page.getByRole("button", { name: "DEAL FLOP" }).click();
-  await expect(page.getByText("FLOP", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "FLOP");
 
   const flop = await tableSnapshot(page);
   const flopActor = pageFor(page, samPage, joPage, flop.poker!.seats, flop.poker!.currentActorId);

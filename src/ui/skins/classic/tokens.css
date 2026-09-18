@@ -2,16 +2,40 @@
   --emerald: #063d31;
   --felt: #075744;
   --felt-hi: #0b7056;
-  --night: #071714;
+  --felt-deep: #04281f;
+  --night: #05080a;
+  --dock: #05080a;
   --panel: #0a241e;
   --gold: #dfbd69;
+  --gold-hi: #f0d78a;
+  --gold-dim: #c9a24b;
+  --gold-ink: #30250d;
+  --gold-line: rgba(223, 189, 105, 0.55);
+  --cream: #f4ead5;
   --ivory: #f4ead5;
   --red: #b8373f;
   --blue: #2466a8;
   --green: #19865c;
-  --black: #22282c;
-  color: #fff;
-  font-family: Inter, system-ui, sans-serif;
+  --black: #05080a;
+  --rail: #16110c;
+  --rail-edge: #2a2218;
+  --outcome-lost: #6e2b32;
+  --outcome-push: #f4ead5;
+  --outcome-blackjack: #111111;
+  --outcome-won: #1f7a4a;
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+  --shadow-inset: inset 0 0 40px rgba(0, 0, 0, 0.28);
+  --control-height: 42px;
+  --radius: 12px;
+  --radius-card: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --font-display: Georgia, "Palatino Linotype", Palatino, serif;
+  --font-ui: Inter, system-ui, sans-serif;
+  color: var(--cream);
+  font-family: var(--font-ui);
 }
 
 .classic-skin *,

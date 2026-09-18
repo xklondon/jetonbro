@@ -353,6 +353,7 @@ model PokerHand {
   createdAt             DateTime       @default(now())
   completedAt           DateTime?
   awardSummary          Json?
+  communityCards        Json?
 
   table         Table              @relation("TablePokerHands", fields: [tableId], references: [id], onDelete: Cascade)
   currentFor    Table?             @relation("CurrentPokerHand")
@@ -377,6 +378,7 @@ model PokerParticipant {
   isDealer                 Boolean                @default(false)
   isSmallBlind             Boolean                @default(false)
   isBigBlind               Boolean                @default(false)
+  holeCards                Json?
 
   hand   PokerHand @relation(fields: [handId], references: [id], onDelete: Cascade)
   player User      @relation(fields: [playerId], references: [id])

@@ -136,6 +136,8 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
   expect(html).toContain("SWITCH GAME");
   expect(html).toContain("+ PLAYER");
   expect(html).toContain("GIVE JETONS");
+  expect(html).toContain('data-table-name="Salon"');
+  expect(html).not.toContain("xklondon");
   expect(html).toMatch(/<button[^>]*disabled[^>]*>DEAL CARDS NOW/);
 });
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { SetupTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { ClassicCreateTable } from "./ClassicCreateTable";
+import { ClothName } from "./ClothName";
 
 export function ClassicSetupTable({
   view,
@@ -61,75 +62,12 @@ export function ClassicSetupTable({
         <div className="current">
           CURRENT PHASE: <strong>TABLE SETUP</strong>
         </div>
-        <div className="dealer-tools setup-top-controls">
-          <button type="button" onClick={() => setQrOpen(true)} disabled={!view.joinUrl}>
-            QR
-          </button>
-          <button type="button" onClick={() => setAddOpen(true)}>
-            + PLAYER
-          </button>
-          {view.canSwitchGame ? (
-            <button type="button" onClick={() => setMenuOpen("game")}>
-              SWITCH GAME
-            </button>
-          ) : null}
-        </div>
-        <button
-          className="gold-button"
-          type="button"
-          disabled={!view.canStartBetting}
-          onClick={() => onCommand("startBetting")}
-        >
-          OPEN BETTING
-        </button>
-        <p className="muted phase-hint">OPEN BETTING starts Betting.</p>
-        {view.setupCompleted ? (
-          <>
-            <div className="field-label">CARD ASSIST</div>
-            <div className="setting-row">
-              {(["OFF", "CONFIRM", "AUTO"] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={(view.cardAssist ?? "OFF") === mode ? "active" : ""}
-                  onClick={() => onCommand("setCardAssist", { cardAssist: mode })}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-            <div className="field-label">BANK FUNDING</div>
-            <div className="setting-row">
-              <button
-                type="button"
-                className={(view.bankFundingMode ?? "OPEN") === "OPEN" ? "active" : ""}
-                onClick={() => onCommand("setBankFunding", { bankFundingMode: "OPEN" })}
-              >
-                OPEN BANK
-              </button>
-              <button
-                type="button"
-                className={view.bankFundingMode === "LIMITED" ? "active" : ""}
-                onClick={() =>
-                  onCommand("setBankFunding", {
-                    bankFundingMode: "LIMITED",
-                    startingBank: view.startingBank?.label || "500",
-                  })
-                }
-              >
-                LIMITED BANK
-              </button>
-            </div>
-          </>
-        ) : null}
-        {!view.canStartBetting && view.startBlockedReason ? (
-          <p className="muted" style={{ textAlign: "center", marginTop: 6 }}>
-            {view.startBlockedReason}
-          </p>
-        ) : null}
       </div>
       </div>
       <main className="felt setup-felt">
+        <div className="table-rail bj-rail">
+          <div className="table-surface">
+        <ClothName name={view.tableName} />
         {notice ? <div className="error">{notice}</div> : null}
         <div className="dealer-spot">DEALER · {view.bankName}</div>
         <div className={`setup-seats ${seatCountClass}`}>
@@ -146,6 +84,8 @@ export function ClassicSetupTable({
               </div>
             ))
           )}
+        </div>
+          </div>
         </div>
       </main>
       <div className={`sheet${qrOpen ? " open" : ""}`}>
@@ -234,6 +174,56 @@ export function ClassicSetupTable({
           {menuOpen === "menu" ? (
             <>
               <h3>Table</h3>
+              <button type="button" onClick={() => { setQrOpen(true); setMenuOpen(null); }} disabled={!view.joinUrl}>
+                QR
+              </button>
+              <button type="button" onClick={() => { setAddOpen(true); setMenuOpen(null); }}>
+                + PLAYER
+              </button>
+              {view.canSwitchGame ? (
+                <button type="button" onClick={() => setMenuOpen("game")}>
+                  SWITCH GAME
+                </button>
+              ) : null}
+              {view.setupCompleted ? (
+                <>
+                  <div className="field-label">CARD ASSIST</div>
+                  <div className="setting-row">
+                    {(["OFF", "CONFIRM", "AUTO"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        className={(view.cardAssist ?? "OFF") === mode ? "active" : ""}
+                        onClick={() => onCommand("setCardAssist", { cardAssist: mode })}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="field-label">BANK FUNDING</div>
+                  <div className="setting-row">
+                    <button
+                      type="button"
+                      className={(view.bankFundingMode ?? "OPEN") === "OPEN" ? "active" : ""}
+                      onClick={() => onCommand("setBankFunding", { bankFundingMode: "OPEN" })}
+                    >
+                      OPEN BANK
+                    </button>
+                    <button
+                      type="button"
+                      className={view.bankFundingMode === "LIMITED" ? "active" : ""}
+                      onClick={() =>
+                        onCommand("setBankFunding", {
+                          bankFundingMode: "LIMITED",
+                          startingBank: view.startingBank?.label || "500",
+                        })
+                      }
+                    >
+                      LIMITED BANK
+                    </button>
+                  </div>
+                </>
+              ) : null}
               <button className="gold-button" type="button" onClick={() => { onCommand("saveTable"); setMenuOpen(null); }}>
                 SAVE TABLE
               </button>
@@ -329,6 +319,29 @@ export function ClassicSetupTable({
           ) : null}
         </div>
       </div>
+      <footer className="dock">
+        <div className="game-controls" data-game-controls="true">
+          <div className="owner-controls">
+            <button type="button" onClick={() => setQrOpen(true)} disabled={!view.joinUrl}>
+              QR
+            </button>
+            <button type="button" onClick={() => setAddOpen(true)}>
+              + PLAYER
+            </button>
+          </div>
+          {!view.canStartBetting && view.startBlockedReason ? (
+            <p className="muted phase-hint">{view.startBlockedReason}</p>
+          ) : null}
+          <button
+            className="gold-button"
+            type="button"
+            disabled={!view.canStartBetting}
+            onClick={() => onCommand("startBetting")}
+          >
+            OPEN BETTING
+          </button>
+        </div>
+      </footer>
     </PhoneShell>
   );
 }

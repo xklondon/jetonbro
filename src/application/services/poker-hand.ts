@@ -5,7 +5,7 @@ import { appendLedger, creditTableAvailable } from "@/application/services/ledge
 import { clearNextHandTimer, scheduleNextHandTimer } from "@/application/services/deal-timer";
 import { replacePokerSeats } from "@/application/services/poker-seats";
 import { amountToCall, isFullRaise, legalActions, minRaiseTo, type PokerActionType } from "@/domain/poker/actions";
-import { STREET_ADVANCE, isBettingStreet, type BettingStreet } from "@/domain/poker/phases";
+import { STREET_ADVANCE, isBettingStreet, type BettingStreet, type PokerHandPhase } from "@/domain/poker/phases";
 import { buildSidePots, splitPotEqually, uncalledReturn } from "@/domain/poker/pots";
 import { assignBlinds, nextActorFrom, nextDealer, orderedSeats, type PokerSeat as DomainSeat } from "@/domain/poker/seats";
 import { allLiveAllIn, livePlayers, onlyOneLive, stillNeedsToAct, streetIsComplete } from "@/domain/poker/street";
@@ -617,6 +617,71 @@ export async function pokerAct(input: {
   });
 }
 
+async function startBettingStreet(
+  tx: Tx,
+  table: Awaited<ReturnType<typeof loadPokerTable>>,
+  handId: string,
+  dealerPlayerId: string,
+  nextPhase: PokerHandPhase,
+) {
+  const totals = await tx.pokerParticipant.findMany({
+    where: { handId },
+    select: { playerId: true, totalContributionMillis: true, lockedMillis: true, status: true },
+  });
+  await tx.pokerParticipant.updateMany({
+    where: { handId },
+    data: { streetContributionMillis: 0n, hasActedThisStreet: false },
+  });
+  const reset = await tx.pokerParticipant.findMany({ where: { handId } });
+  for (const participant of reset) {
+    const before = totals.find((item) => item.playerId === participant.playerId);
+    if (
+      participant.streetContributionMillis !== 0n ||
+      participant.hasActedThisStreet ||
+      (before && participant.totalContributionMillis !== before.totalContributionMillis)
+    ) {
+      await tx.pokerParticipant.update({
+        where: { id: participant.id },
+        data: {
+          streetContributionMillis: 0n,
+          hasActedThisStreet: false,
+          totalContributionMillis: before?.totalContributionMillis ?? participant.totalContributionMillis,
+          lockedMillis: before?.lockedMillis ?? participant.lockedMillis,
+        },
+      });
+    }
+  }
+  const players = (await tx.pokerParticipant.findMany({ where: { handId } })).map((item) => ({
+    playerId: item.playerId,
+    status: item.status,
+    streetContributionMillis: item.streetContributionMillis,
+    hasActedThisStreet: item.hasActedThisStreet,
+  }));
+  let actor: string | null = null;
+  if (nextPhase !== "SHOWDOWN" && !allLiveAllIn(players)) {
+    const seats = domainSeats(table.pokerSeats);
+    const blinds = assignBlinds(seats, dealerPlayerId);
+    const first = blinds.postflopFirstPlayerId;
+    const eligible = (playerId: string) => {
+      const participant = players.find((item) => item.playerId === playerId);
+      return Boolean(participant && canAct(participant));
+    };
+    actor = eligible(first) ? first : nextActorFrom(seats, first, eligible);
+  }
+  await tx.pokerHand.update({
+    where: { id: handId },
+    data: {
+      phase: nextPhase,
+      streetWagerMillis: 0n,
+      lastRaiseSizeMillis: table.pokerBigBlindMillis,
+      lastAggressorPlayerId: null,
+      currentActorPlayerId: actor,
+      actionCount: { increment: 1 },
+    },
+  });
+  await tx.table.update({ where: { id: table.id }, data: { updatedAt: new Date() } });
+}
+
 export async function advancePokerStreet(input: {
   actorId: string;
   tableId: string;
@@ -640,30 +705,7 @@ export async function advancePokerStreet(input: {
         return;
       }
       const next = STREET_ADVANCE[hand.phase as BettingStreet].next;
-      const seats = domainSeats(table.pokerSeats);
-      let actor: string | null = null;
-      if (next !== "SHOWDOWN" && !allLiveAllIn(players)) {
-        const blinds = assignBlinds(seats, hand.dealerPlayerId);
-        actor = nextActorFrom(seats, blinds.dealerPlayerId, (playerId) => {
-          const participant = hand.participants.find((item) => item.playerId === playerId);
-          return Boolean(participant && canAct(participant));
-        });
-      }
-      await tx.pokerParticipant.updateMany({
-        where: { handId: hand.id },
-        data: { streetContributionMillis: 0n, hasActedThisStreet: false },
-      });
-      await tx.pokerHand.update({
-        where: { id: hand.id },
-        data: {
-          phase: next,
-          streetWagerMillis: 0n,
-          lastRaiseSizeMillis: table.pokerBigBlindMillis,
-          lastAggressorPlayerId: null,
-          currentActorPlayerId: next === "SHOWDOWN" ? null : actor,
-        },
-      });
-      await tx.table.update({ where: { id: table.id }, data: { updatedAt: new Date() } });
+      await startBettingStreet(tx, table, hand.id, hand.dealerPlayerId, next);
     });
     publishTable(input.tableId);
     return { ok: true };

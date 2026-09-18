@@ -3,12 +3,32 @@ import { assignBlinds, nextDealer, orderedSeats } from "./seats";
 import { buildSidePots, splitPotEqually, uncalledReturn } from "./pots";
 import { amountToCall, isFullRaise, legalActions } from "./actions";
 import { streetIsComplete } from "./street";
+import { pokerStreetRail } from "./phases";
 
 const seats = [
   { playerId: "d", orderIndex: 0 },
   { playerId: "a", orderIndex: 1 },
   { playerId: "b", orderIndex: 2 },
 ];
+
+test("street rail highlights the current phase only", () => {
+  expect(pokerStreetRail("POKER_SETUP").map((stop) => `${stop.id}:${stop.state}`)).toEqual([
+    "DEAL:current",
+    "PRE-FLOP:next",
+    "FLOP:next",
+    "TURN:next",
+    "RIVER:next",
+    "SHOWDOWN:next",
+  ]);
+  expect(pokerStreetRail("RIVER").find((stop) => stop.state === "current")?.id).toBe("RIVER");
+  expect(pokerStreetRail("RIVER").filter((stop) => stop.state === "done").map((stop) => stop.id)).toEqual([
+    "DEAL",
+    "PRE-FLOP",
+    "FLOP",
+    "TURN",
+  ]);
+  expect(pokerStreetRail("HAND_COMPLETE").every((stop) => stop.state === "done")).toBe(true);
+});
 
 test("three-player blinds sit left of the dealer", () => {
   const blinds = assignBlinds(seats, "d");

@@ -7,6 +7,7 @@ import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
 import { PokerFelt } from "./PokerFelt";
 import { PokerGameControls } from "./PokerGameControls";
+import { PokerStreetRail } from "./PokerStreetRail";
 import { SeatOrderList } from "./SeatOrderList";
 
 type OwnerSheet = "menu" | "seats" | "player" | "jetons" | "game" | "winners" | null;
@@ -57,6 +58,7 @@ export function ClassicPokerDealer({
           </div>
         ) : null}
         <DealCountdown deadline={view.nextHandDeadlineAt} label="Next hand in" />
+        <PokerStreetRail stops={view.streetRail} />
       </div>
       <PokerFelt view={view} />
       <PokerGameControls view={view} onCommand={onCommand} notice={notice} onOwnerSheet={setSheet} />

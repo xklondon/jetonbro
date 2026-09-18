@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, openAs, setupJoinUrl, uniqueEmail } from "./helpers";
+import { createBlackjackTable, expectPokerPhase, openAs, setupJoinUrl, uniqueEmail } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -91,10 +91,13 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
+  await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
+  await expect(page.locator("body")).not.toContainText("xklondon");
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeDisabled();
   await expect(page.getByText("OPEN BANK")).toBeVisible();
   await expect(page.getByText("LIMITED BANK")).toBeVisible();
   await shot(page, "app-blackjack-waiting-first-bet-390x844.png");
+  await shot(page, "app-blackjack-dealer-betting-390x844.png");
 
   const before = await tableSnapshot(page);
   await page.getByRole("button", { name: "SWITCH GAME" }).click();
@@ -103,8 +106,9 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await shot(page, "app-poker-setup-sheet-390x844.png");
   await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await page.getByRole("button", { name: "DEAL CARDS", exact: true }).click();
-  await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expectPokerPhase(page, "PRE-FLOP");
   await shot(page, "app-poker-dealer-preflop-390x844.png");
   await samPage.reload();
   await expect(samPage.getByText(/Waiting for/i).first()).toBeVisible();
@@ -131,7 +135,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await command(page, tableId, "startNextPokerHand");
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "PRE-FLOP");
   await shot(page, "app-poker-dealer-next-hand-390x844.png");
   await shot(samPage, "app-poker-player-next-hand-390x844.png");
   await samContext.close();
@@ -151,7 +155,7 @@ test("three-player showdown split pot and street screenshots", async ({ page, co
   await shot(samPage, "app-poker-player-setup-390x844.png");
   await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
   await page.reload();
-  await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "PRE-FLOP");
 
   async function completeStreet() {
     for (let i = 0; i < 8; i += 1) {
@@ -169,28 +173,28 @@ test("three-player showdown split pot and street screenshots", async ({ page, co
   await command(page, tableId, "advancePokerStreet");
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("FLOP", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "FLOP");
   await shot(page, "app-poker-dealer-flop-390x844.png");
   await shot(samPage, "app-poker-player-flop-390x844.png");
   await completeStreet();
   await command(page, tableId, "advancePokerStreet");
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("TURN", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "TURN");
   await shot(page, "app-poker-dealer-turn-390x844.png");
   await shot(samPage, "app-poker-player-turn-390x844.png");
   await completeStreet();
   await command(page, tableId, "advancePokerStreet");
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("RIVER", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "RIVER");
   await shot(page, "app-poker-dealer-river-390x844.png");
   await shot(samPage, "app-poker-player-river-390x844.png");
   await completeStreet();
   await command(page, tableId, "advancePokerStreet");
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("SHOWDOWN", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "SHOWDOWN");
   await shot(page, "app-poker-dealer-showdown-390x844.png");
   await shot(samPage, "app-poker-player-showdown-390x844.png");
 
@@ -287,7 +291,7 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
   await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "PRE-FLOP");
   await page.getByRole("button", { name: "Menu" }).click();
   await expect(page.getByRole("button", { name: "SEAT ORDER" })).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel" }).click();
@@ -316,7 +320,7 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
   await shot(page, "app-poker-next-hand-countdown-390x844.png");
   await command(page, tableId, "startNextPokerHand");
   await page.reload();
-  await expect(page.getByText("PRE-FLOP", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "PRE-FLOP");
   await samContext.close();
   await joContext.close();
 });
@@ -369,7 +373,7 @@ test("browser All-In side-pot settlement conserves balances", async ({ page, con
   await checkStreet();
   await command(page, tableId, "advancePokerStreet");
   await page.reload();
-  await expect(page.getByText("SHOWDOWN", { exact: true })).toBeVisible();
+  await expectPokerPhase(page, "SHOWDOWN");
   await command(page, tableId, "awardPokerPots", {
     pots: JSON.stringify([
       { index: 0, winnerIds: [samId] },

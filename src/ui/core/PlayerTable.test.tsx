@@ -77,6 +77,8 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("AVAILABLE");
   expect(html).toContain("data-player-wallet");
+  expect(html).toContain('data-table-name="Salon"');
+  expect(html).not.toContain("xklondon");
   expect(html).not.toContain("AVAILABLE VALUE");
   expect(html).toContain("75");
   expect(html).toContain("Insurance");
@@ -88,6 +90,31 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).not.toContain("OPEN BANK");
   expect(html).not.toContain("LIMITED BANK");
 });
+
+test("entered Blackjack ranks sit inside the betting box above the card controls", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: {
+        ...view,
+        boxes: [
+          {
+            ...view.boxes[0]!,
+            hand: { ranks: ["10", "6"], complete: false, label: "16", suggestedOutcome: null, canEdit: true },
+          },
+          view.boxes[1]!,
+        ],
+      },
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("data-box-cards");
+  expect(html).toContain("playing-card is-box");
+  expect(html.indexOf("data-box-cards")).toBeGreaterThan(html.indexOf("class=\"box"));
+  expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("data-game-controls"));
+});
+
 
 test("player never sees the Open/Limited Bank toggle even when a bankroll snapshot is present", () => {
   const html = renderToStaticMarkup(

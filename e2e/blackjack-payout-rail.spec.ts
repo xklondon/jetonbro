@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import {
   createBlackjackTable,
   doubleTapPayoutRow,
@@ -89,6 +91,8 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   await doubleTapPayoutRow(page, joBoxes[0]!.id);
   await expect(page.locator(`[data-box-id="${joBoxes[0]!.id}"]`)).toContainText(/Stand off/i, { timeout: 10_000 });
   await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
+  await mkdir(join(process.cwd(), "docs", "screenshots", "classic"), { recursive: true });
+  await page.screenshot({ path: join(process.cwd(), "docs", "screenshots", "classic", "app-blackjack-round-complete-390x844.png") });
   await expect(page.locator(".outcome-celebration")).toHaveCount(0);
 
   await page.getByRole("button", { name: "NEXT ROUND NOW" }).click();

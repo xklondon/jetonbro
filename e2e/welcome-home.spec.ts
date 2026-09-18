@@ -19,8 +19,10 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   await page.screenshot({ path: join(out, "app-welcome-empty-390x844.png") });
 
   await page.getByRole("button", { name: "CREATE A TABLE" }).click();
-  await expect(page).toHaveURL(/\/tables\//);
+  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   const draftUrl = page.url();
+  expect(draftUrl).toMatch(/\/tables\/[a-z0-9]+$/i);
+  expect(draftUrl).not.toContain("/tables/new");
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeEnabled();
   await expect(page.getByRole("button", { name: /Texas Hold/ })).toBeEnabled();

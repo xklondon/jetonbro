@@ -2,6 +2,7 @@
 
 import "./tokens.css";
 import "./layouts.css";
+import "./table.css";
 import "./jetons.css";
 import "./home.css";
 import "./welcome-celebration.css";

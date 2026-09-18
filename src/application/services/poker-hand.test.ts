@@ -37,6 +37,21 @@ function key() {
   return randomUUID();
 }
 
+async function actUntilStreetReady(tableId: string, ownerId: string) {
+  for (let i = 0; i < 12; i += 1) {
+    const snap = await loadSnapshot(tableId, ownerId);
+    if (snap.poker?.canDealStreet || snap.poker?.phase === "SHOWDOWN" || snap.poker?.phase === "HAND_COMPLETE") {
+      return snap;
+    }
+    const actorId = snap.poker?.currentActorId;
+    if (!actorId) return snap;
+    const actor = await loadSnapshot(tableId, actorId);
+    const type = actor.poker?.legalActions.some((action) => action.type === "CHECK") ? "CHECK" : "CALL";
+    await pokerAct({ actorId, tableId, type, idempotencyKey: key() });
+  }
+  return loadSnapshot(tableId, ownerId);
+}
+
 async function tableValue(tableId: string) {
   const table = await prisma.table.findUniqueOrThrow({ where: { id: tableId } });
   const members = await prisma.tableMember.findMany({ where: { tableId, leftAt: null } });
@@ -237,6 +252,100 @@ describeDb("Texas Hold’em and game switching", () => {
     expect(next.bigBlindPlayerId).toBe(owner.id);
     expect(next.number).toBe(2);
     await expect(startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() })).rejects.toThrow();
+  });
+
+  test("DEAL FLOP, TURN and RIVER each start a fresh street with the first actor left of the button", async () => {
+    const { owner, sam, jo, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
+    });
+    const potBeforeRiver = async () => {
+      const participants = await prisma.pokerParticipant.findMany({
+        where: { hand: { tableId } },
+        orderBy: { seatOrder: "asc" },
+      });
+      return participants;
+    };
+
+    await actUntilStreetReady(tableId, owner.id);
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const flop = await loadSnapshot(tableId, owner.id);
+    expect(flop.poker?.phase).toBe("FLOP");
+    expect(flop.poker?.currentActorId).toBe(sam.id);
+    expect(flop.poker?.streetComplete).toBe(false);
+    expect(flop.poker?.canDealStreet).toBe(false);
+    expect(flop.poker?.nextStreetLabel).toBe("DEAL TURN");
+
+    await actUntilStreetReady(tableId, owner.id);
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const turn = await loadSnapshot(tableId, owner.id);
+    expect(turn.poker?.phase).toBe("TURN");
+    expect(turn.poker?.currentActorId).toBe(sam.id);
+    expect(turn.poker?.streetComplete).toBe(false);
+    expect(turn.poker?.canDealStreet).toBe(false);
+
+    const beforeRiver = await potBeforeRiver();
+    await actUntilStreetReady(tableId, owner.id);
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const river = await loadSnapshot(tableId, owner.id);
+    const samRiver = await loadSnapshot(tableId, sam.id);
+    expect(river.poker?.phase).toBe("RIVER");
+    expect(river.poker?.currentActorId).toBe(sam.id);
+    expect(river.poker?.streetComplete).toBe(false);
+    expect(river.poker?.canDealStreet).toBe(false);
+    expect(river.poker?.nextStreetLabel).toBe("SHOWDOWN");
+    expect(samRiver.poker?.waitingCopy).toBe("YOUR TURN");
+    expect(samRiver.poker?.legalActions.map((action) => action.type)).toEqual(expect.arrayContaining(["CHECK", "BET", "FOLD"]));
+    expect(river.poker?.legalActions).toEqual([]);
+    const afterDeal = await potBeforeRiver();
+    expect(afterDeal.every((item) => item.streetContributionMillis === 0n && item.hasActedThisStreet === false)).toBe(true);
+    expect(afterDeal.map((item) => item.totalContributionMillis.toString())).toEqual(
+      beforeRiver.map((item) => item.totalContributionMillis.toString()),
+    );
+    expect(river.poker?.pot.millis).toBe(beforeRiver.reduce((sum, item) => sum + item.totalContributionMillis, 0n).toString());
+
+    await actUntilStreetReady(tableId, owner.id);
+    const matched = await loadSnapshot(tableId, owner.id);
+    expect(matched.poker?.phase).toBe("RIVER");
+    expect(matched.poker?.streetComplete).toBe(true);
+    expect(matched.poker?.canDealStreet).toBe(true);
+    expect(matched.poker?.nextStreetLabel).toBe("SHOWDOWN");
+    expect(matched.poker?.currentActorId).toBeNull();
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    expect((await loadSnapshot(tableId, owner.id)).poker?.phase).toBe("SHOWDOWN");
+  });
+
+  test("all-in runout deals River without inventing an actor", async () => {
+    const { owner, sam, tableId } = await threePlayerTable();
+    await startTexasHoldem({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id],
+    });
+    await pokerAct({ actorId: owner.id, tableId, type: "ALL_IN", idempotencyKey: key() });
+    await pokerAct({ actorId: sam.id, tableId, type: "ALL_IN", idempotencyKey: key() });
+    const pre = await loadSnapshot(tableId, owner.id);
+    expect(pre.poker?.allInRunout).toBe(true);
+    expect(pre.poker?.canDealStreet).toBe(true);
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const river = await loadSnapshot(tableId, owner.id);
+    expect(river.poker?.phase).toBe("RIVER");
+    expect(river.poker?.currentActorId).toBeNull();
+    expect(river.poker?.allInRunout).toBe(true);
+    expect(river.poker?.canDealStreet).toBe(true);
+    expect(river.poker?.legalActions).toEqual([]);
+    await advancePokerStreet({ actorId: owner.id, tableId, idempotencyKey: key() });
+    expect((await loadSnapshot(tableId, owner.id)).poker?.phase).toBe("SHOWDOWN");
   });
 
   test("heads-up blinds and action order", async () => {

@@ -221,6 +221,17 @@ export type PokerLegalActionView = {
   label: string;
 };
 
+export type PokerCardView = {
+  rank: string;
+  suit: string;
+  label: string;
+};
+
+export type PokerStreetRailView = {
+  id: string;
+  state: "done" | "current" | "next";
+};
+
 export type PokerSeatView = {
   userId: string;
   name: string;
@@ -235,6 +246,8 @@ export type PokerSeatView = {
   isActor: boolean;
   sittingOut: boolean;
   orderIndex: number;
+  hasHoleCards: boolean;
+  holeCards: PokerCardView[] | null;
 };
 
 export type PokerPotView = {
@@ -284,6 +297,10 @@ export type PokerTableView = {
   turnNumber: number;
   handNumber: number;
   viewerId: string;
+  communityCards: PokerCardView[];
+  canEditCommunity: boolean;
+  canEditHole: boolean;
+  streetRail: PokerStreetRailView[];
 };
 
 export type WaitingTableView = {

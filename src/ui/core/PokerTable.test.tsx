@@ -48,6 +48,8 @@ function pokerView(overrides: Partial<PokerTableView> = {}): PokerTableView {
         isActor: true,
         sittingOut: false,
         orderIndex: 0,
+        hasHoleCards: false,
+        holeCards: null,
       },
       {
         userId: "sam",
@@ -63,6 +65,8 @@ function pokerView(overrides: Partial<PokerTableView> = {}): PokerTableView {
         isActor: false,
         sittingOut: false,
         orderIndex: 1,
+        hasHoleCards: false,
+        holeCards: null,
       },
     ],
     pots: [],
@@ -87,6 +91,17 @@ function pokerView(overrides: Partial<PokerTableView> = {}): PokerTableView {
     turnNumber: 1,
     handNumber: 1,
     viewerId: "owner",
+    communityCards: [],
+    canEditCommunity: false,
+    canEditHole: false,
+    streetRail: [
+      { id: "DEAL", state: "done" },
+      { id: "PRE-FLOP", state: "current" },
+      { id: "FLOP", state: "next" },
+      { id: "TURN", state: "next" },
+      { id: "RIVER", state: "next" },
+      { id: "SHOWDOWN", state: "next" },
+    ],
     ...overrides,
   };
 }
@@ -359,6 +374,171 @@ test("owner and player share the same felt projection", () => {
   );
   expect(ownerFelt).toBe(playerFelt);
   expect(ownerFelt).toContain("YOUR TURN");
-  expect(ownerFelt).toContain("Waiting");
+  expect(ownerFelt).toContain("WAITING");
   expect(ownerFelt).not.toContain("Main pot");
+  expect(ownerFelt).toContain('data-table-name="Hold em table"');
+  expect(ownerFelt).not.toContain("xklondon");
+  expect(ownerFelt).not.toContain("data-rail=\"DEAL\"");
 });
+
+test("owner and player share the same street rail with the current stop highlighted", () => {
+  const view = pokerView({
+    phase: "RIVER",
+    phaseLabel: "RIVER",
+    streetRail: [
+      { id: "DEAL", state: "done" },
+      { id: "PRE-FLOP", state: "done" },
+      { id: "FLOP", state: "done" },
+      { id: "TURN", state: "done" },
+      { id: "RIVER", state: "current" },
+      { id: "SHOWDOWN", state: "next" },
+    ],
+  });
+  const owner = renderToStaticMarkup(
+    createElement(ClassicPokerDealer, {
+      view: { ...view, role: "POKER_DEALER", isOwner: true, legalActions: [] },
+      members: [],
+      onCommand: () => undefined,
+    }),
+  );
+  const player = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: { ...view, role: "POKER_PLAYER", isOwner: false, legalActions: [] },
+      onCommand: () => undefined,
+    }),
+  );
+  expect(owner).toContain('data-rail="RIVER" data-rail-state="current"');
+  expect(player).toContain('data-rail="RIVER" data-rail-state="current"');
+  expect(owner).toContain('data-rail="SHOWDOWN" data-rail-state="next"');
+  expect(player).toContain("poker-street-rail");
+  expect(owner).toContain("class=\"dock");
+  expect(owner).not.toContain('data-rail="DEAL"');
+  expect(owner).toContain('data-table-name="Hold em table"');
+});
+
+test("community cards are public while hole values stay on the owning seat only", () => {
+  const seats = pokerView().seats.map((seat) =>
+    seat.userId === "sam"
+      ? {
+          ...seat,
+          hasHoleCards: true,
+          holeCards: null,
+        }
+      : {
+          ...seat,
+          hasHoleCards: true,
+          holeCards: [
+            { rank: "A", suit: "S", label: "A♠" },
+            { rank: "K", suit: "H", label: "K♥" },
+          ],
+        },
+  );
+  const html = renderToStaticMarkup(
+    createElement(PokerFelt, {
+      view: pokerView({
+        communityCards: [
+          { rank: "Q", suit: "D", label: "Q♦" },
+          { rank: "J", suit: "C", label: "J♣" },
+          { rank: "10", suit: "S", label: "10♠" },
+        ],
+        seats,
+        viewerId: "owner",
+      }),
+    }),
+  );
+  expect(html).toContain("data-community-cards");
+  expect(html).toContain("data-card=\"QD\"");
+  expect(html).toContain("data-hole-cards=\"own\"");
+  expect(html).toContain("data-card=\"AS\"");
+  expect(html).toContain("HOLE CARDS IN");
+  expect(html).not.toMatch(/data-player-id="sam"[\s\S]*data-card="AS"/);
+});
+
+test("Blackjack optional ranks render as larger cards inside the betting box", () => {
+  const blackjack: PlayerTableView = {
+    role: "PLAYER",
+    phase: "PLAYING",
+    tableName: "Salon",
+    title: "Play your hands",
+    copy: "Select a box",
+    available: { millis: "75000", label: "75" },
+    insuranceWindowOpen: false,
+    bettingCloseDeadlineAt: null,
+    nextRoundDeadlineAt: null,
+    actions: {
+      bet: false,
+      retract: false,
+      addBox: false,
+      removeEmptyBox: false,
+      double: true,
+      split: true,
+      insurance: false,
+    },
+    boxes: [
+      {
+        id: "1",
+        playerId: "p1",
+        playerName: "Alex",
+        label: "YOUR BOX 1",
+        boxNumber: 1,
+        bet: { millis: "25000", label: "25" },
+        originalStake: { millis: "25000", label: "25" },
+        isDoubled: false,
+        isSplit: false,
+        insurance: null,
+        insuranceMax: { millis: "12500", label: "12.5" },
+        insuranceResult: null,
+        outcome: null,
+        returned: null,
+        payoutActions: [],
+        hand: { ranks: ["A", "K"], complete: false, label: "21", suggestedOutcome: null, canEdit: true },
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: blackjack,
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  const box = html.slice(html.indexOf("class=\"box"), html.indexOf("data-game-controls"));
+  expect(box).toContain("data-box-cards");
+  expect(box).toContain("data-card=\"A\"");
+  expect(box).toContain("playing-card is-box");
+  expect(html).toContain("class=\"dock");
+  expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("data-game-controls"));
+  expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("card-assist"));
+});
+
+test("poker setup prints the live table name on the cloth and hides D/SB/BB before Deal Cards", () => {
+  const html = renderToStaticMarkup(
+    createElement(PokerFelt, {
+      view: pokerView({
+        phase: "POKER_SETUP",
+        phaseLabel: "POKER SETUP",
+        pot: money("0", "0"),
+        toCall: money("0", "0"),
+        legalActions: [],
+        currentActorId: null,
+        waitingCopy: null,
+        seats: pokerView().seats.map((seat) => ({
+          ...seat,
+          isActor: false,
+          isDealer: false,
+          isSmallBlind: false,
+          isBigBlind: false,
+          status: "WAITING",
+        })),
+      }),
+    }),
+  );
+  expect(html).toContain('data-table-name="Hold em table"');
+  expect(html).not.toContain("xklondon");
+  expect(html).not.toContain("dealer-badge");
+  expect(html).not.toContain("blind-badge");
+  expect(html).not.toContain("data-community-cards");
+  expect(html).toContain("WAITING");
+});
+

@@ -9,6 +9,7 @@ export function CardEntryPanel({
   hand,
   completeLabel,
   canClear,
+  showCards = true,
   onAdd,
   onRemove,
   onComplete,
@@ -19,6 +20,7 @@ export function CardEntryPanel({
   hand?: HandView;
   completeLabel: string;
   canClear?: boolean;
+  showCards?: boolean;
   onAdd: (rank: string) => void;
   onRemove: (index: number) => void;
   onComplete: () => void;
@@ -42,6 +44,7 @@ export function CardEntryPanel({
         </button>
       ) : (
         <>
+          {showCards ? (
           <div className="entered-cards">
             {ranks.map((rank, index) => (
               <button
@@ -57,6 +60,9 @@ export function CardEntryPanel({
             ))}
             {hand?.label ? <span className="hand-total">{hand.label}</span> : null}
           </div>
+          ) : hand?.label ? (
+            <span className="hand-total">{hand.label}</span>
+          ) : null}
           {canEdit && !hand?.complete ? (
             <div className="rank-tray" role="group" aria-label="Card ranks">
               {CARD_RANKS.map((rank) => (

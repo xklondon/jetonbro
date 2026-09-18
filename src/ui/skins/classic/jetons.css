@@ -9,13 +9,18 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 3px dashed rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.24), 0 5px 8px rgba(0, 0, 0, 0.3);
+  border: 4px dashed rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 0 0 0 4px rgba(0, 0, 0, 0.22),
+    inset 0 7px 8px rgba(255, 255, 255, 0.2),
+    inset 0 -6px 8px rgba(0, 0, 0, 0.28),
+    0 6px 10px rgba(0, 0, 0, 0.38);
   display: grid;
   place-items: center;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   margin-left: -10px;
+  color: #fff;
 }
 
 .classic-skin .chip:first-child {
@@ -23,20 +28,24 @@
 }
 
 .classic-skin .c5 {
-  background: var(--red);
+  background: radial-gradient(circle at 35% 30%, #d45a60, var(--red) 58%, #7a2228);
 }
 
 .classic-skin .c10 {
-  background: var(--blue);
+  background: radial-gradient(circle at 35% 30%, #4d8fd0, var(--blue) 58%, #163e6c);
 }
 
 .classic-skin .c25 {
-  background: var(--green);
+  background: radial-gradient(circle at 35% 30%, #3cb07a, var(--green) 58%, #0d4a32);
 }
 
 .classic-skin .c50 {
-  background: var(--gold);
-  color: #342706;
+  background: radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold) 58%, var(--gold-dim));
+  color: var(--gold-ink);
+}
+
+.classic-skin .c-exact {
+  background: radial-gradient(circle at 35% 30%, #8a8374, #4d4942);
 }
 
 .classic-skin .jetons {
@@ -56,4 +65,23 @@
   height: 47px;
   margin: 0;
   border-width: 4px;
+}
+
+.classic-skin .chip-lift {
+  transform: translateY(-4px);
+}
+
+.classic-skin .drag-ghost {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+  margin: 0;
+  transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classic-skin .chip-lift,
+  .classic-skin .drag-ghost.settling {
+    transform: none;
+  }
 }

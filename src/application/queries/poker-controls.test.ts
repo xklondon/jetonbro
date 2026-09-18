@@ -33,6 +33,8 @@ function seat(overrides: Partial<PokerSeatView>): PokerSeatView {
     isActor: false,
     sittingOut: false,
     orderIndex: 0,
+    hasHoleCards: false,
+    holeCards: null,
     ...overrides,
   };
 }
@@ -80,6 +82,10 @@ function view(overrides: Partial<PokerTableView> = {}): PokerTableView {
     turnNumber: 1,
     handNumber: 1,
     viewerId: "sam",
+    communityCards: [],
+    canEditCommunity: false,
+    canEditHole: false,
+    streetRail: [],
     ...overrides,
   };
 }

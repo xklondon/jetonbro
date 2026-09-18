@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PlayerTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { FeltBox } from "./FeltBox";
+import { ClothName } from "./ClothName";
 import { DealCountdown } from "./DealCountdown";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { CardEntryPanel } from "./CardEntryPanel";
@@ -81,20 +82,25 @@ export function ClassicPlayerTable({
         <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
       </div>
       <main className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}>
-        <div className={boxClass}>
-          {view.boxes.map((box) => (
-            <FeltBox
-              key={box.id}
-              box={box}
-              selected={box.id === selected?.id}
-              dropHighlight={hoverBoxId === box.id}
-              onSelect={() => onSelectBox(box.id)}
-              retractable={view.actions.retract}
-              onRetractChip={(amount) =>
-                onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
-              }
-            />
-          ))}
+        <div className="table-rail bj-rail">
+          <div className="table-surface">
+            <ClothName name={view.tableName} />
+            <div className={boxClass}>
+              {view.boxes.map((box) => (
+                <FeltBox
+                  key={box.id}
+                  box={box}
+                  selected={box.id === selected?.id}
+                  dropHighlight={hoverBoxId === box.id}
+                  onSelect={() => onSelectBox(box.id)}
+                  retractable={view.actions.retract}
+                  onRetractChip={(amount) =>
+                    onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
+                  }
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </main>
       <footer className="dock player-dock">
@@ -105,6 +111,7 @@ export function ClassicPlayerTable({
           <CardEntryPanel
             hand={selected?.hand}
             completeLabel="HAND COMPLETE"
+            showCards={false}
             onAdd={(rank) => selected && onCommand("addCard", { boxId: selected.id, rank })}
             onRemove={(index) => selected && onCommand("removeCard", { boxId: selected.id, index: String(index) })}
             onComplete={() => selected && onCommand("completeHand", { boxId: selected.id })}

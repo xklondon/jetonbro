@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Realistic Classic table visuals
+
+- Blackjack and Texas Hold’em share one CSS table system: emerald felt texture, antique-gold rails, cream serif headings, ivory cards, denomination-coloured jetons, and a matte-black bottom dock.
+- The configured table name is printed on the cloth in every live phase. Mockup names are never hard-coded.
+- Poker setup uses a compact oval table with POT 0 and no D/SB/BB until DEAL CARDS. Active hands show a `PRE-FLOP · FLOP · TURN · RIVER · SHOWDOWN` rail and five community-card slots. Optional card entry stays display-only.
+- Payout rail order and gestures are unchanged: LOST, STAND OFF, BLACKJACK, WON; swipe left/right and double-tap STAND OFF.
+
+### Poker streets, optional cards, and Classic table shell
+
+- `DEAL RIVER` now starts a real River betting street: street contribution and action-completion reset, totals and pot stay, first actor is left of the rotating D, and `actionCount` / `Table.updatedAt` move so SSE cannot keep a completed-street snapshot. `SHOWDOWN` enables only after River matches. All-in runout still deals remaining streets without inventing an actor.
+- Owner and Players share a compact `DEAL → PRE-FLOP → FLOP → TURN → RIVER → SHOWDOWN` rail.
+- Optional community and hole cards are display-only. Community values are public; hole values stay private to that Player. They never advance a street or change the ledger. Manual Showdown stays authoritative.
+- Community cards render large in the centre pot; a Player’s own hole cards sit at their seat. Blackjack optional ranks move out of the bottom strip into larger cards inside the betting box; rank controls stay below.
+- `CREATE NEW TABLE` goes to `/tables/new` and opens one reused draft on `/tables/{id}` immediately. Setup uses the green felt plus the black bottom dock.
+- Classic CSS tokens (`--emerald`, `--felt`, `--cream`, `--gold`, `--dock`) are shared across table phases.
+
 ### Compact Blackjack betting, game switching, and Texas Hold’em
 
 - The Create Table mask selects Blackjack, Texas Hold’em, or Zilch — Coming later. Confirming Poker opens `POKER_SETUP` with no Blackjack round. Owner-only `DEAL CARDS` starts one hand, posts blinds once, and marks the first actor. Seat order is compact up/down in the table menu during `POKER_SETUP` before the first hand, then locked. Owner and Players share the same felt: pot chips and total, `TO CALL` only when owed, D/SB/BB markers, and street commitment. `NEXT HAND NOW` / `NEXT HAND IN 7 SECONDS` use `PokerHand.nextHandDeadlineAt`. Shared UI projects the active Poker hand phase (`Texas Hold’em · PRE-FLOP`) instead of a leftover Blackjack round phase. Save/close is blocked while `LOCKED_POKER` exists or a hand is unsettled. The current actor is marked `YOUR TURN`.

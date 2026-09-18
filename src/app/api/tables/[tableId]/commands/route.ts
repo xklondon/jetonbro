@@ -48,6 +48,7 @@ import {
   startNextPokerHand,
   startTexasHoldem,
 } from "@/application/services/poker-hand";
+import { setPokerCommunityCards, setPokerHoleCards } from "@/application/services/poker-cards";
 import { BOX_OUTCOMES } from "@/domain/blackjack/payouts";
 import { INSURANCE_RESOLUTIONS } from "@/domain/blackjack/payouts";
 import { publicOrigin } from "@/application/auth-urls";
@@ -306,6 +307,16 @@ async function dispatch(
       });
     case "advancePokerStreet":
       return advancePokerStreet(ctx);
+    case "setPokerCommunityCards":
+      return setPokerCommunityCards({
+        ...ctx,
+        cards: p.cards ? JSON.parse(String(p.cards)) : [],
+      });
+    case "setPokerHoleCards":
+      return setPokerHoleCards({
+        ...ctx,
+        cards: p.cards ? JSON.parse(String(p.cards)) : [],
+      });
     case "setPokerWinners":
       return setPokerWinners({
         ...ctx,

@@ -254,9 +254,10 @@ test("CREATE TABLE reveals dealer table seats, compact QR and OPEN BETTING", () 
   expect(html).toContain("+ PLAYER");
   expect(html).toContain(">QR<");
   expect(html).toContain("OPEN BETTING");
-  expect(html).toContain("OPEN BETTING starts Betting.");
-  expect(html).toContain("CARD ASSIST");
-  expect(html).toContain("BANK FUNDING");
+  expect(html).toContain("data-game-controls");
+  expect(html).toContain("dock");
+  expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
+  expect(html).not.toContain("xklondon");
 });
 
 test("invited seats render as player boxes and Open Betting stays gated", () => {

@@ -1,0 +1,212 @@
+.classic-skin .phone {
+  background-color: var(--emerald);
+  background-image:
+    radial-gradient(ellipse at 50% 8%, rgba(244, 234, 213, 0.1), transparent 42%),
+    radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.42), transparent 58%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.045) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 50% 34%, var(--felt-hi), var(--felt) 48%, var(--emerald));
+}
+
+.classic-skin .brand {
+  font-family: var(--font-display);
+  letter-spacing: 0.28em;
+  font-size: 13px;
+}
+
+.classic-skin .cloth-name {
+  margin: 0 0 8px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--cream);
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.classic-skin .table-rail {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 12px 18px;
+  background:
+    radial-gradient(ellipse at 50% 12%, rgba(255, 236, 190, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(26, 61, 50, 0.35), transparent 28%),
+    var(--felt);
+  box-shadow: var(--shadow-inset), var(--shadow);
+}
+
+.classic-skin .table-rail.bj-rail {
+  border-radius: 18px 18px 46% 46% / 18px 18px 22% 22%;
+  border: 3px solid var(--gold);
+  outline: 8px solid var(--rail);
+  outline-offset: 0;
+}
+
+.classic-skin .table-rail.bj-rail::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: inherit;
+  border: 1px dashed var(--gold-line);
+  pointer-events: none;
+}
+
+.classic-skin .table-rail.poker-rail {
+  border-radius: 48% / 16%;
+  border: 3px solid var(--gold);
+  box-shadow:
+    0 0 0 9px var(--rail),
+    0 0 0 11px var(--gold-dim),
+    var(--shadow-inset),
+    var(--shadow);
+}
+
+.classic-skin .table-rail.poker-rail::before,
+.classic-skin .table-rail.poker-rail::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold-dim));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.classic-skin .table-rail.poker-rail::before {
+  top: 18%;
+  left: 8px;
+}
+
+.classic-skin .table-rail.poker-rail::after {
+  top: 18%;
+  right: 8px;
+  border: 0;
+}
+
+.classic-skin .table-surface {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.classic-skin .poker-pot-ring {
+  width: min(42%, 132px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.25);
+  text-align: center;
+  padding: 8px;
+}
+
+.classic-skin .poker-pot-ring small {
+  display: block;
+  color: var(--gold);
+  letter-spacing: 0.14em;
+  font-size: 10px;
+}
+
+.classic-skin .poker-pot-ring strong {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--cream);
+}
+
+.classic-skin .community-slots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 2px;
+}
+
+.classic-skin .card-slot {
+  width: 42px;
+  height: 60px;
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background:
+    linear-gradient(160deg, rgba(8, 42, 34, 0.9), rgba(4, 28, 22, 0.95));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  display: grid;
+  place-items: center;
+  color: rgba(223, 189, 105, 0.35);
+  font-size: 18px;
+}
+
+.classic-skin .seat-plaque,
+.classic-skin .poker-seat {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(4, 32, 26, 0.78);
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  color: var(--cream);
+}
+
+.classic-skin .poker-seat.is-dealer {
+  border-color: var(--gold-line);
+}
+
+.classic-skin .poker-seat.is-actor {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(223, 189, 105, 0.45), 0 0 18px rgba(223, 189, 105, 0.28);
+}
+
+.classic-skin .betting-spot {
+  width: min(72%, 220px);
+  margin: 8px auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: rgba(4, 32, 26, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.classic-skin .betting-spot::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  border: 1px dashed var(--gold-line);
+  pointer-events: none;
+}
+
+.classic-skin .betting-spot {
+  position: relative;
+}
+
+.classic-skin .payout-row.is-won {
+  box-shadow: inset 0 0 0 1px rgba(31, 122, 74, 0.55), 0 0 16px rgba(223, 189, 105, 0.18);
+}
+
+.classic-skin .table-rail .dealer-list {
+  height: auto;
+  max-height: 100%;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classic-skin .poker-seat.is-actor {
+    animation: none;
+  }
+}

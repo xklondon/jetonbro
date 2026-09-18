@@ -6,8 +6,10 @@ import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
 import { DealerPayoutRow } from "./DealerPayoutRow";
 import { chipsFromMillis } from "./chips";
+import { PlayingCard } from "./PlayingCard";
 import { CardEntryPanel } from "./CardEntryPanel";
 import { BankrollPanel } from "./BankrollPanel";
+import { ClothName } from "./ClothName";
 
 export function ClassicBankTable({
   view,
@@ -54,6 +56,7 @@ export function ClassicBankTable({
               hand={view.dealerHand}
               completeLabel="DEALER COMPLETE"
               canClear
+              showCards={false}
               onAdd={(rank) => onCommand("addCard", { dealer: "true", rank })}
               onRemove={(index) => onCommand("removeCard", { dealer: "true", index: String(index) })}
               onComplete={() => onCommand("completeHand", { dealer: "true" })}
@@ -67,7 +70,7 @@ export function ClassicBankTable({
                 <p className="waiting-first-bet">WAITING FOR THE FIRST BET</p>
               ) : null}
               <div className="deal-actions">
-                <button type="button" disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
+                <button type="button" className={view.actions.dealCards ? "gold-button" : undefined} disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
                   DEAL CARDS NOW
                 </button>
                 <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
@@ -81,7 +84,7 @@ export function ClassicBankTable({
           ) : showNextRound ? (
             <>
               <div className="deal-actions">
-                <button type="button" disabled={!view.actions.nextHand} onClick={() => onCommand("startNextRound")}>
+                <button type="button" className="gold-button" disabled={!view.actions.nextHand} onClick={() => onCommand("startNextRound")}>
                   NEXT ROUND NOW
                 </button>
                 <button
@@ -111,6 +114,16 @@ export function ClassicBankTable({
         </div>
       </div>
       <main className="felt dealer-list-felt">
+        <div className="table-rail bj-rail">
+          <div className="table-surface">
+            <ClothName name={view.tableName} />
+        {view.dealerHand?.ranks.length ? (
+          <div className="community-cards" data-dealer-cards="true">
+            {view.dealerHand.ranks.map((rank, index) => (
+              <PlayingCard key={`${rank}-${index}`} rank={rank} size="felt" />
+            ))}
+          </div>
+        ) : null}
         <div className="dealer-list">
           {view.players.length === 0
             ? view.boxes.map((box) => (
@@ -144,7 +157,7 @@ export function ClassicBankTable({
                         onApply={view.cardAssist === "CONFIRM" ? () => onCommand("applyCardOutcome", { boxId: box.id }) : undefined}
                       />
                     ) : (
-                      <div className="payout-row is-idle" key={box.id} data-box-id={box.id}>
+                      <div className={`payout-row is-idle${view.phase === "BETTING" ? " betting-spot" : ""}`} key={box.id} data-box-id={box.id}>
                         <div className="payout-row-inner">
                           <div>
                             <strong>{box.label}</strong>
@@ -159,22 +172,34 @@ export function ClassicBankTable({
                           </span>
                         </div>
                         {view.phase === "PLAYING" ? (
-                          <CardEntryPanel
-                            hand={box.hand}
-                            completeLabel="HAND COMPLETE"
-                            canClear
-                            onAdd={(rank) => onCommand("addCard", { boxId: box.id, rank })}
-                            onRemove={(index) => onCommand("removeCard", { boxId: box.id, index: String(index) })}
-                            onComplete={() => onCommand("completeHand", { boxId: box.id })}
-                            onReopen={() => onCommand("reopenHand", { boxId: box.id })}
-                            onClear={() => onCommand("clearHand", { boxId: box.id })}
-                          />
+                          <>
+                            {box.hand?.ranks.length ? (
+                              <div className="box-cards" data-box-cards="true">
+                                {box.hand.ranks.map((rank, index) => (
+                                  <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />
+                                ))}
+                              </div>
+                            ) : null}
+                            <CardEntryPanel
+                              hand={box.hand}
+                              completeLabel="HAND COMPLETE"
+                              canClear
+                              showCards={false}
+                              onAdd={(rank) => onCommand("addCard", { boxId: box.id, rank })}
+                              onRemove={(index) => onCommand("removeCard", { boxId: box.id, index: String(index) })}
+                              onComplete={() => onCommand("completeHand", { boxId: box.id })}
+                              onReopen={() => onCommand("reopenHand", { boxId: box.id })}
+                              onClear={() => onCommand("clearHand", { boxId: box.id })}
+                            />
+                          </>
                         ) : null}
                       </div>
                     ),
                   )}
                 </section>
               ))}
+        </div>
+          </div>
         </div>
       </main>
       <footer className="dock dealer-dock">

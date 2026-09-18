@@ -1,6 +1,7 @@
 import { formatJetons } from "@/domain/money";
 import { amountToCall, legalActions } from "@/domain/poker/actions";
-import { STREET_ADVANCE, isBettingStreet, type BettingStreet } from "@/domain/poker/phases";
+import { cardLabel, readPokerCards } from "@/domain/poker/cards";
+import { STREET_ADVANCE, isBettingStreet, pokerStreetRail, type BettingStreet } from "@/domain/poker/phases";
 import { allLiveAllIn, streetIsComplete } from "@/domain/poker/street";
 import { formatPokerPhaseLabel, pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
 import type { MoneyView, PokerTableView } from "./views";
@@ -28,6 +29,7 @@ type Hand = {
   nextHandDeadlineAt: Date | null;
   settledKey: string | null;
   awardSummary: unknown;
+  communityCards?: unknown;
   participants: {
     playerId: string;
     status: "ACTIVE" | "FOLDED" | "ALL_IN";
@@ -39,6 +41,7 @@ type Hand = {
     isSmallBlind: boolean;
     isBigBlind: boolean;
     seatOrder: number;
+    holeCards?: unknown;
     player?: { name: string | null; email: string };
   }[];
   pots: {
@@ -150,6 +153,14 @@ export function buildPokerView(input: {
         isActor: hand?.currentActorPlayerId === item.playerId,
         sittingOut: false,
         orderIndex: item.seatOrder,
+        hasHoleCards: Boolean("holeCards" in item && readPokerCards(item.holeCards ?? []).length),
+        holeCards:
+          item.playerId === viewerId && "holeCards" in item
+            ? (() => {
+                const cards = readPokerCards(item.holeCards ?? []).map((card) => ({ ...card, label: cardLabel(card) }));
+                return cards.length ? cards : null;
+              })()
+            : null,
       };
     });
   const copy =
@@ -223,5 +234,9 @@ export function buildPokerView(input: {
     turnNumber: hand?.actionCount ?? 0,
     handNumber: hand?.number ?? 0,
     viewerId,
+    communityCards: readPokerCards(hand?.communityCards ?? []).map((card) => ({ ...card, label: cardLabel(card) })),
+    canEditCommunity: Boolean(isOwner && ["FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(phase) && !input.tableClosed),
+    canEditHole: Boolean(viewerPart && pokerHandIsOpen(phase) && !input.tableClosed),
+    streetRail: pokerStreetRail(phase),
   };
 }

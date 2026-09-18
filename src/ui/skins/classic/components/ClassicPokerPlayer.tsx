@@ -5,6 +5,7 @@ import { PhoneShell } from "./PhoneShell";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { PokerFelt } from "./PokerFelt";
 import { PokerGameControls } from "./PokerGameControls";
+import { PokerStreetRail } from "./PokerStreetRail";
 
 export function ClassicPokerPlayer({
   view,
@@ -32,6 +33,7 @@ export function ClassicPokerPlayer({
             {view.waitingCopy}
           </div>
         ) : null}
+        <PokerStreetRail stops={view.streetRail} />
       </div>
       <PokerFelt view={view} />
       <PokerGameControls view={view} onCommand={onCommand} notice={notice} />

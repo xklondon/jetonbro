@@ -25,7 +25,7 @@ export async function openSetupSheet(page: Page) {
   const create = page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ });
   await expect(create).toBeVisible();
   await create.click();
-  await expect(page).toHaveURL(/\/tables\//);
+  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Blackjack/ })).toBeVisible();
   await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
@@ -91,6 +91,21 @@ export async function invitePlayerFromLobby(page: Page, email: string) {
   await page.getByLabel("Player email").fill(email);
   await page.getByRole("button", { name: "Send invitation" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
+}
+
+export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
+  await expect(page.locator(".phase-head span strong")).toHaveText(label, { timeout: options?.timeout ?? 15_000 });
+  const rail: Record<string, string> = {
+    "PRE-FLOP": "PRE-FLOP",
+    FLOP: "FLOP",
+    TURN: "TURN",
+    RIVER: "RIVER",
+    SHOWDOWN: "SHOWDOWN",
+  };
+  const stop = rail[label];
+  if (stop) {
+    await expect(page.locator(`[data-rail="${stop}"][data-rail-state="current"]`)).toBeVisible();
+  }
 }
 
 export async function noHorizontalOverflow(page: Page) {
