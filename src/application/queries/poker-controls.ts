@@ -45,7 +45,35 @@ export function pokerActorActions(legal: PokerLegalActionView[]): PokerLegalActi
   return [layout.primary, ...layout.secondary].filter((action): action is PokerLegalActionView => Boolean(action));
 }
 
-export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions">): boolean {
+function millis(value: string | undefined): bigint {
+  try {
+    return BigInt(value || "0");
+  } catch {
+    return 0n;
+  }
+}
+
+export function visiblePokerLegalActions(view: PokerTableView): PokerLegalActionView[] {
+  if (view.viewerStatus === "FOLDED" || view.viewerStatus === "ALL_IN") return [];
+  const available = millis(view.available.millis);
+  const owed = millis(view.toCall.millis);
+  return view.legalActions
+    .filter((action) => {
+      if (action.type === "CALL") return owed > 0n && available > 0n && millis(action.amount.millis) > 0n;
+      if (action.type === "CHECK") return owed === 0n;
+      if (action.type === "BET" || action.type === "RAISE" || action.type === "ALL_IN") return available > 0n;
+      return true;
+    })
+    .map((action) => {
+      if (action.type !== "CALL") return action;
+      const amount = available >= owed && owed > 0n ? view.toCall : action.amount;
+      return { ...action, amount, label: `CALL ${amount.label}` };
+    });
+}
+
+export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "available" | "viewerStatus">): boolean {
+  if (view.viewerStatus === "FOLDED" || view.viewerStatus === "ALL_IN") return false;
+  if (millis(view.available.millis) === 0n) return false;
   return view.legalActions.some((action) => action.type === "BET" || action.type === "RAISE");
 }
 
@@ -99,7 +127,7 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
   if (view.canSwitchGame) {
     controls.push({ id: "switchGame", layer: "owner", surface: "menu", label: "SWITCH GAME", enabled: true });
   }
-  for (const action of pokerActorActions(view.legalActions)) {
+  for (const action of pokerActorActions(visiblePokerLegalActions(view))) {
     controls.push({
       id: action.type.toLowerCase(),
       layer: "actor",

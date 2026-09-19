@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Compact Blackjack rows and Poker felt
+
+- Dealer Blackjack uses one shared compact `DealerBlackjackBoxRow` in BETTING, PLAYING, PAYOUT, and ROUND_COMPLETE. Circular betting spots are gone. The DEALER hand is the same compact row at the top of the list. PLAYING keeps a small inline `+ CARDS` control; entered ranks stay in the row. PAYOUT swipe/button behaviour is unchanged.
+- Poker optional cards are collapsed by default. `+ HOLE CARDS` (own seat only) and `+ BOARD CARDS` (Owner, from FLOP) open a temporary sheet with CLEAR / CANCEL / SAVE. Hole ranks stay private; board cards stay public. The permanent rank/suit keyboard is gone.
+- The mobile Poker felt is a compact shared layout: table name once in the header, street rail, community slots, pot, `TO CALL` only when owed, and seat rows. The large oval, gold dots, and duplicate cloth name are gone.
+- `CALL` uses the authoritative amount owed and is never `CALL 0`. A zero stack cannot Call/Bet/Raise. All-In and Folded Players still get no actor controls. Short stacks that cannot cover the owed amount get All-In, not a zero Call.
+
 ### Blackjack layout, in-box cards, and DEALER WON
 
 - The Classic Blackjack table is a single phone/felt frame. The nested wood/leather rail from the realistic restyle is gone; decorative pseudo-elements cannot receive pointer events.

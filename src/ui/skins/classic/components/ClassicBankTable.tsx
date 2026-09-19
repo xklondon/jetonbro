@@ -4,13 +4,11 @@ import { useState } from "react";
 import type { BankTableView, MemberView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { DealCountdown } from "./DealCountdown";
-import { DealerPayoutRow } from "./DealerPayoutRow";
+import { DealerBlackjackBoxRow } from "./DealerBlackjackBoxRow";
 import { DealerHandBox } from "./DealerHandBox";
-import { chipsFromMillis } from "./chips";
-import { CardEntryPanel } from "./CardEntryPanel";
 import { BankrollPanel } from "./BankrollPanel";
 import { ClothName } from "./ClothName";
-import { FeltBox } from "./FeltBox";
+import { CardEntryPanel } from "./CardEntryPanel";
 
 export function ClassicBankTable({
   view,
@@ -37,7 +35,6 @@ export function ClassicBankTable({
   const [memberId, setMemberId] = useState(memberIdDefault);
   const showInsurance = view.phase === "PLAYING" || view.phase === "PAYOUT" || view.insurance.count > 0;
   const showNextRound = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
-  const showDealerBox = view.phase === "PLAYING" || view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const dealerStatus =
     view.phase === "PLAYING"
       ? view.dealerHand?.complete
@@ -45,7 +42,9 @@ export function ClassicBankTable({
         : "Optional cards"
       : view.phase === "PAYOUT"
         ? "Payout"
-        : "Round complete";
+        : view.phase === "BETTING"
+          ? "Betting"
+          : "Round complete";
 
   return (
     <PhoneShell rightLabel={`♠ ${view.boxCount}`} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
@@ -112,7 +111,7 @@ export function ClassicBankTable({
       <main className="felt dealer-list-felt">
         <div className="table-surface">
             <ClothName name={view.tableName} />
-        {showDealerBox ? (
+        <div className="dealer-list">
           <DealerHandBox
             name={view.dealerName ?? "Dealer"}
             hand={view.dealerHand}
@@ -125,13 +124,12 @@ export function ClassicBankTable({
             onReopen={() => onCommand("reopenHand", { dealer: "true" })}
             onClear={() => onCommand("clearHand", { dealer: "true" })}
           />
-        ) : null}
-        <div className="dealer-list">
           {view.players.length === 0
             ? view.boxes.map((box) => (
-                <DealerPayoutRow
+                <DealerBlackjackBoxRow
                   key={box.id}
                   box={box}
+                  phase={view.phase}
                   payoutEnabled={view.actions.settleBoxes}
                   onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
                   onApply={view.cardAssist === "CONFIRM" ? () => onCommand("applyCardOutcome", { boxId: box.id }) : undefined}
@@ -145,26 +143,20 @@ export function ClassicBankTable({
                       <div className="muted">{player.status}</div>
                     </div>
                     <div className="dealer-player-balances">
-                      <span>Available {player.available.label}</span>
-                      <span>Locked {player.locked.label}</span>
+                      <span>AVAILABLE {player.available.label}</span>
+                      <span>LOCKED {player.locked.label}</span>
                     </div>
                   </header>
-                  {player.boxes.map((box) =>
-                    view.actions.settleBoxes || box.outcome ? (
-                      <DealerPayoutRow
-                        key={box.id}
-                        box={box}
-                        payoutEnabled={view.actions.settleBoxes}
-                        onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
-                        onApply={view.cardAssist === "CONFIRM" ? () => onCommand("applyCardOutcome", { boxId: box.id }) : undefined}
-                      />
-                    ) : view.phase === "PLAYING" ? (
-                      <FeltBox
-                        key={box.id}
-                        box={box}
-                        bank
-                        compact
-                        cardEntry={
+                  {player.boxes.map((box) => (
+                    <DealerBlackjackBoxRow
+                      key={box.id}
+                      box={box}
+                      phase={view.phase}
+                      payoutEnabled={view.actions.settleBoxes}
+                      onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
+                      onApply={view.cardAssist === "CONFIRM" ? () => onCommand("applyCardOutcome", { boxId: box.id }) : undefined}
+                      cardEntry={
+                        view.phase === "PLAYING" ? (
                           <CardEntryPanel
                             hand={box.hand}
                             completeLabel="HAND COMPLETE"
@@ -177,26 +169,10 @@ export function ClassicBankTable({
                             onReopen={() => onCommand("reopenHand", { boxId: box.id })}
                             onClear={() => onCommand("clearHand", { boxId: box.id })}
                           />
-                        }
-                      />
-                    ) : (
-                      <div className={`payout-row is-idle${view.phase === "BETTING" ? " betting-spot" : ""}`} key={box.id} data-box-id={box.id}>
-                        <div className="payout-row-inner">
-                          <div>
-                            <strong>{box.label}</strong>
-                            <div className="muted">Stake {box.bet.label}</div>
-                          </div>
-                          <span className="chip-pile compact">
-                            {chipsFromMillis(box.bet.millis).map((chip, index) => (
-                              <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
-                                {chip.label}
-                              </span>
-                            ))}
-                          </span>
-                        </div>
-                      </div>
-                    ),
-                  )}
+                        ) : undefined
+                      }
+                    />
+                  ))}
                 </section>
               ))}
         </div>

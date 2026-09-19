@@ -56,23 +56,25 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
     if (stack > 0n) actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
     return uniqueActions(actions);
   }
-  const callAmount = owed < stack ? owed : stack;
-  actions.push({ type: "CALL", amountMillis: callAmount, label: `CALL ${formatJetons(callAmount)}` });
-  if (stack > owed) {
-    const raiseTo = minRaiseTo(ctx.streetWagerMillis, ctx.lastRaiseSizeMillis);
-    const maxTo = ctx.streetContributionMillis + stack;
-    if (maxTo > ctx.streetWagerMillis) {
-      actions.push({
-        type: "RAISE",
-        amountMillis: maxTo - ctx.streetContributionMillis,
-        raiseToMillis: raiseTo < maxTo ? raiseTo : maxTo,
-        label: "RAISE",
-      });
+  if (stack === 0n) return uniqueActions(actions);
+  if (stack >= owed) {
+    actions.push({ type: "CALL", amountMillis: owed, label: `CALL ${formatJetons(owed)}` });
+    if (stack > owed) {
+      const raiseTo = minRaiseTo(ctx.streetWagerMillis, ctx.lastRaiseSizeMillis);
+      const maxTo = ctx.streetContributionMillis + stack;
+      if (maxTo > ctx.streetWagerMillis) {
+        actions.push({
+          type: "RAISE",
+          amountMillis: maxTo - ctx.streetContributionMillis,
+          raiseToMillis: raiseTo < maxTo ? raiseTo : maxTo,
+          label: "RAISE",
+        });
+      }
     }
     actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
-  } else if (stack > 0n && callAmount === stack) {
-    actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
+    return uniqueActions(actions);
   }
+  actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
   return uniqueActions(actions);
 }
 

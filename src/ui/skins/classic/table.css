@@ -40,29 +40,7 @@
 }
 
 .classic-skin .table-rail.poker-rail {
-  border-radius: 48% / 16%;
-  border: 1px dashed var(--gold-line);
-}
-
-.classic-skin .table-rail.poker-rail::before,
-.classic-skin .table-rail.poker-rail::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold-dim));
-  pointer-events: none;
-}
-
-.classic-skin .table-rail.poker-rail::before {
-  top: 18%;
-  left: 8px;
-}
-
-.classic-skin .table-rail.poker-rail::after {
-  top: 18%;
-  right: 8px;
+  border-radius: 0;
   border: 0;
 }
 
@@ -88,15 +66,7 @@
 }
 
 .classic-skin .poker-pot-ring {
-  width: min(42%, 132px);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 2px solid var(--gold);
-  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.25);
-  text-align: center;
-  padding: 8px;
+  display: none;
 }
 
 .classic-skin .poker-pot-ring small {
@@ -120,8 +90,8 @@
 }
 
 .classic-skin .card-slot {
-  width: 42px;
-  height: 60px;
+  width: 32px;
+  height: 46px;
   border-radius: var(--radius-card);
   border: 1px solid rgba(223, 189, 105, 0.28);
   background:
@@ -136,8 +106,8 @@
 .classic-skin .seat-plaque,
 .classic-skin .poker-seat {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 14px;
+  padding: 4px 8px;
+  border-radius: 10px;
   background: rgba(4, 32, 26, 0.78);
   border: 1px solid rgba(223, 189, 105, 0.28);
   color: var(--cream);
@@ -153,28 +123,7 @@
 }
 
 .classic-skin .betting-spot {
-  position: relative;
-  width: min(72%, 220px);
-  margin: 8px auto;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 3px solid var(--gold);
-  background: rgba(4, 32, 26, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.classic-skin .betting-spot::before {
-  content: "";
-  position: absolute;
-  inset: 10px;
-  border-radius: 50%;
-  border: 1px dashed var(--gold-line);
-  pointer-events: none;
+  display: none;
 }
 
 .classic-skin .payout-row.is-won {
@@ -182,9 +131,12 @@
 }
 
 .classic-skin .table-surface .dealer-list {
-  height: auto;
-  max-height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
+  max-height: none;
   width: 100%;
+  overflow-y: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

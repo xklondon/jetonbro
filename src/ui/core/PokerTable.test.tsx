@@ -374,11 +374,14 @@ test("owner and player share the same felt projection", () => {
   );
   expect(ownerFelt).toBe(playerFelt);
   expect(ownerFelt).toContain("YOUR TURN");
-  expect(ownerFelt).toContain("WAITING");
+  expect(ownerFelt).toContain("Waiting");
   expect(ownerFelt).not.toContain("Main pot");
-  expect(ownerFelt).toContain('data-table-name="Hold em table"');
   expect(ownerFelt).not.toContain("xklondon");
   expect(ownerFelt).not.toContain("data-rail=\"DEAL\"");
+  expect(ownerFelt).not.toContain("data-table-name");
+  expect(ownerFelt).not.toContain("poker-rail");
+  expect(ownerFelt).toContain('data-card-editor="closed"');
+  expect(ownerFelt).not.toContain("data-card-sheet");
 });
 
 test("owner and player share the same street rail with the current stop highlighted", () => {
@@ -414,6 +417,8 @@ test("owner and player share the same street rail with the current stop highligh
   expect(owner).toContain("class=\"dock");
   expect(owner).not.toContain('data-rail="DEAL"');
   expect(owner).toContain('data-table-name="Hold em table"');
+  expect(owner.match(/data-table-name="/g)?.length).toBe(1);
+  expect(player.match(/data-table-name="/g)?.length).toBe(1);
 });
 
 test("community cards are public while hole values stay on the owning seat only", () => {
@@ -452,6 +457,8 @@ test("community cards are public while hole values stay on the owning seat only"
   expect(html).toContain("data-card=\"AS\"");
   expect(html).toContain("HOLE CARDS IN");
   expect(html).not.toMatch(/data-player-id="sam"[\s\S]*data-card="AS"/);
+  expect(html).not.toContain("+ HOLE CARDS");
+  expect(html).not.toContain("data-card-sheet");
 });
 
 test("Blackjack optional ranks render as larger cards inside the betting box", () => {
@@ -534,11 +541,76 @@ test("poker setup prints the live table name on the cloth and hides D/SB/BB befo
       }),
     }),
   );
-  expect(html).toContain('data-table-name="Hold em table"');
   expect(html).not.toContain("xklondon");
   expect(html).not.toContain("dealer-badge");
   expect(html).not.toContain("blind-badge");
   expect(html).not.toContain("data-community-cards");
-  expect(html).toContain("WAITING");
+  expect(html).toContain("Waiting");
+  expect(html).not.toContain("data-table-name");
 });
+
+test("Poker card assistance stays collapsed until opened and keeps hole ranks private", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        canEditHole: true,
+        canEditCommunity: false,
+        viewerId: "owner",
+        seats: pokerView().seats.map((seat) =>
+          seat.userId === "owner"
+            ? { ...seat, hasHoleCards: false, holeCards: null }
+            : { ...seat, hasHoleCards: true, holeCards: null },
+        ),
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("+ HOLE CARDS");
+  expect(html).not.toContain("+ BOARD CARDS");
+  expect(html).toContain('data-card-editor="closed"');
+  expect(html).not.toContain("data-card-sheet");
+  expect(html).toContain("HOLE CARDS IN");
+  expect(html).not.toContain("Community cards");
+  expect(html.match(/data-table-name="/g)?.length).toBe(1);
+});
+
+test("CALL matches the owed amount and never renders CALL 0", () => {
+  const matched = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        available: money("100"),
+        toCall: money("10"),
+        legalActions: legal,
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(matched).toContain("TO CALL 10");
+  expect(matched).toContain("CALL 10");
+  expect(matched).not.toContain("CALL 0");
+
+  const empty = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        available: money("0", "0"),
+        toCall: money("10"),
+        viewerStatus: "ACTIVE",
+        legalActions: [
+          { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
+          { type: "CALL", amount: money("0", "0"), label: "CALL 0" },
+          { type: "BET", amount: money("0", "0"), label: "BET" },
+          { type: "RAISE", amount: money("0", "0"), label: "RAISE" },
+        ],
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(empty).toContain("TO CALL 10");
+  expect(empty).toContain("FOLD");
+  expect(empty).not.toContain("CALL 0");
+  expect(empty).not.toContain(">CALL 10<");
+  expect(empty).not.toContain(">BET<");
+  expect(empty).not.toContain(">RAISE<");
+});
+
 

@@ -68,6 +68,8 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   await expect(page.locator("[data-dealer-box]")).toBeVisible();
   await expect(page.locator("[data-dealer-box]").getByText("DEALER", { exact: true })).toBeVisible();
   await expect(page.locator("[data-dealer-box]").getByRole("button", { name: "+ CARDS" })).toBeVisible();
+  expect(await page.locator("[data-blackjack-box-row]").count()).toBeGreaterThanOrEqual(3);
+  await expect(page.locator(".betting-spot")).toHaveCount(0);
   await mkdir(join(process.cwd(), "docs", "screenshots", "classic"), { recursive: true });
   await page.screenshot({ path: join(process.cwd(), "docs", "screenshots", "classic", "app-blackjack-dealer-playing-390x844.png") });
   await page.getByRole("button", { name: "PAYOUT PHASE" }).click();

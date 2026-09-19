@@ -29,7 +29,7 @@ export function CardEntryPanel({
   onReopen: () => void;
   onClear?: () => void;
 }) {
-  const [open, setOpen] = useState(Boolean(hand?.ranks.length));
+  const [open, setOpen] = useState(false);
   const ranks = hand?.ranks ?? [];
   const canEdit = Boolean(hand?.canEdit);
 
@@ -37,10 +37,35 @@ export function CardEntryPanel({
     return null;
   }
 
+  const showTray = open && canEdit && !hand?.complete;
+
   return (
     <div className={`card-assist${compact ? " is-compact" : ""}`}>
       {title ? <div className="card-assist-title">{title}</div> : null}
-      {!open && ranks.length === 0 ? (
+      {compact && !open ? (
+        <div className="card-assist-actions">
+          {canEdit && ranks.length === 0 ? (
+            <button type="button" className="add-cards is-compact" onClick={() => setOpen(true)}>
+              + CARDS
+            </button>
+          ) : null}
+          {canEdit && ranks.length > 0 && !hand?.complete ? (
+            <>
+              <button type="button" className="add-cards is-compact" onClick={() => setOpen(true)}>
+                + CARDS
+              </button>
+              <button type="button" className="primary" onClick={onComplete}>
+                {completeLabel}
+              </button>
+            </>
+          ) : null}
+          {canEdit && hand?.complete ? (
+            <button type="button" onClick={onReopen}>
+              REOPEN
+            </button>
+          ) : null}
+        </div>
+      ) : !open && ranks.length === 0 ? (
         <button type="button" className={`add-cards${compact ? " is-compact" : ""}`} onClick={() => setOpen(true)} disabled={!canEdit}>
           + CARDS
         </button>
@@ -65,7 +90,7 @@ export function CardEntryPanel({
           ) : hand?.label ? (
             <span className="hand-total">{hand.label}</span>
           ) : null}
-          {canEdit && !hand?.complete ? (
+          {showTray ? (
             <div className="rank-tray" role="group" aria-label="Card ranks">
               {CARD_RANKS.map((rank) => (
                 <button key={rank} type="button" onClick={() => onAdd(rank)}>
@@ -90,11 +115,9 @@ export function CardEntryPanel({
                   CLEAR
                 </button>
               ) : null}
-              {ranks.length === 0 ? (
-                <button type="button" className="text-link" onClick={() => setOpen(false)}>
-                  Hide
-                </button>
-              ) : null}
+              <button type="button" className="text-link" onClick={() => setOpen(false)}>
+                Hide
+              </button>
             </div>
           ) : null}
         </>

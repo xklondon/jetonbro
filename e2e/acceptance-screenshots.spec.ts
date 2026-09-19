@@ -67,6 +67,9 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-betting-390x844.png") });
   await page.screenshot({ path: join(out, "app-blackjack-dealer-betting-390x844.png") });
+  await expect(page.locator("[data-blackjack-box-row]")).not.toHaveCount(0);
+  await expect(page.locator(".betting-spot")).toHaveCount(0);
+  await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "PAYOUT PHASE" })).toBeVisible();

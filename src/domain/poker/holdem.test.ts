@@ -176,3 +176,39 @@ test("seat order is stable", () => {
     "b",
   ]);
 });
+
+test("CALL uses the owed amount and a zero stack cannot call", () => {
+  const covered = legalActions({
+    isActor: true,
+    status: "ACTIVE",
+    streetContributionMillis: 0n,
+    streetWagerMillis: 10000n,
+    availableMillis: 90000n,
+    lastRaiseSizeMillis: 10000n,
+  });
+  const call = covered.find((action) => action.type === "CALL");
+  expect(call?.amountMillis).toBe(10000n);
+  expect(call?.label).toBe("CALL 10");
+  expect(covered.some((action) => action.label === "CALL 0")).toBe(false);
+
+  const empty = legalActions({
+    isActor: true,
+    status: "ACTIVE",
+    streetContributionMillis: 0n,
+    streetWagerMillis: 10000n,
+    availableMillis: 0n,
+    lastRaiseSizeMillis: 10000n,
+  });
+  expect(empty.map((action) => action.type)).toEqual(["FOLD"]);
+
+  const short = legalActions({
+    isActor: true,
+    status: "ACTIVE",
+    streetContributionMillis: 0n,
+    streetWagerMillis: 10000n,
+    availableMillis: 5000n,
+    lastRaiseSizeMillis: 10000n,
+  });
+  expect(short.map((action) => action.type)).toEqual(["FOLD", "ALL_IN"]);
+});
+

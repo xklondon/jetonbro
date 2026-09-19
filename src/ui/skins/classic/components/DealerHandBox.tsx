@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { HandView } from "@/application/queries/views";
 import { CardEntryPanel } from "./CardEntryPanel";
 import { PlayingCard } from "./PlayingCard";
@@ -30,20 +30,28 @@ export function DealerHandBox({
 }) {
   const [confirm, setConfirm] = useState(false);
   const ranks = hand?.ranks ?? [];
+  const cards: ReactNode =
+    ranks.length > 0 ? (
+      <div className="box-cards" data-dealer-cards="true" data-box-cards="true">
+        {ranks.map((rank, index) => (
+          <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />
+        ))}
+      </div>
+    ) : null;
 
   return (
-    <div className="box dealer-hand-box is-compact" data-dealer-box="true">
-      <span className="dealer-tag">DEALER</span>
-      <span className="box-name">{name}</span>
-      {ranks.length ? (
-        <span className="box-cards" data-dealer-cards="true" data-box-cards="true">
-          {ranks.map((rank, index) => (
-            <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />
-          ))}
-        </span>
-      ) : null}
-      {hand?.label ? <span className="hand-total">{hand.label}</span> : null}
-      <span className="hint">{status}</span>
+    <div className="payout-row blackjack-box-row dealer-hand-row is-idle" data-dealer-box="true" data-blackjack-box-row="true">
+      <div className="payout-row-inner">
+        <div>
+          <span className="dealer-tag">DEALER</span>
+          <strong>{name}</strong>
+          <div className="muted">{status}</div>
+        </div>
+        {cards ?? <span className="chip-pile compact" aria-hidden="true" />}
+        <div className="payout-state">
+          {hand?.label ? <div className="muted">{hand.label}</div> : null}
+        </div>
+      </div>
       <CardEntryPanel
         hand={hand}
         completeLabel="DEALER COMPLETE"

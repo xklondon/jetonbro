@@ -786,8 +786,10 @@
   overflow: hidden;
 }
 
-.classic-skin .dealer-list-felt .table-surface {
-  justify-content: flex-start;
+.classic-skin .dealer-list-felt .table-surface,
+.classic-skin .poker-surface {
+  flex: 1;
+  min-height: 0;
 }
 
 .classic-skin .dealer-list {
@@ -805,14 +807,14 @@
   background: rgba(2, 23, 18, 0.32);
   border: 1px solid rgba(223, 189, 105, 0.28);
   border-radius: 12px;
-  padding: 8px;
+  padding: 6px;
 }
 
 .classic-skin .dealer-player-head {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: var(--ivory);
 }
 
@@ -876,10 +878,10 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 0.9fr);
   gap: 6px;
   align-items: center;
-  padding: 8px;
+  padding: 6px 8px;
   background: rgba(7, 28, 24, 0.92);
   color: var(--ivory);
-  min-height: 64px;
+  min-height: 52px;
 }
 
 .classic-skin .payout-row.is-lost .payout-row-inner {
@@ -1041,26 +1043,37 @@
   width: 100%;
 }
 
-.classic-skin .dealer-hand-box {
+.classic-skin .dealer-hand-box,
+.classic-skin .dealer-hand-row {
   height: auto;
-  min-height: 112px;
-  width: min(100%, 280px);
-  margin: 0 auto 6px;
-  padding: 18px 10px 10px;
-  border-radius: 28px 28px 14px 14px;
+  min-height: 0;
+  width: 100%;
+  margin: 0 0 6px;
+  padding: 0;
+  border-radius: 10px;
   flex-shrink: 0;
 }
 
-.classic-skin .dealer-hand-box .dealer-tag {
-  position: absolute;
-  top: 10px;
+.classic-skin .dealer-hand-row .dealer-tag {
+  display: block;
   color: var(--gold);
   font-size: 10px;
   letter-spacing: 0.16em;
 }
 
-.classic-skin .dealer-hand-box .box-name {
-  top: 24px;
+.classic-skin .dealer-hand-row .payout-row-inner {
+  min-height: 52px;
+}
+
+.classic-skin .blackjack-box-row .box-cards {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px 6px;
+}
+
+.classic-skin .blackjack-box-row .card-assist.is-compact {
+  padding: 0 8px 6px;
+  margin: 0;
 }
 
 .classic-skin .dealer-won-confirm {
@@ -1190,19 +1203,55 @@
 .classic-skin .poker-felt {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+.classic-skin .poker-felt > .sheet {
+  z-index: 6;
+}
+.classic-skin .poker-surface {
+  gap: 6px;
+  align-items: stretch;
+}
+.classic-skin .poker-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 .classic-skin .poker-pot {
   text-align: center;
-  padding: 4px;
+  padding: 2px 4px;
   border: 0;
   background: transparent;
 }
+.classic-skin .poker-pot small {
+  display: block;
+  color: var(--gold);
+  letter-spacing: 0.14em;
+  font-size: 10px;
+}
 .classic-skin .poker-pot strong {
   display: block;
-  font-size: 28px;
+  font-size: 22px;
   color: var(--gold);
+  line-height: 1.1;
+}
+.classic-skin .poker-seats {
+  gap: 6px;
+}
+.classic-skin .poker-seat {
+  padding: 4px 8px;
+}
+.classic-skin .poker-card-draft {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 36px;
+  margin-bottom: 8px;
 }
 .classic-skin .poker-pot-chips {
   display: flex;

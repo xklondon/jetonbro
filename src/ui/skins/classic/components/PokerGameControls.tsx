@@ -6,13 +6,12 @@ import {
   pokerComposeSeed,
   pokerControls,
   pokerTrayEnabled,
+  visiblePokerLegalActions,
   type PokerComposeKind,
 } from "@/application/queries/poker-controls";
 import type { PokerTableView } from "@/application/queries/views";
 import { addChipToAmount } from "@/ui/core/poker-chip-action";
-import { communityCardLimit } from "@/domain/poker/cards";
 import { PlayerWallet } from "./PlayerWallet";
-import { PokerCardPicker } from "./PokerCardPicker";
 
 export function PokerGameControls({
   view,
@@ -25,10 +24,10 @@ export function PokerGameControls({
   notice?: string | null;
   onOwnerSheet?: (sheet: "menu" | "seats" | "player" | "jetons" | "game" | "winners") => void;
 }) {
-  const layout = pokerActorLayout(view.legalActions);
+  const layout = pokerActorLayout(visiblePokerLegalActions(view));
   const ownerControls = pokerControls(view).filter((control) => control.layer === "owner" && control.surface === "dock");
   const showControls = Boolean(
-    notice || ownerControls.length > 0 || layout.primary || layout.secondary.length > 0 || view.canEditHole || view.canEditCommunity,
+    notice || ownerControls.length > 0 || layout.primary || layout.secondary.length > 0,
   );
   const [compose, setCompose] = useState<PokerComposeKind | null>(null);
   const [staged, setStaged] = useState("");
@@ -68,22 +67,6 @@ export function PokerGameControls({
       {showControls ? (
         <div className="game-controls" data-game-controls="true">
           {notice ? <div className="error">{notice}</div> : null}
-          {view.canEditCommunity ? (
-            <PokerCardPicker
-              label="Community cards"
-              cards={view.communityCards}
-              max={communityCardLimit(view.phase)}
-              onSave={(cards) => onCommand("setPokerCommunityCards", { cards: JSON.stringify(cards) })}
-            />
-          ) : null}
-          {view.canEditHole ? (
-            <PokerCardPicker
-              label="Your hole cards"
-              cards={view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? []}
-              max={2}
-              onSave={(cards) => onCommand("setPokerHoleCards", { cards: JSON.stringify(cards) })}
-            />
-          ) : null}
           {ownerControls.length > 0 ? (
             <div className="owner-controls" data-owner-controls="true">
               {ownerControls.map((control) => {

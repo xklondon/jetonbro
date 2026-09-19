@@ -21,7 +21,7 @@ export function ClassicPokerPlayer({
   return (
     <PhoneShell>
       <div className="phase-head">
-        <strong>{view.tableName}</strong>
+        <strong data-table-name={view.tableName}>{view.tableName}</strong>
         <span>
           Texas Hold’em · <strong>{view.phaseLabel}</strong>
         </span>
@@ -35,7 +35,7 @@ export function ClassicPokerPlayer({
         ) : null}
         <PokerStreetRail stops={view.streetRail} />
       </div>
-      <PokerFelt view={view} />
+      <PokerFelt view={view} onCommand={onCommand} />
       <PokerGameControls view={view} onCommand={onCommand} notice={notice} />
       {selfWon ? (
         <OutcomeCelebrationOverlay celebration={{ kind: "rain", copy: "WINNER!", overlay: true }} />

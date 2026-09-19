@@ -1,49 +1,74 @@
 "use client";
 
+import { useState } from "react";
 import type { PokerSeatView, PokerTableView } from "@/application/queries/views";
+import { communityCardLimit } from "@/domain/poker/cards";
 import { chipsFromMillis } from "./chips";
 import { PlayingCard } from "./PlayingCard";
-import { ClothName } from "./ClothName";
+import { PokerCardSheet } from "./PokerCardPicker";
 
 function seatStatus(seat: PokerSeatView): string {
   if (seat.status === "FOLDED") return "FOLDED";
   if (seat.status === "ALL_IN") return "ALL IN";
   if (seat.isActor) return "YOUR TURN";
-  return "WAITING";
+  return "Waiting";
 }
 
 const BOARD_SLOTS = 5;
 
 export function PokerFelt({
   view,
+  onCommand,
 }: {
   view: PokerTableView;
+  onCommand?: (command: string, payload?: Record<string, string>) => void;
 }) {
+  const [sheet, setSheet] = useState<"hole" | "board" | null>(null);
   const owed = view.toCall.millis !== "0";
   const sidePots = view.pots.length > 1;
   const potChips = chipsFromMillis(view.pot.millis);
   const showBoard = view.phase !== "POKER_SETUP";
   const showRoles = view.phase !== "POKER_SETUP";
+  const boardMax = communityCardLimit(view.phase);
+  const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
 
   return (
-    <main className="felt poker-felt">
-      <div className="table-rail poker-rail">
-        <div className="table-surface">
-          <ClothName name={view.tableName} />
-          <div className="poker-pot" data-drop-pot="pot">
-            <div className="poker-pot-ring">
-              <small>POT</small>
-              <strong>{view.pot.label}</strong>
+    <main className="felt poker-felt" data-card-editor={sheet ? "open" : "closed"}>
+      <div className="table-surface poker-surface">
+          {showBoard ? (
+            <div className="poker-board">
+              <div className="community-slots" data-community-cards="true">
+                {Array.from({ length: BOARD_SLOTS }, (_, index) => {
+                  const card = view.communityCards[index];
+                  if (card) {
+                    return <PlayingCard key={`${card.label}-${index}`} rank={card.rank} suit={card.suit} size="felt" />;
+                  }
+                  return (
+                    <span key={`slot-${index}`} className="card-slot" data-card-slot={index} aria-hidden="true">
+                      ♠
+                    </span>
+                  );
+                })}
+              </div>
+              {view.canEditCommunity ? (
+                <button type="button" className="add-cards is-compact" onClick={() => setSheet("board")}>
+                  + BOARD CARDS
+                </button>
+              ) : null}
             </div>
+          ) : null}
+          <div className="poker-pot" data-drop-pot="pot">
             {view.pot.millis !== "0" ? (
-              <span className="chip-pile poker-pot-chips">
+              <span className="chip-pile compact poker-pot-chips">
                 {potChips.map((chip, index) => (
-                  <span key={`${chip.label}-${index}`} className="chip-slot">
-                    <span className={`chip ${chip.className}`}>{chip.label}</span>
+                  <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
+                    {chip.label}
                   </span>
                 ))}
               </span>
             ) : null}
+            <small>POT</small>
+            <strong>{view.pot.label}</strong>
             {owed ? <div className="poker-to-call">TO CALL {view.toCall.label}</div> : null}
             {sidePots ? (
               <ul className="poker-pot-list">
@@ -65,22 +90,7 @@ export function PokerFelt({
               </ul>
             ) : null}
           </div>
-          {showBoard ? (
-            <div className="community-slots" data-community-cards="true">
-              {Array.from({ length: BOARD_SLOTS }, (_, index) => {
-                const card = view.communityCards[index];
-                if (card) {
-                  return <PlayingCard key={`${card.label}-${index}`} rank={card.rank} suit={card.suit} size="felt" />;
-                }
-                return (
-                  <span key={`slot-${index}`} className="card-slot" data-card-slot={index} aria-hidden="true">
-                    ♠
-                  </span>
-                );
-              })}
-            </div>
-          ) : null}
-          <div className="dealer-list">
+          <div className="dealer-list poker-seats">
             {view.seats.map((seat, index) => (
               <section
                 key={seat.userId}
@@ -125,11 +135,33 @@ export function PokerFelt({
                     HOLE CARDS IN
                   </div>
                 ) : null}
+                {view.canEditHole && seat.userId === view.viewerId ? (
+                  <button type="button" className="add-cards is-compact" onClick={() => setSheet("hole")}>
+                    + HOLE CARDS
+                  </button>
+                ) : null}
               </section>
             ))}
           </div>
-        </div>
       </div>
+      {sheet === "board" ? (
+        <PokerCardSheet
+          title="Board cards"
+          cards={view.communityCards}
+          max={boardMax}
+          onSave={(cards) => onCommand?.("setPokerCommunityCards", { cards: JSON.stringify(cards) })}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
+      {sheet === "hole" ? (
+        <PokerCardSheet
+          title="Hole cards"
+          cards={ownHole}
+          max={2}
+          onSave={(cards) => onCommand?.("setPokerHoleCards", { cards: JSON.stringify(cards) })}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
     </main>
   );
 }

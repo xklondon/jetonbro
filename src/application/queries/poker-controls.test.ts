@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { pokerActorActions, pokerActorLayout, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled } from "./poker-controls";
+import { pokerActorActions, pokerActorLayout, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled, visiblePokerLegalActions } from "./poker-controls";
 import type { PokerLegalActionView, PokerSeatView, PokerTableView } from "./views";
 
 const money = (label: string, millis = `${Number(label) * 1000}`) => ({ millis, label });
@@ -290,6 +290,7 @@ test("role × phase matrix is identical for heads-up and 3-player", () => {
         nextStreetLabel: null,
         legalActions: checkLegal,
         currentActorId: "p1",
+        toCall: money("0", "0"),
       });
       const playerWaiting = view({
         phase: street.phase,
@@ -374,3 +375,45 @@ test("role × phase matrix is identical for heads-up and 3-player", () => {
     }), "owner")).toEqual(["nextHand", "scheduleNextHand", "addPlayer", "giveJetons", "switchGame"]);
   }
 });
+
+test("displayed CALL equals the owed amount and CALL 0 is never shown", () => {
+  const actor = view({
+    viewerId: "owner",
+    currentActorId: "owner",
+    available: money("100"),
+    toCall: money("10"),
+    legalActions: actorLegal,
+  });
+  const call = visiblePokerLegalActions(actor).find((action) => action.type === "CALL");
+  expect(call?.label).toBe("CALL 10");
+  expect(call?.amount.label).toBe(actor.toCall.label);
+  expect(pokerControlIds(actor, "actor")).toContain("call");
+  expect(pokerControls(actor).some((control) => control.label === "CALL 0")).toBe(false);
+
+  const zeroStack = view({
+    viewerId: "owner",
+    currentActorId: "owner",
+    available: money("0", "0"),
+    toCall: money("10"),
+    viewerStatus: "ACTIVE",
+    legalActions: [
+      { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
+      { type: "CALL", amount: money("0", "0"), label: "CALL 0" },
+      { type: "BET", amount: money("0", "0"), label: "BET" },
+    ],
+  });
+  expect(visiblePokerLegalActions(zeroStack).map((action) => action.type)).toEqual(["FOLD"]);
+  expect(pokerControlIds(zeroStack, "actor")).toEqual(["fold"]);
+  expect(pokerTrayEnabled(zeroStack)).toBe(false);
+
+  const allIn = view({
+    viewerId: "owner",
+    currentActorId: "owner",
+    viewerStatus: "ALL_IN",
+    available: money("0", "0"),
+    legalActions: actorLegal,
+  });
+  expect(visiblePokerLegalActions(allIn)).toEqual([]);
+  expect(pokerControlIds(allIn, "actor")).toEqual([]);
+});
+

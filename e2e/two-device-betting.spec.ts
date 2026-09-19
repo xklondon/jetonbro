@@ -56,7 +56,7 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await expect(playerPage.locator(".player-box, .box").first()).toContainText("25");
 
   await page.reload();
-  await expect(page.locator(".payout-row, .dealer-player").first()).toContainText("25");
+  await expect(page.locator('[data-blackjack-box-row="true"]:not([data-dealer-box="true"])')).toContainText("25");
   await page.screenshot({ path: join(out, "app-bank-player-bet-25-390x844.png") });
 
   await playerContext.close();
