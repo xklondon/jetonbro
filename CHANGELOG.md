@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Texas Hold’em fold-complete and pot authority
+
+- A completed hand now clears the actor, street wager, and amount to call. `HAND COMPLETE` cannot keep `TO CALL`, a Waiting seat, or leftover Fold/Call controls.
+- Fold-out awards the complete pot once. The felt shows `{name} WON {amount}` and `POT PAID` instead of an unexplained `POT 0`.
+- Bank and Player snapshots use one `legalActions` / `liveAmountToCall` path. A player who cannot post a blind is All-In for the posted short amount.
+- Next hand still rotates the Dealer once and posts blinds once. Manual `NEXT HAND NOW` and the countdown share that transition.
+
 ### Blackjack headers, box swipe, and Poker betting protocol
 
 - Blackjack table chrome is now nav + compact phase heading + essential phase controls. The live table name is printed only on the cloth. Duplicate names, `CURRENT PHASE`, and repeated instructional sentences are gone across TABLE SETUP, BETTING, PLAYING, and PAYOUT.

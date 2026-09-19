@@ -270,6 +270,7 @@ export type PokerTableView = {
   copy: string;
   isOwner: boolean;
   pot: MoneyView;
+  potPaid: boolean;
   toCall: MoneyView;
   contribution: MoneyView;
   available: MoneyView;

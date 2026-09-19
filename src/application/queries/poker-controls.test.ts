@@ -56,6 +56,7 @@ function view(overrides: Partial<PokerTableView> = {}): PokerTableView {
     copy: "YOUR TURN",
     isOwner: false,
     pot: money("15"),
+    potPaid: false,
     toCall: money("10"),
     contribution: money("0", "0"),
     available: money("100"),
@@ -386,6 +387,24 @@ test("role × phase matrix is identical for heads-up and 3-player", () => {
       canGiveJetons: true,
     }), "owner")).toEqual(["nextHand", "scheduleNextHand", "addPlayer", "giveJetons", "switchGame"]);
   }
+});
+
+test("HAND_COMPLETE cannot expose leftover actor actions", () => {
+  const leftover = view({
+    phase: "HAND_COMPLETE",
+    potPaid: true,
+    toCall: money("5"),
+    currentActorId: "owner",
+    waitingCopy: "Waiting for Owner",
+    viewerId: "owner",
+    viewerStatus: "ACTIVE",
+    legalActions: [
+      { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
+      { type: "CALL", amount: money("5"), label: "CALL 5" },
+    ],
+  });
+  expect(visiblePokerLegalActions(leftover)).toEqual([]);
+  expect(pokerControlIds(leftover, "actor")).toEqual([]);
 });
 
 test("displayed CALL equals the owed amount and CALL 0 is never shown", () => {

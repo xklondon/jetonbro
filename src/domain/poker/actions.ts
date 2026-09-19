@@ -1,4 +1,5 @@
 import { formatJetons, type JetonMillis } from "../money";
+import { isBettingStreet } from "./phases";
 
 export const POKER_ACTION_TYPES = ["FOLD", "CHECK", "CALL", "BET", "RAISE", "ALL_IN"] as const;
 export type PokerActionType = (typeof POKER_ACTION_TYPES)[number];
@@ -22,6 +23,15 @@ export type ActionContext = {
 
 export function amountToCall(streetWager: JetonMillis, streetContribution: JetonMillis): JetonMillis {
   return streetWager > streetContribution ? streetWager - streetContribution : 0n;
+}
+
+export function liveAmountToCall(
+  phase: string,
+  streetWager: JetonMillis,
+  streetContribution: JetonMillis,
+): JetonMillis {
+  if (!isBettingStreet(phase)) return 0n;
+  return amountToCall(streetWager, streetContribution);
 }
 
 export function minRaiseTo(streetWager: JetonMillis, lastRaiseSize: JetonMillis): JetonMillis {

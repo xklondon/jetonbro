@@ -26,6 +26,7 @@ function pokerView(overrides: Partial<PokerTableView> = {}): PokerTableView {
     copy: "YOUR TURN",
     isOwner: false,
     pot: money("15"),
+    potPaid: false,
     toCall: money("10"),
     contribution: money("0", "0"),
     available: money("100"),
@@ -613,6 +614,37 @@ test("CALL matches the owed amount and never renders CALL 0", () => {
   expect(empty).not.toContain(">CALL 10<");
   expect(empty).not.toContain(">BET<");
   expect(empty).not.toContain(">RAISE<");
+});
+
+test("a completed hand shows the award and never TO CALL or Waiting", () => {
+  const html = renderToStaticMarkup(
+    createElement(PokerFelt, {
+      view: pokerView({
+        phase: "HAND_COMPLETE",
+        phaseLabel: "HAND COMPLETE",
+        pot: money("0", "0"),
+        potPaid: true,
+        toCall: money("5"),
+        legalActions: [{ type: "FOLD", amount: money("0", "0"), label: "FOLD" }],
+        currentActorId: null,
+        waitingCopy: null,
+        winners: [{ userId: "sam", name: "Sam", amount: money("15") }],
+        seats: pokerView().seats.map((seat) => ({
+          ...seat,
+          isActor: false,
+          toCall: money("0", "0"),
+          status: seat.userId === "owner" ? "FOLDED" : "ACTIVE",
+        })),
+      }),
+    }),
+  );
+  expect(html).toContain("POT PAID");
+  expect(html).toContain("Sam WON 15");
+  expect(html).toContain("WON");
+  expect(html).toContain("FOLDED");
+  expect(html).not.toContain("TO CALL");
+  expect(html).not.toContain("Waiting");
+  expect(html).not.toContain(">FOLD<");
 });
 
 

@@ -6,7 +6,7 @@ import { clearNextHandTimer, scheduleNextHandTimer } from "@/application/service
 import { replacePokerSeats } from "@/application/services/poker-seats";
 import { amountToCall, isFullRaise, legalActions, minRaiseTo, type PokerActionType } from "@/domain/poker/actions";
 import { STREET_ADVANCE, isBettingStreet, type BettingStreet, type PokerHandPhase } from "@/domain/poker/phases";
-import { buildSidePots, splitPotEqually, uncalledReturn } from "@/domain/poker/pots";
+import { buildSidePots, splitPotEqually } from "@/domain/poker/pots";
 import { assignBlinds, nextActorFrom, nextDealer, orderedSeats, type PokerSeat as DomainSeat } from "@/domain/poker/seats";
 import { allLiveAllIn, livePlayers, onlyOneLive, stillNeedsToAct, streetIsComplete } from "@/domain/poker/street";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, PhaseConflictError } from "@/domain/errors";
@@ -137,7 +137,7 @@ async function postBlind(
       streetContributionMillis: amount,
       totalContributionMillis: amount,
       lockedMillis: amount,
-      status: allIn && amount > 0n ? "ALL_IN" : "ACTIVE",
+      status: allIn ? "ALL_IN" : "ACTIVE",
       hasActedThisStreet: allIn,
     },
   });
@@ -169,42 +169,11 @@ async function rebuildPots(tx: Tx, handId: string) {
   return pots;
 }
 
+function awardRecord(playerId: string, amount: bigint) {
+  return { playerId, amount: formatJetons(amount), millis: amount.toString() };
+}
+
 async function finishByFold(tx: Tx, tableId: string, hand: NonNullable<Awaited<ReturnType<typeof loadPokerTable>>["currentPokerHand"]>, actorId: string) {
-  const extra = uncalledReturn(
-    hand.participants.map((item) => ({
-      playerId: item.playerId,
-      total: item.totalContributionMillis,
-      folded: item.status === "FOLDED",
-    })),
-  );
-  if (extra) {
-    const member = await tx.tableMember.findUniqueOrThrow({
-      where: { tableId_userId: { tableId, userId: extra.playerId } },
-    });
-    await creditBack(tx, {
-      memberId: member.id,
-      playerId: extra.playerId,
-      tableId,
-      handId: hand.id,
-      amount: extra.amount,
-      type: "POKER_UNCALLED_RETURN",
-      key: `${hand.id}:uncalled`,
-      description: `LOCKED_POKER → AVAILABLE · uncalled ${formatJetons(extra.amount)}`,
-      actorId,
-    });
-    await tx.pokerParticipant.update({
-      where: { handId_playerId: { handId: hand.id, playerId: extra.playerId } },
-      data: {
-        totalContributionMillis: { decrement: extra.amount },
-        lockedMillis: { decrement: extra.amount },
-      },
-    });
-    const winner = hand.participants.find((item) => item.playerId === extra.playerId);
-    if (winner) {
-      winner.totalContributionMillis -= extra.amount;
-      winner.lockedMillis -= extra.amount;
-    }
-  }
   const pots = await rebuildPots(tx, hand.id);
   const live = livePlayers(hand.participants.map((item) => ({
     playerId: item.playerId,
@@ -213,7 +182,7 @@ async function finishByFold(tx: Tx, tableId: string, hand: NonNullable<Awaited<R
     hasActedThisStreet: item.hasActedThisStreet,
   })));
   const winnerId = live[0]?.playerId;
-  const awards: { playerId: string; amount: string }[] = [];
+  const awards: { playerId: string; amount: string; millis: string }[] = [];
   if (winnerId) {
     let total = 0n;
     for (const pot of pots) {
@@ -239,8 +208,8 @@ async function finishByFold(tx: Tx, tableId: string, hand: NonNullable<Awaited<R
         description: `LOCKED_POKER → AVAILABLE · pot ${formatJetons(total)}`,
         actorId,
       });
-      awards.push({ playerId: winnerId, amount: formatJetons(total) });
     }
+    awards.push(awardRecord(winnerId, total));
   }
   await tx.pokerParticipant.updateMany({ where: { handId: hand.id }, data: { lockedMillis: 0n } });
   await tx.pokerHand.update({
@@ -248,6 +217,7 @@ async function finishByFold(tx: Tx, tableId: string, hand: NonNullable<Awaited<R
     data: {
       phase: "HAND_COMPLETE",
       currentActorPlayerId: null,
+      streetWagerMillis: 0n,
       completedAt: new Date(),
       settledKey: hand.id,
       awardSummary: awards,
@@ -803,7 +773,7 @@ export async function awardPokerPots(input: {
         }
         await tx.pokerPot.update({ where: { id: pot.id }, data: { awarded: true } });
       }
-      const awards: { playerId: string; amount: string }[] = [];
+      const awards: { playerId: string; amount: string; millis: string }[] = [];
       for (const [playerId, amount] of totals) {
         const member = table.members.find((item) => item.userId === playerId);
         if (!member) continue;
@@ -818,12 +788,18 @@ export async function awardPokerPots(input: {
           description: `LOCKED_POKER → AVAILABLE · pot ${formatJetons(amount)}`,
           actorId: input.actorId,
         });
-        awards.push({ playerId, amount: formatJetons(amount) });
+        awards.push(awardRecord(playerId, amount));
       }
       await tx.pokerParticipant.updateMany({ where: { handId: hand.id }, data: { lockedMillis: 0n } });
       await tx.pokerHand.update({
         where: { id: hand.id },
-        data: { phase: "HAND_COMPLETE", completedAt: new Date(), currentActorPlayerId: null, awardSummary: awards },
+        data: {
+          phase: "HAND_COMPLETE",
+          completedAt: new Date(),
+          currentActorPlayerId: null,
+          streetWagerMillis: 0n,
+          awardSummary: awards,
+        },
       });
       await tx.table.update({ where: { id: table.id }, data: { updatedAt: new Date() } });
     });

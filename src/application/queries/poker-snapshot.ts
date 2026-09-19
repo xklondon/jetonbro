@@ -1,5 +1,5 @@
-import { formatJetons } from "@/domain/money";
-import { amountToCall, legalActions } from "@/domain/poker/actions";
+import { formatJetons, parseJetonInput } from "@/domain/money";
+import { legalActions, liveAmountToCall } from "@/domain/poker/actions";
 import { cardLabel, readPokerCards } from "@/domain/poker/cards";
 import { STREET_ADVANCE, isBettingStreet, pokerStreetRail, type BettingStreet } from "@/domain/poker/phases";
 import { allLiveAllIn, streetIsComplete } from "@/domain/poker/street";
@@ -13,6 +13,33 @@ function money(millis: bigint | null | undefined): MoneyView {
 
 function displayName(user: { name: string | null; email: string }): string {
   return user.name?.trim() || user.email.split("@")[0] || "Player";
+}
+
+function readAwardSummary(
+  raw: unknown,
+  nameOf: (id: string) => string,
+): { userId: string; name: string; amount: MoneyView }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as { playerId?: string; amount?: string; millis?: string };
+    if (!record.playerId) return [];
+    let millis = 0n;
+    if (record.millis) {
+      try {
+        millis = BigInt(record.millis);
+      } catch {
+        millis = 0n;
+      }
+    } else if (record.amount) {
+      try {
+        millis = parseJetonInput(record.amount);
+      } catch {
+        millis = 0n;
+      }
+    }
+    return [{ userId: record.playerId, name: nameOf(record.playerId), amount: money(millis) }];
+  });
 }
 
 type Hand = {
@@ -80,13 +107,15 @@ export function buildPokerView(input: {
     ? streetIsComplete(players, hand.streetWagerMillis) || allLiveAllIn(players)
     : phase === "SHOWDOWN" || phase === "HAND_COMPLETE";
   const allInRunout = Boolean(hand && allLiveAllIn(players));
-  const potTotal = hand?.participants.reduce((sum, item) => sum + item.totalContributionMillis, 0n) ?? 0n;
+  const committedPot = hand?.participants.reduce((sum, item) => sum + item.totalContributionMillis, 0n) ?? 0n;
+  const potTotal = phase === "HAND_COMPLETE" ? 0n : committedPot;
   const viewerPart = hand?.participants.find((item) => item.playerId === viewerId);
   const viewerMember = memberById.get(viewerId);
   const toCall = viewerPart
-    ? amountToCall(hand!.streetWagerMillis, viewerPart.streetContributionMillis)
+    ? liveAmountToCall(phase, hand!.streetWagerMillis, viewerPart.streetContributionMillis)
     : 0n;
-  const legal = viewerPart && hand && hand.currentActorPlayerId === viewerId && isBettingStreet(hand.phase)
+  const actorId = isBettingStreet(phase) ? (hand?.currentActorPlayerId ?? null) : null;
+  const legal = viewerPart && hand && actorId === viewerId && isBettingStreet(hand.phase)
     ? legalActions({
         isActor: true,
         status: viewerPart.status,
@@ -103,14 +132,8 @@ export function buildPokerView(input: {
       }))
     : [];
   const nextStreet = hand && isBettingStreet(hand.phase) ? STREET_ADVANCE[hand.phase as BettingStreet] : null;
-  const actorName = hand?.currentActorPlayerId ? nameOf(hand.currentActorPlayerId) : null;
-  const awards = Array.isArray(hand?.awardSummary)
-    ? (hand!.awardSummary as { playerId: string; amount: string }[]).map((item) => ({
-        userId: item.playerId,
-        name: nameOf(item.playerId),
-        amount: { millis: "0", label: item.amount },
-      }))
-    : [];
+  const actorName = actorId ? nameOf(actorId) : null;
+  const awards = readAwardSummary(hand?.awardSummary, nameOf);
   const seats: PokerTableView["seats"] = (hand
     ? hand.participants
     : input.seats.map((seat) => ({
@@ -138,14 +161,14 @@ export function buildPokerView(input: {
         streetContribution: money("streetContributionMillis" in item ? item.streetContributionMillis : 0n),
         toCall: money(
           hand && "streetContributionMillis" in item
-            ? amountToCall(hand.streetWagerMillis, item.streetContributionMillis)
+            ? liveAmountToCall(phase, hand.streetWagerMillis, item.streetContributionMillis)
             : 0n,
         ),
         status: hand ? item.status : "WAITING",
         isDealer: item.isDealer,
         isSmallBlind: item.isSmallBlind,
         isBigBlind: item.isBigBlind,
-        isActor: hand?.currentActorPlayerId === item.playerId,
+        isActor: actorId === item.playerId,
         sittingOut: false,
         orderIndex: item.seatOrder,
         hasHoleCards: Boolean("holeCards" in item && readPokerCards(item.holeCards ?? []).length),
@@ -166,11 +189,13 @@ export function buildPokerView(input: {
     phase === "POKER_SETUP"
       ? "Set blinds and dealer order, then DEAL CARDS"
       : phase === "HAND_COMPLETE"
-        ? "Hand complete"
+        ? awards.length
+          ? awards.map((winner) => `${winner.name} WON ${winner.amount.label}`).join(" · ")
+          : "Hand complete"
         : phase === "SHOWDOWN"
           ? "Assign winners for every pot"
           : actorName
-            ? hand?.currentActorPlayerId === viewerId
+            ? actorId === viewerId
               ? "YOUR TURN"
               : `Waiting for ${actorName}`
             : "Betting street";
@@ -188,12 +213,13 @@ export function buildPokerView(input: {
     copy,
     isOwner,
     pot: money(potTotal),
+    potPaid: phase === "HAND_COMPLETE",
     toCall: money(toCall),
     contribution: money(viewerPart?.totalContributionMillis ?? 0n),
     available: money(viewerMember?.availableMillis ?? 0n),
     smallBlind: money(input.smallBlind),
     bigBlind: money(input.bigBlind),
-    streetWager: money(hand?.streetWagerMillis ?? 0n),
+    streetWager: money(isBettingStreet(phase) ? (hand?.streetWagerMillis ?? 0n) : 0n),
     viewerStatus: viewerPart?.status ?? "WAITING",
     seats,
     pots: (hand?.pots ?? []).map((pot) => ({
@@ -205,9 +231,9 @@ export function buildPokerView(input: {
     })),
     legalActions: legal,
     currentActorName: actorName,
-    currentActorId: hand?.currentActorPlayerId ?? null,
-    waitingCopy: hand?.currentActorPlayerId
-      ? hand.currentActorPlayerId === viewerId
+    currentActorId: actorId,
+    waitingCopy: actorId
+      ? actorId === viewerId
         ? "YOUR TURN"
         : `Waiting for ${actorName}`
       : null,

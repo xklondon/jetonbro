@@ -8,7 +8,13 @@ import { PlayingCard } from "./PlayingCard";
 import { PokerCardSheet } from "./PokerCardPicker";
 import { ClothName } from "./ClothName";
 
-function seatStatus(seat: PokerSeatView): string {
+function seatStatus(seat: PokerSeatView, view: PokerTableView): string {
+  if (view.phase === "HAND_COMPLETE") {
+    if (seat.status === "FOLDED") return "FOLDED";
+    if (view.winners.some((winner) => winner.userId === seat.userId)) return "WON";
+    if (seat.status === "ALL_IN") return "ALL IN";
+    return "";
+  }
   if (seat.status === "FOLDED") return "FOLDED";
   if (seat.status === "ALL_IN") return "ALL IN";
   if (seat.isActor) return "YOUR TURN";
@@ -30,8 +36,8 @@ export function PokerFelt({
   onCommand?: (command: string, payload?: Record<string, string>) => void;
 }) {
   const [sheet, setSheet] = useState<"hole" | "board" | null>(null);
-  const owed = view.toCall.millis !== "0";
-  const sidePots = view.pots.length > 1;
+  const owed = !view.potPaid && view.toCall.millis !== "0";
+  const sidePots = view.pots.length > 1 && view.seats.some((seat) => seat.status === "ALL_IN");
   const potChips = chipsFromMillis(view.pot.millis);
   const showBoard = view.phase !== "POKER_SETUP";
   const showRoles = view.phase !== "POKER_SETUP";
@@ -64,8 +70,8 @@ export function PokerFelt({
               ) : null}
             </div>
           ) : null}
-          <div className="poker-pot" data-drop-pot="pot">
-            {view.pot.millis !== "0" ? (
+          <div className="poker-pot" data-drop-pot="pot" data-pot-paid={view.potPaid ? "true" : "false"}>
+            {!view.potPaid && view.pot.millis !== "0" ? (
               <span className="chip-pile compact poker-pot-chips">
                 {potChips.map((chip, index) => (
                   <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
@@ -74,10 +80,10 @@ export function PokerFelt({
                 ))}
               </span>
             ) : null}
-            <small>POT</small>
-            <strong>{view.pot.label}</strong>
+            <small>{view.potPaid ? "POT PAID" : "POT"}</small>
+            {view.potPaid ? null : <strong>{view.pot.label}</strong>}
             {owed ? <div className="poker-to-call">TO CALL {view.toCall.label}</div> : null}
-            {sidePots ? (
+            {sidePots && !view.potPaid ? (
               <ul className="poker-pot-list">
                 {view.pots.map((pot) => (
                   <li key={pot.index} data-pot-index={pot.index}>
@@ -91,7 +97,7 @@ export function PokerFelt({
               <ul className="poker-pot-list" data-winners="true">
                 {view.winners.map((winner) => (
                   <li key={winner.userId}>
-                    {winner.name} · {winner.amount.label}
+                    {winner.name} WON {winner.amount.label}
                   </li>
                 ))}
               </ul>
@@ -122,7 +128,7 @@ export function PokerFelt({
                       </div>
                     ) : null}
                     <strong>{seat.name}</strong>
-                    <div className="poker-seat-status">{seatStatus(seat)}</div>
+                    <div className="poker-seat-status">{seatStatus(seat, view)}</div>
                   </div>
                   <div className="dealer-player-balances">
                     <span>

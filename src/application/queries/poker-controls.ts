@@ -55,6 +55,7 @@ function millis(value: string | undefined): bigint {
 }
 
 export function visiblePokerLegalActions(view: PokerTableView): PokerLegalActionView[] {
+  if (view.phase === "HAND_COMPLETE" || view.phase === "SHOWDOWN" || view.phase === "POKER_SETUP") return [];
   if (view.viewerStatus === "FOLDED" || view.viewerStatus === "ALL_IN") return [];
   const available = millis(view.available.millis);
   const owed = millis(view.toCall.millis);

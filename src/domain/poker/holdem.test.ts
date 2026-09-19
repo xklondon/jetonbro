@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { assignBlinds, nextDealer, orderedSeats } from "./seats";
 import { buildSidePots, splitPotEqually, uncalledReturn } from "./pots";
-import { amountToCall, isFullRaise, legalActions } from "./actions";
+import { amountToCall, isFullRaise, legalActions, liveAmountToCall } from "./actions";
 import { streetIsComplete } from "./street";
 import { pokerStreetRail } from "./phases";
 
@@ -88,6 +88,13 @@ test("uncalled extra returns to the last live player", () => {
     { playerId: "fold", total: 25000n, folded: true },
   ]);
   expect(extra).toEqual({ playerId: "raiser", amount: 55000n });
+});
+
+test("a completed or non-betting street never has an amount to call", () => {
+  expect(liveAmountToCall("HAND_COMPLETE", 10000n, 5000n)).toBe(0n);
+  expect(liveAmountToCall("SHOWDOWN", 10000n, 0n)).toBe(0n);
+  expect(liveAmountToCall("POKER_SETUP", 10000n, 0n)).toBe(0n);
+  expect(liveAmountToCall("PRE_FLOP", 10000n, 5000n)).toBe(5000n);
 });
 
 test("check is illegal when chips are owed", () => {
