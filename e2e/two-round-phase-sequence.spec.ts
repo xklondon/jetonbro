@@ -65,7 +65,7 @@ test("two browsers complete two full rounds through the production command path"
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeDisabled();
   await addJetons(playerPage, "25");
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "IN 7 SECONDS" }).click();
+  await page.getByRole("button", { name: "DEAL IN 7 SECONDS" }).click();
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();

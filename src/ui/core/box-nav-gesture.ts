@@ -82,9 +82,9 @@ export function endBoxNavDrag(session: BoxNavSession, pointer: BoxNavPointerInpu
   if (!pointer.isPrimary || pointer.pointerId !== session.pointerId) {
     return { direction: null, ignoreClick: false };
   }
-  const dx = session.dragging ? session.dx : pointer.clientX - session.originX;
-  const dy = session.dragging ? session.dy : pointer.clientY - session.originY;
+  const dx = pointer.clientX - session.originX;
+  const dy = pointer.clientY - session.originY;
   const direction = boxNavSwipeDirection(dx, dy);
   if (direction) return { direction, ignoreClick: true };
-  return { direction: null, ignoreClick: session.dragging };
+  return { direction: null, ignoreClick: false };
 }

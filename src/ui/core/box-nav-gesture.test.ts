@@ -37,14 +37,6 @@ test("a tap and a vertical move are not swipes", () => {
   expect(endBoxNavDrag(moved, pointer({ clientX: 206, clientY: 180 })).direction).toBeNull();
 });
 
-test("a committed horizontal drag still completes if the pointer is cancelled", () => {
-  const start = startBoxNavDrag(pointer({ clientX: 200, clientY: 80 }), null)!;
-  const moved = moveBoxNavDrag(start, pointer({ clientX: 120, clientY: 82 }));
-  expect(moved.dragging).toBe(true);
-  expect(endBoxNavDrag(moved, pointer({ clientX: 200, clientY: 80 })).direction).toBe("next");
-  expect(endBoxNavDrag(moved, pointer({ clientX: 200, clientY: 80 })).ignoreClick).toBe(true);
-});
-
 test("touch and mouse pointer paths both lock horizontally", () => {
   const touch = startBoxNavDrag(pointer({ clientX: 180, clientY: 90, pointerType: "touch" }), null)!;
   const dragged = moveBoxNavDrag(touch, pointer({ clientX: 100, clientY: 92, pointerType: "touch" }));

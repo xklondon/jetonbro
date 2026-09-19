@@ -2,12 +2,6 @@
 
 ## Unreleased
 
-### Blackjack dealer chrome and real mobile box swipe
-
-- Bank/Dealer Blackjack is one stable interface: short phase title, one optional status line, then one phase-control row above the felt. `OPEN BETTING` sits in that row on TABLE SETUP. BETTING and PAYOUT use equal-width `DEAL CARDS NOW | IN 7 SECONDS` and `NEXT ROUND NOW | IN 7 SECONDS`. The table name appears once, on the cloth, in Setup, Betting, Playing, and Payout.
-- TABLE SETUP uses the same compact dealer row + player group + nested box row as later phases. The giant centred Setup seat cards are gone.
-- Player box swipe binds to the visible box cluster. Native non-passive `touchmove` owns real Android Chromium/Brave input; a committed horizontal drag still completes after `pointercancel`. Taps and vertical scrolling stay intact.
-
 ### Blackjack headers, box swipe, and Poker betting protocol
 
 - Blackjack table chrome is now nav + compact phase heading + essential phase controls. The live table name is printed only on the cloth. Duplicate names, `CURRENT PHASE`, and repeated instructional sentences are gone across TABLE SETUP, BETTING, PLAYING, and PAYOUT.

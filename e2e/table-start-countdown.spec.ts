@@ -35,14 +35,14 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await joPage.goto(joinPath);
   await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
 
-  await expect(page.locator(".dealer-player").filter({ hasText: /Joined|Ready/ }).first()).toBeVisible({
+  await expect(page.locator(".setup-seat").filter({ hasText: /Joined|Ready/ }).first()).toBeVisible({
     timeout: 15_000,
   });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled();
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "IN 7 SECONDS" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "DEAL IN 7 SECONDS" })).toBeDisabled();
 
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
@@ -51,7 +51,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await expect(samPage.getByLabel("Retract 25 jetons from Box 1")).toBeVisible();
 
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "IN 7 SECONDS" }).click();
+  await page.getByRole("button", { name: "DEAL IN 7 SECONDS" }).click();
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();
   await page.reload();
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();

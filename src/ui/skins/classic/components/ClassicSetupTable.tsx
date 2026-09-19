@@ -26,6 +26,7 @@ export function ClassicSetupTable({
   const playerSeats = view.seats.filter((seat) => seat.status !== "Bank / Dealer");
   const pendingEmails = view.invitations.filter((invite) => invite.pending && invite.email).map((invite) => invite.email as string);
   const initialEmails = pendingEmails.length ? pendingEmails : [""];
+  const seatCountClass = playerSeats.length >= 3 ? "three" : playerSeats.length === 2 ? "two" : "one";
 
   useEffect(() => {
     if (!view.joinUrl) return;
@@ -56,71 +57,24 @@ export function ClassicSetupTable({
       <div className="phase-head">
         <strong data-phase-heading>TABLE SETUP</strong>
       </div>
-      <div className="bank-phase-control">
-        {!view.canStartBetting && view.startBlockedReason ? (
-          <p className="waiting-first-bet">{view.startBlockedReason}</p>
-        ) : null}
-        <div className="deal-actions" data-phase-controls="true" data-count="1">
-          <button
-            className="gold-button"
-            type="button"
-            disabled={!view.canStartBetting}
-            onClick={() => onCommand("startBetting")}
-          >
-            OPEN BETTING
-          </button>
-        </div>
       </div>
-      </div>
-      <main className="felt dealer-list-felt setup-felt">
+      <main className="felt setup-felt">
         <div className="table-surface">
-        {view.setupCompleted ? <ClothName name={view.tableName} /> : null}
+        <ClothName name={view.tableName} />
         {notice ? <div className="error">{notice}</div> : null}
-        <div className="dealer-list">
-          <div className="payout-row blackjack-box-row dealer-hand-row is-idle" data-dealer-box="true" data-blackjack-box-row="true">
-            <div className="payout-row-inner">
-              <div>
-                <span className="dealer-tag">DEALER</span>
-                <strong>{view.bankName}</strong>
-                <div className="muted">Table setup</div>
-              </div>
-            </div>
-          </div>
+        <div className="dealer-spot">DEALER · {view.bankName}</div>
+        <div className={`setup-seats ${seatCountClass}`}>
           {playerSeats.length === 0 ? (
-            <section className="dealer-player" data-seat-status="empty">
-              <header className="dealer-player-head">
-                <div>
-                  <strong>Player</strong>
-                  <div className="muted">Waiting to join</div>
-                </div>
-              </header>
-              <div className="payout-row blackjack-box-row is-idle" data-blackjack-box-row="true">
-                <div className="payout-row-inner">
-                  <div>
-                    <strong>Box 1</strong>
-                    <div className="muted">Waiting</div>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <div className="box setup-seat" data-seat-status="empty">
+              <strong>Player</strong>
+              <span className="muted">Waiting to join</span>
+            </div>
           ) : (
             playerSeats.map((seat) => (
-              <section className="dealer-player" data-seat-status={seat.status} key={seat.id}>
-                <header className="dealer-player-head">
-                  <div>
-                    <strong>{seat.name}</strong>
-                    <div className="muted">{seat.status}</div>
-                  </div>
-                </header>
-                <div className="payout-row blackjack-box-row is-idle" data-blackjack-box-row="true">
-                  <div className="payout-row-inner">
-                    <div>
-                      <strong>Box 1</strong>
-                      <div className="muted">{seat.status === "Invited" ? "Invited" : "Ready"}</div>
-                    </div>
-                  </div>
-                </div>
-              </section>
+              <div className="box setup-seat member-row" data-seat-status={seat.status} key={seat.id}>
+                <strong>{seat.name}</strong>
+                <span className="muted">{seat.status}</span>
+              </div>
             ))
           )}
         </div>
@@ -367,6 +321,17 @@ export function ClassicSetupTable({
               + PLAYER
             </button>
           </div>
+          {!view.canStartBetting && view.startBlockedReason ? (
+            <p className="muted phase-hint">{view.startBlockedReason}</p>
+          ) : null}
+          <button
+            className="gold-button"
+            type="button"
+            disabled={!view.canStartBetting}
+            onClick={() => onCommand("startBetting")}
+          >
+            OPEN BETTING
+          </button>
         </div>
       </footer>
     </PhoneShell>

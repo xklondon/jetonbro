@@ -451,12 +451,7 @@
 
 .classic-skin .deal-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.classic-skin .deal-actions[data-count="1"] {
-  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .classic-skin main.felt.betting-open {

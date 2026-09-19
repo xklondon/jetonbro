@@ -60,17 +60,17 @@ export function ClassicBankTable({
               {view.waitingForFirstBet || !view.hasValidBet ? (
                 <p className="waiting-first-bet">WAITING FOR THE FIRST BET</p>
               ) : null}
-              <div className="deal-actions next-round-row" data-phase-controls="true" data-count="2">
+              <div className="deal-actions">
                 <button type="button" className={view.actions.dealCards ? "gold-button" : undefined} disabled={!view.actions.dealCards} onClick={() => onCommand("dealCards")}>
                   DEAL CARDS NOW
                 </button>
                 <button type="button" disabled={!view.actions.scheduleDeal} onClick={() => onCommand("scheduleDeal")}>
-                  IN 7 SECONDS
+                  DEAL IN 7 SECONDS
                 </button>
               </div>
             </>
           ) : showNextRound ? (
-            <div className="deal-actions next-round-row" data-phase-controls="true" data-count="2">
+            <div className="deal-actions next-round-row">
               <button type="button" className="gold-button" disabled={!view.actions.nextHand} onClick={() => onCommand("startNextRound")}>
                 NEXT ROUND NOW
               </button>
@@ -83,17 +83,15 @@ export function ClassicBankTable({
               </button>
             </div>
           ) : (
-            <div className="deal-actions" data-phase-controls="true" data-count="1">
-              <button
-                type="button"
-                disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
-                onClick={() => {
-                  if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
-                }}
-              >
-                PAYOUT PHASE
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={!view.primaryAction.enabled && view.primaryAction.id !== "payoutPhase"}
+              onClick={() => {
+                if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
+              }}
+            >
+              PAYOUT PHASE
+            </button>
           )}
         </div>
       </div>
