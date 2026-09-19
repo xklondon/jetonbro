@@ -110,12 +110,13 @@ test("Bank betting keeps deal controls at the top", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicBankTable, { view: bankView({}), members, onCommand: () => undefined }),
   );
-  expect(html).toContain("CURRENT PHASE:");
+  expect(html).toContain('data-phase-heading');
   expect(html).toContain("BETTING");
   expect(html).toContain("DEAL CARDS NOW");
   expect(html).toContain("DEAL IN 7 SECONDS");
-  expect(html).toContain("DEAL CARDS NOW closes Betting and starts Playing.");
-  expect(html.indexOf("CURRENT PHASE:")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
+  expect(html).not.toContain("CURRENT PHASE:");
+  expect(html).not.toContain("DEAL CARDS NOW closes Betting and starts Playing.");
+  expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
   expect(html.indexOf("DEAL CARDS NOW")).toBeLessThan(html.indexOf("ON TABLE"));
   expect(html).toContain('data-blackjack-box-row="true"');
   expect(html).toContain('data-dealer-box="true"');
@@ -218,7 +219,8 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
   );
   expect(html).toContain("PLAYING");
   expect(html).toContain("PAYOUT PHASE");
-  expect(html).toContain("PAYOUT PHASE moves Playing to Payout.");
+  expect(html).not.toContain("PAYOUT PHASE moves Playing to Payout.");
+  expect(html).not.toContain("Settle every box");
   expect(html).toContain("INSURANCE SIDE POT · OPEN · 1 bet");
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");

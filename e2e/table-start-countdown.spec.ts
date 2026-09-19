@@ -11,7 +11,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await createBlackjackTable(page, "Salon table", { starting: "100" });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
   await expect(page.locator(".waiting-room")).toHaveCount(0);
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "QR" }).click();
   await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
@@ -40,7 +40,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled();
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "DEAL IN 7 SECONDS" })).toBeDisabled();
 
@@ -56,7 +56,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await page.reload();
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();
   await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
 
   await samPage.reload();

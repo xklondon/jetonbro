@@ -6,11 +6,17 @@ import { communityCardLimit } from "@/domain/poker/cards";
 import { chipsFromMillis } from "./chips";
 import { PlayingCard } from "./PlayingCard";
 import { PokerCardSheet } from "./PokerCardPicker";
+import { ClothName } from "./ClothName";
 
 function seatStatus(seat: PokerSeatView): string {
   if (seat.status === "FOLDED") return "FOLDED";
   if (seat.status === "ALL_IN") return "ALL IN";
   if (seat.isActor) return "YOUR TURN";
+  if (seat.streetAction === "CHECK") return "CHECKED";
+  if (seat.streetAction === "CALL") return "CALLED";
+  if (seat.streetAction === "BET") return "BET";
+  if (seat.streetAction === "RAISE") return "RAISED";
+  if (seat.streetAction === "ALL_IN") return "ALL IN";
   return "Waiting";
 }
 
@@ -35,6 +41,7 @@ export function PokerFelt({
   return (
     <main className="felt poker-felt" data-card-editor={sheet ? "open" : "closed"}>
       <div className="table-surface poker-surface">
+          <ClothName name={view.tableName} />
           {showBoard ? (
             <div className="poker-board">
               <div className="community-slots" data-community-cards="true">
@@ -121,7 +128,11 @@ export function PokerFelt({
                     <span>
                       <small>AVAILABLE</small> {seat.available.label}
                     </span>
-                    {showRoles ? <span data-street-commit="true">{seat.streetContribution.label}</span> : null}
+                    {showRoles ? (
+                      <span data-street-commit="true">
+                        <small>STREET</small> {seat.streetContribution.label}
+                      </span>
+                    ) : null}
                   </div>
                 </header>
                 {seat.holeCards && seat.holeCards.length > 0 ? (

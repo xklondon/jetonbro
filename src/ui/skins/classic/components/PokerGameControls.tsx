@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   pokerActorLayout,
+  pokerComposeBounds,
   pokerComposeSeed,
   pokerControls,
   pokerTrayEnabled,
@@ -59,7 +60,11 @@ export function PokerGameControls({
 
   function confirmCompose() {
     if (!compose || busy || !/^\d+$/.test(staged.trim())) return;
-    send(compose, { amount: staged.trim() });
+    const bounds = pokerComposeBounds(view, compose);
+    const requested = BigInt(staged.trim()) * 1000n;
+    if (requested < bounds.minMillis && requested < bounds.maxMillis) return;
+    const amount = requested > bounds.maxMillis ? bounds.max : staged.trim();
+    send(compose, { amount });
   }
 
   return (
@@ -161,6 +166,9 @@ export function PokerGameControls({
               </div>
               {compose ? (
                 <div className="actor-compose" data-raise-composer="true">
+                  <small data-raise-convention={pokerComposeBounds(view, compose).convention}>
+                    {pokerComposeBounds(view, compose).convention} · min {pokerComposeBounds(view, compose).min}
+                  </small>
                   <input
                     aria-label={compose === "RAISE" ? "Raise to" : "Bet amount"}
                     inputMode="numeric"

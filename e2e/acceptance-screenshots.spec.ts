@@ -30,7 +30,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await page.reload();
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.locator("[data-table-name]").first()).toHaveText("Acceptance table");
   await expect(page.locator("body")).not.toContainText("xklondon");

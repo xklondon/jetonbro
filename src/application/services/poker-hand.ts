@@ -499,6 +499,7 @@ export async function pokerAct(input: {
         streetWagerMillis: hand.streetWagerMillis,
         availableMillis: member.availableMillis,
         lastRaiseSizeMillis: hand.lastRaiseSizeMillis,
+        hasActedThisStreet: participant.hasActedThisStreet,
       });
       const chosen = legal.find((action) => action.type === input.type);
       if (!chosen) throw new DomainError("ILLEGAL_ACTION", "That action is not available now.", 409);

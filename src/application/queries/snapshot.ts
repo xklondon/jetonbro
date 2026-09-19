@@ -73,6 +73,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         include: {
           participants: { include: { player: true } },
           pots: { orderBy: { index: "asc" } },
+          actions: { orderBy: { sequence: "asc" } },
         },
       },
       pokerSeats: { orderBy: { orderIndex: "asc" } },

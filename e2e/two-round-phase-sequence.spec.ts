@@ -15,10 +15,9 @@ async function playOneRound(bank: Page, player: Page) {
   await addJetons(player, "25");
   await expect(player.getByText("25").first()).toBeVisible();
   await expect(bank.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
-  await expect(bank.getByText("DEAL CARDS NOW closes Betting and starts Playing.")).toBeVisible();
   await bank.getByRole("button", { name: "DEAL CARDS NOW" }).click();
   await expect(bank.getByText("PLAYING", { exact: true })).toBeVisible();
-  await expect(player.getByText("PLAYING").or(player.getByText("Cards are in play").or(player.getByText("YOUR JETONS")))).toBeVisible();
+  await expect(player.getByText("YOUR JETONS")).toBeVisible();
   await bank.reload();
   await player.reload();
   await expect(bank.getByText("PLAYING", { exact: true })).toBeVisible();

@@ -116,6 +116,21 @@ test("check is legal when nothing is owed", () => {
   expect(actions.some((action) => action.type === "CHECK")).toBe(true);
   expect(actions.some((action) => action.type === "BET")).toBe(false);
   expect(actions.some((action) => action.type === "RAISE")).toBe(true);
+  expect(actions.find((action) => action.type === "ALL_IN")?.label).toBe("ALL IN 90");
+});
+
+test("a player who already acted cannot raise a short all-in", () => {
+  const actions = legalActions({
+    isActor: true,
+    status: "ACTIVE",
+    streetContributionMillis: 20000n,
+    streetWagerMillis: 25000n,
+    availableMillis: 80000n,
+    lastRaiseSizeMillis: 10000n,
+    hasActedThisStreet: true,
+  });
+  expect(actions.map((action) => action.type)).toEqual(["FOLD", "CALL", "ALL_IN"]);
+  expect(actions.find((action) => action.type === "CALL")?.label).toBe("CALL 5");
 });
 
 test("bet is legal only when the street wager is zero", () => {

@@ -49,8 +49,13 @@
 .classic-skin .phase-head strong {
   font-family: var(--font-display);
   color: var(--ivory);
-  font-size: 26px;
+  font-size: 18px;
   display: block;
+  letter-spacing: 0.04em;
+}
+
+.classic-skin .phase-head [data-phase-heading] {
+  font-size: 18px;
 }
 
 .classic-skin .phase-head span {
@@ -186,12 +191,19 @@
   align-items: stretch;
 }
 
+.classic-skin .felt[data-box-nav="true"] {
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+}
+
 .classic-skin .player-boxes {
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: stretch;
   gap: 8px;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
 }
 
 .classic-skin .player-boxes.one .box {

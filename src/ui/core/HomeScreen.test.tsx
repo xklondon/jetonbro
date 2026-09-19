@@ -214,7 +214,7 @@ test("setup mask sits over the dealer table and shows the shared QR", () => {
     }),
   );
   expect(html).toContain("CREATE TABLE");
-  expect(html).toContain("CURRENT PHASE:");
+  expect(html).toContain("data-phase-heading");
   expect(html).toContain("TABLE SETUP");
   expect(html).toContain("DEALER · Alex");
   expect(html).toContain("setup-mask");
@@ -246,7 +246,7 @@ test("CREATE TABLE reveals dealer table seats, compact QR and OPEN BETTING", () 
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
   expect(html).not.toContain("Waiting for players");
-  expect(html).toContain("CURRENT PHASE:");
+  expect(html).toContain("data-phase-heading");
   expect(html).toContain("TABLE SETUP");
   expect(html).toContain("DEALER · Alex");
   expect(html).toContain("Sam");

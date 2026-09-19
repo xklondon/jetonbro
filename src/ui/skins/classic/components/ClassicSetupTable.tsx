@@ -55,13 +55,7 @@ export function ClassicSetupTable({
     <PhoneShell onMenu={view.isOwner ? () => setMenuOpen("menu") : undefined}>
       <div>
       <div className="phase-head">
-        <strong>{view.tableName}</strong>
-        <span>Blackjack · Bank/Dealer {view.bankName}</span>
-      </div>
-      <div className="bank-phase-control">
-        <div className="current">
-          CURRENT PHASE: <strong>TABLE SETUP</strong>
-        </div>
+        <strong data-phase-heading>TABLE SETUP</strong>
       </div>
       </div>
       <main className="felt setup-felt">

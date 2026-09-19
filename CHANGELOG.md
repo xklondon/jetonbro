@@ -2,11 +2,18 @@
 
 ## Unreleased
 
+### Blackjack headers, box swipe, and Poker betting protocol
+
+- Blackjack table chrome is now nav + compact phase heading + essential phase controls. The live table name is printed only on the cloth. Duplicate names, `CURRENT PHASE`, and repeated instructional sentences are gone across TABLE SETUP, BETTING, PLAYING, and PAYOUT.
+- Players with two or more Blackjack boxes swipe the box cluster to change the selected box: left for next, right for previous, wrapping at the ends. Taps and vertical movement do not navigate. Box-specific controls follow the selected box. Payout row gestures are unchanged.
+- Heads-up and multi-way Poker snapshots use the posted big blind as the live street wager, so the small blind faces `CALL` rather than `CHECK`. RAISE stays visible with CHECK when a wager already exists (big-blind option). ALL IN shows the stack amount. The composer uses a **Raise to** convention with the legal minimum.
+- A player who has already acted cannot raise a short all-in. Full raises still reopen action. Bank and Player views share the same actor, pot, street contribution, and to-call amounts. The Poker table name sits on the cloth; seat amounts are labelled AVAILABLE and STREET.
+
 ### Compact Blackjack rows and Poker felt
 
 - Dealer Blackjack uses one shared compact `DealerBlackjackBoxRow` in BETTING, PLAYING, PAYOUT, and ROUND_COMPLETE. Circular betting spots are gone. The DEALER hand is the same compact row at the top of the list. PLAYING keeps a small inline `+ CARDS` control; entered ranks stay in the row. PAYOUT swipe/button behaviour is unchanged.
 - Poker optional cards are collapsed by default. `+ HOLE CARDS` (own seat only) and `+ BOARD CARDS` (Owner, from FLOP) open a temporary sheet with CLEAR / CANCEL / SAVE. Hole ranks stay private; board cards stay public. The permanent rank/suit keyboard is gone.
-- The mobile Poker felt is a compact shared layout: table name once in the header, street rail, community slots, pot, `TO CALL` only when owed, and seat rows. The large oval, gold dots, and duplicate cloth name are gone.
+- The mobile Poker felt is a compact shared layout: table name once on the cloth, street rail, community slots, pot, `TO CALL` only when owed, and seat rows. The large oval, gold dots, and duplicate header name are gone.
 - `CALL` uses the authoritative amount owed and is never `CALL 0`. A zero stack cannot Call/Bet/Raise. All-In and Folded Players still get no actor controls. Short stacks that cannot cover the owed amount get All-In, not a zero Call.
 
 ### Blackjack layout, in-box cards, and DEALER WON

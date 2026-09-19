@@ -1,3 +1,4 @@
+import { formatJetons } from "@/domain/money";
 import type { PokerLegalActionView, PokerTableView } from "./views";
 
 export type PokerControlLayer = "owner" | "actor";
@@ -36,7 +37,7 @@ export function pokerActorLayout(legal: PokerLegalActionView[]): PokerActorLayou
   return {
     owed: false,
     primary: check,
-    secondary: [bet, allIn, fold].filter((action): action is PokerLegalActionView => Boolean(action)),
+    secondary: [bet, raise, allIn, fold].filter((action): action is PokerLegalActionView => Boolean(action)),
   };
 }
 
@@ -78,13 +79,37 @@ export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "av
 }
 
 export function pokerComposeSeed(
-  view: Pick<PokerTableView, "legalActions" | "bigBlind">,
+  view: Pick<PokerTableView, "legalActions" | "bigBlind" | "available" | "seats" | "viewerId">,
   kind: PokerComposeKind,
 ): string {
+  return pokerComposeBounds(view, kind).min;
+}
+
+export function pokerComposeBounds(
+  view: Pick<PokerTableView, "legalActions" | "bigBlind" | "available" | "seats" | "viewerId">,
+  kind: PokerComposeKind,
+): { min: string; max: string; minMillis: bigint; maxMillis: bigint; convention: "Raise to" | "Bet" } {
+  const own = view.seats?.find((seat) => seat.userId === view.viewerId);
+  const maxTo = millis(own?.streetContribution.millis) + millis(view.available.millis);
+  const maxMillis = maxTo > 0n ? maxTo : millis(view.available.millis);
   if (kind === "RAISE") {
-    return view.legalActions.find((action) => action.type === "RAISE")?.raiseTo?.label ?? view.bigBlind.label;
+    const minMillis = millis(view.legalActions.find((action) => action.type === "RAISE")?.raiseTo?.millis ?? view.bigBlind.millis);
+    return {
+      min: formatJetons(minMillis),
+      max: formatJetons(maxMillis),
+      minMillis,
+      maxMillis,
+      convention: "Raise to",
+    };
   }
-  return view.bigBlind.label;
+  const minMillis = millis(view.bigBlind.millis);
+  return {
+    min: view.bigBlind.label,
+    max: view.available.label,
+    minMillis,
+    maxMillis: millis(view.available.millis),
+    convention: "Bet",
+  };
 }
 
 export function pokerControls(view: PokerTableView): PokerControl[] {

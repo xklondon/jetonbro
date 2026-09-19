@@ -53,7 +53,7 @@ export async function createPokerTable(
     await page.getByLabel("Big blind").fill(options.bigBlind);
   }
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("POKER SETUP");
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
@@ -77,7 +77,7 @@ export async function createBlackjackTable(
     await page.locator(".setup-mask").getByLabel("Player email").fill(options.email);
   }
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "+ PLAYER" })).toBeVisible();
@@ -113,6 +113,52 @@ export async function noHorizontalOverflow(page: Page) {
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
   );
   expect(overflow).toBe(false);
+}
+
+export async function swipePlayerBoxes(
+  page: Page,
+  direction: "left" | "right",
+  options?: { pointerType?: "mouse" | "touch"; distance?: number },
+) {
+  const area = page.locator("[data-box-nav=true]");
+  await expect(area).toBeVisible();
+  await page.evaluate(() => document.querySelector("nextjs-portal")?.remove());
+  const box = await area.boundingBox();
+  if (!box) throw new Error("missing box nav");
+  const distance = options?.distance ?? 140;
+  const y = box.y + Math.min(36, box.height / 5);
+  const x = box.x + box.width / 2;
+  const dx = direction === "left" ? -distance : distance;
+  if (options?.pointerType === "touch") {
+    await area.evaluate(
+      (el, coords) => {
+        const fire = (type: string, clientX: number, clientY: number) => {
+          el.dispatchEvent(
+            new PointerEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              composed: true,
+              pointerId: 1,
+              pointerType: "touch",
+              isPrimary: true,
+              button: 0,
+              buttons: type === "pointerup" ? 0 : 1,
+              clientX,
+              clientY,
+            }),
+          );
+        };
+        fire("pointerdown", coords.x, coords.y);
+        fire("pointermove", coords.x + coords.dx / 3, coords.y);
+        fire("pointermove", coords.x + (coords.dx * 2) / 3, coords.y);
+        fire("pointermove", coords.x + coords.dx, coords.y);
+        fire("pointerup", coords.x + coords.dx, coords.y);
+      },
+      { x, y, dx },
+    );
+    return;
+  }
+  await pointerSwipe(page, area, x, y, x + dx, y);
 }
 
 export async function swipePayoutRow(
@@ -170,6 +216,7 @@ async function pointerSwipe(
   options?: { release?: boolean },
 ) {
   await locator.scrollIntoViewIfNeeded();
+  await page.mouse.up().catch(() => undefined);
   await page.mouse.move(x1, y1);
   await page.mouse.down();
   await page.mouse.move((x1 + x2) / 2, y1, { steps: 4 });

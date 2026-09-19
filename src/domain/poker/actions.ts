@@ -17,6 +17,7 @@ export type ActionContext = {
   streetWagerMillis: JetonMillis;
   availableMillis: JetonMillis;
   lastRaiseSizeMillis: JetonMillis;
+  hasActedThisStreet?: boolean;
 };
 
 export function amountToCall(streetWager: JetonMillis, streetContribution: JetonMillis): JetonMillis {
@@ -36,6 +37,7 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
   if (!ctx.isActor || ctx.status !== "ACTIVE") return [];
   const owed = amountToCall(ctx.streetWagerMillis, ctx.streetContributionMillis);
   const stack = ctx.availableMillis;
+  const mayRaise = !ctx.hasActedThisStreet;
   const actions: LegalPokerAction[] = [
     { type: "FOLD", amountMillis: 0n, label: "FOLD" },
   ];
@@ -43,7 +45,7 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
     actions.push({ type: "CHECK", amountMillis: 0n, label: "CHECK" });
     if (stack > 0n && ctx.streetWagerMillis === 0n) {
       actions.push({ type: "BET", amountMillis: stack, label: "BET" });
-    } else if (stack > 0n) {
+    } else if (stack > 0n && mayRaise) {
       const raiseTo = minRaiseTo(ctx.streetWagerMillis, ctx.lastRaiseSizeMillis);
       const maxTo = ctx.streetContributionMillis + stack;
       actions.push({
@@ -53,13 +55,13 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
         label: "RAISE",
       });
     }
-    if (stack > 0n) actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
+    if (stack > 0n) actions.push({ type: "ALL_IN", amountMillis: stack, label: `ALL IN ${formatJetons(stack)}` });
     return uniqueActions(actions);
   }
   if (stack === 0n) return uniqueActions(actions);
   if (stack >= owed) {
     actions.push({ type: "CALL", amountMillis: owed, label: `CALL ${formatJetons(owed)}` });
-    if (stack > owed) {
+    if (stack > owed && mayRaise) {
       const raiseTo = minRaiseTo(ctx.streetWagerMillis, ctx.lastRaiseSizeMillis);
       const maxTo = ctx.streetContributionMillis + stack;
       if (maxTo > ctx.streetWagerMillis) {
@@ -71,10 +73,10 @@ export function legalActions(ctx: ActionContext): LegalPokerAction[] {
         });
       }
     }
-    actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
+    actions.push({ type: "ALL_IN", amountMillis: stack, label: `ALL IN ${formatJetons(stack)}` });
     return uniqueActions(actions);
   }
-  actions.push({ type: "ALL_IN", amountMillis: stack, label: "ALL IN" });
+  actions.push({ type: "ALL_IN", amountMillis: stack, label: `ALL IN ${formatJetons(stack)}` });
   return uniqueActions(actions);
 }
 

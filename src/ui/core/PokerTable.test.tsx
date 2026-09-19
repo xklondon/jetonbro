@@ -375,10 +375,12 @@ test("owner and player share the same felt projection", () => {
   expect(ownerFelt).toBe(playerFelt);
   expect(ownerFelt).toContain("YOUR TURN");
   expect(ownerFelt).toContain("Waiting");
+  expect(ownerFelt).toContain("STREET");
+  expect(ownerFelt).toContain("AVAILABLE");
   expect(ownerFelt).not.toContain("Main pot");
   expect(ownerFelt).not.toContain("xklondon");
   expect(ownerFelt).not.toContain("data-rail=\"DEAL\"");
-  expect(ownerFelt).not.toContain("data-table-name");
+  expect(ownerFelt).toContain('data-table-name="Hold em table"');
   expect(ownerFelt).not.toContain("poker-rail");
   expect(ownerFelt).toContain('data-card-editor="closed"');
   expect(ownerFelt).not.toContain("data-card-sheet");
@@ -546,7 +548,7 @@ test("poker setup prints the live table name on the cloth and hides D/SB/BB befo
   expect(html).not.toContain("blind-badge");
   expect(html).not.toContain("data-community-cards");
   expect(html).toContain("Waiting");
-  expect(html).not.toContain("data-table-name");
+  expect(html).toContain('data-table-name="Hold em table"');
 });
 
 test("Poker card assistance stays collapsed until opened and keeps hole ranks private", () => {

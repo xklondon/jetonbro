@@ -26,6 +26,7 @@ type Hand = {
   streetWagerMillis: bigint;
   lastRaiseSizeMillis: bigint;
   actionCount: number;
+  actions?: { playerId: string; street: string; type: string }[];
   nextHandDeadlineAt: Date | null;
   settledKey: string | null;
   awardSummary: unknown;
@@ -93,18 +94,12 @@ export function buildPokerView(input: {
         streetWagerMillis: hand.streetWagerMillis,
         availableMillis: viewerMember?.availableMillis ?? 0n,
         lastRaiseSizeMillis: hand.lastRaiseSizeMillis,
+        hasActedThisStreet: viewerPart.hasActedThisStreet,
       }).map((action) => ({
         type: action.type,
         amount: money(action.amountMillis),
         raiseTo: action.raiseToMillis ? money(action.raiseToMillis) : undefined,
-        label:
-          action.type === "CALL"
-            ? `CALL ${formatJetons(action.amountMillis)}`
-            : action.type === "ALL_IN"
-              ? "ALL IN"
-              : action.type === "RAISE"
-                ? "RAISE"
-                : action.type,
+        label: action.label,
       }))
     : [];
   const nextStreet = hand && isBettingStreet(hand.phase) ? STREET_ADVANCE[hand.phase as BettingStreet] : null;
@@ -161,6 +156,10 @@ export function buildPokerView(input: {
                 return cards.length ? cards : null;
               })()
             : null,
+        streetAction:
+          hand?.actions
+            ?.filter((action) => action.playerId === item.playerId && action.street === hand.phase)
+            .at(-1)?.type ?? null,
       };
     });
   const copy =

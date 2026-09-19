@@ -250,6 +250,7 @@ export type PokerSeatView = {
   orderIndex: number;
   hasHoleCards: boolean;
   holeCards: PokerCardView[] | null;
+  streetAction?: string | null;
 };
 
 export type PokerPotView = {

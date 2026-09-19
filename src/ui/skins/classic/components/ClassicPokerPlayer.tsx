@@ -21,9 +21,8 @@ export function ClassicPokerPlayer({
   return (
     <PhoneShell>
       <div className="phase-head">
-        <strong data-table-name={view.tableName}>{view.tableName}</strong>
         <span>
-          Texas Hold’em · <strong>{view.phaseLabel}</strong>
+          Texas Hold’em · <strong data-phase-heading>{view.phaseLabel}</strong>
         </span>
         {view.waitingCopy ? (
           <div

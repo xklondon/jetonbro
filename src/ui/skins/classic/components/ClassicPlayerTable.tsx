@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { PlayerTableView } from "@/application/queries/views";
 import { PhoneShell } from "./PhoneShell";
 import { FeltBox } from "./FeltBox";
@@ -14,6 +14,13 @@ import {
   selectOutcomeCelebration,
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
+import {
+  adjacentBoxId,
+  endBoxNavDrag,
+  moveBoxNavDrag,
+  startBoxNavDrag,
+  type BoxNavSession,
+} from "@/ui/core/box-nav-gesture";
 
 export function ClassicPlayerTable({
   view,
@@ -31,7 +38,11 @@ export function ClassicPlayerTable({
   const [exact, setExact] = useState("");
   const [insuranceAmount, setInsuranceAmount] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
+  const [navDragging, setNavDragging] = useState(false);
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
+  const boxIds = view.boxes.map((box) => box.id);
+  const navSession = useRef<BoxNavSession | null>(null);
+  const ignoreClick = useRef(false);
   const boxClass = useMemo(() => {
     if (view.boxes.length >= 4) return "player-boxes scroll";
     if (view.boxes.length === 3) return "player-boxes three";
@@ -72,16 +83,80 @@ export function ClassicPlayerTable({
     onCommand("placeBet", { boxId, amount, mode: "ADD" });
   }
 
+  function pointerFromEvent(event: PointerEvent<HTMLElement>) {
+    return {
+      isPrimary: event.isPrimary,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      button: event.button,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    };
+  }
+
+  function onNavPointerDown(event: PointerEvent<HTMLElement>) {
+    if (boxIds.length < 2) return;
+    const next = startBoxNavDrag(pointerFromEvent(event), navSession.current);
+    if (!next) return;
+    navSession.current = next;
+    ignoreClick.current = false;
+  }
+
+  function onNavPointerMove(event: PointerEvent<HTMLElement>) {
+    if (!navSession.current) return;
+    const wasDragging = navSession.current.dragging;
+    const next = moveBoxNavDrag(navSession.current, pointerFromEvent(event));
+    navSession.current = next;
+    if (next.dragging) {
+      if (!wasDragging && event.currentTarget.setPointerCapture) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+      event.preventDefault();
+      setNavDragging(true);
+    }
+  }
+
+  function onNavPointerEnd(event: PointerEvent<HTMLElement>) {
+    const current = navSession.current;
+    navSession.current = null;
+    setNavDragging(false);
+    if (!current) return;
+    const ended = endBoxNavDrag(current, pointerFromEvent(event));
+    if (ended.ignoreClick) ignoreClick.current = true;
+    if (ended.direction) {
+      const nextId = adjacentBoxId(boxIds, selected?.id ?? selectedBoxId, ended.direction);
+      if (nextId) onSelectBox(nextId);
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   return (
     <PhoneShell rightLabel={`♠ ${view.boxes.length}`}>
       <OutcomeCelebrationOverlay celebration={celebration} />
       <div className="phase-head">
-        <strong>{view.title}</strong>
-        <span>{view.copy}</span>
+        <strong data-phase-heading>{view.phase.replaceAll("_", " ")}</strong>
         <DealCountdown deadline={view.bettingCloseDeadlineAt} />
         <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
       </div>
-      <main className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}>
+      <main
+        className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}
+        data-box-nav={boxIds.length > 1 ? "true" : "false"}
+        data-selected-box={selected?.id ?? ""}
+        data-box-count={boxIds.length}
+        onPointerDown={onNavPointerDown}
+        onPointerMove={onNavPointerMove}
+        onPointerUp={onNavPointerEnd}
+        onPointerCancel={onNavPointerEnd}
+        onClickCapture={(event) => {
+          if (!ignoreClick.current) return;
+          ignoreClick.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        style={{ touchAction: boxIds.length > 1 ? (navDragging ? "none" : "pan-y") : undefined }}
+      >
         <div className="table-surface">
             <ClothName name={view.tableName} />
             <div className={boxClass}>
@@ -91,7 +166,10 @@ export function ClassicPlayerTable({
                   box={box}
                   selected={box.id === selected?.id}
                   dropHighlight={hoverBoxId === box.id}
-                  onSelect={() => onSelectBox(box.id)}
+                  onSelect={() => {
+                    if (ignoreClick.current) return;
+                    onSelectBox(box.id);
+                  }}
                   retractable={view.actions.retract}
                   onRetractChip={(amount) =>
                     onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })

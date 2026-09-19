@@ -74,6 +74,10 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   );
   expect(html).toContain("YOUR BOX 1");
   expect(html).toContain("YOUR BOX 2");
+  expect(html).toContain('data-box-nav="true"');
+  expect(html).toContain('data-selected-box="1"');
+  expect(html).toContain('data-phase-heading');
+  expect(html).not.toContain("Select a box");
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("AVAILABLE");
   expect(html).toContain("data-player-wallet");

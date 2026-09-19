@@ -7,6 +7,7 @@ It records virtual jetons used alongside a physical Blackjack table. Cards, cash
 ## Modules
 
 - `src/domain/blackjack` — explicit phase machine, payout math, Blackjack actions
+- `src/domain/poker` — Texas Hold’em blinds, legal actions, streets, and side pots
 - `src/domain/ledger` — transaction types and bucket moves
 - `src/domain/tables` — table status
 - `src/domain/invitations` — invitation usability

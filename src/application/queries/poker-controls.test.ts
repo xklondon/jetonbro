@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { pokerActorActions, pokerActorLayout, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled, visiblePokerLegalActions } from "./poker-controls";
+import { pokerActorActions, pokerActorLayout, pokerComposeBounds, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled, visiblePokerLegalActions } from "./poker-controls";
 import type { PokerLegalActionView, PokerSeatView, PokerTableView } from "./views";
 
 const money = (label: string, millis = `${Number(label) * 1000}`) => ({ millis, label });
@@ -8,14 +8,21 @@ const actorLegal: PokerLegalActionView[] = [
   { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
   { type: "CALL", amount: money("10"), label: "CALL 10" },
   { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE" },
-  { type: "ALL_IN", amount: money("100"), label: "ALL IN" },
+  { type: "ALL_IN", amount: money("100"), label: "ALL IN 100" },
 ];
 
 const checkLegal: PokerLegalActionView[] = [
   { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
   { type: "CHECK", amount: money("0", "0"), label: "CHECK" },
   { type: "BET", amount: money("100"), label: "BET" },
-  { type: "ALL_IN", amount: money("100"), label: "ALL IN" },
+  { type: "ALL_IN", amount: money("100"), label: "ALL IN 100" },
+];
+
+const bbOptionLegal: PokerLegalActionView[] = [
+  { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
+  { type: "CHECK", amount: money("0", "0"), label: "CHECK" },
+  { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE" },
+  { type: "ALL_IN", amount: money("90"), label: "ALL IN 90" },
 ];
 
 function seat(overrides: Partial<PokerSeatView>): PokerSeatView {
@@ -98,6 +105,11 @@ test("actor controls keep CALL available and open BET/RAISE separately", () => {
   expect(owed.secondary.map((action) => action.type)).toEqual(["FOLD", "RAISE", "ALL_IN"]);
   expect(pokerComposeSeed(view({ legalActions: actorLegal }), "RAISE")).toBe("20");
   expect(pokerComposeSeed(view({ legalActions: checkLegal }), "BET")).toBe("10");
+  expect(pokerActorActions(bbOptionLegal).map((action) => action.type)).toEqual(["CHECK", "RAISE", "ALL_IN", "FOLD"]);
+  expect(pokerComposeBounds(view({ legalActions: actorLegal }), "RAISE")).toMatchObject({
+    convention: "Raise to",
+    min: "20",
+  });
 });
 
 test("folded and all-in players get no actor controls or tray", () => {

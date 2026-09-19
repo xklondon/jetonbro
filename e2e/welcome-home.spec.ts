@@ -32,7 +32,7 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   await expect(page.locator(".setup-mask").getByAltText("Shared table join QR code")).toBeVisible();
   await expect(page.locator(".setup-mask").getByRole("button", { name: "COPY LINK" })).toBeVisible();
   await expect(page.locator(".setup-mask").getByRole("button", { name: "SHARE" })).toBeVisible();
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await page.screenshot({ path: join(out, "app-welcome-games-390x844.png") });
   await page.screenshot({ path: join(out, "app-blackjack-setup-390x844.png") });
 
@@ -50,7 +50,7 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
-  await expect(page.getByText("CURRENT PHASE:")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
   await expect(page.getByText("DEALER · Alex")).toBeVisible();
   await expect(page.getByRole("button", { name: "+ PLAYER" })).toBeVisible();

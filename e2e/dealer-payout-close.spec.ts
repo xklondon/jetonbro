@@ -103,8 +103,8 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await samPage.reload();
   await joPage.reload();
-  await expect(samPage.getByText("BETTING").or(samPage.getByText("YOUR JETONS"))).toBeVisible();
-  await expect(joPage.getByText("BETTING").or(joPage.getByText("YOUR JETONS"))).toBeVisible();
+  await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
+  await expect(joPage.getByText("YOUR JETONS")).toBeVisible();
 
   await addJetons(samPage, "5");
   await addJetons(joPage, "5");
