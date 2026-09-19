@@ -114,7 +114,12 @@
 
 .classic-skin .deal-actions {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.classic-skin .deal-actions[data-count="1"] {
+  grid-template-columns: 1fr;
 }
 
 .classic-skin .deal-actions.next-round-row {
@@ -122,6 +127,7 @@
   gap: 6px;
 }
 
+.classic-skin .deal-actions button,
 .classic-skin .deal-actions.next-round-row button {
   min-width: 0;
   width: 100%;
@@ -191,11 +197,6 @@
   align-items: stretch;
 }
 
-.classic-skin .felt[data-box-nav="true"] {
-  touch-action: pan-y;
-  overscroll-behavior-x: none;
-}
-
 .classic-skin .player-boxes {
   width: 100%;
   display: flex;
@@ -204,6 +205,13 @@
   gap: 8px;
   touch-action: pan-y;
   overscroll-behavior-x: none;
+}
+
+.classic-skin .player-boxes[data-box-nav="true"] {
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .classic-skin .player-boxes.one .box {

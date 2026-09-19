@@ -52,14 +52,15 @@ test("authenticated welcome, one setup mask, then the dealer table", async ({ pa
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
-  await expect(page.getByText("DEALER · Alex")).toBeVisible();
+  await expect(page.locator("[data-dealer-box=true]")).toContainText("DEALER");
+  await expect(page.locator("[data-dealer-box=true]")).toContainText("Alex");
   await expect(page.getByRole("button", { name: "+ PLAYER" })).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
   await expect(page.getByText("Waiting for a player to join")).toBeVisible();
   await page.getByRole("button", { name: "QR" }).click();
   await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.getByText("DEALER · Alex")).toBeVisible();
+  await expect(page.locator("[data-dealer-box=true]")).toContainText("Alex");
   await page.screenshot({ path: join(out, "app-table-lobby-invites-390x844.png") });
 
   await page.goto("/");

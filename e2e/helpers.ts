@@ -126,39 +126,21 @@ export async function swipePlayerBoxes(
   const box = await area.boundingBox();
   if (!box) throw new Error("missing box nav");
   const distance = options?.distance ?? 140;
-  const y = box.y + Math.min(36, box.height / 5);
+  const y = box.y + Math.min(box.height / 2, 80);
   const x = box.x + box.width / 2;
   const dx = direction === "left" ? -distance : distance;
-  if (options?.pointerType === "touch") {
-    await area.evaluate(
-      (el, coords) => {
-        const fire = (type: string, clientX: number, clientY: number) => {
-          el.dispatchEvent(
-            new PointerEvent(type, {
-              bubbles: true,
-              cancelable: true,
-              composed: true,
-              pointerId: 1,
-              pointerType: "touch",
-              isPrimary: true,
-              button: 0,
-              buttons: type === "pointerup" ? 0 : 1,
-              clientX,
-              clientY,
-            }),
-          );
-        };
-        fire("pointerdown", coords.x, coords.y);
-        fire("pointermove", coords.x + coords.dx / 3, coords.y);
-        fire("pointermove", coords.x + (coords.dx * 2) / 3, coords.y);
-        fire("pointermove", coords.x + coords.dx, coords.y);
-        fire("pointerup", coords.x + coords.dx, coords.y);
-      },
-      { x, y, dx },
-    );
+  if (options?.pointerType === "mouse") {
+    await pointerSwipe(page, area, x, y, x + dx, y);
     return;
   }
-  await pointerSwipe(page, area, x, y, x + dx, y);
+  const client = await page.context().newCDPSession(page);
+  const point = (clientX: number, clientY: number) => [{ x: Math.round(clientX), y: Math.round(clientY) }];
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: point(x, y) });
+  await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: point(x + dx / 3, y) });
+  await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: point(x + (dx * 2) / 3, y) });
+  await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: point(x + dx, y) });
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await client.detach();
 }
 
 export async function swipePayoutRow(

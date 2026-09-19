@@ -216,7 +216,9 @@ test("setup mask sits over the dealer table and shows the shared QR", () => {
   expect(html).toContain("CREATE TABLE");
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("TABLE SETUP");
-  expect(html).toContain("DEALER · Alex");
+  expect(html).toContain(">DEALER<");
+  expect(html).toContain("Alex");
+  expect(html).toContain("data-blackjack-box-row");
   expect(html).toContain("setup-mask");
   expect(html).toContain("Shared table join QR code");
   expect(html).toContain("SCAN TO JOIN TABLE");
@@ -248,15 +250,26 @@ test("CREATE TABLE reveals dealer table seats, compact QR and OPEN BETTING", () 
   expect(html).not.toContain("Waiting for players");
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("TABLE SETUP");
-  expect(html).toContain("DEALER · Alex");
+  expect(html).toContain(">DEALER<");
+  expect(html).toContain("Alex");
+  expect(html).toContain("dealer-list");
+  expect(html).toContain("dealer-player");
+  expect(html).toContain("data-blackjack-box-row");
   expect(html).toContain("Sam");
   expect(html).toContain("Joined");
   expect(html).toContain("+ PLAYER");
   expect(html).toContain(">QR<");
   expect(html).toContain("OPEN BETTING");
+  expect(html).toContain('data-phase-controls="true"');
   expect(html).toContain("data-game-controls");
   expect(html).toContain("dock");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
+  expect((html.match(/data-table-name=/g) ?? []).length).toBe(1);
+  expect(html.indexOf("OPEN BETTING")).toBeLessThan(html.indexOf("dealer-list"));
+  expect(html.indexOf("OPEN BETTING")).toBeLessThan(html.indexOf("data-game-controls"));
+  expect(html).not.toContain("setup-seats");
+  expect(html).not.toContain("setup-seat");
+  expect(html).not.toContain("DEALER · Alex");
   expect(html).not.toContain("xklondon");
 });
 

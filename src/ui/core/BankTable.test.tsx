@@ -113,7 +113,10 @@ test("Bank betting keeps deal controls at the top", () => {
   expect(html).toContain('data-phase-heading');
   expect(html).toContain("BETTING");
   expect(html).toContain("DEAL CARDS NOW");
-  expect(html).toContain("DEAL IN 7 SECONDS");
+  expect(html).toContain("IN 7 SECONDS");
+  expect(html).toContain('data-phase-controls="true"');
+  expect(html).toContain('data-count="2"');
+  expect(html).not.toContain("DEAL IN 7 SECONDS");
   expect(html).not.toContain("CURRENT PHASE:");
   expect(html).not.toContain("DEAL CARDS NOW closes Betting and starts Playing.");
   expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
