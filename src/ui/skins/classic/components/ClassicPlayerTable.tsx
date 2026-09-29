@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { PlayerTableView } from "@/application/queries/views";
+import type { MemberView, PlayerTableView } from "@/application/queries/views";
 import { TableShell } from "./TableShell";
 import { PhaseBar } from "./PhaseBar";
 import { TableIdentity } from "./TableIdentity";
 import { BlackjackBox } from "./BlackjackBox";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { PlayerWallet } from "./PlayerWallet";
+import { SheetOverlay } from "./SheetOverlay";
 import {
   selectInsuranceCelebration,
   selectOutcomeCelebration,
@@ -26,16 +27,27 @@ export function ClassicPlayerTable({
   onSelectBox,
   onCommand,
   notice,
+  members = [],
 }: {
   view: PlayerTableView;
   selectedBoxId: string | null;
   onSelectBox: (id: string) => void;
-  onCommand: (command: string, payload?: Record<string, string>) => void;
+  onCommand: (command: string, payload?: Record<string, string>) => void | boolean | Promise<void | boolean>;
   notice?: string | null;
+  members?: MemberView[];
 }) {
   const [exact, setExact] = useState("");
   const [insuranceAmount, setInsuranceAmount] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<"menu" | "close" | "game" | "poker" | "rename" | "dealer" | "player" | "jetons" | null>(null);
+  const [tableName, setTableName] = useState(view.tableName);
+  const [email, setEmail] = useState("");
+  const [localName, setLocalName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [smallBlind, setSmallBlind] = useState("5");
+  const [bigBlind, setBigBlind] = useState("10");
+  const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
+  const [dealerId, setDealerId] = useState(members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "");
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const slots: Array<(typeof view.boxes)[number] | null> = [null, null, null];
   const extras: typeof view.boxes = [];
@@ -81,7 +93,7 @@ export function ClassicPlayerTable({
   }
 
   return (
-    <TableShell>
+    <TableShell badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
       <OutcomeCelebrationOverlay celebration={celebration} />
       <PhaseBar label={phaseLabel(view)} />
       <main
@@ -264,6 +276,177 @@ export function ClassicPlayerTable({
           onHover={setHoverBoxId}
         />
       </footer>
+      {view.isOwner ? (
+        <SheetOverlay open={Boolean(sheet)} onClose={() => setSheet(null)}>
+          {sheet === "menu" ? (
+            <>
+              <h3>Table</h3>
+              <button type="button" onClick={() => setSheet("player")}>
+                ADD PLAYER
+              </button>
+              <button type="button" onClick={() => setSheet("jetons")}>
+                GIVE JETONS
+              </button>
+              <button type="button" onClick={() => setSheet("rename")}>
+                RENAME TABLE
+              </button>
+              <button type="button" onClick={() => setSheet("dealer")}>
+                ASSIGN DEALER
+              </button>
+              {view.canSwitchGame ? (
+                <button type="button" onClick={() => setSheet("game")}>
+                  SWITCH GAME
+                </button>
+              ) : null}
+              <button className="gold-button" type="button" onClick={() => { onCommand("saveTable"); setSheet(null); }}>
+                SAVE TABLE
+              </button>
+              <button className="gold-button" type="button" onClick={() => setSheet("close")}>
+                CLOSE TABLE & SAVE BALANCES
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "game" ? (
+            <>
+              <h3>Switch game</h3>
+              <button className="gold-button" type="button" onClick={() => { onCommand("switchGame", { game: "BLACKJACK" }); setSheet(null); }}>
+                Blackjack
+              </button>
+              <button className="gold-button" type="button" onClick={() => setSheet("poker")}>
+                Texas Hold’em
+              </button>
+              <button type="button" disabled>
+                Zilch — Coming later
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "poker" ? (
+            <>
+              <h3>Texas Hold’em</h3>
+              <label>
+                Small blind
+                <input value={smallBlind} onChange={(event) => setSmallBlind(event.target.value)} aria-label="Small blind" />
+              </label>
+              <label>
+                Big blind
+                <input value={bigBlind} onChange={(event) => setBigBlind(event.target.value)} aria-label="Big blind" />
+              </label>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("switchGame", {
+                    game: "POKER",
+                    smallBlind,
+                    bigBlind,
+                    seatOrder: members.map((member) => member.userId).join(","),
+                  });
+                  setSheet(null);
+                }}
+              >
+                SWITCH TO TEXAS HOLD’EM
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("game")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "rename" ? (
+            <>
+              <h3>Rename table</h3>
+              <label>
+                Table name
+                <input aria-label="Table name" value={tableName} onChange={(event) => setTableName(event.target.value)} />
+              </label>
+              <button className="gold-button" type="button" onClick={() => { onCommand("updateSettings", { name: tableName }); setSheet(null); }}>
+                Save name
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "dealer" ? (
+            <>
+              <h3>Assign Dealer</h3>
+              <label>
+                Dealer
+                <select aria-label="Dealer" value={dealerId} onChange={(event) => setDealerId(event.target.value)}>
+                  {members.map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="gold-button" type="button" onClick={() => { onCommand("assignBank", { userId: dealerId }); setSheet(null); }}>
+                Confirm dealer
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "close" ? (
+            <>
+              <h3>Close {view.tableName}</h3>
+              <p>{view.closePreview?.confirmation ?? `Save remaining jetons and close ${view.tableName}?`}</p>
+              <button className="gold-button" type="button" onClick={() => { onCommand("closeTable"); setSheet(null); }}>
+                Confirm close
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "jetons" || sheet === "player" ? (
+            <>
+              <h3>{sheet === "jetons" ? "Give jetons" : "Add player"}</h3>
+              {sheet === "jetons" ? (
+                <>
+                  <select value={memberId} onChange={(event) => setMemberId(event.target.value)} aria-label="Player">
+                    {members.map((member) => (
+                      <option key={member.userId} value={member.userId}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input placeholder="Jeton amount" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                </>
+              ) : (
+                <>
+                  <input placeholder="Player name" aria-label="Player name" value={localName} onChange={(event) => setLocalName(event.target.value)} />
+                  <input placeholder="Starting jetons" aria-label="Starting jetons" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                  <input placeholder="Email optional" aria-label="Player email" value={email} onChange={(event) => setEmail(event.target.value)} />
+                </>
+              )}
+              <div className="sheet-actions">
+                <button type="button" onClick={() => setSheet(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="gold-button"
+                  type="button"
+                  onClick={() => {
+                    if (sheet === "jetons") onCommand("giveJetons", { userId: memberId, amount });
+                    else if (email.trim()) onCommand("addPlayer", { email, name: localName });
+                    else onCommand("addPlayer", { name: localName, startingJetons: amount });
+                    setSheet(null);
+                  }}
+                >
+                  Confirm
+                </button>
+              </div>
+            </>
+          ) : null}
+        </SheetOverlay>
+      ) : null}
     </TableShell>
   );
 }

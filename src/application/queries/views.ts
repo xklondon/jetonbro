@@ -141,6 +141,9 @@ export type PlayerTableView = {
   bankroll?: BankrollView;
   dealerHand?: HandView;
   bankLimitReached?: boolean;
+  isOwner?: boolean;
+  canSwitchGame?: boolean;
+  closePreview?: CloseTablePreview | null;
 };
 
 export type BankTableView = {
@@ -206,6 +209,7 @@ export type SetupTableView = {
   canStartBetting: boolean;
   startBlockedReason: string | null;
   isOwner: boolean;
+  isBank?: boolean;
   setupCompleted: boolean;
   tableStatus: "SETUP" | "ACTIVE" | "ARCHIVED";
   paused: boolean;
@@ -214,6 +218,7 @@ export type SetupTableView = {
   bankFundingMode?: "OPEN" | "LIMITED";
   startingBank?: MoneyView | null;
   canSwitchGame?: boolean;
+  emailConfigured?: boolean;
 };
 
 export type PokerLegalActionView = {

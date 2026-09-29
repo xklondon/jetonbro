@@ -7,6 +7,7 @@ import { PhaseBar } from "./PhaseBar";
 import { PhaseActionDock } from "./PhaseActionDock";
 import { TableIdentity } from "./TableIdentity";
 import { DealerRow } from "./DealerRow";
+import { SheetOverlay } from "./SheetOverlay";
 
 export function ClassicSetupTable({
   view,
@@ -14,19 +15,24 @@ export function ClassicSetupTable({
   notice,
 }: {
   view: SetupTableView;
-  onCommand: (command: string, payload?: Record<string, string>) => void | Promise<void>;
+  onCommand: (command: string, payload?: Record<string, string>) => void | boolean | Promise<void | boolean>;
   notice?: string | null;
 }) {
   const [emails, setEmails] = useState("");
+  const [localName, setLocalName] = useState("");
+  const [localStarting, setLocalStarting] = useState(view.startingJetonsPerPlayer.label);
+  const [tableName, setTableName] = useState(view.tableName);
+  const [dealerId, setDealerId] = useState(view.members.find((member) => member.isBankDealer)?.userId ?? "");
   const [addOpen, setAddOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState<"menu" | "close" | "game" | "poker" | null>(null);
+  const [menuOpen, setMenuOpen] = useState<"menu" | "close" | "game" | "poker" | "rename" | "dealer" | null>(null);
   const [smallBlind, setSmallBlind] = useState("5");
   const [bigBlind, setBigBlind] = useState("10");
   const [qrData, setQrData] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const playerSeats = view.seats.filter((seat) => seat.status !== "Bank / Dealer");
   const seatCountClass = playerSeats.length >= 3 ? "three" : playerSeats.length === 2 ? "two" : "one";
+  const emailReady = view.emailConfigured !== false;
 
   useEffect(() => {
     if (!view.joinUrl) return;
@@ -34,6 +40,12 @@ export function ClassicSetupTable({
       void QRCode.toDataURL(view.joinUrl!, { margin: 1, width: 200 }).then(setQrData);
     });
   }, [view.joinUrl]);
+
+  useEffect(() => {
+    setTableName(view.tableName);
+    setLocalStarting(view.startingJetonsPerPlayer.label);
+    setDealerId(view.members.find((member) => member.isBankDealer)?.userId ?? "");
+  }, [view.tableName, view.startingJetonsPerPlayer.label, view.members]);
 
   async function copyLink() {
     if (!view.joinUrl) return;
@@ -51,44 +63,19 @@ export function ClassicSetupTable({
     await copyLink();
   }
 
-  const inviteSheet = (
-    <>
-      <h3>Add Player</h3>
-      <input
-        placeholder="Player email"
-        aria-label="Player email"
-        value={emails}
-        onChange={(event) => setEmails(event.target.value)}
-      />
-      <button
-        className="gold-button"
-        type="button"
-        onClick={() => {
-          onCommand("inviteByEmail", { emails });
-          setEmails("");
-          setAddOpen(false);
-        }}
-      >
-        Invite by email
-      </button>
-      {view.joinUrl ? (
-        <div className="qr-panel compact-qr" data-join-url={view.joinUrl} aria-label="Shared table join QR code">
-          {qrData ? <img src={qrData} alt="Shared table join QR code" /> : <div className="muted">Preparing table QR…</div>}
-          <div className="dealer-tools">
-            <button type="button" onClick={() => void copyLink()}>
-              {copied ? "Copied" : "Copy link"}
-            </button>
-            <button type="button" onClick={() => void shareLink()}>
-              Share
-            </button>
-          </div>
-        </div>
-      ) : null}
-      <button className="text-link" type="button" onClick={() => { setAddOpen(false); setQrOpen(false); }}>
-        Close
-      </button>
-    </>
-  );
+  const joinTools = view.joinUrl ? (
+    <div className="qr-panel compact-qr" data-join-url={view.joinUrl} aria-label="Shared table join QR code">
+      {qrData ? <img src={qrData} alt="Shared table join QR code" /> : <div className="muted">Preparing table QR…</div>}
+      <div className="dealer-tools">
+        <button type="button" onClick={() => void copyLink()}>
+          {copied ? "Copied" : "Copy link"}
+        </button>
+        <button type="button" onClick={() => void shareLink()}>
+          Share
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <TableShell onMenu={view.isOwner ? () => setMenuOpen("menu") : undefined}>
@@ -101,7 +88,7 @@ export function ClassicSetupTable({
             <button
               className="gold-button"
               type="button"
-              disabled={!view.canStartBetting}
+              disabled={!view.canStartBetting || view.isBank === false}
               onClick={() => onCommand("startBetting")}
             >
               START BLACKJACK
@@ -146,11 +133,96 @@ export function ClassicSetupTable({
           <div className="muted">Starting {view.startingJetonsPerPlayer.label}</div>
         </div>
       </main>
-      <div className={`sheet${qrOpen || addOpen ? " open" : ""}`}>
-        <div className="sheet-panel">{qrOpen || addOpen ? inviteSheet : null}</div>
-      </div>
-      <div className={`sheet${menuOpen ? " open" : ""}`}>
-        <div className="sheet-panel">
+      <SheetOverlay
+        open={qrOpen || addOpen}
+        onClose={() => {
+          setAddOpen(false);
+          setQrOpen(false);
+        }}
+      >
+        {qrOpen && !addOpen ? (
+          <>
+            <h3>Invite Player</h3>
+            {joinTools}
+            <button className="text-link" type="button" onClick={() => setQrOpen(false)}>
+              Close
+            </button>
+          </>
+        ) : (
+          <>
+            <h3>Add Player</h3>
+            <label>
+              Player name
+              <input
+                placeholder="Player name"
+                aria-label="Player name"
+                value={localName}
+                onChange={(event) => setLocalName(event.target.value)}
+              />
+            </label>
+            <label>
+              Starting jetons
+              <input
+                placeholder="Starting jetons"
+                aria-label="Starting jetons"
+                value={localStarting}
+                onChange={(event) => setLocalStarting(event.target.value)}
+              />
+            </label>
+            <button
+              className="gold-button"
+              type="button"
+              onClick={async () => {
+                const ok = await onCommand("addPlayer", { name: localName, startingJetons: localStarting });
+                if (ok !== false) {
+                  setLocalName("");
+                  setAddOpen(false);
+                }
+              }}
+            >
+              Add local player
+            </button>
+            {notice && addOpen ? <div className="error">{notice}</div> : null}
+            <label>
+              Player email
+              <input
+                placeholder="Player email"
+                aria-label="Player email"
+                value={emails}
+                onChange={(event) => setEmails(event.target.value)}
+                disabled={!emailReady}
+              />
+            </label>
+            {!emailReady ? (
+              <p className="muted">Email delivery is not configured. QR and copy link still work.</p>
+            ) : null}
+            <button
+              className="gold-button"
+              type="button"
+              disabled={!emailReady}
+              onClick={() => {
+                onCommand("inviteByEmail", { emails });
+                setEmails("");
+                setAddOpen(false);
+              }}
+            >
+              Invite by email
+            </button>
+            {joinTools}
+            <button
+              className="text-link"
+              type="button"
+              onClick={() => {
+                setAddOpen(false);
+                setQrOpen(false);
+              }}
+            >
+              Close
+            </button>
+          </>
+        )}
+      </SheetOverlay>
+      <SheetOverlay open={Boolean(menuOpen)} onClose={() => setMenuOpen(null)}>
           {menuOpen === "menu" ? (
             <>
               <h3>Table</h3>
@@ -159,6 +231,12 @@ export function ClassicSetupTable({
               </button>
               <button type="button" onClick={() => { setAddOpen(true); setMenuOpen(null); }}>
                 ADD PLAYER
+              </button>
+              <button type="button" onClick={() => setMenuOpen("rename")}>
+                RENAME TABLE
+              </button>
+              <button type="button" onClick={() => setMenuOpen("dealer")}>
+                ASSIGN DEALER
               </button>
               {view.canSwitchGame ? (
                 <button type="button" onClick={() => setMenuOpen("game")}>
@@ -212,9 +290,59 @@ export function ClassicSetupTable({
               </button>
             </>
           ) : null}
+          {menuOpen === "rename" ? (
+            <>
+              <h3>Rename table</h3>
+              <label>
+                Table name
+                <input aria-label="Table name" value={tableName} onChange={(event) => setTableName(event.target.value)} />
+              </label>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={async () => {
+                  const ok = await onCommand("updateSettings", { name: tableName });
+                  if (ok !== false) setMenuOpen(null);
+                }}
+              >
+                Save name
+              </button>
+              <button className="text-link" type="button" onClick={() => setMenuOpen("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {menuOpen === "dealer" ? (
+            <>
+              <h3>Assign Dealer</h3>
+              <label>
+                Dealer
+                <select aria-label="Dealer" value={dealerId} onChange={(event) => setDealerId(event.target.value)}>
+                  {view.members.map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={async () => {
+                  const ok = await onCommand("assignBank", { userId: dealerId });
+                  if (ok !== false) setMenuOpen(null);
+                }}
+              >
+                Confirm dealer
+              </button>
+              <button className="text-link" type="button" onClick={() => setMenuOpen("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
           {menuOpen === "close" ? (
             <>
-              <h3>Close this table</h3>
+              <h3>Close {view.tableName}</h3>
               <p>{view.closePreview?.confirmation ?? "Save each Player’s remaining jetons to their personal ledger and close this table?"}</p>
               {(view.closePreview?.players ?? []).map((player) => (
                 <div className="member-row" key={player.userId}>
@@ -293,8 +421,7 @@ export function ClassicSetupTable({
               </button>
             </>
           ) : null}
-        </div>
-      </div>
+      </SheetOverlay>
       <footer className="dock">
         <div className="game-controls setup-dock" data-game-controls="true">
           <div className="owner-controls">

@@ -54,6 +54,13 @@ function developmentEmailConfigError(): Error {
   );
 }
 
+export function isEmailDeliveryConfigured(): boolean {
+  if (allowDevMailbox()) return true;
+  const apiKey = process.env.RESEND_API_KEY?.trim() ?? "";
+  const from = process.env.EMAIL_FROM?.trim() ?? "";
+  return Boolean(apiKey && from);
+}
+
 function assertEmailConfig(): { apiKey: string; from: string } {
   const apiKey = process.env.RESEND_API_KEY?.trim() ?? "";
   const from = process.env.EMAIL_FROM?.trim() ?? "";

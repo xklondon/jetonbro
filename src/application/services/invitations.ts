@@ -4,10 +4,17 @@ import { withIdempotency } from "@/application/idempotency";
 import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
-import { requireOwnerOrBank, creditStartingJetonsOnce, transferPocketIntoTable } from "@/application/services/tables";
+import {
+  requireOwner,
+  requireOwnerOrBank,
+  creditStartingJetonsOnce,
+  distributeJetons,
+  transferPocketIntoTable,
+} from "@/application/services/tables";
 import { ensurePokerSeat } from "@/application/services/poker-seats";
 import { DomainError, NotFoundError } from "@/domain/errors";
 import { assertInvitationUsable } from "@/domain/invitations/types";
+import { formatJetons, parseWholeJetons } from "@/domain/money";
 
 const EMAIL_INVITE_HOURS = 48;
 const QR_INVITE_DAYS = 14;
@@ -205,15 +212,95 @@ export async function joinWithToken(input: { userId: string; token: string; user
   return { tableId: table.id };
 }
 
+function memberDisplayName(user: { name: string | null; email: string }): string {
+  return user.name?.trim() || user.email.split("@")[0] || "Player";
+}
+
+async function addLocalPlayer(input: {
+  actorId: string;
+  tableId: string;
+  name: string;
+  startingJetons?: string;
+  idempotencyKey: string;
+}) {
+  const name = input.name.trim();
+  if (!name) {
+    throw new DomainError("INVALID_PLAYER_NAME", "Enter a player name.");
+  }
+  return withIdempotency(input.actorId, input.idempotencyKey, "addPlayerManually", input, async () => {
+    await requireOwner(input.tableId, input.actorId);
+    const members = await prisma.tableMember.findMany({
+      where: { tableId: input.tableId, leftAt: null },
+      include: { user: { select: { name: true, email: true } } },
+    });
+    if (members.some((member) => memberDisplayName(member.user).toLowerCase() === name.toLowerCase())) {
+      throw new DomainError("DUPLICATE_PLAYER_NAME", "That player name is already at this table.");
+    }
+    const requested = input.startingJetons?.trim() ? parseWholeJetons(input.startingJetons, "Starting jetons") : null;
+    const created = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email: `local.${randomToken(8)}@invalid.local`,
+        },
+      });
+      const member = await tx.tableMember.create({
+        data: {
+          tableId: input.tableId,
+          userId: user.id,
+          isOwner: false,
+          isBankDealer: false,
+        },
+      });
+      const table = await tx.table.findUniqueOrThrow({ where: { id: input.tableId } });
+      await creditStartingJetonsOnce(tx, {
+        tableId: table.id,
+        memberId: member.id,
+        userId: user.id,
+        actorId: input.actorId,
+        startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+        isBankDealer: false,
+        game: table.game,
+      });
+      if (table.game === "POKER") {
+        await ensurePokerSeat(tx, table.id, user.id);
+      }
+      return { userId: user.id, starting: table.startingJetonsPerPlayerMillis };
+    });
+    if (requested && requested > created.starting) {
+      await distributeJetons({
+        actorId: input.actorId,
+        tableId: input.tableId,
+        userId: created.userId,
+        amount: formatJetons(requested - created.starting),
+        idempotencyKey: `${input.idempotencyKey}:extra`,
+      });
+    }
+    publishTable(input.tableId);
+    return { joined: true as const, local: true as const };
+  });
+}
+
 export async function addPlayerManually(input: {
   actorId: string;
   tableId: string;
-  email: string;
+  email?: string;
   name?: string;
+  startingJetons?: string;
   idempotencyKey: string;
   origin: string;
 }) {
-  const email = input.email.trim().toLowerCase();
+  const email = (input.email ?? "").trim().toLowerCase();
+  const name = (input.name ?? "").trim();
+  if (!email) {
+    return addLocalPlayer({
+      actorId: input.actorId,
+      tableId: input.tableId,
+      name,
+      startingJetons: input.startingJetons,
+      idempotencyKey: input.idempotencyKey,
+    });
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new DomainError("INVALID_EMAIL", "Enter a valid email address.");
   }

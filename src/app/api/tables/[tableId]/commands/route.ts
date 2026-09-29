@@ -204,8 +204,9 @@ async function dispatch(
     case "addPlayer":
       return addPlayerManually({
         ...ctx,
-        email: String(p.email ?? ""),
+        email: p.email ? String(p.email) : "",
         name: p.name ? String(p.name) : undefined,
+        startingJetons: p.startingJetons ? String(p.startingJetons) : undefined,
       });
     case "giveJetons":
       return distributeJetons({
@@ -220,9 +221,11 @@ async function dispatch(
     case "updateSettings":
       return updateTableSettings({
         ...ctx,
+        name: p.name !== undefined ? String(p.name) : undefined,
         minBet: p.minBet ? String(p.minBet) : undefined,
         maxBet: p.maxBet ? String(p.maxBet) : undefined,
-        blackjackPayout: p.blackjackPayout === "SIX_FIVE" ? "SIX_FIVE" : "THREE_TWO",
+        blackjackPayout:
+          p.blackjackPayout === "SIX_FIVE" ? "SIX_FIVE" : p.blackjackPayout === "THREE_TWO" ? "THREE_TWO" : undefined,
         maxBoxesPerPlayer: p.maxBoxesPerPlayer === undefined ? undefined : String(p.maxBoxesPerPlayer),
         insuranceEnabled: p.insuranceEnabled === undefined ? undefined : p.insuranceEnabled === true || p.insuranceEnabled === "true",
         bankMayDistributeJetons: p.bankMayDistributeJetons === undefined ? undefined : Boolean(p.bankMayDistributeJetons),

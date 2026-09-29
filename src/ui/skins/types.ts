@@ -2,7 +2,10 @@ import type { ComponentType } from "react";
 import type { HomeTableCard } from "@/application/queries/home";
 import type { BankTableView, MemberView, PlayerTableView, PokerTableView, SetupTableView, WaitingTableView } from "@/application/queries/views";
 
-export type CommandHandler = (command: string, payload?: Record<string, string>) => void;
+export type CommandHandler = (
+  command: string,
+  payload?: Record<string, string>,
+) => void | boolean | Promise<void | boolean>;
 
 export type JetonBroSkin = {
   id: "classic";
@@ -13,6 +16,7 @@ export type JetonBroSkin = {
     onSelectBox: (id: string) => void;
     onCommand: CommandHandler;
     notice?: string | null;
+    members?: MemberView[];
   }>;
   BankTable: ComponentType<{
     view: BankTableView;

@@ -4,6 +4,7 @@ import { formatJetons } from "@/domain/money";
 import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
+import { isEmailDeliveryConfigured } from "@/application/mail";
 import { alignTablePhase, ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
 import { ensureNextPokerHandIfDue } from "@/application/services/poker-hand";
 import { buildPokerView } from "./poker-snapshot";
@@ -255,11 +256,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
                 ? "Waiting for a player to join"
                 : null,
           isOwner,
+          isBank,
           setupCompleted: table.setupCompletedAt !== null,
           tableStatus: table.status,
           paused: table.pausedAt !== null,
           closePreview: isOwner ? closePreview : null,
           canSwitchGame: isOwner && table.status !== "ARCHIVED",
+          emailConfigured: isEmailDeliveryConfigured(),
         }
       : null;
 
@@ -396,6 +399,14 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           bankroll,
           dealerHand: dealerHandView,
           bankLimitReached: table.bankFundingMode === "LIMITED" && !bankroll.canCoverMore,
+          isOwner,
+          canSwitchGame:
+            isOwner &&
+            !fundingLocked &&
+            !pokerOpen &&
+            !tableClosed &&
+            (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+          closePreview: isOwner ? closePreview : null,
         }
       : table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
         ? null
@@ -462,7 +473,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             !tableClosed &&
             boxes.some((box) => !box.outcome),
           settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance && !tableClosed,
-          addPlayer: table.currentPhase === "BETTING" && !tableClosed,
+          addPlayer: isOwner && table.currentPhase === "BETTING" && !tableClosed,
           giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
           changeBank: table.currentPhase === "BETTING" && isOwner && !tableClosed,
           saveTable: isOwner && !tableClosed && !pokerOpen && !anyLocked,

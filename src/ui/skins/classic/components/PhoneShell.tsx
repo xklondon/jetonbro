@@ -20,7 +20,13 @@ export function PhoneShell({
       <section className="phone">
         <header className="top-bar">
           {overlay}
-          <button className="head-button" aria-label="Menu" type="button" onClick={onMenu}>
+          <button
+            className="head-button"
+            aria-label="Menu"
+            type="button"
+            disabled={!onMenu}
+            onClick={onMenu}
+          >
             ☰
           </button>
           <div className={`brand${brandClassName ? ` ${brandClassName}` : ""}`}>JETONBRO</div>

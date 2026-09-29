@@ -101,13 +101,14 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       }
       if (command === "abandonDraft" && result.abandoned) {
         router.push("/");
-        return;
+        return true;
       }
       if (command === "saveTable" || command === "closeTable") {
         router.push("/");
-        return;
+        return true;
       }
       await refreshSnapshot();
+      return true;
     } catch (error) {
       const code = error instanceof Error ? error.name : "";
       setNotice(code === "TURN_CONFLICT" ? "TURN_CONFLICT" : error instanceof Error ? error.message : "Something went wrong.");
@@ -116,6 +117,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       } catch {
         // Keep the domain error visible even if the follow-up refresh fails.
       }
+      return false;
     }
   };
 
@@ -147,6 +149,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
         onSelectBox={setSelectedBoxId}
         onCommand={onCommand}
         notice={notice}
+        members={playerMembers}
       />
     );
   }

@@ -12,8 +12,9 @@ import { PokerGameControls } from "./PokerGameControls";
 import { PokerStreetRail } from "./PokerStreetRail";
 import { SeatOrderList } from "./SeatOrderList";
 import { PokerCardSheet } from "./PokerCardPicker";
+import { SheetOverlay } from "./SheetOverlay";
 
-type OwnerSheet = "menu" | "seats" | "player" | "jetons" | "game" | null;
+type OwnerSheet = "menu" | "seats" | "player" | "jetons" | "game" | "rename" | "dealer" | "close" | null;
 
 export function ClassicPokerDealer({
   view,
@@ -31,6 +32,8 @@ export function ClassicPokerDealer({
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
+  const [dealerId, setDealerId] = useState(members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "");
+  const [tableName, setTableName] = useState(view.tableName);
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
   const menuIds = pokerControlIds(view, "owner", "menu");
@@ -171,9 +174,8 @@ export function ClassicPokerDealer({
           onClose={() => setCards(null)}
         />
       ) : null}
-      <div className={`sheet${sheet ? " open" : ""}`}>
-        <div className="sheet-panel">
-          {sheet === "menu" ? (
+      <SheetOverlay open={Boolean(sheet)} onClose={() => setSheet(null)}>
+        {sheet === "menu" ? (
             <>
               <h3>Table</h3>
               {menuIds.includes("reorderSeats") ? (
@@ -191,6 +193,12 @@ export function ClassicPokerDealer({
                   GIVE JETONS
                 </button>
               ) : null}
+              <button type="button" onClick={() => setSheet("rename")}>
+                RENAME TABLE
+              </button>
+              <button type="button" onClick={() => setSheet("dealer")}>
+                ASSIGN DEALER
+              </button>
               {menuIds.includes("switchGame") ? (
                 <button type="button" onClick={() => setSheet("game")}>
                   SWITCH GAME
@@ -216,6 +224,12 @@ export function ClassicPokerDealer({
                   ) : null}
                 </>
               ) : null}
+              <button className="gold-button" type="button" onClick={() => { onCommand("saveTable"); setSheet(null); }}>
+                SAVE TABLE
+              </button>
+              <button className="gold-button" type="button" onClick={() => setSheet("close")}>
+                CLOSE TABLE & SAVE BALANCES
+              </button>
               <button className="text-link" type="button" onClick={() => setSheet(null)}>
                 Cancel
               </button>
@@ -255,12 +269,74 @@ export function ClassicPokerDealer({
               </button>
             </>
           ) : null}
+          {sheet === "rename" ? (
+            <>
+              <h3>Rename table</h3>
+              <label>
+                Table name
+                <input aria-label="Table name" value={tableName} onChange={(event) => setTableName(event.target.value)} />
+              </label>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("updateSettings", { name: tableName });
+                  setSheet(null);
+                }}
+              >
+                Save name
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "dealer" ? (
+            <>
+              <h3>Assign Dealer</h3>
+              <label>
+                Dealer
+                <select aria-label="Dealer" value={dealerId} onChange={(event) => setDealerId(event.target.value)}>
+                  {members.map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("assignBank", { userId: dealerId });
+                  setSheet(null);
+                }}
+              >
+                Confirm dealer
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "close" ? (
+            <>
+              <h3>Close {view.tableName}</h3>
+              <p>Save each Player’s remaining jetons to their personal ledger and close {view.tableName}?</p>
+              <button className="gold-button" type="button" onClick={() => { onCommand("closeTable"); setSheet(null); }}>
+                Confirm close
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
           {sheet === "jetons" || sheet === "player" ? (
             <>
               <h3>{sheet === "jetons" ? "Give jetons" : "Add player"}</h3>
               {sheet === "jetons" ? (
                 <>
-                  <select value={memberId} onChange={(event) => setMemberId(event.target.value)}>
+                  <select value={memberId} onChange={(event) => setMemberId(event.target.value)} aria-label="Player">
                     {members.map((member) => (
                       <option key={member.userId} value={member.userId}>
                         {member.name}
@@ -271,8 +347,9 @@ export function ClassicPokerDealer({
                 </>
               ) : (
                 <>
-                  <input placeholder="Player name" value={name} onChange={(event) => setName(event.target.value)} />
-                  <input placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+                  <input placeholder="Player name" aria-label="Player name" value={name} onChange={(event) => setName(event.target.value)} />
+                  <input placeholder="Starting jetons" aria-label="Starting jetons" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                  <input placeholder="Email optional" aria-label="Player email" value={email} onChange={(event) => setEmail(event.target.value)} />
                 </>
               )}
               <div className="sheet-actions">
@@ -284,7 +361,8 @@ export function ClassicPokerDealer({
                   type="button"
                   onClick={() => {
                     if (sheet === "jetons") onCommand("giveJetons", { userId: memberId, amount });
-                    else onCommand("addPlayer", { email, name });
+                    else if (email.trim()) onCommand("addPlayer", { email, name });
+                    else onCommand("addPlayer", { name, startingJetons: amount });
                     setSheet(null);
                   }}
                 >
@@ -293,8 +371,7 @@ export function ClassicPokerDealer({
               </div>
             </>
           ) : null}
-        </div>
-      </div>
+      </SheetOverlay>
     </TableShell>
   );
 }

@@ -30,6 +30,7 @@ export type HomeTableCard = {
   playerCount: number;
   boxCount: number;
   bankName: string;
+  ownerName: string;
   role: string;
   updatedAt: string;
   saved: boolean;
@@ -78,6 +79,7 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
     include: {
       table: {
         include: {
+          owner: { select: { name: true, email: true } },
           bankDealer: { select: { name: true, email: true } },
           members: { where: { leftAt: null }, include: { user: { select: { name: true, email: true } } } },
           currentRound: { include: { boxes: true, insuranceBets: true } },
@@ -162,10 +164,16 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         name: table.name,
         game: active.gameLabel,
         phase: active.phase,
-        headline: active.headline,
+        headline:
+          active.phase === "TABLE_SETUP" || active.phase === "POKER_SETUP"
+            ? "SETUP"
+            : table.pausedAt
+              ? `${active.gameLabel} · SAVED`
+              : active.headline,
         playerCount: playerMembers.length,
         boxCount: boxes.length,
         bankName: table.bankDealer ? displayName(table.bankDealer) : "Unassigned",
+        ownerName: displayName(table.owner),
         role: roleLabel(isBank, isOwner),
         updatedAt: table.updatedAt.toISOString(),
         saved: table.pausedAt !== null,

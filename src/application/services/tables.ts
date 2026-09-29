@@ -693,6 +693,7 @@ export async function updateTableSettings(input: {
   actorId: string;
   tableId: string;
   idempotencyKey: string;
+  name?: string;
   minBet?: string;
   maxBet?: string;
   blackjackPayout?: BlackjackPayoutRule;
@@ -705,43 +706,71 @@ export async function updateTableSettings(input: {
   startingBank?: string;
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "updateTableSettings", input, async () => {
-    const table = await requireOwnerOrBank(input.tableId, input.actorId);
-    if (table.currentPhase !== "TABLE_SETUP") {
-      throw new ConflictError("Table settings can only change during setup.");
-    }
-    if (input.game && input.game !== "BLACKJACK") {
-      if (!isPlayableGame(input.game)) {
-        throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
+    const wantsName = input.name !== undefined;
+    const wantsSettings =
+      input.minBet !== undefined ||
+      input.maxBet !== undefined ||
+      input.blackjackPayout !== undefined ||
+      input.maxBoxesPerPlayer !== undefined ||
+      input.insuranceEnabled !== undefined ||
+      input.bankMayDistributeJetons !== undefined ||
+      input.game !== undefined ||
+      input.cardAssist !== undefined ||
+      input.bankFundingMode !== undefined ||
+      input.startingBank !== undefined;
+    if (wantsName) {
+      const table = await requireOwner(input.tableId, input.actorId);
+      const name = input.name!.trim();
+      if (!name) {
+        throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
+      }
+      if (name !== table.name) {
+        await prisma.table.update({
+          where: { id: table.id },
+          data: { name, updatedAt: new Date() },
+        });
       }
     }
-    await prisma.$transaction(async (tx) => {
-      await tx.table.update({
-        where: { id: input.tableId },
-        data: {
-          minBetMillis: parseOptionalJetons(input.minBet),
-          maxBetMillis: parseOptionalJetons(input.maxBet),
-          blackjackPayout: input.blackjackPayout,
-          maxBoxesPerPlayer: input.maxBoxesPerPlayer === undefined ? undefined : parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer),
-          insuranceEnabled: input.insuranceEnabled,
-          bankMayDistributeJetons: input.bankMayDistributeJetons,
-          cardAssist: input.cardAssist ? parseCardAssist(input.cardAssist, table.cardAssist) : undefined,
-        },
-      });
-      if (input.bankFundingMode || input.startingBank) {
-        const fresh = await tx.table.findUniqueOrThrow({
+    if (wantsSettings) {
+      const table = await requireOwnerOrBank(input.tableId, input.actorId);
+      if (table.currentPhase !== "TABLE_SETUP") {
+        throw new ConflictError("Table settings can only change during setup.");
+      }
+      if (input.game && input.game !== "BLACKJACK") {
+        if (!isPlayableGame(input.game)) {
+          throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
+        }
+      }
+      await prisma.$transaction(async (tx) => {
+        await tx.table.update({
           where: { id: input.tableId },
-          include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
+          data: {
+            minBetMillis: input.minBet === undefined ? undefined : parseOptionalJetons(input.minBet),
+            maxBetMillis: input.maxBet === undefined ? undefined : parseOptionalJetons(input.maxBet),
+            blackjackPayout: input.blackjackPayout,
+            maxBoxesPerPlayer:
+              input.maxBoxesPerPlayer === undefined ? undefined : parseMaxBoxesPerPlayer(input.maxBoxesPerPlayer),
+            insuranceEnabled: input.insuranceEnabled,
+            bankMayDistributeJetons: input.bankMayDistributeJetons,
+            cardAssist: input.cardAssist ? parseCardAssist(input.cardAssist, table.cardAssist) : undefined,
+          },
         });
-        await applyBankFundingMode(tx, {
-          table: fresh,
-          actorId: input.actorId,
-          mode: parseBankFunding(input.bankFundingMode, fresh.bankFundingMode),
-          startingBank: input.startingBank,
-          idempotencyKey: input.idempotencyKey,
-        });
-      }
-    });
-    publishTable(input.tableId);
+        if (input.bankFundingMode || input.startingBank) {
+          const fresh = await tx.table.findUniqueOrThrow({
+            where: { id: input.tableId },
+            include: { currentRound: { include: { boxes: true, insuranceBets: true } } },
+          });
+          await applyBankFundingMode(tx, {
+            table: fresh,
+            actorId: input.actorId,
+            mode: parseBankFunding(input.bankFundingMode, fresh.bankFundingMode),
+            startingBank: input.startingBank,
+            idempotencyKey: input.idempotencyKey,
+          });
+        }
+      });
+    }
+    if (wantsName || wantsSettings) publishTable(input.tableId);
     return { ok: true };
   });
 }
@@ -753,12 +782,9 @@ export async function assignBankDealer(input: {
   idempotencyKey: string;
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "assignBankDealer", input, async () => {
-    const table = await requireOwnerOrBank(input.tableId, input.actorId);
+    const table = await requireOwner(input.tableId, input.actorId);
     if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
       throw new ConflictError("The Bank/Dealer can only be changed before cards are dealt.");
-    }
-    if (table.ownerId !== input.actorId && table.currentPhase !== "TABLE_SETUP") {
-      throw new ForbiddenError("Only the owner can transfer the Bank/Dealer role during play setup.");
     }
     await prisma.$transaction(async (tx) => {
       await tx.tableMember.updateMany({
@@ -887,7 +913,7 @@ export async function removeMember(input: {
   idempotencyKey: string;
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "removeMember", input, async () => {
-    const table = await requireOwnerOrBank(input.tableId, input.actorId);
+    const table = await requireOwner(input.tableId, input.actorId);
     if (table.game === "POKER") {
       const hand = table.currentPokerHandId
         ? await prisma.pokerHand.findUnique({ where: { id: table.currentPokerHandId } })

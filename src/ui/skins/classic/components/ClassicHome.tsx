@@ -3,12 +3,9 @@
 import { useState } from "react";
 import { PhoneShell } from "./PhoneShell";
 import { WelcomeCelebration } from "./WelcomeCelebration";
+import { SheetOverlay } from "./SheetOverlay";
 import { parseJoinDestination } from "@/application/auth-urls";
 import type { HomeTableCard } from "@/application/queries/home";
-
-function phaseLabel(phase: string): string {
-  return phase.replaceAll("_", " ");
-}
 
 export function ClassicHome({
   displayName,
@@ -99,9 +96,7 @@ export function ClassicHome({
                   <header className="home-table-row-head">
                     <div>
                       <strong>{table.name}</strong>
-                      <div className="muted">
-                        {table.headline ?? `${table.game} · ${table.saved ? "SAVED" : phaseLabel(table.phase)}`}
-                      </div>
+                      <div className="muted">{table.headline}</div>
                     </div>
                     {table.isOwner ? (
                       <button
@@ -114,23 +109,13 @@ export function ClassicHome({
                       </button>
                     ) : null}
                   </header>
-                  <div className="muted home-table-meta">Dealer · {table.bankName}</div>
-                  {table.players.length > 0 ? (
-                    <ul className="home-table-players">
-                      {table.players.map((player) => (
-                        <li key={player.userId}>
-                          <span>{player.name}</span>
-                          {player.available ? <span>{player.available.label}</span> : null}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="muted">No Players yet</div>
-                  )}
-                  <div className="muted home-table-counts">
-                    {table.playerCount} {table.playerCount === 1 ? "player" : "players"} · {table.boxCount}{" "}
-                    {table.boxCount === 1 ? "box" : "boxes"}
+                  <div className="muted home-table-meta">
+                    {table.playerCount} {table.playerCount === 1 ? "player" : "players"}
                   </div>
+                  <div className="muted home-table-meta">
+                    Owner · {table.ownerName} · Dealer · {table.bankName}
+                  </div>
+                  <div className="muted home-table-counts">{table.saved ? "SAVED · Resume" : "RESUME"}</div>
                   {menuId === table.id && table.isOwner ? (
                     <div className="home-table-overflow">
                       {table.canDeleteDraft ? (
@@ -185,12 +170,19 @@ export function ClassicHome({
             </div>
           </>
         )}
-        <div className={`sheet${joinOpen || confirm ? " open" : ""}`}>
-          <div className="sheet-panel">
-            {confirm && confirmCard ? (
+        <SheetOverlay
+          open={joinOpen || Boolean(confirm)}
+          onClose={() => {
+            setJoinOpen(false);
+            setConfirm(null);
+          }}
+        >
+          {confirm && confirmCard ? (
               <>
                 <h3>{confirm.title}</h3>
-                <p>{confirmCard.closePreview?.confirmation}</p>
+                <p>
+                  {confirmCard.name}: {confirmCard.closePreview?.confirmation}
+                </p>
                 <p className="muted">
                   {confirmCard.closePreview?.kind === "delete-draft"
                     ? "Permanent draft deletion."
@@ -247,8 +239,7 @@ export function ClassicHome({
                 </button>
               </>
             )}
-          </div>
-        </div>
+        </SheetOverlay>
       </main>
       <footer className="dock">
         <div className="muted" style={{ textAlign: "center" }}>

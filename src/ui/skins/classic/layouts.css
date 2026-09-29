@@ -57,6 +57,12 @@
   background: transparent;
   color: var(--cream);
   padding: 7px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.classic-skin .head-button:disabled {
+  opacity: 0.35;
 }
 
 .classic-skin .phase-head {
@@ -793,13 +799,15 @@
   inset: 0;
   grid-row: 1 / -1;
   grid-column: 1;
-  background: rgba(0, 0, 0, 0.57);
+  background: rgba(0, 0, 0, 0.78);
   z-index: 5;
   align-items: flex-end;
+  pointer-events: none;
 }
 
 .classic-skin .sheet.open {
   display: flex;
+  pointer-events: auto;
 }
 
 .classic-skin .sheet-panel {

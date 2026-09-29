@@ -11,6 +11,7 @@ import { PokerFelt } from "./PokerFelt";
 import { PokerGameControls } from "./PokerGameControls";
 import { PokerStreetRail } from "./PokerStreetRail";
 import { PokerCardSheet } from "./PokerCardPicker";
+import { SheetOverlay } from "./SheetOverlay";
 
 export function ClassicPokerPlayer({
   view,
@@ -61,9 +62,8 @@ export function ClassicPokerPlayer({
           onClose={() => setCards(null)}
         />
       ) : null}
-      <div className={`sheet${sheet ? " open" : ""}`}>
-        <div className="sheet-panel">
-          {sheet === "menu" ? (
+      <SheetOverlay open={sheet === "menu"} onClose={() => setSheet(null)}>
+        {sheet === "menu" ? (
             <>
               <h3>Table</h3>
               <div className="field-label">OPTIONAL TOOLS</div>
@@ -85,8 +85,7 @@ export function ClassicPokerPlayer({
               </button>
             </>
           ) : null}
-        </div>
-      </div>
+      </SheetOverlay>
     </TableShell>
   );
 }
