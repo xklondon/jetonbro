@@ -1,0 +1,165 @@
+# JetBro II design authority
+
+Documentation only. These boards and rules control presentation. They do not change ledger, phase, permission, or payout behaviour.
+
+## Valid boards
+
+Store compressed WebP copies under `docs/design-reference/` when the source file can be copied safely. Do not store the blank/corrupt image. Do not regenerate mockups.
+
+| Source filename | Role | Prompt |
+|---|---|---|
+| `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 2 |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup | 2 (structure) / later polish |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 2 |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases | 3 only — do not implement now |
+
+Ignore:
+
+- `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1).png` — blank/corrupt, not a reference.
+
+If a board file cannot be copied into this repository, keep this filename table as the authority and implement from the attached conversation images.
+
+## Behaviour versus presentation
+
+### Behaviour (not the boards)
+
+```text
+Existing verified JetBro II engine
+→ written game specification
+→ acceptance tests
+```
+
+Boards do not control example balances, generated names, payout arithmetic, legal actions, phase transitions, or permissions.
+
+### Presentation
+
+```text
+Attached design boards
+→ shared fixed-grid rules
+→ existing JetBro II Classic assets
+→ developer interpretation
+```
+
+Boards control screen anatomy, element position, hierarchy, density, the green/gold/ivory/black palette, Player and Dealer rows, Blackjack box appearance, action placement, the fixed jeton tray, spacing, and typography.
+
+Do not reproduce generated-image mistakes (fake USD, invented names, duplicate table titles, made-up payout math).
+
+The live table name appears exactly once, on the felt (`data-table-name`).
+
+## Seven-zone mobile grid (390×844)
+
+Maximum game width approximately 480px. Minimum touch target 44px. Felt may scroll internally. The tray never covers controls. Avoid full-page body scroll during active play.
+
+1. Compact app header
+2. Phase header
+3. Dealer phase action (Owner/Dealer only; Players omit this row)
+4. Felt and table identity
+5. Players and Blackjack boxes
+6. Current Blackjack controls
+7. Fixed jeton/balance tray (Player), or compact Dealer stats (Dealer who is not personally betting)
+
+Phase lives in the phase header. Player available balance lives with the tray. Phase controls sit directly above the tray for Players, and in zone 3 for Dealer round progression.
+
+## Shared colour and type
+
+Classic tokens already match the boards: `--emerald` / `--felt` felt, `--gold` metal, `--ivory` / `--cream` type, `--dock` / `--black` chrome. Display headings use the serif stack. UI labels use the sans stack. Do not introduce a second palette.
+
+## Blackjack Player screen contract
+
+Dominant board: Player phases (`12_49_42 PM (1)`).
+
+**Fixed box stage (user correction).** Player boxes occupy a permanent 3-slot grid (box 1 / 2 / 3). A box never recentres, resizes, or slides when another box is added, dropped, or when Insurance, Playing, or Payout chrome appears. Empty slots keep their space. Extra split boxes wrap to the next row of the same three columns. Controls, Insurance copy, and Card Assist never live inside the box stage.
+
+### Betting
+
+- Table name near the top of the felt.
+- Compact Dealer state only — do not fill the felt with other Players’ complete boxes.
+- The Player’s own boxes occupy the fixed stage.
+- Selected box: restrained gold border.
+- Each box shows stake and chip pile.
+- `START ADDITIONAL BOX`, `RETRACT`, `PLACE BET` in the control dock.
+- Jeton tray fixed at the bottom; available balance beside/above the tray.
+
+### Playing
+
+- Same owned boxes in the same slots.
+- `DOUBLE` / `SPLIT` / `INSURANCE` directly above the tray.
+- No cards or totals on the default surface.
+
+### Insurance
+
+- Same selected box and main stake.
+- Insurance as a separate side bet.
+- Copy: `INSURANCE` / `Up to half the box stake`.
+- Place Insurance when legal. Do not invent a retract-Insurance command.
+- Keep the Double/Split/Insurance row structurally consistent.
+
+### Payout / Result
+
+- Same box component: Won, Lost, Stand-off, Blackjack, returned/won amount, updated available balance.
+- Do not show Double/Split/Insurance as enabled controls.
+- Tray remains visible and disabled.
+
+## Blackjack Dealer / Owner screen contract
+
+Dominant board: Dealer/Owner phases (`12_50_27 PM (3)`). Do not copy its illustrative arithmetic.
+
+### Role header
+
+Separate badges: `OWNER`, `DEALER`. A Dealer who also plays may show `DEALER · PLAYING`. Do not create a duplicate Player seat for the Dealer.
+
+### Betting
+
+Phase; `CLOSE BETTING` in the phase-action row; every Player; balances; main stakes; boxes; compact actions. No Player jeton tray unless the Dealer is placing a personal bet.
+
+### Playing
+
+Same Player rows and boxes. Show Double/Split and Insurance state. `ENTER PAYOUT`.
+
+### Insurance
+
+`OPEN INSURANCE` / `CLOSE INSURANCE` in the phase-action row. Main bet and Insurance in separate fields labelled `MAIN` and `INSURANCE`. Do not call per-box Insurance an “insurance pot”.
+
+### Payout
+
+Same Player/box structure. Settle `LOST` / `STAND-OFF` / `WON` / `BLACKJACK`. Insurance separately: `INS WON` / `INS LOST`. `START NEXT ROUND` stays disabled until everything is resolved.
+
+## Owner utilities
+
+These stay available and must not compete with play. They live in the compact menu/sheet:
+
+- give extra jetons
+- change Dealer/Bank
+- save/close table
+- switch game
+- invite management after setup
+- limits / Open vs Limited Bank
+- optional Card Assist
+- countdown extras (`DEAL IN 7 SECONDS`, `IN 7 SECONDS`)
+
+The main phase-action row only progresses the round:
+
+```text
+START BLACKJACK
+CLOSE BETTING
+OPEN INSURANCE / CLOSE INSURANCE
+ENTER PAYOUT
+START NEXT ROUND
+```
+
+## Card Assist
+
+Physical cards remain authoritative. Card Assist must not appear by default on Setup, Betting, Playing, Insurance, or Payout. Do not delete the engine. Entry: Menu → Optional tools → Card Assist. It must not consume felt space, change phase, calculate results, block payout, or appear in Player primary controls.
+
+## Must never appear
+
+- Duplicate table name in the header
+- `CURRENT PHASE:` and long instructional sentences
+- Other Players’ complete boxes on the Player felt
+- Cards or totals on the default Player surface
+- Spreadsheet / generic-form layouts for live play
+- Generated-image USD signs, fake names, or invented payout math
+- Owner utilities in the phase-action row
+- Card Assist on the default felt
+- The blank `12_50_26 PM (1)` image as a reference
+- Poker visuals from `12_50_27 PM (5)` before Prompt 3

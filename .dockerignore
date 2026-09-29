@@ -1,0 +1,9 @@
+.git
+docs
+docs/design-reference
+docs/screenshots
+test-results
+e2e
+*.md
+.cursorfile
+node_modules
