@@ -5,6 +5,7 @@
 ### Prompt 5 — staging packaging repair
 
 - Railway `prebuild` runs guardrails. The image now includes `.cursorfile`, `CHANGELOG.md`, and `docs/architecture/CURSOR_GUARDRAILS.md`. Test screenshots and Playwright specs stay out of the runtime image.
+- Staging deploy of `c21fc8b` to JetBro II Web (`https://jetbro-ii-web-production.up.railway.app`). Tag `v1.0.0-rc.1`. Automated three-role Railway Playwright passed. Real two-phone pass is still required.
 
 ### Prompt 4 — complete product lifecycle and release candidate
 
