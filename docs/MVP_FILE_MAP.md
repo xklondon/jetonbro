@@ -123,6 +123,11 @@ Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay fr
 
 This slice is larger than five files because Home, Setup, Owner menus on every table surface, invitations, and persistence share one lifecycle. Do not treat that as a licence to edit frozen Blackjack/Poker accounting.
 
+## Active packaging (Prompt 5)
+
+- `.dockerignore` must keep `.cursorfile`, `CHANGELOG.md`, and `docs/architecture/CURSOR_GUARDRAILS.md` in the Railway image because `prebuild` runs guardrails. `e2e/` and screenshot docs stay excluded.
+- `src/application/packaging.test.ts`
+
 ## Deferred areas
 
 Do not open unless blocked:

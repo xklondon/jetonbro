@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Prompt 5 — staging packaging repair
+
+- Railway `prebuild` runs guardrails. The image now includes `.cursorfile`, `CHANGELOG.md`, and `docs/architecture/CURSOR_GUARDRAILS.md`. Test screenshots and Playwright specs stay out of the runtime image.
+
 ### Prompt 4 — complete product lifecycle and release candidate
 
 - Home is a compact entry: `CREATE TABLE`, saved tables with one `RESUME`, table name, `SETUP` or current game, player count, Owner/Dealer, and resume status. Per-player balances and box counts are not on Home cards.

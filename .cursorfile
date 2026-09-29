@@ -240,7 +240,7 @@ Full acceptance means:
 
 - Repository: Blackjack MVP and Texas Hold’em MVP with authenticated welcome / create-table journey
 - Current game: Blackjack MVP and Texas Hold’em MVP
-- Next milestone: Prompt 5 — staging deployment plus a real two-phone acceptance pass, provided Prompt 4 has no release blocker. Zilch remains coming later.
+- Next milestone: Prompt 5 — staging deployment plus a real two-phone acceptance pass. Railway image must keep `.cursorfile` and architecture docs required by `prebuild` guardrails. Zilch remains coming later.
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
 - Bank accounting: Open Bank uses unlimited `BANK_VIRTUAL_RESERVE`. Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Poker locks `LOCKED_POKER` from Player AVAILABLE and never touches Bank buckets. Card Assist defaults to `OFF`. Optional rank records and Limited Bank accounting are accepted: Player credited once per settlement; `BANK_PAYOUT` / `BANK_STAKE_TAKE` are Bank-side; table value `AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + LOCKED_POKER + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE` is conserved except explicit `BANK_VIRTUAL_RESERVE` funding. Limited Bank buckets freeze in place while Texas Hold’em is active.
