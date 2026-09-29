@@ -173,7 +173,8 @@ test("the next actor sees legal actions and the waiting player does not", () => 
       onCommand: () => undefined,
     }),
   );
-  expect(waiting).toContain("Waiting for Owner");
+  expect(waiting).toContain('data-turn-state="other"');
+  expect(waiting).not.toContain('data-turn-state="you"');
   expect(waiting).toContain("YOUR JETONS");
   expect(waiting).toContain("AVAILABLE");
   expect(waiting).toContain("data-player-wallet");
@@ -304,7 +305,7 @@ test("Blackjack and Poker player wallets share the same tray structure", () => {
   expect(pokerWaiting).not.toContain("data-actor-controls");
 });
 
-test("POKER SETUP shows DEAL CARDS only on the owner dock and keeps seat order off the felt", () => {
+test("POKER SETUP shows START HAND only on the owner dock and keeps seat order off the felt", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicPokerDealer, {
       view: pokerView({
@@ -337,7 +338,7 @@ test("POKER SETUP shows DEAL CARDS only on the owner dock and keeps seat order o
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("DEAL CARDS");
+  expect(html).toContain("START HAND");
   expect(html).not.toContain("START TEXAS HOLD");
   expect(html).not.toContain("Move up");
   expect(html).not.toContain("Move down");
@@ -418,13 +419,13 @@ test("owner and player share the same street rail with the current stop highligh
   expect(owner).toContain('data-rail="SHOWDOWN" data-rail-state="next"');
   expect(player).toContain("poker-street-rail");
   expect(owner).toContain("class=\"dock");
-  expect(owner).not.toContain('data-rail="DEAL"');
+  expect(owner).toContain('data-rail="DEAL"');
   expect(owner).toContain('data-table-name="Hold em table"');
   expect(owner.match(/data-table-name="/g)?.length).toBe(1);
   expect(player.match(/data-table-name="/g)?.length).toBe(1);
 });
 
-test("community cards are public while hole values stay on the owning seat only", () => {
+test("community and hole cards stay off the default felt", () => {
   const seats = pokerView().seats.map((seat) =>
     seat.userId === "sam"
       ? {
@@ -454,14 +455,13 @@ test("community cards are public while hole values stay on the owning seat only"
       }),
     }),
   );
-  expect(html).toContain("data-community-cards");
-  expect(html).toContain("data-card=\"QD\"");
-  expect(html).toContain("data-hole-cards=\"own\"");
-  expect(html).toContain("data-card=\"AS\"");
-  expect(html).toContain("HOLE CARDS IN");
-  expect(html).not.toMatch(/data-player-id="sam"[\s\S]*data-card="AS"/);
+  expect(html).not.toContain("data-community-cards");
+  expect(html).not.toContain("data-card=\"QD\"");
+  expect(html).not.toContain("data-hole-cards");
+  expect(html).not.toContain("HOLE CARDS IN");
   expect(html).not.toContain("+ HOLE CARDS");
   expect(html).not.toContain("data-card-sheet");
+  expect(html).toContain('data-table-name="Hold em table"');
 });
 
 test("Blackjack optional ranks render as larger cards inside the betting box", () => {
@@ -550,7 +550,7 @@ test("poker setup prints the live table name on the cloth and hides D/SB/BB befo
   expect(html).toContain('data-table-name="Hold em table"');
 });
 
-test("Poker card assistance stays collapsed until opened and keeps hole ranks private", () => {
+test("Poker card assistance stays in the table menu and off the felt", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicPokerPlayer, {
       view: pokerView({
@@ -566,11 +566,11 @@ test("Poker card assistance stays collapsed until opened and keeps hole ranks pr
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("+ HOLE CARDS");
+  expect(html).not.toContain("+ HOLE CARDS");
   expect(html).not.toContain("+ BOARD CARDS");
   expect(html).toContain('data-card-editor="closed"');
   expect(html).not.toContain("data-card-sheet");
-  expect(html).toContain("HOLE CARDS IN");
+  expect(html).not.toContain("HOLE CARDS IN");
   expect(html).not.toContain("Community cards");
   expect(html.match(/data-table-name="/g)?.length).toBe(1);
 });
@@ -643,6 +643,39 @@ test("a completed hand shows the award and never TO CALL or Waiting", () => {
   expect(html).not.toContain("TO CALL");
   expect(html).not.toContain("Waiting");
   expect(html).not.toContain(">FOLD<");
+});
+
+test("Hand Complete owner shows NEXT HAND without countdown or actor controls", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPokerDealer, {
+      view: pokerView({
+        role: "POKER_DEALER",
+        phase: "HAND_COMPLETE",
+        phaseLabel: "HAND COMPLETE",
+        isOwner: true,
+        potPaid: true,
+        toCall: money("0", "0"),
+        legalActions: [],
+        currentActorId: null,
+        waitingCopy: null,
+        canNextHand: true,
+        canScheduleNextHand: true,
+        canSwitchGame: true,
+        nextStreetLabel: null,
+        winners: [{ userId: "sam", name: "Sam", amount: money("15") }],
+        seats: pokerView().seats.map((seat) => ({ ...seat, isActor: false })),
+      }),
+      members: [],
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("NEXT HAND");
+  expect(html).not.toContain("NEXT HAND NOW");
+  expect(html).not.toContain("NEXT HAND IN 7 SECONDS");
+  expect(html).not.toContain("data-actor-controls");
+  expect(html).not.toContain("TO CALL");
+  expect(html).not.toContain("Waiting");
+  expect(html).toContain("POT PAID");
 });
 
 

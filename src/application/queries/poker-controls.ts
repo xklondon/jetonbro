@@ -120,11 +120,11 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
       id: "startHand",
       layer: "owner",
       surface: "dock",
-      label: "DEAL CARDS",
+      label: "START HAND",
       enabled: view.seats.length >= 2,
     });
   }
-  if (view.isOwner && view.nextStreetLabel) {
+  if (view.isOwner && view.nextStreetLabel && !["POKER_SETUP", "SHOWDOWN", "HAND_COMPLETE"].includes(view.phase)) {
     controls.push({
       id: "dealStreet",
       layer: "owner",
@@ -135,11 +135,10 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
     });
   }
   if (view.isOwner && view.canAward) {
-    controls.push({ id: "assignWinners", layer: "owner", surface: "dock", label: "ASSIGN WINNERS", enabled: true });
+    controls.push({ id: "assignWinners", layer: "owner", surface: "dock", label: "AWARD POT", enabled: true });
   }
   if (view.isOwner && view.canNextHand) {
-    controls.push({ id: "nextHand", layer: "owner", surface: "dock", label: "NEXT HAND NOW", enabled: true });
-    controls.push({ id: "scheduleNextHand", layer: "owner", surface: "dock", label: "NEXT HAND IN 7 SECONDS", enabled: true });
+    controls.push({ id: "nextHand", layer: "owner", surface: "dock", label: "NEXT HAND", enabled: true });
   }
   if (view.canReorderSeats) {
     controls.push({ id: "reorderSeats", layer: "owner", surface: "menu", label: "SEAT ORDER", enabled: true });
@@ -153,6 +152,15 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
   if (view.canSwitchGame) {
     controls.push({ id: "switchGame", layer: "owner", surface: "menu", label: "SWITCH GAME", enabled: true });
   }
+  if (view.isOwner && view.canScheduleNextHand) {
+    controls.push({
+      id: "scheduleNextHand",
+      layer: "owner",
+      surface: "menu",
+      label: "NEXT HAND IN 7 SECONDS",
+      enabled: true,
+    });
+  }
   for (const action of pokerActorActions(visiblePokerLegalActions(view))) {
     controls.push({
       id: action.type.toLowerCase(),
@@ -163,6 +171,12 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
     });
   }
   return controls;
+}
+
+export function pokerTurnLabel(waitingCopy: string | null): { label: string; you: boolean } | null {
+  if (!waitingCopy) return null;
+  if (waitingCopy === "YOUR TURN") return { label: "YOUR TURN", you: true };
+  return { label: "TURN", you: false };
 }
 
 export function pokerControlIds(

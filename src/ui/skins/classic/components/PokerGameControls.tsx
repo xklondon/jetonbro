@@ -5,7 +5,6 @@ import {
   pokerActorLayout,
   pokerComposeBounds,
   pokerComposeSeed,
-  pokerControls,
   pokerTrayEnabled,
   visiblePokerLegalActions,
   type PokerComposeKind,
@@ -18,18 +17,13 @@ export function PokerGameControls({
   view,
   onCommand,
   notice,
-  onOwnerSheet,
 }: {
   view: PokerTableView;
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
-  onOwnerSheet?: (sheet: "menu" | "seats" | "player" | "jetons" | "game" | "winners") => void;
 }) {
   const layout = pokerActorLayout(visiblePokerLegalActions(view));
-  const ownerControls = pokerControls(view).filter((control) => control.layer === "owner" && control.surface === "dock");
-  const showControls = Boolean(
-    notice || ownerControls.length > 0 || layout.primary || layout.secondary.length > 0,
-  );
+  const showControls = Boolean(notice || layout.primary || layout.secondary.length > 0);
   const [compose, setCompose] = useState<PokerComposeKind | null>(null);
   const [staged, setStaged] = useState("");
   const [busy, setBusy] = useState(false);
@@ -72,62 +66,6 @@ export function PokerGameControls({
       {showControls ? (
         <div className="game-controls" data-game-controls="true">
           {notice ? <div className="error">{notice}</div> : null}
-          {ownerControls.length > 0 ? (
-            <div className="owner-controls" data-owner-controls="true">
-              {ownerControls.map((control) => {
-                if (control.id === "assignWinners") {
-                  return (
-                    <button key={control.id} type="button" className="gold-button" onClick={() => onOwnerSheet?.("winners")}>
-                      {control.label}
-                    </button>
-                  );
-                }
-                if (control.id === "dealStreet") {
-                  return (
-                    <div key={control.id} className="owner-street">
-                      <button
-                        type="button"
-                        className={control.enabled ? "gold-button" : undefined}
-                        disabled={!control.enabled}
-                        onClick={() => onCommand("advancePokerStreet")}
-                      >
-                        {control.label}
-                      </button>
-                      {control.hint ? <small>{control.hint}</small> : null}
-                    </div>
-                  );
-                }
-                if (control.id === "startHand") {
-                  return (
-                    <button
-                      key={control.id}
-                      type="button"
-                      className="gold-button"
-                      disabled={!control.enabled}
-                      onClick={() => onCommand("startTexasHoldem")}
-                    >
-                      {control.label}
-                    </button>
-                  );
-                }
-                if (control.id === "nextHand") {
-                  return (
-                    <button key={control.id} type="button" className="gold-button" onClick={() => onCommand("startNextPokerHand")}>
-                      {control.label}
-                    </button>
-                  );
-                }
-                if (control.id === "scheduleNextHand") {
-                  return (
-                    <button key={control.id} type="button" onClick={() => onCommand("scheduleNextPokerHand")}>
-                      {control.label}
-                    </button>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          ) : null}
           {layout.primary || layout.secondary.length > 0 ? (
             <div className="actor-actions" data-actor-controls="true" data-compose={compose ?? "closed"}>
               {layout.primary ? (
@@ -179,12 +117,7 @@ export function PokerGameControls({
                   <button type="button" className="gold-button" disabled={busy} onClick={confirmCompose}>
                     {compose === "RAISE" ? "CONFIRM RAISE" : "CONFIRM BET"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStaged("");
-                    }}
-                  >
+                  <button type="button" onClick={() => setStaged("")}>
                     CLEAR
                   </button>
                   <button

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { pokerActorActions, pokerActorLayout, pokerComposeBounds, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled, visiblePokerLegalActions } from "./poker-controls";
+import { pokerActorActions, pokerActorLayout, pokerComposeBounds, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled, pokerTurnLabel, visiblePokerLegalActions } from "./poker-controls";
 import type { PokerLegalActionView, PokerSeatView, PokerTableView } from "./views";
 
 const money = (label: string, millis = `${Number(label) * 1000}`) => ({ millis, label });
@@ -174,7 +174,7 @@ test("role × phase owner controls follow setup, streets, showdown, and next han
     canSwitchGame: true,
   });
   expect(pokerControls(setup).find((control) => control.id === "startHand")).toMatchObject({
-    label: "DEAL CARDS",
+    label: "START HAND",
     surface: "dock",
   });
   expect(pokerControlIds(setup, "owner")).toEqual(["startHand", "reorderSeats", "addPlayer", "giveJetons", "switchGame"]);
@@ -206,7 +206,7 @@ test("role × phase owner controls follow setup, streets, showdown, and next han
     canSwitchGame: true,
     canAddPlayer: true,
     canGiveJetons: true,
-  }), "owner")).toEqual(["nextHand", "scheduleNextHand", "addPlayer", "giveJetons", "switchGame"]);
+  }), "owner")).toEqual(["nextHand", "addPlayer", "giveJetons", "switchGame", "scheduleNextHand"]);
   expect(pokerControlIds(view({
     phase: "HAND_COMPLETE",
     isOwner: true,
@@ -216,7 +216,7 @@ test("role × phase owner controls follow setup, streets, showdown, and next han
     canSwitchGame: true,
     canAddPlayer: true,
     canGiveJetons: true,
-  }), "owner", "dock")).toEqual(["nextHand", "scheduleNextHand"]);
+  }), "owner", "dock")).toEqual(["nextHand"]);
   expect(pokerControlIds(view({
     phase: "HAND_COMPLETE",
     isOwner: true,
@@ -226,7 +226,13 @@ test("role × phase owner controls follow setup, streets, showdown, and next han
     canSwitchGame: true,
     canAddPlayer: true,
     canGiveJetons: true,
-  }), "owner", "menu")).toEqual(["addPlayer", "giveJetons", "switchGame"]);
+  }), "owner", "menu")).toEqual(["addPlayer", "giveJetons", "switchGame", "scheduleNextHand"]);
+  expect(pokerControls(view({
+    phase: "SHOWDOWN",
+    isOwner: true,
+    viewerId: "owner",
+    canAward: true,
+  })).find((control) => control.id === "assignWinners")?.label).toBe("AWARD POT");
 });
 
 test("the rotating dealer button does not grant owner street controls", () => {
@@ -385,7 +391,7 @@ test("role × phase matrix is identical for heads-up and 3-player", () => {
       canSwitchGame: true,
       canAddPlayer: true,
       canGiveJetons: true,
-    }), "owner")).toEqual(["nextHand", "scheduleNextHand", "addPlayer", "giveJetons", "switchGame"]);
+    }), "owner")).toEqual(["nextHand", "addPlayer", "giveJetons", "switchGame", "scheduleNextHand"]);
   }
 });
 
@@ -446,5 +452,11 @@ test("displayed CALL equals the owed amount and CALL 0 is never shown", () => {
   });
   expect(visiblePokerLegalActions(allIn)).toEqual([]);
   expect(pokerControlIds(allIn, "actor")).toEqual([]);
+});
+
+test("actor devices show YOUR TURN and other devices show TURN", () => {
+  expect(pokerTurnLabel("YOUR TURN")).toEqual({ label: "YOUR TURN", you: true });
+  expect(pokerTurnLabel("Waiting for Owner")).toEqual({ label: "TURN", you: false });
+  expect(pokerTurnLabel(null)).toBeNull();
 });
 

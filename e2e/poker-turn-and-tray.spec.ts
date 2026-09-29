@@ -182,7 +182,7 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "DEAL CARDS", exact: true }).click();
+  await page.getByRole("button", { name: "START HAND", exact: true }).click();
   await expectPokerPhase(page, "PRE-FLOP");
   await expect(page.getByText("YOUR JETONS")).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toBeVisible();

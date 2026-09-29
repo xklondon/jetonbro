@@ -39,7 +39,7 @@ export async function createPokerTable(
   await createBlackjackTable(page, name, { starting: options?.starting ?? "0" });
   await page.getByRole("button", { name: "START POKER" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "DEAL CARDS", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
 }
@@ -110,7 +110,7 @@ export async function invitePlayerFromLobby(page: Page, email: string) {
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
-  await expect(page.locator(".phase-head span strong")).toHaveText(label, { timeout: options?.timeout ?? 15_000 });
+  await expect(page.locator("[data-phase-heading]")).toHaveText(label, { timeout: options?.timeout ?? 15_000 });
   const rail: Record<string, string> = {
     "PRE-FLOP": "PRE-FLOP",
     FLOP: "FLOP",

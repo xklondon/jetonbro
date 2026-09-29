@@ -137,3 +137,136 @@ test("two devices share a fold-complete hand and a rotated next hand", async ({ 
 
   await samContext.close();
 });
+
+test("two-player complete hand conserves 200, pays once, and rotates", async ({ page, context, browser }) => {
+  test.setTimeout(180_000);
+  await mkdir(out, { recursive: true });
+  const ownerEmail = uniqueEmail("full-bank");
+  const samEmail = uniqueEmail("full-sam");
+  await openAs(context, page, ownerEmail, "Owner");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await createBlackjackTable(page, "High Roller", { starting: "100" });
+  const setup = await tableSnapshot(page);
+  const joinPath = new URL(setup.setup!.joinUrl!).pathname;
+  const tableId = page.url().split("/tables/")[1]!.split("?")[0]!;
+  const ownerId = setup.setup?.members?.find((member) => member.isOwner)?.userId ?? setup.viewerId;
+
+  const samContext = await browser.newContext();
+  const samPage = await samContext.newPage();
+  await samPage.setViewportSize({ width: 390, height: 844 });
+  await openAs(samContext, samPage, samEmail, "Sam");
+  await samPage.goto(joinPath);
+  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await command(page, tableId, "giveJetons", { userId: ownerId, amount: "100" });
+  await command(page, tableId, "switchGame", { game: "POKER" });
+  await page.reload();
+  await samPage.reload();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
+  await page.screenshot({ path: join(out, "app-poker-setup-owner-390x844.png") });
+  await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
+  await page.reload();
+  await samPage.reload();
+  await expectPokerPhase(page, "PRE-FLOP");
+
+  const opened = await tableSnapshot(page);
+  expect(opened.poker?.pot.label).toBe("15");
+  const actorPage = opened.poker?.currentActorId === opened.viewerId ? page : samPage;
+  const otherPage = actorPage === page ? samPage : page;
+  await actorPage.screenshot({ path: join(out, "app-poker-preflop-player-call-390x844.png") });
+  await page.screenshot({ path: join(out, "app-poker-preflop-owner-390x844.png") });
+  await actorPage.getByRole("button", { name: /CALL 5/ }).click();
+  await expect(otherPage.getByRole("button", { name: "CHECK" })).toBeVisible({ timeout: 15_000 });
+  await otherPage.getByRole("button", { name: "CHECK" }).click();
+  await expect(page.getByRole("button", { name: "DEAL FLOP" })).toBeEnabled({ timeout: 15_000 });
+  await page.getByRole("button", { name: "DEAL FLOP" }).click();
+  await expectPokerPhase(page, "FLOP");
+
+  async function act(type: "CHECK" | "CALL" | "BET") {
+    const snap = await tableSnapshot(page);
+    const current = snap.poker?.currentActorId === snap.viewerId ? page : samPage;
+    await current.reload();
+    if (type === "BET") {
+      await expect(current.getByRole("button", { name: "BET" })).toBeVisible({ timeout: 15_000 });
+      await current.getByRole("button", { name: "BET" }).click();
+      await expect(current.getByRole("button", { name: "CONFIRM BET" })).toBeVisible();
+      await current.getByRole("button", { name: "CONFIRM BET" }).click();
+      return;
+    }
+    if (type === "CALL") {
+      await expect(current.getByRole("button", { name: /CALL / })).toBeVisible({ timeout: 15_000 });
+      await current.getByRole("button", { name: /CALL / }).click();
+      return;
+    }
+    await expect(current.getByRole("button", { name: "CHECK" })).toBeVisible({ timeout: 15_000 });
+    await current.getByRole("button", { name: "CHECK" }).click();
+  }
+
+  const flopActor = (await tableSnapshot(page)).poker?.currentActorId;
+  await act("CHECK");
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.currentActorId).not.toBe(flopActor);
+  await samPage.screenshot({ path: join(out, "app-poker-flop-player-390x844.png") });
+  await page.screenshot({ path: join(out, "app-poker-owner-betting-street-390x844.png") });
+  await act("BET");
+  await expect.poll(async () => {
+    const snap = await tableSnapshot(page);
+    return snap.poker?.seats.find((seat) => seat.userId === snap.poker?.currentActorId)?.toCall?.label ?? "0";
+  }).toBe("10");
+  const facingSnap = await tableSnapshot(page);
+  const facing = facingSnap.poker?.currentActorId === facingSnap.viewerId ? page : samPage;
+  await facing.reload();
+  await expect(facing.getByRole("button", { name: /CALL 10/ })).toBeVisible();
+  await expect(facing.getByRole("button", { name: "RAISE" })).toBeVisible();
+  await expect(facing.getByRole("button", { name: /ALL IN/ })).toBeVisible();
+  await expect(facing.getByRole("button", { name: "FOLD" })).toBeVisible();
+  await act("CALL");
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.pot.label).toBe("40");
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.canDealStreet).toBe(true);
+  await page.getByRole("button", { name: "DEAL TURN" }).click();
+  await expectPokerPhase(page, "TURN");
+  await samPage.screenshot({ path: join(out, "app-poker-turn-player-390x844.png") });
+  await act("CHECK");
+  await act("CHECK");
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.canDealStreet).toBe(true);
+  await page.getByRole("button", { name: "DEAL RIVER" }).click();
+  await expectPokerPhase(page, "RIVER");
+  await act("CHECK");
+  await act("CHECK");
+  await expect.poll(async () => (await tableSnapshot(page)).poker?.canDealStreet).toBe(true);
+  await page.getByRole("button", { name: "SHOWDOWN" }).click();
+  await expectPokerPhase(page, "SHOWDOWN");
+  await expect(page.locator("[data-turn-state]")).toHaveCount(0);
+  await expect(page.getByText("TO CALL")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "FOLD" })).toHaveCount(0);
+  await page.screenshot({ path: join(out, "app-poker-showdown-owner-390x844.png") });
+  const showdown = await tableSnapshot(page);
+  const winnerName = showdown.poker?.seats.find((seat) => seat.userId !== ownerId)?.name ?? "Sam";
+  await page.getByRole("button", { name: winnerName, exact: true }).click();
+  await page.getByRole("button", { name: "AWARD POT", exact: true }).click();
+  await expect(page.getByText("HAND COMPLETE", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("POT PAID")).toBeVisible();
+  await expect(page.locator("[data-turn-state]")).toHaveCount(0);
+  await expect(page.getByText("TO CALL")).toHaveCount(0);
+  await expect(page.getByText("Waiting", { exact: true })).toHaveCount(0);
+  const done = await tableSnapshot(page);
+  expect(done.poker?.currentActorId).toBeNull();
+  expect(done.poker?.toCall.label).toBe("0");
+  expect(done.poker?.potPaid).toBe(true);
+  const total = (done.poker?.seats ?? []).reduce((sum, seat) => sum + Number(seat.available.label), 0);
+  expect(total).toBe(200);
+  await page.screenshot({ path: join(out, "app-poker-complete-owner-390x844.png") });
+  await samPage.reload();
+  await samPage.screenshot({ path: join(out, "app-poker-complete-player-390x844.png") });
+  const firstDealer = done.poker?.seats.find((seat) => seat.isDealer)?.name;
+  await page.getByRole("button", { name: "NEXT HAND", exact: true }).click();
+  await expectPokerPhase(page, "PRE-FLOP");
+  await page.reload();
+  await samPage.reload();
+  const next = await tableSnapshot(page);
+  const samNext = await tableSnapshot(samPage);
+  expect(next.poker?.phase).toBe(samNext.poker?.phase);
+  expect(next.poker?.pot.label).toBe("15");
+  expect(next.poker?.pot.label).toBe(samNext.poker?.pot.label);
+  expect(next.poker?.currentActorId).toBe(samNext.poker?.currentActorId);
+  expect(next.poker?.seats.find((seat) => seat.isDealer)?.name).not.toBe(firstDealer);
+  await samContext.close();
+});

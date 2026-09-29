@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Prompt 3 — Poker Dealer/Owner/Player screens
+
+- Approved Poker board `12_50_27 PM (5)` is documented as visual authority. The source file was not available to copy into `docs/design-reference/poker-dealer-owner-phases.webp`; do not regenerate it.
+- Owner and Player Poker screens share the Classic seven-zone shell. One seat row across every street. Owner phase actions live in zone 3 (`START HAND`, street deals, `AWARD POT`, `NEXT HAND`). Player actions sit above the fixed tray. Card Assist, seat order, switch game, and `NEXT HAND IN 7 SECONDS` stay in the table menu.
+- Actor devices show `YOUR TURN`; other devices show `TURN`. `CALL 0`, leftover To Call, and Waiting seats never appear after Hand Complete.
+
 ### Prompt 2 — design authority, Blackjack polish, MVP workflow
 
 - Design boards and the seven-zone grid are the visual authority (`docs/DESIGN_AUTHORITY.md`). Player boxes occupy a fixed 3-slot stage and do not jump across Betting, Playing, Insurance, or Payout.

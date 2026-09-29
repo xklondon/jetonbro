@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import type { PokerTableView } from "@/application/queries/views";
-import { PhoneShell } from "./PhoneShell";
+import { communityCardLimit } from "@/domain/poker/cards";
+import { pokerTurnLabel } from "@/application/queries/poker-controls";
+import { TableShell } from "./TableShell";
+import { PhaseBar } from "./PhaseBar";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { PokerFelt } from "./PokerFelt";
 import { PokerGameControls } from "./PokerGameControls";
 import { PokerStreetRail } from "./PokerStreetRail";
+import { PokerCardSheet } from "./PokerCardPicker";
 
 export function ClassicPokerPlayer({
   view,
@@ -16,29 +21,72 @@ export function ClassicPokerPlayer({
   onCommand: (command: string, payload?: Record<string, string>) => void;
   notice?: string | null;
 }) {
+  const [sheet, setSheet] = useState<"menu" | null>(null);
+  const [cards, setCards] = useState<"hole" | "board" | null>(null);
   const selfWon = view.phase === "HAND_COMPLETE" && view.winners.some((winner) => winner.userId === view.viewerId);
+  const turn =
+    view.phase === "HAND_COMPLETE" || view.phase === "SHOWDOWN" || view.phase === "POKER_SETUP"
+      ? null
+      : pokerTurnLabel(view.waitingCopy);
+  const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
 
   return (
-    <PhoneShell>
-      <div className="phase-head">
-        <span>
-          Texas Hold’em · <strong data-phase-heading>{view.phaseLabel}</strong>
-        </span>
-        {view.waitingCopy ? (
-          <div
-            className={`poker-turn-banner${view.waitingCopy === "YOUR TURN" ? " is-you" : ""}`}
-            data-turn-state={view.waitingCopy === "YOUR TURN" ? "you" : "waiting"}
-          >
-            {view.waitingCopy}
+    <TableShell onMenu={() => setSheet("menu")}>
+      <PhaseBar prefix="POKER" label={view.phaseLabel}>
+        {turn ? (
+          <div className={`poker-turn-banner${turn.you ? " is-you" : ""}`} data-turn-state={turn.you ? "you" : "other"}>
+            {turn.label}
           </div>
         ) : null}
         <PokerStreetRail stops={view.streetRail} />
-      </div>
-      <PokerFelt view={view} onCommand={onCommand} />
+      </PhaseBar>
+      <PokerFelt view={view} />
       <PokerGameControls view={view} onCommand={onCommand} notice={notice} />
-      {selfWon ? (
-        <OutcomeCelebrationOverlay celebration={{ kind: "rain", copy: "WINNER!", overlay: true }} />
+      {selfWon ? <OutcomeCelebrationOverlay celebration={{ kind: "rain", copy: "WINNER!", overlay: true }} /> : null}
+      {cards === "board" ? (
+        <PokerCardSheet
+          title="Board cards"
+          cards={view.communityCards}
+          max={communityCardLimit(view.phase)}
+          onSave={(next) => onCommand("setPokerCommunityCards", { cards: JSON.stringify(next) })}
+          onClose={() => setCards(null)}
+        />
       ) : null}
-    </PhoneShell>
+      {cards === "hole" ? (
+        <PokerCardSheet
+          title="Hole cards"
+          cards={ownHole}
+          max={2}
+          onSave={(next) => onCommand("setPokerHoleCards", { cards: JSON.stringify(next) })}
+          onClose={() => setCards(null)}
+        />
+      ) : null}
+      <div className={`sheet${sheet ? " open" : ""}`}>
+        <div className="sheet-panel">
+          {sheet === "menu" ? (
+            <>
+              <h3>Table</h3>
+              <div className="field-label">OPTIONAL TOOLS</div>
+              {view.canEditHole ? (
+                <button type="button" onClick={() => { setSheet(null); setCards("hole"); }}>
+                  + HOLE CARDS
+                </button>
+              ) : null}
+              {view.canEditCommunity ? (
+                <button type="button" onClick={() => { setSheet(null); setCards("board"); }}>
+                  + BOARD CARDS
+                </button>
+              ) : null}
+              {!view.canEditHole && !view.canEditCommunity ? (
+                <p className="muted">Card Assist stays off the felt. Open this menu during a live hand to enter optional ranks.</p>
+              ) : null}
+              <button className="text-link" type="button" onClick={() => setSheet(null)}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </TableShell>
   );
 }
