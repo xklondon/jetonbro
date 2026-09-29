@@ -39,6 +39,7 @@ export async function inviteByEmail(input: {
   return withIdempotency(input.actorId, input.idempotencyKey, "inviteByEmail", input, async () => {
     const table = await requireOwnerOrBank(input.tableId, input.actorId);
     const invitations = [];
+    let emailWarning: string | null = null;
     for (const email of emails) {
       const token = randomToken();
       const invitation = await prisma.invitation.create({
@@ -52,16 +53,23 @@ export async function inviteByEmail(input: {
         },
       });
       const url = `${input.origin}/join/${token}`;
-      await sendInvitationEmail({
-        to: email,
-        tableName: table.name,
-        url,
-        ip: input.ip,
-      });
+      try {
+        await sendInvitationEmail({
+          to: email,
+          tableName: table.name,
+          url,
+          ip: input.ip,
+        });
+      } catch (error) {
+        emailWarning =
+          error instanceof Error
+            ? error.message
+            : "Email delivery is not configured. QR and copy link still work.";
+      }
       invitations.push({ id: invitation.id, email });
     }
     publishTable(table.id);
-    return { invitations };
+    return { invitations, emailWarning };
   });
 }
 

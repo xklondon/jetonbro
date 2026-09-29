@@ -22,16 +22,13 @@ export async function openAs(context: BrowserContext, page: Page, email: string,
 
 export async function openSetupSheet(page: Page) {
   await page.goto("/");
-  const create = page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ });
+  const create = page.getByRole("button", { name: "CREATE TABLE" });
   await expect(create).toBeVisible();
   await create.click();
-  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
+  await expect(page).toHaveURL(/\/tables\/new/);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Blackjack/ })).toBeVisible();
-  await expect(page.locator(".setup-mask").getByLabel("Player email")).toBeVisible();
-  await expect(page.locator(".setup-mask").getByLabel("Starting jetons per player")).toBeVisible();
-  await expect(page.locator(".setup-mask").getByAltText("Shared table join QR code")).toBeVisible();
-  await expect(page.locator(".setup-mask").getByText("SCAN TO JOIN TABLE")).toBeVisible();
+  await expect(page.getByLabel("Table name")).toBeVisible();
+  await expect(page.getByLabel("Starting jetons per player")).toBeVisible();
 }
 
 export async function createPokerTable(
@@ -39,30 +36,24 @@ export async function createPokerTable(
   name: string,
   options?: { starting?: string; smallBlind?: string; bigBlind?: string },
 ) {
-  await openSetupSheet(page);
-  await page.getByRole("button", { name: /Texas Hold/ }).click();
-  await expect(page.getByLabel("Small blind")).toBeVisible();
-  await expect(page.getByLabel("Big blind")).toBeVisible();
-  await expect(page.getByLabel("Dealer rotation order")).toBeVisible();
-  await page.locator(".setup-mask").getByLabel("Table name").fill(name);
-  await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
-  if (options?.smallBlind) {
-    await page.getByLabel("Small blind").fill(options.smallBlind);
-  }
-  if (options?.bigBlind) {
-    await page.getByLabel("Big blind").fill(options.bigBlind);
-  }
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("POKER SETUP");
+  await createBlackjackTable(page, name, { starting: options?.starting ?? "0" });
+  await page.getByRole("button", { name: "START POKER" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
 }
 
 export async function setupJoinUrl(page: Page) {
-  await expect(page.locator(".setup-mask [data-join-url]")).toBeVisible();
-  return page.locator(".setup-mask [data-join-url]").getAttribute("data-join-url");
+  const fromMain = page.locator("main[data-join-url]");
+  if (await fromMain.count()) {
+    return fromMain.getAttribute("data-join-url");
+  }
+  await page.getByRole("button", { name: "QR" }).click();
+  await expect(page.locator(".sheet.open [data-join-url]")).toBeVisible();
+  const url = await page.locator(".sheet.open [data-join-url]").getAttribute("data-join-url");
+  await page.getByRole("button", { name: "Close" }).click();
+  return url;
 }
 
 export async function createBlackjackTable(
@@ -71,25 +62,26 @@ export async function createBlackjackTable(
   options?: { starting?: string; email?: string },
 ) {
   await openSetupSheet(page);
-  await page.locator(".setup-mask").getByLabel("Table name").fill(name);
-  await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
-  if (options?.email) {
-    await page.locator(".setup-mask").getByLabel("Player email").fill(options.email);
-  }
+  await page.getByLabel("Table name").fill(name);
+  await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
-  await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "+ PLAYER" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "QR" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START POKER" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ADD PLAYER" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "QR" }).first()).toBeVisible();
+  await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
+  if (options?.email) {
+    await invitePlayerFromLobby(page, options.email);
+  }
 }
 
 export async function invitePlayerFromLobby(page: Page, email: string) {
-  await page.getByRole("button", { name: "+ PLAYER" }).click();
+  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
   await page.getByLabel("Player email").fill(email);
-  await page.getByRole("button", { name: "Send invitation" }).click();
+  await page.getByRole("button", { name: "Invite by email" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
 }
 

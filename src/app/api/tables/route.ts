@@ -21,6 +21,7 @@ const schema = z.object({
   bankMayDistributeJetons: z.boolean().optional(),
   smallBlind: z.string().optional(),
   bigBlind: z.string().optional(),
+  hostName: z.string().optional(),
   idempotencyKey: z.string().min(8),
 });
 
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
       bankMayDistributeJetons: body.bankMayDistributeJetons,
       smallBlind: body.smallBlind,
       bigBlind: body.bigBlind,
+      hostName: body.hostName,
       idempotencyKey: body.idempotencyKey,
     });
     return NextResponse.json(result);

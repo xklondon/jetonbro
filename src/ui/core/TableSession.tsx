@@ -16,7 +16,12 @@ async function sendCommand(tableId: string, command: string, payload: Record<str
       ...payload,
     }),
   });
-  const data = (await response.json()) as { error?: string; code?: string; abandoned?: boolean };
+  const data = (await response.json()) as {
+    error?: string;
+    code?: string;
+    abandoned?: boolean;
+    emailWarning?: string | null;
+  };
   if (!response.ok) {
     const error = new Error(data.error ?? "This action could not be completed.");
     error.name = data.code ?? "CommandError";
@@ -91,6 +96,9 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     setNotice(null);
     try {
       const result = await sendCommand(snapshot.tableId, command, payload);
+      if (result.emailWarning) {
+        setNotice(result.emailWarning);
+      }
       if (command === "abandonDraft" && result.abandoned) {
         router.push("/");
         return;
@@ -142,5 +150,16 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       />
     );
   }
-  return <skin.WaitingTable view={{ role: "WAITING", phase: "TABLE_SETUP", tableName: "JetonBro", game: "Blackjack", available: { millis: "0", label: "0" }, copy: "Loading table" }} />;
+  return (
+    <skin.WaitingTable
+      view={{
+        role: "WAITING",
+        phase: "TABLE_SETUP",
+        tableName: "JetonBro",
+        game: "Blackjack",
+        available: { millis: "0", label: "0" },
+        copy: "Loading table",
+      }}
+    />
+  );
 }

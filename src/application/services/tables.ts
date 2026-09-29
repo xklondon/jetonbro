@@ -113,6 +113,8 @@ export async function createTable(input: {
   startingBank?: string;
   smallBlind?: string;
   bigBlind?: string;
+  draft?: boolean;
+  hostName?: string;
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
@@ -163,9 +165,17 @@ export async function createTable(input: {
           pokerBigBlindMillis: bigBlindMillis,
           currentPhase: "TABLE_SETUP",
           status: "SETUP",
-          setupCompletedAt: game === "POKER" ? new Date() : undefined,
+          setupCompletedAt: input.draft ? undefined : new Date(),
         },
       });
+
+      const hostName = input.hostName?.trim();
+      if (hostName) {
+        const actor = await tx.user.findUnique({ where: { id: input.actorId } });
+        if (actor && !actor.name?.trim()) {
+          await tx.user.update({ where: { id: input.actorId }, data: { name: hostName } });
+        }
+      }
 
       const ownerMember = await tx.tableMember.create({
         data: {
@@ -274,6 +284,7 @@ export async function ensureDraftTable(input: { actorId: string; name?: string }
       game: "BLACKJACK",
       startingJetonsPerPlayer: BLACKJACK_TABLE_DEFAULTS.startingAllocation,
       emails: [],
+      draft: true,
     });
   } catch (error) {
     if (isOpenDraftConflict(error)) {

@@ -69,28 +69,28 @@ export function ClassicHome({
       brandClassName={brandShimmer ? "brand-shimmer" : undefined}
     >
       <div className={`phase-head${empty ? "" : " home-head-compact"}`}>
-        <strong>{empty ? `Welcome to the table, ${displayName}` : `Welcome back, ${displayName}`}</strong>
-        <span>{empty ? "Pick a game, bring your friends, run the Bank." : "Return to a table or open a new one."}</span>
+        <strong>{empty ? `Welcome, ${displayName}` : `Welcome back, ${displayName}`}</strong>
+        <span>{empty ? "Create a table or join one." : "Resume a table or create a new one."}</span>
       </div>
       <main className="felt home-stack">
         {notice ? <div className="error">{notice}</div> : null}
         {empty ? (
           <div className="home-actions">
             <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
-              {creating ? "Opening table" : "CREATE A TABLE"}
+              {creating ? "Opening table" : "CREATE TABLE"}
             </button>
             <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
-              JOIN A TABLE
+              JOIN TABLE
             </button>
           </div>
         ) : (
           <>
             <div className="home-actions compact">
               <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
-                {creating ? "Opening table" : "CREATE NEW TABLE"}
+                {creating ? "Opening table" : "CREATE TABLE"}
               </button>
               <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
-                JOIN A TABLE
+                JOIN TABLE
               </button>
             </div>
             <div className="home-table-list">
@@ -178,7 +178,7 @@ export function ClassicHome({
                     </div>
                   ) : null}
                   <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
-                    RETURN TO TABLE
+                    RESUME
                   </button>
                 </article>
               ))}

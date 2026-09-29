@@ -10,7 +10,7 @@ test("owner can permanently delete an empty draft from home", async ({ page, con
   const card = page.locator("[data-table-id]");
   await expect(card).toBeVisible();
   await expect(card.getByText("No Players yet")).toBeVisible();
-  await expect(page.getByRole("button", { name: "RETURN TO TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "RESUME" })).toBeVisible();
   await page.getByRole("button", { name: "Table menu" }).click();
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CLOSE TABLE & SAVE BALANCES" })).toHaveCount(0);
@@ -19,7 +19,7 @@ test("owner can permanently delete an empty draft from home", async ({ page, con
   await expect(page.getByText("Permanent draft deletion.")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.locator("[data-table-id]")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "CREATE A TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
 });
 
 test("owner sees balances, non-owner does not, and started tables archive", async ({ page, context, browser }) => {
@@ -97,8 +97,8 @@ test("locked bets block close and remove from home", async ({ page, context, bro
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await samPage.reload();
   await samPage.evaluate(() => document.querySelector("nextjs-portal")?.remove());
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click({ force: true });

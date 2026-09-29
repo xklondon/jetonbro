@@ -62,7 +62,7 @@ describeDb("create table home journey", () => {
     expect(snapshot.setup?.canStartBetting).toBe(false);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Bank / Dealer")).toBe(true);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Invited" && seat.name === playerEmail)).toBe(true);
-    expect(snapshot.setup?.setupCompleted).toBe(false);
+    expect(snapshot.setup?.setupCompleted).toBe(true);
 
     const home = await listHomeTables(owner.id);
     expect(home.some((item) => item.id === created.tableId && item.role === "Bank / Dealer")).toBe(true);

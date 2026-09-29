@@ -100,18 +100,17 @@ test("create table leaves home and does not keep a second setup form there", () 
       tables: [],
     }),
   );
-  expect(html).toContain("CREATE A TABLE");
+  expect(html).toContain("CREATE TABLE");
   expect(html).not.toContain("START TABLE");
   expect(html).not.toContain("SET UP TABLE");
   expect(html).not.toContain("Player email");
-  expect(html).not.toContain("CREATE TABLE");
 });
 
 test("empty authenticated home shows create and join", () => {
   const html = renderToStaticMarkup(createElement(ClassicHome, { ...homeProps, tables: [] }));
-  expect(html).toContain("Welcome to the table, Alex");
-  expect(html).toContain("CREATE A TABLE");
-  expect(html).toContain("JOIN A TABLE");
+  expect(html).toContain("Welcome, Alex");
+  expect(html).toContain("CREATE TABLE");
+  expect(html).toContain("JOIN TABLE");
 });
 
 test("Blackjack and Texas Hold’em are selectable while Zilch is not", () => {
@@ -135,9 +134,9 @@ test("existing tables remain on the compact home", () => {
       tables: [homeCard()],
     }),
   );
-  expect(html).toContain("CREATE NEW TABLE");
+  expect(html).toContain("CREATE TABLE");
   expect(html).toContain("Salon table");
-  expect(html).toContain("RETURN TO TABLE");
+  expect(html).toContain("RESUME");
   expect(html).toContain("Dealer · Alex");
   expect(html).toContain("Sam");
   expect(html).toContain("100");
@@ -182,51 +181,46 @@ test("non-owner home card hides other player balances", () => {
   expect(html).not.toContain("SAVE TABLE");
 });
 
-test("single setup mask includes invites, QR actions and CREATE TABLE", () => {
+test("simple create table asks only for name and starting jetons", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicCreateTable, {
       defaultTableName: "Alex's table",
-      joinUrl: "http://127.0.0.1:3000/join/shared-token",
       onBack: () => undefined,
       onCreate: async () => undefined,
     }),
   );
   expect(html).toMatch(/Alex(&#x27;|')s table/);
   expect(html).toContain("CREATE TABLE");
+  expect(html).toContain("Starting jetons per Player");
   expect(html).not.toContain("START TABLE");
-  expect(html).toContain("SCAN TO JOIN TABLE");
-  expect(html).toContain("OR INVITE BY EMAIL");
-  expect(html).toContain("Player email");
-  expect(html).toContain("+ ADD ANOTHER");
-  expect(html).toContain("COPY LINK");
-  expect(html).toContain("SHARE");
-  expect(html.indexOf("SCAN TO JOIN TABLE")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
-  expect(html.indexOf("COPY LINK")).toBeLessThan(html.indexOf("OR INVITE BY EMAIL"));
-  expect(html.indexOf("OR INVITE BY EMAIL")).toBeLessThan(html.indexOf("CREATE TABLE"));
+  expect(html).not.toContain("SCAN TO JOIN TABLE");
+  expect(html).not.toContain("OR INVITE BY EMAIL");
   expect(html).not.toContain("Maximum boxes per player");
+  expect(html).not.toContain("CARD ASSIST");
 });
 
-test("setup mask sits over the dealer table and shows the shared QR", () => {
+test("one Table Setup screen shows felt, players and START actions", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
-      view: setupView(),
+      view: setupView({ setupCompleted: true }),
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("CREATE TABLE");
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("TABLE SETUP");
   expect(html).toContain("DEALER · Alex");
-  expect(html).toContain("setup-mask");
-  expect(html).toContain("Shared table join QR code");
-  expect(html).toContain("SCAN TO JOIN TABLE");
-  expect(html).toContain("COPY LINK");
-  expect(html).toContain("SHARE");
-  expect(html).toContain("OR INVITE BY EMAIL");
+  expect(html).toContain("Owner · Alex");
+  expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
+  expect(html).toContain("ADD PLAYER");
+  expect(html).toContain(">QR<");
+  expect(html).toContain("START BLACKJACK");
+  expect(html).toContain("START POKER");
+  expect(html).toContain("data-phase-action");
+  expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
 });
 
-test("CREATE TABLE reveals dealer table seats, compact QR and OPEN BETTING", () => {
+test("CREATE TABLE reveals dealer table seats, compact QR and START BLACKJACK", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({
@@ -251,9 +245,10 @@ test("CREATE TABLE reveals dealer table seats, compact QR and OPEN BETTING", () 
   expect(html).toContain("DEALER · Alex");
   expect(html).toContain("Sam");
   expect(html).toContain("Joined");
-  expect(html).toContain("+ PLAYER");
+  expect(html).toContain("ADD PLAYER");
   expect(html).toContain(">QR<");
-  expect(html).toContain("OPEN BETTING");
+  expect(html).toContain("START BLACKJACK");
+  expect(html).toContain("START POKER");
   expect(html).toContain("data-game-controls");
   expect(html).toContain("dock");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
