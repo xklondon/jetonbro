@@ -9,7 +9,7 @@ test("owner can permanently delete an empty draft from home", async ({ page, con
   await page.goto("/");
   const card = page.locator("[data-table-id]");
   await expect(card).toBeVisible();
-  await expect(card.getByText("No Players yet")).toBeVisible();
+  await expect(card.getByText("0 players")).toBeVisible();
   await expect(page.getByRole("button", { name: "RESUME" })).toBeVisible();
   await page.getByRole("button", { name: "Table menu" }).click();
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toHaveCount(0);
@@ -42,14 +42,13 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
 
   await page.goto("/");
   await expect(page.getByText("Open salon")).toBeVisible();
-  await expect(page.getByText("Sam")).toBeVisible();
-  await expect(page.locator("[data-table-id]").getByText("100", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 player")).toBeVisible();
+  await expect(page.getByText("Owner · Alex · Dealer · Alex")).toBeVisible();
   await expect(page.getByRole("button", { name: "Table menu" })).toBeVisible();
 
   await samPage.goto("/");
   await expect(samPage.getByText("Open salon")).toBeVisible();
-  await expect(samPage.getByText("Sam", { exact: true })).toBeVisible();
-  await expect(samPage.getByText("100", { exact: true })).toBeVisible();
+  await expect(samPage.getByText("1 player")).toBeVisible();
   await expect(samPage.getByRole("button", { name: "Table menu" })).toHaveCount(0);
 
   const joContext = await browser.newContext();
@@ -59,13 +58,10 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
 
   await samPage.goto("/");
-  await expect(samPage.getByText("Jo", { exact: true })).toBeVisible();
-  const joRow = samPage.locator(".home-table-players li", { hasText: /^Jo$/ });
-  await expect(joRow).toBeVisible();
-  await expect(joRow.getByText("100")).toHaveCount(0);
+  await expect(samPage.getByText("2 players")).toBeVisible();
 
   await page.goto("/");
-  await expect(page.getByText("Jo", { exact: true })).toBeVisible();
+  await expect(page.getByText("2 players")).toBeVisible();
   await page.getByRole("button", { name: "Table menu" }).click();
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: "CLOSE & REMOVE TABLE" })).toHaveCount(0);

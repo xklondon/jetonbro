@@ -138,11 +138,9 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
     }),
   );
   expect(html).toContain("WAITING FOR THE FIRST BET");
-  expect(html).toContain("OPEN BANK");
-  expect(html).toContain("LIMITED BANK");
-  expect(html).toContain("Unlimited");
   expect(html).toContain('data-table-name="Salon"');
   expect(html).not.toContain("xklondon");
+  expect(html).not.toContain("OPEN BANK");
   expect(html).toMatch(/<button[^>]*disabled[^>]*>CLOSE BETTING/);
 });
 
@@ -164,11 +162,11 @@ test("funding toggle stays visible but locked after a stake exists", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("OPEN BANK");
   expect(html).toContain("LIMITED BANK");
-  expect(html).toContain("462.5 available · 37.5 reserved");
-  expect(html).toContain("Funding is locked for this round");
-  expect(html).toMatch(/funding-switch[^>]*disabled/);
+  expect(html).toContain("462.5");
+  expect(html).not.toContain("OPEN BANK");
+  expect(html).not.toContain("funding-switch");
+  expect(html).not.toContain("Funding is locked for this round");
 });
 
 test("Bank playing shows an open Insurance window as a side pot", () => {

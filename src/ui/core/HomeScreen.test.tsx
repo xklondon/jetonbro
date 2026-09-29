@@ -19,10 +19,11 @@ const homeCard = (overrides: Partial<HomeTableCard> = {}): HomeTableCard => ({
   name: "Salon table",
   game: "Blackjack",
   phase: "TABLE_SETUP",
-  headline: "Blackjack · TABLE SETUP",
+  headline: "SETUP",
   playerCount: 1,
   boxCount: 0,
   bankName: "Alex",
+  ownerName: "Alex",
   role: "Bank / Dealer",
   updatedAt: new Date().toISOString(),
   saved: false,
@@ -137,21 +138,22 @@ test("existing tables remain on the compact home", () => {
   expect(html).toContain("CREATE TABLE");
   expect(html).toContain("Salon table");
   expect(html).toContain("RESUME");
-  expect(html).toContain("Dealer · Alex");
-  expect(html).toContain("Sam");
-  expect(html).toContain("100");
-  expect(html).toContain("home-table-row");
+  expect(html).toContain("Owner · Alex · Dealer · Alex");
   expect(html).toContain("1 player");
-  expect(html).toContain("0 boxes");
+  expect(html).toContain("SETUP");
+  expect(html).toContain("home-table-row");
+  expect(html).not.toContain("0 boxes");
+  expect(html).not.toContain("home-table-players");
 });
 
-test("owner home card shows player balances and table menu", () => {
+test("owner home card shows compact summary and table menu", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicHome, { ...homeProps, tables: [homeCard()] }),
   );
   expect(html).toContain("Table menu");
-  expect(html).toContain("Sam");
-  expect(html).toContain("100");
+  expect(html).toContain("Owner · Alex");
+  expect(html).toContain("1 player");
+  expect(html).not.toContain("home-table-players");
 });
 
 test("non-owner home card hides other player balances", () => {
@@ -162,6 +164,7 @@ test("non-owner home card hides other player balances", () => {
         homeCard({
           isOwner: false,
           role: "Player",
+          playerCount: 2,
           canSave: false,
           canClose: false,
           canDeleteDraft: false,
@@ -174,11 +177,10 @@ test("non-owner home card hides other player balances", () => {
       ],
     }),
   );
-  expect(html).toContain("Sam");
-  expect(html).toContain("Jo");
-  expect(html).toContain("100");
+  expect(html).toContain("2 players");
   expect(html).not.toContain("Table menu");
   expect(html).not.toContain("SAVE TABLE");
+  expect(html).not.toContain("home-table-players");
 });
 
 test("simple create table asks only for name and starting jetons", () => {

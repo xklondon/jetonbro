@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
 import { allowDevMailbox } from "./dev-only";
 import {
+  isEmailDeliveryConfigured,
   sendInvitationEmail,
   sendMagicLinkEmail,
   setMailLoggerForTests,
@@ -81,6 +82,7 @@ test("missing RESEND_API_KEY fails safely in production", async () => {
   ).rejects.toThrow(/Set RESEND_API_KEY and EMAIL_FROM/);
   expect(send).not.toHaveBeenCalled();
   expect(allowDevMailbox()).toBe(false);
+  expect(isEmailDeliveryConfigured()).toBe(false);
 });
 
 test("API key and invitation or auth tokens never appear in logged errors", async () => {

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
-import { createTable, distributeJetons, ensureDraftTable, finalizeSetup, abandonDraft } from "@/application/services/tables";
-import { inviteByEmail, joinWithToken } from "@/application/services/invitations";
+import { createTable, distributeJetons, ensureDraftTable, finalizeSetup, abandonDraft, assignBankDealer, updateTableSettings } from "@/application/services/tables";
+import { addPlayerManually, inviteByEmail, joinWithToken } from "@/application/services/invitations";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import { listHomeTables } from "@/application/queries/home";
 import { DomainError } from "@/domain/errors";
@@ -377,5 +377,109 @@ describeDb("create table home journey", () => {
     });
     expect(blocked.abandoned).toBe(false);
     expect(await prisma.table.findUnique({ where: { id: kept.tableId } })).not.toBeNull();
+  });
+
+  test("owner can add a local player by name without email, once", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Local add",
+      startingJetonsPerPlayer: "100",
+    });
+    const addKey = randomUUID();
+    const added = await addPlayerManually({
+      actorId: owner.id,
+      tableId: created.tableId,
+      name: "Blair",
+      startingJetons: "100",
+      idempotencyKey: addKey,
+      origin: "http://127.0.0.1:3000",
+    });
+    expect(added.joined).toBe(true);
+    const snapshot = await loadSnapshot(created.tableId, owner.id);
+    expect(snapshot.setup?.seats.some((seat) => seat.name === "Blair")).toBe(true);
+    const blair = await prisma.tableMember.findFirstOrThrow({
+      where: { tableId: created.tableId, user: { name: "Blair" } },
+    });
+    expect(blair.availableMillis).toBe(100000n);
+    expect(blair.startingJetonsCredited).toBe(true);
+    await addPlayerManually({
+      actorId: owner.id,
+      tableId: created.tableId,
+      name: "Blair",
+      startingJetons: "100",
+      idempotencyKey: addKey,
+      origin: "http://127.0.0.1:3000",
+    });
+    expect(await prisma.ledgerEntry.count({
+      where: { tableId: created.tableId, playerId: blair.userId, transactionType: "INITIAL_ALLOCATION" },
+    })).toBe(1);
+    await expect(
+      addPlayerManually({
+        actorId: owner.id,
+        tableId: created.tableId,
+        name: "Blair",
+        idempotencyKey: randomUUID(),
+        origin: "http://127.0.0.1:3000",
+      }),
+    ).rejects.toMatchObject({ code: "DUPLICATE_PLAYER_NAME" });
+    await expect(
+      addPlayerManually({
+        actorId: owner.id,
+        tableId: created.tableId,
+        name: "   ",
+        idempotencyKey: randomUUID(),
+        origin: "http://127.0.0.1:3000",
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_PLAYER_NAME" });
+  });
+
+  test("owner can rename and assign dealer; other members cannot", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const dealer = await user(`dealer-${randomUUID()}@jetonbro.test`, "Blair");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Authority table",
+      startingJetonsPerPlayer: "100",
+    });
+    const qr = await prisma.invitation.findFirstOrThrow({
+      where: { tableId: created.tableId, kind: "QR", revokedAt: null },
+    });
+    await joinWithToken({ userId: dealer.id, token: qr.token, userEmail: dealer.email });
+    await updateTableSettings({
+      actorId: owner.id,
+      tableId: created.tableId,
+      idempotencyKey: randomUUID(),
+      name: "FINAL TABLE",
+    });
+    const renamed = await prisma.table.findUniqueOrThrow({ where: { id: created.tableId } });
+    expect(renamed.name).toBe("FINAL TABLE");
+    await assignBankDealer({
+      actorId: owner.id,
+      tableId: created.tableId,
+      userId: dealer.id,
+      idempotencyKey: randomUUID(),
+    });
+    const assigned = await prisma.table.findUniqueOrThrow({ where: { id: created.tableId } });
+    expect(assigned.bankDealerId).toBe(dealer.id);
+    expect(assigned.ownerId).toBe(owner.id);
+    await expect(
+      updateTableSettings({
+        actorId: dealer.id,
+        tableId: created.tableId,
+        idempotencyKey: randomUUID(),
+        name: "Hijacked",
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      assignBankDealer({
+        actorId: dealer.id,
+        tableId: created.tableId,
+        userId: owner.id,
+        idempotencyKey: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
