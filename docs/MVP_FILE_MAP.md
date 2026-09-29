@@ -105,6 +105,24 @@ Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay fr
 - `e2e/acceptance-screenshots.spec.ts`
 - `e2e/helpers.ts`
 
+## Active UI areas (Prompt 4)
+
+### Product lifecycle / Owner administration / Home
+
+- `src/ui/skins/classic/components/ClassicHome.tsx`
+- `src/ui/skins/classic/components/ClassicSetupTable.tsx`
+- `src/ui/skins/classic/components/ClassicBankTable.tsx`
+- `src/ui/skins/classic/components/ClassicPlayerTable.tsx`
+- `src/ui/skins/classic/components/ClassicPokerDealer.tsx`
+- `src/ui/skins/classic/components/SheetOverlay.tsx`
+- `src/application/services/invitations.ts` (local name-only add; email path unchanged)
+- `src/application/services/tables.ts` (owner rename via `updateTableSettings`; `assignBankDealer` owner-only)
+- `e2e/release-lifecycle.spec.ts`
+- `e2e/home-delete.spec.ts`
+- `e2e/welcome-home.spec.ts`
+
+This slice is larger than five files because Home, Setup, Owner menus on every table surface, invitations, and persistence share one lifecycle. Do not treat that as a licence to edit frozen Blackjack/Poker accounting.
+
 ## Deferred areas
 
 Do not open unless blocked:

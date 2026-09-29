@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Prompt 4 — complete product lifecycle and release candidate
+
+- Home is a compact entry: `CREATE TABLE`, saved tables with one `RESUME`, table name, `SETUP` or current game, player count, Owner/Dealer, and resume status. Per-player balances and box counts are not on Home cards.
+- Owner administration can rename the table, add a local Player by name without email, invite by email when configured, assign Dealer, fund, switch games at a safe boundary, and save/close. Those utilities stay in the table menu, not the phase dock.
+- A joined Dealer uses Blackjack phase controls and their own Player actions. They cannot rename, switch games, assign Dealer, remove Players, save, or close. Players see shared state and only their own actions.
+- Menu sheets restore focus, close on Escape and overlay click, and block the felt. Missing Resend configuration shows an unavailable email state and never blocks QR, copy link, local add, or starting a game.
+- Full two-device release journey: `e2e/release-lifecycle.spec.ts`.
+
 ### Prompt 3 — Poker Dealer/Owner/Player screens
 
 - Approved Poker board `12_50_27 PM (5)` is documented as visual authority. The source file was not available to copy into `docs/design-reference/poker-dealer-owner-phases.webp`; do not regenerate it.
