@@ -11,7 +11,7 @@ Store compressed WebP copies under `docs/design-reference/` when the source file
 | `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 2 |
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup | 2 (structure) / later polish |
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 2 |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases | 3 only — do not implement now |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases: Setup, Pre-flop, streets, Showdown, Hand Complete, game-change | 3 |
 
 Ignore:
 
@@ -151,6 +151,30 @@ START NEXT ROUND
 
 Physical cards remain authoritative. Card Assist must not appear by default on Setup, Betting, Playing, Insurance, or Payout. Do not delete the engine. Entry: Menu → Optional tools → Card Assist. It must not consume felt space, change phase, calculate results, block payout, or appear in Player primary controls.
 
+## Poker Dealer / Owner / Player screen contract
+
+Dominant board: Poker Dealer / Owner phases (`12_50_27 PM (5)`). Player screens use the same visual system. Do not copy illustrative balances or names.
+
+### Shared grid
+
+Same seven-zone 390×844 grid as Blackjack. Poker seats occupy zone 5 in every phase. One seat component across `SETUP`, `PRE_FLOP`, `FLOP`, `TURN`, `RIVER`, `SHOWDOWN`, and `HAND_COMPLETE`. Owner street actions live in zone 3. Player betting actions sit immediately above the fixed tray. The rotating Dealer button is a seat marker (`D`), never Owner chrome.
+
+### Setup
+
+Table name once on the felt. Compact Poker label. Participating Players with available balances. Dealer-button assignment when the engine has one. Small Blind and Big Blind. Owner `START HAND`. Seat order stays in the menu.
+
+### Streets
+
+Compact rail `DEAL → PRE-FLOP → FLOP → TURN → RIVER → SHOWDOWN`. Felt shows `POT [amount]` and `TO CALL [amount]` only when owed on a live street. Never `CALL 0`. Never To Call after Hand Complete. Side-pot lines only when side pots exist. Current actor: `YOUR TURN` on that device, `TURN` on others, gold pulse (static outline when reduced-motion). Player actions follow `legalActions` only.
+
+### Showdown / Hand Complete
+
+No actor, To Call, or betting controls. Owner awards eligible winners with compact controls; cards and hand strength stay offline. Hand Complete shows `POT PAID`, `{name} WON {amount}`, final balances, and Owner `NEXT HAND`. Tray remains visible and disabled on Player views.
+
+### Hidden from the primary surface
+
+Card Assist, community/hole-card graphics, `NEXT HAND IN 7 SECONDS`, seat ordering, switch game, and funding live in the table menu. Do not delete the commands.
+
 ## Must never appear
 
 - Duplicate table name in the header
@@ -162,4 +186,4 @@ Physical cards remain authoritative. Card Assist must not appear by default on S
 - Owner utilities in the phase-action row
 - Card Assist on the default felt
 - The blank `12_50_26 PM (1)` image as a reference
-- Poker visuals from `12_50_27 PM (5)` before Prompt 3
+- Poker visuals that ignore `12_50_27 PM (5)` after Prompt 3

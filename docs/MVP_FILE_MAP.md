@@ -31,6 +31,24 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
+## Active UI areas (Prompt 3)
+
+### Poker screens
+
+- `src/ui/skins/classic/components/ClassicPokerDealer.tsx`
+- `src/ui/skins/classic/components/ClassicPokerPlayer.tsx`
+- `src/ui/skins/classic/components/PokerFelt.tsx`
+- `src/ui/skins/classic/components/PokerGameControls.tsx`
+- `src/ui/skins/classic/components/PokerStreetRail.tsx`
+- `src/application/queries/poker-controls.ts` (presentation labels/surfaces only)
+- `src/ui/core/PokerTable.test.tsx`
+- `e2e/poker-and-betting.spec.ts`
+- `e2e/poker-turn-and-tray.spec.ts`
+- `e2e/poker-two-device-protocol.spec.ts`
+- `e2e/poker-two-hand-protocol.spec.ts`
+
+Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay frozen unless a required acceptance step fails.
+
 ## Active UI areas (Prompt 2)
 
 ### Shared Classic shell
@@ -91,7 +109,6 @@ Related unit tests under `src/application/` and `src/domain/` prove these files.
 
 Do not open unless blocked:
 
-- Poker visuals (`ClassicPokerTable` and Poker CSS) — Prompt 3
 - Card Assist expansion (`CardEntryPanel` engine stays; do not surface it on the default felt)
 - Countdown control redesign
 - Alternative skins
