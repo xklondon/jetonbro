@@ -8,6 +8,7 @@ import {
   openAs,
   swipePayoutRow,
   uniqueEmail,
+  openTableMenu,
 } from "./helpers";
 
 async function tableSnapshot(page: Page) {
@@ -164,8 +165,9 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
     return snap.bank?.players.flatMap((player) => player.boxes).find((box) => box.id === joBoxes[0]!.id)?.outcome ?? null;
   }).toBe("PUSH");
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
-  await expect(page.locator(".next-round-row")).toBeVisible();
-  await expect(page.getByRole("button", { name: "IN 7 SECONDS", exact: true })).toBeVisible();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByRole("button", { name: "IN 7 SECONDS", exact: true })).toBeVisible();
+  await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
   await mkdir(join(process.cwd(), "docs", "screenshots", "classic"), { recursive: true });
   await page.screenshot({ path: join(process.cwd(), "docs", "screenshots", "classic", "app-blackjack-round-complete-390x844.png") });
   await expect(page.locator(".outcome-celebration")).toHaveCount(0);
@@ -179,7 +181,7 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await samPage.reload();
-  await expect(samPage.getByText("Waiting for the Bank").first()).toBeVisible({ timeout: 15_000 });
+  await expect(samPage.getByText("ROUND COMPLETE").first()).toBeVisible({ timeout: 15_000 });
 
   const second = (await tableSnapshot(page)) as {
     bank?: { players: { name: string; boxes: { id: string }[] }[] };
@@ -239,7 +241,7 @@ test("DEALER WON settles unresolved boxes as LOST and leaves Insurance alone", a
   await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await page.getByRole("button", { name: "Open Insurance" }).click();
   await samPage.reload();
-  await samPage.getByRole("button", { name: "Insurance" }).click();
+  await samPage.getByRole("button", { name: "PLACE INSURANCE" }).click();
   await page.getByRole("button", { name: "Close Insurance" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
@@ -255,7 +257,7 @@ test("DEALER WON settles unresolved boxes as LOST and leaves Insurance alone", a
   await page.locator("[data-dealer-box]").getByRole("button", { name: "Confirm" }).click();
   await expect(page.locator(`[data-box-id="${boxes[1]!.id}"]`)).toContainText(/Lost/i, { timeout: 10_000 });
   await expect(page.locator(`[data-box-id="${boxes[0]!.id}"]`)).toContainText(/Won/i);
-  await expect(page.locator(".insurance-pot")).toContainText("INSURANCE");
-  await expect(page.getByRole("button", { name: "INSURANCE WON" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "INS WON" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "INS LOST" })).toBeVisible();
   await samContext.close();
 });

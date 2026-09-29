@@ -165,6 +165,7 @@ export function ClassicSetupTable({
                   SWITCH GAME
                 </button>
               ) : null}
+              <div className="field-label">OPTIONAL TOOLS</div>
               <div className="field-label">CARD ASSIST</div>
               <div className="setting-row">
                 {(["OFF", "CONFIRM", "AUTO"] as const).map((mode) => (

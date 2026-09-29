@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, expectPokerPhase, openAs, setupJoinUrl, uniqueEmail } from "./helpers";
+import { createBlackjackTable, expectPokerPhase, openAs, setupJoinUrl, uniqueEmail, openTableMenu } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -94,13 +94,16 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await expect(page.locator("body")).not.toContainText("xklondon");
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeDisabled();
-  await expect(page.getByText("OPEN BANK")).toBeVisible();
-  await expect(page.getByText("LIMITED BANK")).toBeVisible();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByText("OPEN BANK")).toBeVisible();
+  await expect(page.locator(".sheet.open").getByText("LIMITED BANK")).toBeVisible();
+  await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
   await shot(page, "app-blackjack-waiting-first-bet-390x844.png");
   await shot(page, "app-blackjack-dealer-betting-390x844.png");
 
   const before = await tableSnapshot(page);
-  await page.locator(".dealer-tools").getByRole("button", { name: "SWITCH GAME" }).click();
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "SWITCH GAME" }).click();
   await expect(page.getByRole("button", { name: "Zilch — Coming later" })).toBeDisabled();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await shot(page, "app-poker-setup-sheet-390x844.png");

@@ -78,6 +78,30 @@ export async function createBlackjackTable(
   }
 }
 
+export async function openTableMenu(page: Page) {
+  if (await page.locator(".sheet.open").count()) return;
+  await page.getByRole("button", { name: "Menu" }).click();
+  await expect(page.locator(".sheet.open")).toBeVisible();
+}
+
+export async function closeTableMenu(page: Page) {
+  const cancel = page.locator(".sheet.open").getByRole("button", { name: "Cancel" });
+  if (await cancel.count()) {
+    await cancel.click();
+  }
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
+}
+
+export async function giveJetonsFromMenu(page: Page) {
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "GIVE JETONS" }).click();
+}
+
+export async function scheduleDealFromMenu(page: Page) {
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "DEAL IN 7 SECONDS" }).click();
+}
+
 export async function invitePlayerFromLobby(page: Page, email: string) {
   await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
   await page.getByLabel("Player email").fill(email);

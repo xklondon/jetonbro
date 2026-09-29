@@ -20,6 +20,24 @@
   position: relative;
 }
 
+.classic-skin .role-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 46%;
+}
+
+.classic-skin .role-badge {
+  border: 1px solid var(--gold-line);
+  color: var(--gold);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 3px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 .classic-skin header.top-bar {
   padding: 17px 17px 7px;
   display: flex;
@@ -196,6 +214,53 @@
   overscroll-behavior-x: none;
 }
 
+.classic-skin main.felt.player-play-felt {
+  overflow: hidden;
+}
+
+.classic-skin .player-play-felt .table-surface {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.classic-skin .player-dealer-ring {
+  width: 72px;
+  height: 72px;
+  margin: 4px auto 10px;
+  border: 1px solid var(--gold-line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  font: 10px var(--font-display);
+  letter-spacing: 0.12em;
+}
+
+.classic-skin .player-box-stage {
+  width: 100%;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 200px;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.classic-skin .player-box-stage .box,
+.classic-skin .player-box-stage .box-slot {
+  width: 100%;
+  min-width: 0;
+  height: 200px;
+}
+
+.classic-skin .player-box-stage .box-slot {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .classic-skin .player-boxes {
   width: 100%;
   display: flex;
@@ -204,38 +269,6 @@
   gap: 8px;
   touch-action: pan-y;
   overscroll-behavior-x: none;
-}
-
-.classic-skin .player-boxes.one .box {
-  width: min(78%, 240px);
-}
-
-.classic-skin .player-boxes.two .box {
-  width: min(48%, 190px);
-}
-
-.classic-skin .player-boxes.three .box {
-  width: min(32%, 140px);
-}
-
-.classic-skin .player-boxes.scroll {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  gap: 8px;
-  padding-bottom: 6px;
-}
-
-.classic-skin .player-boxes.scroll .box {
-  min-width: 72%;
-  flex: 0 0 72%;
-  scroll-snap-align: start;
-}
-
-.classic-skin .player-boxes.scroll::after {
-  content: "";
-  min-width: 18px;
-  pointer-events: none;
 }
 
 .classic-skin .box {
@@ -266,8 +299,54 @@
 }
 
 .classic-skin .box.selected {
-  background: rgba(223, 189, 105, 0.08);
-  box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(223, 189, 105, 0.35), inset 0 0 25px rgba(223, 189, 105, 0.08);
+  background: rgba(223, 189, 105, 0.06);
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.classic-skin .box.is-won {
+  border-color: var(--gold);
+  background: rgba(223, 189, 105, 0.22);
+}
+
+.classic-skin .box.is-lost {
+  border-color: var(--red);
+  background: rgba(184, 55, 63, 0.38);
+}
+
+.classic-skin .box.is-push {
+  border-color: var(--ivory);
+}
+
+.classic-skin .box.is-blackjack {
+  border-color: var(--gold-hi);
+  background: rgba(5, 8, 10, 0.35);
+}
+
+.classic-skin .box-stakes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.classic-skin .box-stakes small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(244, 234, 213, 0.65);
+}
+
+.classic-skin .insurance-dock {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.classic-skin .insurance-dock strong {
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
 }
 
 .classic-skin .box-name {
@@ -540,6 +619,37 @@
   gap: 8px;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.classic-skin .betting-controls {
+  display: grid;
+  gap: 6px;
+}
+
+.classic-skin .betting-controls .start-box {
+  width: 100%;
+  min-height: var(--control-height);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.classic-skin .betting-controls .exact {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 1fr) auto auto;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.classic-skin .betting-controls .exact .gold-button,
+.classic-skin .betting-controls .exact button {
+  width: auto;
+  min-width: 88px;
+  padding: 10px 8px;
+  font-size: 12px;
 }
 
 .classic-skin .exact input,

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, openAs, uniqueEmail, openTableMenu } from "./helpers";
 
 async function tableSnapshot(page: Page) {
   return page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((response) => response.json());
@@ -85,12 +85,14 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await page.getByRole("button", { name: "Open Insurance" }).click();
   await samPage.reload();
   await samPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
-  await samPage.getByRole("button", { name: "Insurance" }).click();
+  await samPage.getByRole("button", { name: "PLACE INSURANCE" }).click();
   await page.getByRole("button", { name: "Close Insurance" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "IN 7 SECONDS", exact: true })).toBeDisabled();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByRole("button", { name: "IN 7 SECONDS", exact: true })).toBeDisabled();
+  await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
 
   const payoutSnap = (await tableSnapshot(page)) as {
     bank?: { players: { name: string; boxes: { id: string }[] }[] };
@@ -106,10 +108,11 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await expect(page.locator(`[data-box-id="${samBoxes[1]!.id}"]`)).toContainText(/Lost/i, { timeout: 10_000 });
   await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: /STAND OFF/ }).click();
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeDisabled();
-  await page.getByRole("button", { name: "INSURANCE LOST" }).click();
+  await page.getByRole("button", { name: "INS LOST" }).click();
 
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
-  await page.getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();
   await page.reload();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();

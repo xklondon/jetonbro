@@ -3,7 +3,14 @@
 import type { ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
-import { PlayingCard } from "./PlayingCard";
+
+function resultCopy(box: BoxView): { kind: string; text: string } | null {
+  if (!box.outcome) return null;
+  if (box.outcome === "WON") return { kind: "won", text: box.returned ? `Won +${box.returned.label}` : "Won" };
+  if (box.outcome === "LOST") return { kind: "lost", text: box.returned && box.returned.label !== "0" ? `Lost ${box.returned.label}` : "Lost" };
+  if (box.outcome === "PUSH") return { kind: "push", text: box.returned ? `Stand-off ${box.returned.label}` : "Stand-off" };
+  return { kind: "blackjack", text: box.returned ? `Blackjack +${box.returned.label}` : "Blackjack" };
+}
 
 export function FeltBox({
   box,
@@ -31,24 +38,18 @@ export function FeltBox({
   cardEntry?: ReactNode;
 }) {
   const chips = chipsFromMillis(box.bet.millis);
-  const className = `box${compact ? " is-compact" : ""}${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}`;
+  const result = resultCopy(box);
+  const className = `box${compact ? " is-compact" : ""}${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}${result ? ` is-${result.kind}` : ""}`;
   const content = (
     <>
       <span className="box-name">{box.label}</span>
-      <span className="amount-label">BET</span>
+      <span className="amount-label">MAIN</span>
       <span className="amount">{box.bet.label}</span>
-      {box.hand?.ranks.length && cardEntry ? (
-        <span className="box-cards" data-box-cards="true">
-          {box.hand.ranks.map((rank, index) => (
-            <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />
-          ))}
-        </span>
-      ) : null}
       {!showOutcomes ? (
         <span className="chip-pile">
           {chips.map((chip, index) => (
             <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
-              <span className={`chip ${chip.className}${chip.exact ? "" : ""}`}>{chip.label}</span>
+              <span className={`chip ${chip.className}`}>{chip.label}</span>
               {retractable ? (
                 <button
                   type="button"
@@ -66,23 +67,11 @@ export function FeltBox({
           ))}
         </span>
       ) : null}
-      {box.insurance ? <span className="hint">Insurance {box.insurance.label}</span> : null}
+      {box.insurance ? <span className="hint">INSURANCE {box.insurance.label}</span> : null}
       {box.isDoubled ? <span className="hint">Doubled</span> : null}
-      {box.outcome && box.returned ? (
-        <span className="result">
-          {box.outcome === "WON"
-            ? "Won"
-            : box.outcome === "PUSH"
-              ? "Push"
-              : box.outcome === "LOST"
-                ? "Lost"
-                : "Blackjack"}{" "}
-          · return {box.returned.label}
-        </span>
-      ) : null}
+      {result ? <span className="result">{result.text}</span> : null}
       {box.insuranceResult ? <span className="result">{box.insuranceResult}</span> : null}
       {cardEntry}
-      {!box.outcome && !bank ? <span className="hint">{selected ? "Selected" : "Tap to select"}</span> : null}
       {showOutcomes && !box.outcome ? (
         <span className="outcome">
           {box.payoutActions.map((action) => (
@@ -109,6 +98,7 @@ export function FeltBox({
         className={className}
         data-drop-box={box.id}
         data-box-id={box.id}
+        data-box-slot={box.boxNumber}
         role="button"
         aria-label={box.label}
         tabIndex={0}
@@ -125,7 +115,7 @@ export function FeltBox({
     );
   }
   return (
-    <div className={className} data-drop-box={box.id} data-box-id={box.id}>
+    <div className={className} data-drop-box={box.id} data-box-id={box.id} data-box-slot={box.boxNumber}>
       {content}
     </div>
   );

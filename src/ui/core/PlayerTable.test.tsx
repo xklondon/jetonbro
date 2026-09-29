@@ -87,6 +87,8 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("INSURANCE");
   expect(html).toContain("DOUBLE");
   expect(html).toContain("SPLIT");
+  expect(html).toContain("data-box-stage");
+  expect(html).toContain("MAIN");
   expect(html).not.toContain("+ CARDS");
   expect(html).not.toContain("+ ADD CARDS");
   expect(html).not.toContain("bj-rail");
@@ -166,15 +168,18 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
     }),
   );
   expect(html).toContain("Amount");
-  expect(html).toContain("Place Bet");
+  expect(html).toContain("PLACE BET");
   expect(html).toContain("START ADDITIONAL BOX");
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("Retract 25 jetons from Box 1");
-  expect(html).toContain("player-boxes two");
+  expect(html).toContain("data-box-stage");
+  expect(html).toContain('data-box-slot="1"');
+  expect(html).toContain('data-box-slot="2"');
+  expect(html).not.toContain("player-boxes two");
   expect(html.indexOf("Amount")).toBeLessThan(html.indexOf("YOUR JETONS"));
 });
 
-test("a single player box is centred on the felt", () => {
+test("a single player box stays in slot 1 of the fixed stage", () => {
   const oneBox: PlayerTableView = {
     ...view,
     phase: "BETTING",
@@ -190,7 +195,11 @@ test("a single player box is centred on the felt", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("player-boxes one");
+  expect(html).toContain("data-box-stage");
+  expect(html).toContain('data-box-slot="1"');
+  expect(html).toContain('data-empty-slot="2"');
+  expect(html).toContain('data-empty-slot="3"');
+  expect(html).not.toContain("player-boxes one");
 });
 
 test("player payout keeps the jeton dock visible under settlement status", () => {
@@ -208,9 +217,10 @@ test("player payout keeps the jeton dock visible under settlement status", () =>
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("Waiting for the Bank");
+  expect(html).toContain("ROUND COMPLETE");
   expect(html).toContain("YOUR JETONS");
-  expect(html.indexOf("Waiting for the Bank")).toBeLessThan(html.indexOf("YOUR JETONS"));
+  expect(html.indexOf("ROUND COMPLETE")).toBeLessThan(html.indexOf("YOUR JETONS"));
+  expect(html).not.toContain("DOUBLE");
 });
 
 test("player payout shows Hand complete after every box is resolved", () => {
@@ -229,7 +239,29 @@ test("player payout shows Hand complete after every box is resolved", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("Hand complete");
+  expect(html).toContain("ROUND COMPLETE");
   expect(html).toContain("YOUR JETONS");
   expect(html).not.toContain("outcome-celebration");
+});
+
+test("player Insurance uses short copy and keeps the fixed box stage", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: {
+        ...view,
+        insuranceWindowOpen: true,
+        actions: { ...view.actions, insurance: true, double: true, split: true },
+      },
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain(">INSURANCE<");
+  expect(html).toContain("Up to half the box stake");
+  expect(html).toContain("PLACE INSURANCE");
+  expect(html).toContain("DOUBLE");
+  expect(html).toContain("data-box-stage");
+  expect(html).toContain('data-box-slot="1"');
+  expect(html).toContain('data-box-slot="2"');
 });

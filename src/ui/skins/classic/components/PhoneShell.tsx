@@ -5,12 +5,14 @@ export function PhoneShell({
   rightLabel,
   overlay,
   brandClassName,
+  badges,
   onMenu,
 }: {
   children: React.ReactNode;
   rightLabel?: string;
   overlay?: React.ReactNode;
   brandClassName?: string;
+  badges?: string[];
   onMenu?: () => void;
 }) {
   return (
@@ -22,7 +24,17 @@ export function PhoneShell({
             ☰
           </button>
           <div className={`brand${brandClassName ? ` ${brandClassName}` : ""}`}>JETONBRO</div>
-          <span>{rightLabel ?? "♠"}</span>
+          {badges?.length ? (
+            <div className="role-badges" data-role-badges="true">
+              {badges.map((badge) => (
+                <span key={badge} className="role-badge">
+                  {badge}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span>{rightLabel ?? "♠"}</span>
+          )}
         </header>
         {children}
       </section>

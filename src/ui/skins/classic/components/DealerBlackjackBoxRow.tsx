@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
@@ -43,15 +43,11 @@ export function DealerBlackjackBoxRow({
   phase,
   payoutEnabled = false,
   onSettle,
-  cardAssist,
-  cardEntry,
 }: {
   box: BoxView;
   phase: string;
   payoutEnabled?: boolean;
   onSettle?: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
-  cardAssist?: "OFF" | "CONFIRM" | "AUTO";
-  cardEntry?: ReactNode;
 }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -156,7 +152,16 @@ export function DealerBlackjackBoxRow({
         >
           <div>
             <strong>{box.label}</strong>
-            <div className="muted">Stake {box.bet.label}</div>
+            <div className="box-stakes">
+              <span>
+                <small>MAIN</small>
+                <strong>{box.bet.label}</strong>
+              </span>
+              <span>
+                <small>INSURANCE</small>
+                <strong>{box.insurance?.label ?? "—"}</strong>
+              </span>
+            </div>
           </div>
           <span className="chip-pile compact">
             {chips.map((chip, index) => (
@@ -166,23 +171,12 @@ export function DealerBlackjackBoxRow({
             ))}
           </span>
           <div className="payout-state">
-            {settled ?? (unresolved ? "Unresolved" : phase === "PLAYING" ? "In play" : phase === "BETTING" ? "Betting" : box.hand?.label || "")}
-            {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
+            {settled ?? (unresolved ? "Unresolved" : phase === "PLAYING" ? "In play" : phase === "BETTING" ? "Betting" : "")}
             {box.isDoubled ? <div className="muted">Doubled</div> : null}
             {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
           </div>
         </div>
       </div>
-      {cardEntry}
-      {unresolved && cardAssist === "CONFIRM" && box.hand?.suggestedOutcome ? (
-        <button
-          type="button"
-          className="primary"
-          onClick={() => settle(box.hand!.suggestedOutcome!)}
-        >
-          APPLY {box.hand.suggestedOutcome}
-        </button>
-      ) : null}
       {unresolved ? (
         <div className="payout-access" role="group" aria-label={`Settle ${box.label}`}>
           {railActions.map((action) => (

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Prompt 2 — design authority, Blackjack polish, MVP workflow
+
+- Design boards and the seven-zone grid are the visual authority (`docs/DESIGN_AUTHORITY.md`). Player boxes occupy a fixed 3-slot stage and do not jump across Betting, Playing, Insurance, or Payout.
+- Owner utilities, Card Assist, and countdown extras live in the table menu. Phase-action only advances the round. Insurance labels are `MAIN` / `INSURANCE` / `INS WON` / `INS LOST`.
+- MVP file map (`docs/MVP_FILE_MAP.md`) keeps engine files frozen and limits Cursor to the active Classic UI slice.
+
 ### Prompt 1 — simple setup, shared visual system, Blackjack screens
 
 - Home → Create Table → one Table Setup → invite Players → `START BLACKJACK` or `START POKER`. Create asks only for table name, host name if unknown, and starting jetons. Blackjack defaults stay 3:2, 3 boxes, Insurance on.

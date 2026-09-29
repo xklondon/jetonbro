@@ -214,11 +214,15 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("PLAYING");
+  expect(html).toContain("INSURANCE");
   expect(html).toContain("ENTER PAYOUT");
   expect(html).not.toContain("ENTER PAYOUT moves Playing to Payout.");
   expect(html).not.toContain("Settle every box");
-  expect(html).toContain("INSURANCE · OPEN · 1");
+  expect(html).toContain("OPEN INSURANCE");
+  expect(html).toContain("CLOSE INSURANCE");
+  expect(html).toContain("MAIN");
+  expect(html).not.toContain("INSURANCE · OPEN");
+  expect(html).not.toContain("insurance pot");
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");
   expect(html).not.toContain("+ CARDS");
@@ -295,7 +299,8 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html.indexOf("rail-title\">LOST")).toBeLessThan(html.indexOf("rail-title\">STAND OFF"));
   expect(html.indexOf("rail-title\">STAND OFF")).toBeLessThan(html.indexOf("rail-title\">BLACKJACK"));
   expect(html.indexOf("rail-title\">BLACKJACK")).toBeLessThan(html.indexOf("rail-title\">WON"));
-  expect(html).toContain("INSURANCE WON");
+  expect(html).toContain("INS WON");
+  expect(html).toContain("INS LOST");
   expect(html).not.toContain("Deal cards");
   expect(html).toMatch(/<button[^>]*disabled[^>]*>START NEXT ROUND/);
   expect(html).not.toContain("outcome-celebration");

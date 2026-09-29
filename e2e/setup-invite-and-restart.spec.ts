@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createBlackjackTable, decodeQrDataUrl, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, decodeQrDataUrl, openAs, uniqueEmail, openTableMenu } from "./helpers";
 
 async function decodeSetupQr(page: Page) {
   return page.evaluate(async () => {
@@ -138,7 +138,8 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
   await openAs(bankTwoContext, bankTwo, ownerEmail, "Alex");
   await bankTwo.goto(tableUrl);
   await expect(bankTwo.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
-  await page.getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();
   await page.getByRole("button", { name: "START NEXT ROUND" }).click();
   await bankTwo.getByRole("button", { name: "START NEXT ROUND" }).click({ force: true }).catch(() => undefined);

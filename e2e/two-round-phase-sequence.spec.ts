@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, openAs, uniqueEmail, scheduleDealFromMenu } from "./helpers";
 
 async function tableSnapshot(page: Page) {
   return page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((response) => response.json());
@@ -65,7 +65,7 @@ test("two browsers complete two full rounds through the production command path"
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeDisabled();
   await addJetons(playerPage, "25");
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "DEAL IN 7 SECONDS" }).click();
+  await scheduleDealFromMenu(page);
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();
   await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, openAs, uniqueEmail, openTableMenu, scheduleDealFromMenu } from "./helpers";
 
 test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser }) => {
   test.setTimeout(120_000);
@@ -42,7 +42,9 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "DEAL IN 7 SECONDS" })).toBeDisabled();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByRole("button", { name: "DEAL IN 7 SECONDS" })).toBeDisabled();
+  await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
 
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
@@ -51,7 +53,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await expect(samPage.getByLabel("Retract 25 jetons from Box 1")).toBeVisible();
 
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "DEAL IN 7 SECONDS" }).click();
+  await scheduleDealFromMenu(page);
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();
   await page.reload();
   await expect(page.getByText(/Cards in [1-7]/)).toBeVisible();

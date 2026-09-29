@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, invitePlayerFromLobby, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, invitePlayerFromLobby, openAs, uniqueEmail, giveJetonsFromMenu } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -47,7 +47,7 @@ test("two player sessions join a table and open betting", async ({ page, context
 
   await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
-  await page.locator(".dealer-tools").getByRole("button", { name: "GIVE JETONS" }).click();
+  await giveJetonsFromMenu(page);
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("100");
   await page.getByRole("button", { name: "Confirm" }).click();

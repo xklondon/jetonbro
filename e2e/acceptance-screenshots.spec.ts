@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, invitePlayerFromLobby, noHorizontalOverflow, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, invitePlayerFromLobby, noHorizontalOverflow, openAs, uniqueEmail, giveJetonsFromMenu } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -35,7 +35,7 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(page.locator("[data-table-name]").first()).toHaveText("Acceptance table");
   await expect(page.locator("body")).not.toContainText("xklondon");
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
-  await page.locator(".dealer-tools").getByRole("button", { name: "GIVE JETONS" }).click();
+  await giveJetonsFromMenu(page);
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("200");
   await page.getByRole("button", { name: "Confirm" }).click();
@@ -46,11 +46,11 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(alexPage.getByText("YOUR BOX 2")).toBeVisible();
   await alexPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await alexPage.getByPlaceholder("Amount").fill("25");
-  await alexPage.getByRole("button", { name: "Place Bet", exact: true }).click();
+  await alexPage.getByRole("button", { name: "PLACE BET", exact: true }).click();
   await expect(alexPage.locator(".box").filter({ hasText: "YOUR BOX 1" })).toContainText("25");
   await alexPage.getByRole("button", { name: /YOUR BOX 2/ }).click();
   await alexPage.getByPlaceholder("Amount").fill("10");
-  await alexPage.getByRole("button", { name: "Place Bet", exact: true }).click();
+  await alexPage.getByRole("button", { name: "PLACE BET", exact: true }).click();
   await expect(alexPage.locator(".box").filter({ hasText: "YOUR BOX 2" })).toContainText("10");
   await expect(alexPage.getByText("165", { exact: true }).first()).toBeVisible();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
@@ -85,12 +85,14 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(alexPage.getByText(/SPLIT BOX/)).toBeVisible();
 
   await page.getByRole("button", { name: "Open Insurance" }).click();
-  await expect(page.getByText(/INSURANCE · OPEN/)).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
+  await expect(page.getByRole("button", { name: "CLOSE INSURANCE" })).toBeEnabled();
   await alexPage.reload();
   await alexPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
-  await alexPage.getByRole("button", { name: "Insurance" }).click();
+  await alexPage.getByRole("button", { name: "PLACE INSURANCE" }).click();
   await page.reload();
-  await expect(page.getByText(/INSURANCE · OPEN · 1/)).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
+  await expect(page.getByText("INSURANCE").nth(0)).toBeVisible();
   await alexPage.screenshot({ path: join(out, "app-player-playing-390x844.png") });
   await alexPage.screenshot({ path: join(out, "app-blackjack-player-playing-390x844.png") });
   await page.screenshot({ path: join(out, "app-bank-playing-insurance-390x844.png") });
@@ -101,12 +103,12 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "WON" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "INSURANCE WON" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "INS WON" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-payout-unresolved-390x844.png") });
   await page.screenshot({ path: join(out, "app-blackjack-dealer-payout-390x844.png") });
 
   await alexPage.reload();
-  await expect(alexPage.getByText("Waiting for the Bank", { exact: true }).first()).toBeVisible();
+  await expect(alexPage.getByText("ROUND COMPLETE").first()).toBeVisible();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
   await alexPage.screenshot({ path: join(out, "app-player-payout-390x844.png") });
   await alexPage.screenshot({ path: join(out, "app-blackjack-player-payout-390x844.png") });

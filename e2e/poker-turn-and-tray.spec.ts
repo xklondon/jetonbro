@@ -6,6 +6,7 @@ import {
   openAs,
   swipePayoutRow,
   uniqueEmail,
+  openTableMenu,
 } from "./helpers";
 
 type Snap = {
@@ -112,8 +113,10 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   test.setTimeout(180_000);
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
   await page.getByRole("button", { name: "START BLACKJACK" }).click();
-  await expect(page.getByText("OPEN BANK")).toBeVisible();
-  await expect(page.getByText("LIMITED BANK")).toBeVisible();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByText("OPEN BANK")).toBeVisible();
+  await expect(page.locator(".sheet.open").getByText("LIMITED BANK")).toBeVisible();
+  await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
   await expect(samPage.getByText("OPEN BANK")).toHaveCount(0);
@@ -174,7 +177,8 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
 
   await page.getByRole("button", { name: "START NEXT ROUND" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
-  await page.locator(".dealer-tools").getByRole("button", { name: "SWITCH GAME" }).click();
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "SWITCH GAME" }).click();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
