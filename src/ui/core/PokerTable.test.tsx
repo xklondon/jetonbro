@@ -514,12 +514,10 @@ test("Blackjack optional ranks render as larger cards inside the betting box", (
     }),
   );
   const box = html.slice(html.indexOf("class=\"box"), html.indexOf("data-game-controls"));
-  expect(box).toContain("data-box-cards");
-  expect(box).toContain("data-card=\"A\"");
-  expect(box).toContain("playing-card is-box");
+  expect(box).not.toContain("data-box-cards");
   expect(html).toContain("class=\"dock");
-  expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("data-game-controls"));
-  expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("card-assist"));
+  expect(html).toContain("YOUR BOX 1");
+  expect(html).not.toContain("+ CARDS");
 });
 
 test("poker setup prints the live table name on the cloth and hides D/SB/BB before Deal Cards", () => {

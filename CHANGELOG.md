@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Prompt 1 — simple setup, shared visual system, Blackjack screens
+
+- Home → Create Table → one Table Setup → invite Players → `START BLACKJACK` or `START POKER`. Create asks only for table name, host name if unknown, and starting jetons. Blackjack defaults stay 3:2, 3 boxes, Insurance on.
+- Blackjack labels: `START BLACKJACK`, `CLOSE BETTING`, `ENTER PAYOUT`, `START NEXT ROUND`. Command handlers are unchanged. Poker reducer/protocol is unchanged.
+- Shared Classic slots: TableShell, PhaseBar, TableIdentity, DealerRow, PlayerRow, BlackjackBox, PhaseActionDock, JetonTray. Player box selection is tap-only. Card Assist stays out of the default main UI.
+- Insurance PAYOUT buttons are `INSURANCE WON` / `INSURANCE LOST`. A jeton tray tap still places when the pointer did not drop on a box.
+
+### Product boundary restated
+
+- JetonBro is a virtual-jeton ledger for physical tables. The dealer owns cards, decisions, and winners. The application owns balances, locks, blinds, pots, turn indication, dealer-declared payout, and ledger persistence.
+- Protocol work must not add digital-card play, hand evaluation, automatic winners, or a visual redesign.
+
 ### Texas Hold’em fold-complete and pot authority
 
 - A completed hand now clears the actor, street wager, and amount to call. `HAND COMPLETE` cannot keep `TO CALL`, a Waiting seat, or leftover Fold/Call controls.

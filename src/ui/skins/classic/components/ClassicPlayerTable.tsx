@@ -1,26 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PlayerTableView } from "@/application/queries/views";
-import { PhoneShell } from "./PhoneShell";
-import { FeltBox } from "./FeltBox";
-import { ClothName } from "./ClothName";
-import { DealCountdown } from "./DealCountdown";
+import { TableShell } from "./TableShell";
+import { PhaseBar } from "./PhaseBar";
+import { TableIdentity } from "./TableIdentity";
+import { BlackjackBox } from "./BlackjackBox";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
-import { CardEntryPanel } from "./CardEntryPanel";
 import { PlayerWallet } from "./PlayerWallet";
+import { CardEntryPanel } from "./CardEntryPanel";
 import {
   selectInsuranceCelebration,
   selectOutcomeCelebration,
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
-import {
-  adjacentBoxId,
-  endBoxNavDrag,
-  moveBoxNavDrag,
-  startBoxNavDrag,
-  type BoxNavSession,
-} from "@/ui/core/box-nav-gesture";
 
 export function ClassicPlayerTable({
   view,
@@ -38,11 +31,8 @@ export function ClassicPlayerTable({
   const [exact, setExact] = useState("");
   const [insuranceAmount, setInsuranceAmount] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
-  const [navDragging, setNavDragging] = useState(false);
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const boxIds = view.boxes.map((box) => box.id);
-  const navSession = useRef<BoxNavSession | null>(null);
-  const ignoreClick = useRef(false);
   const boxClass = useMemo(() => {
     if (view.boxes.length >= 4) return "player-boxes scroll";
     if (view.boxes.length === 3) return "player-boxes three";
@@ -70,7 +60,7 @@ export function ClassicPlayerTable({
       }
       if (box.insuranceResult && !seenInsurance.current.has(box.id)) {
         seenInsurance.current.add(box.id);
-        const won = /return/i.test(box.insuranceResult) && !/lost/i.test(box.insuranceResult);
+        const won = /WON/i.test(box.insuranceResult) && !/LOST/i.test(box.insuranceResult);
         const returned = box.insuranceResult?.match(/return ([0-9.]+)/)?.[1] ?? null;
         const next = selectInsuranceCelebration(`${box.id}:insurance`, won, reducedMotion, returned);
         setCelebration(next);
@@ -83,210 +73,143 @@ export function ClassicPlayerTable({
     onCommand("placeBet", { boxId, amount, mode: "ADD" });
   }
 
-  function pointerFromEvent(event: PointerEvent<HTMLElement>) {
-    return {
-      isPrimary: event.isPrimary,
-      pointerId: event.pointerId,
-      pointerType: event.pointerType,
-      button: event.button,
-      clientX: event.clientX,
-      clientY: event.clientY,
-    };
-  }
-
-  function onNavPointerDown(event: PointerEvent<HTMLElement>) {
-    if (boxIds.length < 2) return;
-    const next = startBoxNavDrag(pointerFromEvent(event), navSession.current);
-    if (!next) return;
-    navSession.current = next;
-    ignoreClick.current = false;
-  }
-
-  function onNavPointerMove(event: PointerEvent<HTMLElement>) {
-    if (!navSession.current) return;
-    const wasDragging = navSession.current.dragging;
-    const next = moveBoxNavDrag(navSession.current, pointerFromEvent(event));
-    navSession.current = next;
-    if (next.dragging) {
-      if (!wasDragging && event.currentTarget.setPointerCapture) {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }
-      event.preventDefault();
-      setNavDragging(true);
-    }
-  }
-
-  function onNavPointerEnd(event: PointerEvent<HTMLElement>) {
-    const current = navSession.current;
-    navSession.current = null;
-    setNavDragging(false);
-    if (!current) return;
-    const ended = endBoxNavDrag(current, pointerFromEvent(event));
-    if (ended.ignoreClick) ignoreClick.current = true;
-    if (ended.direction) {
-      const nextId = adjacentBoxId(boxIds, selected?.id ?? selectedBoxId, ended.direction);
-      if (nextId) onSelectBox(nextId);
-    }
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }
-
   return (
-    <PhoneShell rightLabel={`♠ ${view.boxes.length}`}>
+    <TableShell rightLabel={`♠ ${view.boxes.length}`}>
       <OutcomeCelebrationOverlay celebration={celebration} />
-      <div className="phase-head">
-        <strong data-phase-heading>{view.phase.replaceAll("_", " ")}</strong>
-        <DealCountdown deadline={view.bettingCloseDeadlineAt} />
-        <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
-      </div>
+      <PhaseBar label={view.phase.replaceAll("_", " ")} />
       <main
-        className={`felt${view.phase === "BETTING" ? " betting-open" : ""}${view.bettingCloseDeadlineAt ? " betting-closing" : ""}`}
-        data-box-nav={boxIds.length > 1 ? "true" : "false"}
+        className={`felt${view.phase === "BETTING" ? " betting-open" : ""}`}
         data-selected-box={selected?.id ?? ""}
         data-box-count={boxIds.length}
-        onPointerDown={onNavPointerDown}
-        onPointerMove={onNavPointerMove}
-        onPointerUp={onNavPointerEnd}
-        onPointerCancel={onNavPointerEnd}
-        onClickCapture={(event) => {
-          if (!ignoreClick.current) return;
-          ignoreClick.current = false;
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        style={{ touchAction: boxIds.length > 1 ? (navDragging ? "none" : "pan-y") : undefined }}
       >
         <div className="table-surface">
-            <ClothName name={view.tableName} />
-            <div className={boxClass}>
-              {view.boxes.map((box) => (
-                <FeltBox
-                  key={box.id}
-                  box={box}
-                  selected={box.id === selected?.id}
-                  dropHighlight={hoverBoxId === box.id}
-                  onSelect={() => {
-                    if (ignoreClick.current) return;
-                    onSelectBox(box.id);
-                  }}
-                  retractable={view.actions.retract}
-                  onRetractChip={(amount) =>
-                    onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
-                  }
-                  cardEntry={
-                    view.phase === "PLAYING" ? (
-                      <CardEntryPanel
-                        hand={box.hand}
-                        completeLabel="HAND COMPLETE"
-                        compact
-                        showCards={false}
-                        onAdd={(rank) => onCommand("addCard", { boxId: box.id, rank })}
-                        onRemove={(index) => onCommand("removeCard", { boxId: box.id, index: String(index) })}
-                        onComplete={() => onCommand("completeHand", { boxId: box.id })}
-                        onReopen={() => onCommand("reopenHand", { boxId: box.id })}
-                      />
-                    ) : null
-                  }
-                />
-              ))}
-            </div>
+          <TableIdentity name={view.tableName} />
+          <div className={boxClass}>
+            {view.boxes.map((box) => (
+              <BlackjackBox
+                key={box.id}
+                box={box}
+                selected={box.id === selected?.id}
+                dropHighlight={hoverBoxId === box.id}
+                onSelect={() => onSelectBox(box.id)}
+                retractable={view.actions.retract}
+                onRetractChip={(amount) =>
+                  onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
+                }
+                cardEntry={
+                  view.phase === "PLAYING" && view.cardAssist && view.cardAssist !== "OFF" ? (
+                    <CardEntryPanel
+                      hand={box.hand}
+                      completeLabel="HAND COMPLETE"
+                      compact
+                      showCards={false}
+                      onAdd={(rank) => onCommand("addCard", { boxId: box.id, rank })}
+                      onRemove={(index) => onCommand("removeCard", { boxId: box.id, index: String(index) })}
+                      onComplete={() => onCommand("completeHand", { boxId: box.id })}
+                      onReopen={() => onCommand("reopenHand", { boxId: box.id })}
+                    />
+                  ) : null
+                }
+              />
+            ))}
+          </div>
         </div>
       </main>
       <footer className="dock player-dock">
         <div className="game-controls" data-game-controls="true">
-        {notice ? <div className="error">{notice}</div> : null}
-        {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
-        {view.actions.bet ? (
-          <div className="exact">
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="Amount"
-              value={exact}
-              onChange={(event) => setExact(event.target.value)}
-              aria-label="Exact bet amount"
-            />
-            <button
-              className="gold-button"
-              type="button"
-              disabled={!selected || !exact || selected.coverage?.bet === false}
-              onClick={() => {
-                if (!selected || !exact) return;
-                onCommand("placeBet", { boxId: selected.id, amount: exact, mode: "SET" });
-                setExact("");
-              }}
-            >
-              Bet
-            </button>
-            <button
-              className="gold-button"
-              type="button"
-              onClick={() => view.actions.addBox && onCommand("addBox")}
-            >
-              + Box
-            </button>
-            <button
-              className="gold-button"
-              type="button"
-              disabled={!selected || selected.bet.label === "0"}
-              onClick={() =>
-                selected && onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })
-              }
-            >
-              Retract
-            </button>
-          </div>
-        ) : null}
-        {view.actions.double || view.actions.split || view.actions.insurance ? (
-          <div>
-            {view.actions.insurance ? (
-              <div className="exact">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Insurance amount"
-                  value={insuranceAmount}
-                  onChange={(event) => setInsuranceAmount(event.target.value)}
-                  aria-label="Insurance amount"
-                />
-              </div>
-            ) : null}
-            <div className="play-controls">
+          {notice ? <div className="error">{notice}</div> : null}
+          {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
+          {view.actions.bet ? (
+            <div className="exact">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="Amount"
+                value={exact}
+                onChange={(event) => setExact(event.target.value)}
+                aria-label="Exact bet amount"
+              />
               <button
+                className="gold-button"
                 type="button"
-                disabled={!view.actions.insurance || !selected || selected.coverage?.insurance === false}
+                disabled={!selected || !exact || selected.coverage?.bet === false}
+                onClick={() => {
+                  if (!selected || !exact) return;
+                  onCommand("placeBet", { boxId: selected.id, amount: exact, mode: "SET" });
+                  setExact("");
+                }}
+              >
+                Place Bet
+              </button>
+              <button
+                className="gold-button"
+                type="button"
+                disabled={!view.actions.addBox}
+                onClick={() => view.actions.addBox && onCommand("addBox")}
+              >
+                START ADDITIONAL BOX
+              </button>
+              <button
+                className="gold-button"
+                type="button"
+                disabled={!selected || selected.bet.label === "0"}
                 onClick={() =>
-                  selected &&
-                  onCommand("buyInsurance", {
-                    boxId: selected.id,
-                    amount: insuranceAmount || selected.insuranceMax.label,
-                  })
+                  selected && onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })
                 }
               >
-                Insurance
-              </button>
-              <button
-                type="button"
-                className="primary"
-                disabled={!view.actions.double || !selected || selected.coverage?.double === false}
-                onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
-              >
-                Double
-              </button>
-              <button
-                type="button"
-                disabled={!view.actions.split || !selected || selected.coverage?.split === false}
-                onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
-              >
-                Split
+                Retract
               </button>
             </div>
-          </div>
-        ) : null}
-        {view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE" ? (
-          <div className="payout-wait">{view.title}</div>
-        ) : null}
+          ) : null}
+          {view.actions.double || view.actions.split || view.actions.insurance ? (
+            <div>
+              {view.actions.insurance ? (
+                <div className="exact">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Insurance amount"
+                    value={insuranceAmount}
+                    onChange={(event) => setInsuranceAmount(event.target.value)}
+                    aria-label="Insurance amount"
+                  />
+                </div>
+              ) : null}
+              <div className="play-controls">
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={!view.actions.double || !selected || selected.coverage?.double === false}
+                  onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
+                >
+                  DOUBLE
+                </button>
+                <button
+                  type="button"
+                  disabled={!view.actions.split || !selected || selected.coverage?.split === false}
+                  onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
+                >
+                  SPLIT
+                </button>
+                <button
+                  type="button"
+                  disabled={!view.actions.insurance || !selected || selected.coverage?.insurance === false}
+                  onClick={() =>
+                    selected &&
+                    onCommand("buyInsurance", {
+                      boxId: selected.id,
+                      amount: insuranceAmount || selected.insuranceMax.label,
+                    })
+                  }
+                >
+                  INSURANCE
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE" ? (
+            <div className="payout-wait">{view.title}</div>
+          ) : null}
         </div>
         <PlayerWallet
           available={view.available}
@@ -302,6 +225,6 @@ export function ClassicPlayerTable({
           onHover={setHoverBoxId}
         />
       </footer>
-    </PhoneShell>
+    </TableShell>
   );
 }

@@ -14,12 +14,13 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await openAs(context, page, ownerEmail, "Alex");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page.getByRole("button", { name: "CREATE A TABLE" }).click();
-  await page.getByLabel("Table name").fill("Salon table");
-  await page.locator(".setup-mask").getByLabel("Starting jetons per player").fill("100");
-  await page.locator(".setup-mask").getByLabel("Player email").fill(playerEmail);
-  await page.screenshot({ path: join(out, "app-create-table-setup-390x844.png") });
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await page.getByLabel("Table name").fill("Salon table");
+  await page.getByLabel("Starting jetons per player").fill("100");
+  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByLabel("Player email").fill(playerEmail);
+  await page.getByRole("button", { name: "Invite by email" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
 
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
@@ -40,7 +41,7 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   });
   await page.screenshot({ path: join(out, "app-bank-lobby-invited-joined-390x844.png") });
 
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
 
   await playerPage.reload();

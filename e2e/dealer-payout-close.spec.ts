@@ -48,34 +48,48 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await joPage.goto(joinPath);
   await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.locator(".dealer-list")).toBeVisible();
   await expect(page.locator(".dealer-grid")).toHaveCount(0);
 
   await samPage.reload();
   await expect(samPage.getByRole("button", { name: "Add 25 jetons" })).toBeVisible();
   await addJetons(samPage, "25");
-  await samPage.getByRole("button", { name: "+ Box" }).click({ force: true });
-  await samPage.getByRole("button", { name: /YOUR BOX 2/ }).click({ force: true });
+  await expect.poll(async () => {
+    const snap = (await tableSnapshot(samPage)) as { player?: { boxes: { boxNumber: number; bet: { label: string } }[] } };
+    return snap.player?.boxes.find((box) => box.boxNumber === 1)?.bet.label ?? "";
+  }).toBe("25");
+  await samPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click({ force: true });
+  await expect.poll(async () => {
+    const snap = (await tableSnapshot(samPage)) as { player?: { boxes: { id: string; boxNumber: number }[] } };
+    return snap.player?.boxes.length ?? 0;
+  }).toBe(2);
+  const extraBox = ((await tableSnapshot(samPage)) as { player?: { boxes: { id: string; boxNumber: number }[] } }).player?.boxes.find((box) => box.boxNumber === 2);
+  expect(extraBox?.id).toBeTruthy();
+  await samPage.locator(`[data-box-id="${extraBox!.id}"]`).click();
   await addJetons(samPage, "10");
+  await expect.poll(async () => {
+    const snap = (await tableSnapshot(samPage)) as { player?: { boxes: { boxNumber: number; bet: { label: string } }[] } };
+    return snap.player?.boxes.find((box) => box.boxNumber === 2)?.bet.label ?? "";
+  }).toBe("10");
   await joPage.reload();
   await expect(joPage.getByRole("button", { name: "Add 25 jetons" })).toBeVisible();
   await addJetons(joPage, "25");
   await expect(joPage.getByText("75", { exact: true }).first()).toBeVisible();
   await expect(samPage.getByText("65", { exact: true }).first()).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
+  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Open Insurance" }).click();
   await samPage.reload();
   await samPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await samPage.getByRole("button", { name: "Insurance" }).click();
   await page.getByRole("button", { name: "Close Insurance" }).click();
-  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
+  await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "IN 7 SECONDS", exact: true })).toBeDisabled();
 
   const payoutSnap = (await tableSnapshot(page)) as {
@@ -91,15 +105,15 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await swipeRow(page, samBoxes[1]!.id, "left");
   await expect(page.locator(`[data-box-id="${samBoxes[1]!.id}"]`)).toContainText(/Lost/i, { timeout: 10_000 });
   await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: /STAND OFF/ }).click();
-  await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
-  await page.getByRole("button", { name: "No Blackjack" }).click();
+  await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeDisabled();
+  await page.getByRole("button", { name: "INSURANCE LOST" }).click();
 
-  await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
   await page.getByRole("button", { name: "IN 7 SECONDS", exact: true }).click();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();
   await page.reload();
   await expect(page.getByText(/Next round in [1-7]/)).toBeVisible();
-  await page.getByRole("button", { name: "NEXT ROUND NOW" }).click();
+  await page.getByRole("button", { name: "START NEXT ROUND" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await samPage.reload();
   await joPage.reload();
@@ -110,10 +124,10 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   await addJetons(joPage, "5");
   await expect(samPage.getByText("97.5", { exact: true }).first()).toBeVisible();
   await expect(joPage.getByText("95", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
+  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
+  await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   const second = (await tableSnapshot(page)) as { bank?: { players: { boxes: { id: string }[] }[] } };
   for (const player of second.bank?.players ?? []) {
@@ -121,12 +135,12 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
       await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /STAND OFF/ }).click({ force: true });
     }
   }
-  await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled();
   await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "CLOSE TABLE & SAVE BALANCES" }).click();
   await expect(page.getByText(/Save each Player/i)).toBeVisible();
   await page.getByRole("button", { name: "Confirm close" }).click();
-  await expect(page.getByRole("button", { name: /CREATE (A|NEW) TABLE/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
 
   const retry = await page.request.post(`/api/tables/${tableId}/commands`, {
     data: { command: "closeTable", idempotencyKey: crypto.randomUUID() },

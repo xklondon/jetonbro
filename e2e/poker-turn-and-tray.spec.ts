@@ -10,6 +10,7 @@ import {
 
 type Snap = {
   viewerId: string;
+  player?: { boxes: { id: string; boxNumber?: number; bet?: { label: string }; outcome?: string | null }[] };
   bank?: { players: { name: string; boxes: { id: string; outcome?: string | null }[] }[] };
   poker?: {
     phase: string;
@@ -95,7 +96,7 @@ async function threeSeated(page: Page, context: BrowserContext, browser: Browser
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
 
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
   const ownerId = setupSnap.setup?.members?.find((member) => member.isOwner)?.userId ?? setupSnap.viewerId;
   await page.request.post(`/api/tables/${tableId}/commands`, {
     data: { command: "giveJetons", userId: ownerId, amount: "100", idempotencyKey: crypto.randomUUID() },
@@ -110,7 +111,7 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
 }) => {
   test.setTimeout(180_000);
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.getByText("OPEN BANK")).toBeVisible();
   await expect(page.getByText("LIMITED BANK")).toBeVisible();
   await samPage.reload();
@@ -119,9 +120,19 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect(samPage.getByText("LIMITED BANK")).toHaveCount(0);
 
   await addJetons(samPage, "25");
-  await samPage.getByRole("button", { name: "+ Box" }).click({ force: true });
-  await samPage.getByRole("button", { name: /YOUR BOX 2/ }).click({ force: true });
+  await samPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click({ force: true });
+  await expect.poll(async () => {
+    const snap = await tableSnapshot(samPage);
+    return snap.player?.boxes.length ?? 0;
+  }).toBe(2);
+  const extraBox = (await tableSnapshot(samPage)).player?.boxes.find((box) => box.boxNumber === 2);
+  expect(extraBox?.id).toBeTruthy();
+  await samPage.locator(`[data-box-id="${extraBox!.id}"]`).click();
   await addJetons(samPage, "10");
+  await expect.poll(async () => {
+    const snap = await tableSnapshot(samPage);
+    return snap.player?.boxes.find((box) => box.boxNumber === 2)?.bet.label ?? "";
+  }).toBe("10");
   await joPage.reload();
   await addJetons(joPage, "25");
   await expect
@@ -131,9 +142,9 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
     })
     .toBe(1);
 
-  await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
+  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
+  await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect
     .poll(async () => {
@@ -161,9 +172,9 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
     })
     .toBe("LOST,WON,PUSH");
 
-  await page.getByRole("button", { name: "NEXT ROUND NOW" }).click();
+  await page.getByRole("button", { name: "START NEXT ROUND" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "SWITCH GAME" }).click();
+  await page.locator(".dealer-tools").getByRole("button", { name: "SWITCH GAME" }).click();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });

@@ -5,7 +5,6 @@ import type { BoxView } from "@/application/queries/views";
 import { chipsFromMillis } from "./chips";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import { endPayoutDrag, movePayoutDrag, startPayoutDrag, type PayoutDragSession } from "@/ui/core/payout-gesture";
-import { PlayingCard } from "./PlayingCard";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
   LOST: "LOST",
@@ -44,14 +43,14 @@ export function DealerBlackjackBoxRow({
   phase,
   payoutEnabled = false,
   onSettle,
-  onApply,
+  cardAssist,
   cardEntry,
 }: {
   box: BoxView;
   phase: string;
   payoutEnabled?: boolean;
   onSettle?: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
-  onApply?: () => void;
+  cardAssist?: "OFF" | "CONFIRM" | "AUTO";
   cardEntry?: ReactNode;
 }) {
   const [dx, setDx] = useState(0);
@@ -118,15 +117,6 @@ export function DealerBlackjackBoxRow({
     event.stopPropagation();
   }
 
-  const cards: ReactNode =
-    box.hand?.ranks.length ? (
-      <div className="box-cards" data-box-cards="true">
-        {box.hand.ranks.map((rank, index) => (
-          <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />
-        ))}
-      </div>
-    ) : null;
-
   return (
     <div
       className={`payout-row blackjack-box-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
@@ -178,29 +168,19 @@ export function DealerBlackjackBoxRow({
           <div className="payout-state">
             {settled ?? (unresolved ? "Unresolved" : phase === "PLAYING" ? "In play" : phase === "BETTING" ? "Betting" : box.hand?.label || "")}
             {box.insurance ? <div className="muted">Insurance {box.insurance.label}</div> : null}
+            {box.isDoubled ? <div className="muted">Doubled</div> : null}
             {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
-            {box.hand?.label ? <div className="muted">{box.hand.label}</div> : null}
-            {box.hand?.suggestedOutcome ? (
-              <div className="muted">Suggested {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}</div>
-            ) : null}
           </div>
         </div>
       </div>
-      {cards}
       {cardEntry}
-      {unresolved && onApply && box.hand?.suggestedOutcome ? (
+      {unresolved && cardAssist === "CONFIRM" && box.hand?.suggestedOutcome ? (
         <button
           type="button"
-          className="apply-suggestion"
-          data-payout-action="true"
-          onPointerDown={stopActionPointer}
-          onClick={(event) => {
-            event.stopPropagation();
-            if (Date.now() < ignoreClickUntil.current) return;
-            onApply();
-          }}
+          className="primary"
+          onClick={() => settle(box.hand!.suggestedOutcome!)}
         >
-          APPLY {box.hand.suggestedOutcome === "PUSH" ? "STAND OFF" : box.hand.suggestedOutcome}
+          APPLY {box.hand.suggestedOutcome}
         </button>
       ) : null}
       {unresolved ? (

@@ -67,6 +67,7 @@ export type JetonBroSkin = {
       game: "BLACKJACK" | "POKER";
       startingJetonsPerPlayer: string;
       emails: string[];
+      hostName?: string;
       cardAssist?: string;
       bankFundingMode?: string;
       startingBank?: string;
@@ -78,5 +79,7 @@ export type JetonBroSkin = {
     joinUrl?: string | null;
     defaultStartingJetons?: string;
     initialEmails?: string[];
+    needsHostName?: boolean;
+    defaultHostName?: string;
   }>;
 };

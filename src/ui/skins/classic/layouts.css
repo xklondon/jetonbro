@@ -9,7 +9,7 @@
 
 .classic-skin .phone {
   width: 100%;
-  max-width: 430px;
+  max-width: 480px;
   min-height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
@@ -380,6 +380,16 @@
   margin-bottom: 8px;
 }
 
+.classic-skin .setup-start {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.classic-skin .setup-start button {
+  min-height: 44px;
+}
+
 .classic-skin .owner-controls {
   display: flex;
   flex-wrap: wrap;
@@ -546,6 +556,11 @@
   border-radius: 10px;
   padding: 10px;
   font-size: 16px;
+}
+
+.classic-skin .exact input {
+  min-width: 7.5rem;
+  flex: 1 1 7.5rem;
 }
 
 .classic-skin .exact .gold-button {

@@ -29,28 +29,28 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
 
   await page.reload();
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({ timeout: 15000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.locator("[data-table-name]").first()).toHaveText("Acceptance table");
   await expect(page.locator("body")).not.toContainText("xklondon");
-  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
-  await page.getByRole("button", { name: "GIVE JETONS" }).click();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
+  await page.locator(".dealer-tools").getByRole("button", { name: "GIVE JETONS" }).click();
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("200");
   await page.getByRole("button", { name: "Confirm" }).click();
 
   await alexPage.reload();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
-  await alexPage.getByRole("button", { name: "+ Box" }).click();
+  await alexPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click();
   await expect(alexPage.getByText("YOUR BOX 2")).toBeVisible();
   await alexPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await alexPage.getByPlaceholder("Amount").fill("25");
-  await alexPage.getByRole("button", { name: "Bet", exact: true }).click();
+  await alexPage.getByRole("button", { name: "Place Bet", exact: true }).click();
   await expect(alexPage.locator(".box").filter({ hasText: "YOUR BOX 1" })).toContainText("25");
   await alexPage.getByRole("button", { name: /YOUR BOX 2/ }).click();
   await alexPage.getByPlaceholder("Amount").fill("10");
-  await alexPage.getByRole("button", { name: "Bet", exact: true }).click();
+  await alexPage.getByRole("button", { name: "Place Bet", exact: true }).click();
   await expect(alexPage.locator(".box").filter({ hasText: "YOUR BOX 2" })).toContainText("10");
   await expect(alexPage.getByText("165", { exact: true }).first()).toBeVisible();
   await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
@@ -64,16 +64,16 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await alexPage.setViewportSize({ width: 390, height: 844 });
 
   await page.reload();
-  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-betting-390x844.png") });
   await page.screenshot({ path: join(out, "app-blackjack-dealer-betting-390x844.png") });
   await expect(page.locator("[data-blackjack-box-row]")).not.toHaveCount(0);
   await expect(page.locator(".betting-spot")).toHaveCount(0);
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
-  await page.getByRole("button", { name: "DEAL CARDS NOW" }).click();
+  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "PAYOUT PHASE" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "ENTER PAYOUT" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
 
   await alexPage.reload();
   await expect(alexPage.getByRole("button", { name: "Double" })).toBeVisible();
@@ -85,23 +85,23 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   await expect(alexPage.getByText(/SPLIT BOX/)).toBeVisible();
 
   await page.getByRole("button", { name: "Open Insurance" }).click();
-  await expect(page.getByText(/INSURANCE SIDE POT · OPEN/)).toBeVisible();
+  await expect(page.getByText(/INSURANCE · OPEN/)).toBeVisible();
   await alexPage.reload();
   await alexPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await alexPage.getByRole("button", { name: "Insurance" }).click();
   await page.reload();
-  await expect(page.getByText(/INSURANCE SIDE POT · OPEN · 1 bet/)).toBeVisible();
+  await expect(page.getByText(/INSURANCE · OPEN · 1/)).toBeVisible();
   await alexPage.screenshot({ path: join(out, "app-player-playing-390x844.png") });
   await alexPage.screenshot({ path: join(out, "app-blackjack-player-playing-390x844.png") });
   await page.screenshot({ path: join(out, "app-bank-playing-insurance-390x844.png") });
 
   await page.getByRole("button", { name: "Close Insurance" }).click();
-  await page.getByRole("button", { name: "PAYOUT PHASE" }).click();
+  await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "DEAL CARDS NOW" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "NEXT ROUND NOW" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "WON" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Dealer Blackjack" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "INSURANCE WON" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-bank-payout-unresolved-390x844.png") });
   await page.screenshot({ path: join(out, "app-blackjack-dealer-payout-390x844.png") });
 

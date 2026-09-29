@@ -314,6 +314,9 @@ export type WaitingTableView = {
   game: string;
   available: MoneyView;
   copy: string;
+  bankName?: string;
+  ownerName?: string;
+  startingJetons?: MoneyView;
 };
 
 export type ClientSnapshot = {

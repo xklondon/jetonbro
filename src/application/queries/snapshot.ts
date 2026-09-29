@@ -128,8 +128,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       insuranceMax: money(insuranceMaxMillis(box.originalStakeMillis || box.lockedBetMillis)),
       insuranceResult: insurance?.settledAt
         ? insurance.resolution === "DEALER_BLACKJACK"
-          ? `Insurance · return ${formatJetons(insurance.returnedMillis ?? 0n)}`
-          : "Insurance lost"
+          ? `INSURANCE WON · return ${formatJetons(insurance.returnedMillis ?? 0n)}`
+          : "INSURANCE LOST"
         : null,
       outcome: box.outcome,
       returned: box.returnedMillis !== null ? money(box.returnedMillis) : null,
@@ -271,7 +271,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           tableName: table.name,
           game: "Blackjack",
           available: money(viewer.availableMillis),
-          copy: "Waiting for the Bank to open betting",
+          copy: "Waiting for the Bank to start",
+          bankName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
+          ownerName: displayName(table.owner),
+          startingJetons: money(table.startingJetonsPerPlayerMillis),
         }
       : isOwner && table.currentPhase === "TABLE_SETUP"
         ? null
@@ -424,10 +427,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         phaseLabel: table.currentPhase.replace("_", " "),
         primaryAction:
           table.currentPhase === "BETTING"
-            ? { id: "dealCards", label: "DEAL CARDS NOW", enabled: hasValidBet && !tableClosed }
+            ? { id: "dealCards", label: "CLOSE BETTING", enabled: hasValidBet && !tableClosed }
             : table.currentPhase === "PLAYING"
-              ? { id: "payoutPhase", label: "PAYOUT PHASE", enabled: !tableClosed }
-              : { id: "nextHand", label: "NEXT ROUND NOW", enabled: canNextHand && !tableClosed },
+              ? { id: "payoutPhase", label: "ENTER PAYOUT", enabled: !tableClosed }
+              : { id: "nextHand", label: "START NEXT ROUND", enabled: canNextHand && !tableClosed },
         boxes,
         players,
         playerCount: players.length,
@@ -467,8 +470,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           switchGame: isOwner && !fundingLocked && !pokerOpen && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
         },
         insuranceSettleActions: [
-          { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
-          { id: "NO_DEALER_BLACKJACK", label: "No Blackjack" },
+          { id: "DEALER_BLACKJACK", label: "INSURANCE WON" },
+          { id: "NO_DEALER_BLACKJACK", label: "INSURANCE LOST" },
         ],
         bettingCloseDeadlineAt: deadline,
         nextRoundDeadlineAt: nextRoundDeadline,
@@ -491,7 +494,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     : null;
 
   if (isBank && table.currentPhase === "ROUND_COMPLETE" && bank) {
-    bank.primaryAction = { id: "nextHand", label: "NEXT ROUND NOW", enabled: canNextHand && !tableClosed };
+    bank.primaryAction = { id: "nextHand", label: "START NEXT ROUND", enabled: canNextHand && !tableClosed };
   }
 
   const poker =
@@ -544,7 +547,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             tableName: table.name,
             game: "Blackjack",
             available: money(viewer.availableMillis),
-            copy: "Waiting for the Bank to open betting",
+            copy: "Waiting for the Bank to start",
+            bankName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
+            ownerName: displayName(table.owner),
+            startingJetons: money(table.startingJetonsPerPlayerMillis),
           }
         : null)
       : null,

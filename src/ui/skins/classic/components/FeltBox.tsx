@@ -37,7 +37,7 @@ export function FeltBox({
       <span className="box-name">{box.label}</span>
       <span className="amount-label">BET</span>
       <span className="amount">{box.bet.label}</span>
-      {box.hand?.ranks.length ? (
+      {box.hand?.ranks.length && cardEntry ? (
         <span className="box-cards" data-box-cards="true">
           {box.hand.ranks.map((rank, index) => (
             <PlayingCard key={`${rank}-${index}`} rank={rank} size="box" />

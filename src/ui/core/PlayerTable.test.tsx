@@ -74,7 +74,6 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   );
   expect(html).toContain("YOUR BOX 1");
   expect(html).toContain("YOUR BOX 2");
-  expect(html).toContain('data-box-nav="true"');
   expect(html).toContain('data-selected-box="1"');
   expect(html).toContain('data-phase-heading');
   expect(html).not.toContain("Select a box");
@@ -85,20 +84,20 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).not.toContain("xklondon");
   expect(html).not.toContain("AVAILABLE VALUE");
   expect(html).toContain("75");
-  expect(html).toContain("Insurance");
-  expect(html).toContain("Double");
-  expect(html).toContain("Split");
-  expect(html).toContain("+ CARDS");
+  expect(html).toContain("INSURANCE");
+  expect(html).toContain("DOUBLE");
+  expect(html).toContain("SPLIT");
+  expect(html).not.toContain("+ CARDS");
   expect(html).not.toContain("+ ADD CARDS");
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("table-rail");
-  expect(html.indexOf("Insurance")).toBeLessThan(html.indexOf("YOUR JETONS"));
+  expect(html.indexOf("DOUBLE")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).toContain("selected");
   expect(html).not.toContain("OPEN BANK");
   expect(html).not.toContain("LIMITED BANK");
 });
 
-test("entered Blackjack ranks sit inside the betting box above the card controls", () => {
+test("optional ranks stay off the main Player surface unless Card Assist is on", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicPlayerTable, {
       view: {
@@ -116,13 +115,9 @@ test("entered Blackjack ranks sit inside the betting box above the card controls
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("data-box-cards");
-  expect(html).toContain("playing-card is-box");
-  expect(html.indexOf("data-box-cards")).toBeGreaterThan(html.indexOf("class=\"box"));
-  expect(html.indexOf("data-box-cards")).toBeLessThan(html.indexOf("data-game-controls"));
-  expect(html.indexOf("+ CARDS") === -1 || html.indexOf("HAND COMPLETE") > html.indexOf("class=\"box")).toBe(true);
-  expect(html.indexOf("HAND COMPLETE")).toBeGreaterThan(html.indexOf("class=\"box"));
-  expect(html.indexOf("HAND COMPLETE")).toBeLessThan(html.indexOf("data-game-controls"));
+  expect(html).not.toContain("data-box-cards");
+  expect(html).not.toContain("+ CARDS");
+  expect(html).not.toContain("HAND COMPLETE");
   expect(html).not.toContain("+ ADD CARDS");
 });
 
@@ -171,6 +166,8 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
     }),
   );
   expect(html).toContain("Amount");
+  expect(html).toContain("Place Bet");
+  expect(html).toContain("START ADDITIONAL BOX");
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("Retract 25 jetons from Box 1");
   expect(html).toContain("player-boxes two");

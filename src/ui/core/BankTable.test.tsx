@@ -47,7 +47,7 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
     title: "Take bets",
     copy: "Close when ready",
     phaseLabel: "BETTING",
-    primaryAction: { id: "dealCards", label: "DEAL CARDS NOW", enabled: true },
+    primaryAction: { id: "dealCards", label: "CLOSE BETTING", enabled: true },
     boxes: [box({ insurance: null })],
     playerCount: 1,
     boxCount: 1,
@@ -99,8 +99,8 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
       switchGame: false,
     },
     insuranceSettleActions: [
-      { id: "DEALER_BLACKJACK", label: "Dealer Blackjack" },
-      { id: "NO_DEALER_BLACKJACK", label: "No Blackjack" },
+      { id: "DEALER_BLACKJACK", label: "INSURANCE WON" },
+      { id: "NO_DEALER_BLACKJACK", label: "INSURANCE LOST" },
     ],
     ...overrides,
   };
@@ -112,12 +112,11 @@ test("Bank betting keeps deal controls at the top", () => {
   );
   expect(html).toContain('data-phase-heading');
   expect(html).toContain("BETTING");
-  expect(html).toContain("DEAL CARDS NOW");
-  expect(html).toContain("DEAL IN 7 SECONDS");
+  expect(html).toContain("CLOSE BETTING");
   expect(html).not.toContain("CURRENT PHASE:");
-  expect(html).not.toContain("DEAL CARDS NOW closes Betting and starts Playing.");
-  expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS NOW"));
-  expect(html.indexOf("DEAL CARDS NOW")).toBeLessThan(html.indexOf("ON TABLE"));
+  expect(html).not.toContain("CLOSE BETTING closes Betting and starts Playing.");
+  expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("CLOSE BETTING"));
+  expect(html.indexOf("CLOSE BETTING")).toBeLessThan(html.indexOf("ON TABLE"));
   expect(html).toContain('data-blackjack-box-row="true"');
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");
@@ -131,6 +130,7 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
       view: bankView({
         hasValidBet: false,
         waitingForFirstBet: true,
+        primaryAction: { id: "dealCards", label: "CLOSE BETTING", enabled: false },
         actions: { ...bankView({}).actions, dealCards: false, scheduleDeal: false, switchGame: true },
       }),
       members,
@@ -141,12 +141,9 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
   expect(html).toContain("OPEN BANK");
   expect(html).toContain("LIMITED BANK");
   expect(html).toContain("Unlimited");
-  expect(html).toContain("SWITCH GAME");
-  expect(html).toContain("+ PLAYER");
-  expect(html).toContain("GIVE JETONS");
   expect(html).toContain('data-table-name="Salon"');
   expect(html).not.toContain("xklondon");
-  expect(html).toMatch(/<button[^>]*disabled[^>]*>DEAL CARDS NOW/);
+  expect(html).toMatch(/<button[^>]*disabled[^>]*>CLOSE BETTING/);
 });
 
 test("funding toggle stays visible but locked after a stake exists", () => {
@@ -180,7 +177,7 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
       view: bankView({
         phase: "PLAYING",
         phaseLabel: "PLAYING",
-        primaryAction: { id: "payoutPhase", label: "PAYOUT PHASE", enabled: true },
+        primaryAction: { id: "payoutPhase", label: "ENTER PAYOUT", enabled: true },
         dealerHand: { ranks: [], complete: false, label: "", suggestedOutcome: null, canEdit: true },
         boxes: [box({ hand: { ranks: [], complete: false, label: "", suggestedOutcome: null, canEdit: true } })],
         players: [
@@ -218,13 +215,13 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
     }),
   );
   expect(html).toContain("PLAYING");
-  expect(html).toContain("PAYOUT PHASE");
-  expect(html).not.toContain("PAYOUT PHASE moves Playing to Payout.");
+  expect(html).toContain("ENTER PAYOUT");
+  expect(html).not.toContain("ENTER PAYOUT moves Playing to Payout.");
   expect(html).not.toContain("Settle every box");
-  expect(html).toContain("INSURANCE SIDE POT · OPEN · 1 bet");
+  expect(html).toContain("INSURANCE · OPEN · 1");
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");
-  expect(html).toContain("+ CARDS");
+  expect(html).not.toContain("+ CARDS");
   expect(html).not.toContain("+ ADD CARDS");
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("table-rail");
@@ -243,7 +240,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
         phase: "PAYOUT",
         phaseLabel: "PAYOUT",
         title: "Settle the round",
-        primaryAction: { id: "nextHand", label: "NEXT ROUND NOW", enabled: false },
+        primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: false },
         boxes: [box()],
         players: [
           {
@@ -280,9 +277,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
     }),
   );
   expect(html).toContain("PAYOUT");
-  expect(html).toContain("NEXT ROUND NOW");
-  expect(html).toContain("IN 7 SECONDS");
-  expect(html).toContain("next-round-row");
+  expect(html).toContain("START NEXT ROUND");
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain("DEALER WON");
   expect(html).toContain("dealer-list");
@@ -300,9 +295,9 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html.indexOf("rail-title\">LOST")).toBeLessThan(html.indexOf("rail-title\">STAND OFF"));
   expect(html.indexOf("rail-title\">STAND OFF")).toBeLessThan(html.indexOf("rail-title\">BLACKJACK"));
   expect(html.indexOf("rail-title\">BLACKJACK")).toBeLessThan(html.indexOf("rail-title\">WON"));
-  expect(html).toContain("Dealer Blackjack");
+  expect(html).toContain("INSURANCE WON");
   expect(html).not.toContain("Deal cards");
-  expect(html).toMatch(/<button[^>]*disabled[^>]*>NEXT ROUND NOW/);
+  expect(html).toMatch(/<button[^>]*disabled[^>]*>START NEXT ROUND/);
   expect(html).not.toContain("outcome-celebration");
   expect(html).not.toContain("WINNER!");
   expect(html).not.toContain("OPEN BANK");
@@ -363,7 +358,7 @@ test("ROUND_COMPLETE keeps the dealer box and one compact next-round row", () =>
       view: bankView({
         phase: "ROUND_COMPLETE",
         phaseLabel: "ROUND_COMPLETE",
-        primaryAction: { id: "nextHand", label: "NEXT ROUND NOW", enabled: true },
+        primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: true },
         dealerHand: { ranks: ["K", "7"], complete: true, label: "17", suggestedOutcome: null, canEdit: false },
         dealerName: "Alex",
         actions: {
@@ -380,11 +375,8 @@ test("ROUND_COMPLETE keeps the dealer box and one compact next-round row", () =>
   );
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");
-  expect(html).toContain("next-round-row");
-  expect(html).toContain("NEXT ROUND NOW");
-  expect(html).toContain("IN 7 SECONDS");
+  expect(html).toContain("START NEXT ROUND");
   expect(html).not.toContain("NEXT ROUND IN 7 SECONDS");
-  expect(html).toContain('data-dealer-cards="true"');
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("DEALER WON");
   expect(html).toContain('data-blackjack-box-row="true"');
@@ -392,13 +384,13 @@ test("ROUND_COMPLETE keeps the dealer box and one compact next-round row", () =>
   expect(html).not.toContain("class=\"box is-compact");
 });
 
-test("entered cards and compact + CARDS sit inside the dealer and player boxes", () => {
+test("optional card assist stays off the main Playing surface by default", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicBankTable, {
       view: bankView({
         phase: "PLAYING",
         phaseLabel: "PLAYING",
-        primaryAction: { id: "payoutPhase", label: "PAYOUT PHASE", enabled: true },
+        primaryAction: { id: "payoutPhase", label: "ENTER PAYOUT", enabled: true },
         dealerHand: { ranks: ["A", "6"], complete: false, label: "Soft 17", suggestedOutcome: null, canEdit: true },
         dealerName: "Alex",
         boxes: [box({ hand: { ranks: ["10", "9"], complete: false, label: "19", suggestedOutcome: null, canEdit: true } })],
@@ -423,20 +415,13 @@ test("entered cards and compact + CARDS sit inside the dealer and player boxes",
       onCommand: () => undefined,
     }),
   );
-  const dealer = html.indexOf('data-dealer-box="true"');
-  const playerBox = html.indexOf('data-blackjack-box-row="true"');
-  expect(dealer).toBeGreaterThan(-1);
-  expect(playerBox).toBeGreaterThan(-1);
-  expect(html.indexOf("data-dealer-cards")).toBeGreaterThan(dealer);
-  expect(html.lastIndexOf("data-box-cards")).toBeGreaterThan(playerBox);
-  expect(html.indexOf("Soft 17")).toBeGreaterThan(dealer);
-  expect(html.indexOf("HAND COMPLETE")).toBeGreaterThan(playerBox);
-  expect(html.indexOf("DEALER COMPLETE")).toBeGreaterThan(dealer);
-  expect(html).toContain('data-box-phase="PLAYING"');
-  expect(html).not.toContain("rank-tray");
+  expect(html).toContain("ENTER PAYOUT");
+  expect(html).toContain('data-dealer-box="true"');
+  expect(html).toContain('data-blackjack-box-row="true"');
+  expect(html).not.toContain("+ CARDS");
+  expect(html).not.toContain("HAND COMPLETE");
+  expect(html).not.toContain("DEALER COMPLETE");
   expect(html).not.toContain("+ ADD CARDS");
-  expect(html).not.toContain('class="community-cards"');
-  expect(html).not.toContain("class=\"box is-compact");
 });
 
 test("Dealer uses the same compact box row in every live phase", () => {

@@ -7,12 +7,12 @@ export function DealerPayoutRow({
   box,
   payoutEnabled,
   onSettle,
-  onApply,
+  cardAssist,
 }: {
   box: BoxView;
   payoutEnabled: boolean;
   onSettle: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
-  onApply?: () => void;
+  cardAssist?: "OFF" | "CONFIRM" | "AUTO";
 }) {
   return (
     <DealerBlackjackBoxRow
@@ -20,7 +20,7 @@ export function DealerPayoutRow({
       phase="PAYOUT"
       payoutEnabled={payoutEnabled}
       onSettle={onSettle}
-      onApply={onApply}
+      cardAssist={cardAssist}
     />
   );
 }

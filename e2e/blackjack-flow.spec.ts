@@ -45,9 +45,9 @@ test("two player sessions join a table and open betting", async ({ page, context
   await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
 
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await page.getByRole("button", { name: "START BLACKJACK" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
-  await page.getByRole("button", { name: "GIVE JETONS" }).click();
+  await page.locator(".dealer-tools").getByRole("button", { name: "GIVE JETONS" }).click();
   await page.locator("select").last().selectOption({ label: "Alex" });
   await page.getByPlaceholder("Jeton amount").fill("100");
   await page.getByRole("button", { name: "Confirm" }).click();

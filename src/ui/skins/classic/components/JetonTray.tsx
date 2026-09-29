@@ -59,7 +59,11 @@ export function JetonTray({
     origin.current = null;
     setDrag(null);
     onHoverRef.current?.(null);
-    if (denom && dragged && target) onDropRef.current(denom, target);
+    if (denom && dragged && target) {
+      onDropRef.current(denom, target);
+      return;
+    }
+    skipClick.current = false;
   }
 
   function begin(denom: string, x: number, y: number) {
