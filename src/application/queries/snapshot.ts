@@ -185,7 +185,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           role: "SETUP",
           phase: "TABLE_SETUP",
           tableName: table.name,
-          game: "Blackjack",
+          game: table.game === "POKER" ? "Texas Hold’em" : "Blackjack",
+          gameId: table.game === "POKER" ? "POKER" : "BLACKJACK",
           gameOptions: GAME_CATALOG.map((game) => ({
             id: game.id,
             label: game.comingLater ? `${game.label} · ${game.comingLater}` : game.label,
@@ -272,12 +273,21 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           role: "WAITING",
           phase: "TABLE_SETUP",
           tableName: table.name,
-          game: "Blackjack",
+          game: table.game === "POKER" ? "Texas Hold’em" : "Blackjack",
+          gameId: table.game === "POKER" ? "POKER" : "BLACKJACK",
           available: money(viewer.availableMillis),
-          copy: "Waiting for the Bank to start",
+          copy: table.setupCompletedAt ? "WAITING FOR PLAYERS" : "Waiting for the Bank to start",
           bankName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
           ownerName: displayName(table.owner),
           startingJetons: money(table.startingJetonsPerPlayerMillis),
+          members: table.members.map((member) => ({
+            userId: member.userId,
+            name: displayName(member.user),
+            email: member.user.email,
+            isOwner: member.isOwner,
+            isBankDealer: member.isBankDealer,
+            available: money(member.availableMillis),
+          })),
         }
       : isOwner && table.currentPhase === "TABLE_SETUP"
         ? null
@@ -549,9 +559,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       isBankDealer: member.isBankDealer,
       available: isOwner || isBank || member.userId === viewerId ? money(member.availableMillis) : null,
     })),
-    setup: blackjack ? setup : null,
-    waiting: blackjack
-      ? waiting ?? (table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
+    setup,
+    waiting:
+      waiting ??
+      (blackjack && table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
         ? {
             role: "WAITING",
             phase: "TABLE_SETUP",
@@ -563,8 +574,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             ownerName: displayName(table.owner),
             startingJetons: money(table.startingJetonsPerPlayerMillis),
           }
-        : null)
-      : null,
+        : null),
     player: blackjack ? player : null,
     bank: blackjack ? bank : null,
     poker,

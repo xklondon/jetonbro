@@ -85,5 +85,19 @@ export type JetonBroSkin = {
     initialEmails?: string[];
     needsHostName?: boolean;
     defaultHostName?: string;
+    view?: SetupTableView | null;
+    onCommand?: CommandHandler;
+  }>;
+  PhaseZero: ComponentType<{
+    setup: SetupTableView | null;
+    waiting: WaitingTableView | null;
+    poker: PokerTableView | null;
+    members: MemberView[];
+    onCommand: CommandHandler;
+    notice?: string | null;
+    isOwner: boolean;
+    isBank: boolean;
+    viewerId: string;
+    game: "BLACKJACK" | "POKER";
   }>;
 };

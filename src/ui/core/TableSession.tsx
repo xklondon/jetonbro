@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ClientSnapshot } from "@/application/queries/views";
 import { getSkin } from "@/ui/skins/registry";
@@ -36,6 +36,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const [snapshot, setSnapshot] = useState(initial);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(initial.player?.boxes[0]?.id ?? null);
+  const commandSeq = useRef(0);
 
   const applySnapshot = useCallback((next: ClientSnapshot) => {
     if (!next.tableId) return;
@@ -93,9 +94,11 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   }, [snapshot.player?.boxes, selectedBoxId]);
 
   const onCommand = async (command: string, payload: Record<string, string> = {}) => {
+    const seq = ++commandSeq.current;
     setNotice(null);
     try {
       const result = await sendCommand(snapshot.tableId, command, payload);
+      if (seq !== commandSeq.current) return false;
       if (result.emailWarning) {
         setNotice(result.emailWarning);
       }
@@ -110,6 +113,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       await refreshSnapshot();
       return true;
     } catch (error) {
+      if (seq !== commandSeq.current) return false;
       const code = error instanceof Error ? error.name : "";
       setNotice(code === "TURN_CONFLICT" ? "TURN_CONFLICT" : error instanceof Error ? error.message : "Something went wrong.");
       try {
@@ -126,6 +130,46 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     [snapshot],
   );
 
+  const draftSetup = Boolean(snapshot.setup && !snapshot.setup.setupCompleted);
+  const phaseZeroBlackjack =
+    snapshot.game === "BLACKJACK" &&
+    snapshot.phase === "TABLE_SETUP" &&
+    Boolean(snapshot.setup?.setupCompleted || snapshot.waiting);
+  const phaseZeroPoker =
+    snapshot.game === "POKER" &&
+    snapshot.poker?.phase === "POKER_SETUP" &&
+    Boolean(snapshot.setup?.setupCompleted || snapshot.waiting);
+
+  if (draftSetup && snapshot.setup) {
+    return (
+      <skin.CreateTable
+        defaultTableName={snapshot.setup.tableName}
+        defaultStartingJetons={snapshot.setup.startingJetonsPerPlayer.label}
+        defaultHostName={snapshot.setup.ownerName}
+        notice={notice}
+        view={snapshot.setup}
+        onCommand={onCommand}
+        onBack={() => void onCommand("abandonDraft")}
+        onCreate={async () => undefined}
+      />
+    );
+  }
+  if (phaseZeroBlackjack || phaseZeroPoker) {
+    return (
+      <skin.PhaseZero
+        setup={snapshot.setup}
+        waiting={snapshot.waiting}
+        poker={phaseZeroPoker ? snapshot.poker : null}
+        members={snapshot.members}
+        onCommand={onCommand}
+        notice={notice}
+        isOwner={snapshot.isOwner}
+        isBank={snapshot.isBank}
+        viewerId={snapshot.viewerId}
+        game={snapshot.game}
+      />
+    );
+  }
   if (snapshot.poker) {
     if (snapshot.poker.isOwner) {
       return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={notice} />;
