@@ -65,110 +65,102 @@ export function ClassicHome({
       overlay={<WelcomeCelebration onActiveChange={setBrandShimmer} />}
       brandClassName={brandShimmer ? "brand-shimmer" : undefined}
     >
-      <div className={`phase-head${empty ? "" : " home-head-compact"}`}>
-        <strong>{empty ? `Welcome, ${displayName}` : `Welcome back, ${displayName}`}</strong>
-        <span>{empty ? "Create a table or join one." : "Resume a table or create a new one."}</span>
+      <div className="phase-head home-head-compact">
+        <strong>{empty ? "JETONBRO" : "SAVED TABLES"}</strong>
+        <span>{empty ? `Welcome, ${displayName}` : "Resume a table or create a new one."}</span>
       </div>
       <main className="felt home-stack">
         {notice ? <div className="error">{notice}</div> : null}
+        <div className="home-actions compact">
+          <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
+            {creating ? "Opening table" : "CREATE TABLE"}
+          </button>
+        </div>
         {empty ? (
-          <div className="home-actions">
-            <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
-              {creating ? "Opening table" : "CREATE TABLE"}
-            </button>
-            <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
-              JOIN TABLE
-            </button>
-          </div>
+          <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
+            Have a join code?
+          </button>
         ) : (
-          <>
-            <div className="home-actions compact">
-              <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
-                {creating ? "Opening table" : "CREATE TABLE"}
-              </button>
-              <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
-                JOIN TABLE
-              </button>
-            </div>
-            <div className="home-table-list">
-              {tables.map((table) => (
-                <article className="home-table-card home-table-row" key={table.id} data-table-id={table.id}>
-                  <header className="home-table-row-head">
-                    <div>
-                      <strong>{table.name}</strong>
-                      <div className="muted">{table.headline}</div>
+          <div className="home-table-list">
+            {tables.map((table) => (
+              <article className="home-table-card home-table-row" key={table.id} data-table-id={table.id}>
+                <header className="home-table-row-head">
+                  <div>
+                    <strong>{table.name}</strong>
+                    <div className="muted">
+                      {table.game} · {table.headline}
                     </div>
-                    {table.isOwner ? (
+                  </div>
+                  {table.isOwner ? (
+                    <button
+                      type="button"
+                      className="home-table-menu"
+                      aria-label="Table menu"
+                      onClick={() => setMenuId(menuId === table.id ? null : table.id)}
+                    >
+                      ⋯
+                    </button>
+                  ) : null}
+                </header>
+                <div className="muted home-table-meta">
+                  {table.playerCount} {table.playerCount === 1 ? "player" : "players"}
+                  {" · "}Owner · {table.ownerName}
+                  {" · "}Dealer · {table.bankName}
+                </div>
+                {menuId === table.id && table.isOwner ? (
+                  <div className="home-table-overflow">
+                    {table.canDeleteDraft ? (
                       <button
                         type="button"
-                        className="home-table-menu"
-                        aria-label="Table menu"
-                        onClick={() => setMenuId(menuId === table.id ? null : table.id)}
+                        className="panel-button danger"
+                        onClick={() => {
+                          setMenuId(null);
+                          setConfirm({
+                            tableId: table.id,
+                            command: "deleteTable",
+                            title: "DELETE TABLE",
+                          });
+                        }}
                       >
-                        ⋯
+                        DELETE
                       </button>
-                    ) : null}
-                  </header>
-                  <div className="muted home-table-meta">
-                    {table.playerCount} {table.playerCount === 1 ? "player" : "players"}
-                  </div>
-                  <div className="muted home-table-meta">
-                    Owner · {table.ownerName} · Dealer · {table.bankName}
-                  </div>
-                  <div className="muted home-table-counts">{table.saved ? "SAVED · Resume" : "RESUME"}</div>
-                  {menuId === table.id && table.isOwner ? (
-                    <div className="home-table-overflow">
-                      {table.canDeleteDraft ? (
+                    ) : (
+                      <>
                         <button
                           type="button"
-                          className="danger"
+                          className="panel-button"
+                          disabled={!table.canSave}
+                          onClick={() => {
+                            setMenuId(null);
+                            void onTableCommand?.(table.id, "saveTable");
+                          }}
+                        >
+                          SAVE TABLE
+                        </button>
+                        <button
+                          type="button"
+                          className="panel-button"
                           onClick={() => {
                             setMenuId(null);
                             setConfirm({
                               tableId: table.id,
-                              command: "deleteTable",
-                              title: "DELETE TABLE",
+                              command: "closeTable",
+                              title: "CLOSE TABLE & SAVE BALANCES",
                             });
                           }}
                         >
-                          DELETE TABLE
+                          CLOSE TABLE
                         </button>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            disabled={!table.canSave}
-                            onClick={() => {
-                              setMenuId(null);
-                              void onTableCommand?.(table.id, "saveTable");
-                            }}
-                          >
-                            SAVE TABLE
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMenuId(null);
-                              setConfirm({
-                                tableId: table.id,
-                                command: "closeTable",
-                                title: "CLOSE TABLE & SAVE BALANCES",
-                              });
-                            }}
-                          >
-                            CLOSE TABLE & SAVE BALANCES
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ) : null}
-                  <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
-                    RESUME
-                  </button>
-                </article>
-              ))}
-            </div>
-          </>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+                <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
+                  RESUME
+                </button>
+              </article>
+            ))}
+          </div>
         )}
         <SheetOverlay
           open={joinOpen || Boolean(confirm)}
@@ -178,67 +170,67 @@ export function ClassicHome({
           }}
         >
           {confirm && confirmCard ? (
-              <>
-                <h3>{confirm.title}</h3>
-                <p>
-                  {confirmCard.name}: {confirmCard.closePreview?.confirmation}
-                </p>
-                <p className="muted">
-                  {confirmCard.closePreview?.kind === "delete-draft"
-                    ? "Permanent draft deletion."
-                    : "Historical archival. Ledger and rounds are kept."}
-                </p>
-                {(confirmCard.closePreview?.players ?? []).map((player) => (
-                  <div className="member-row" key={player.name}>
-                    <div>
-                      <strong>{player.name}</strong>
-                      <div className="muted">Saving {player.available}</div>
-                      <div className="muted">Locked {player.locked}</div>
-                    </div>
+            <>
+              <h3>{confirm.title}</h3>
+              <p>
+                {confirmCard.name}: {confirmCard.closePreview?.confirmation}
+              </p>
+              <p className="muted">
+                {confirmCard.closePreview?.kind === "delete-draft"
+                  ? "Permanent draft deletion."
+                  : "Historical archival. Ledger and rounds are kept."}
+              </p>
+              {(confirmCard.closePreview?.players ?? []).map((player) => (
+                <div className="member-row" key={player.name}>
+                  <div>
+                    <strong>{player.name}</strong>
+                    <div className="muted">Saving {player.available}</div>
+                    <div className="muted">Locked {player.locked}</div>
                   </div>
-                ))}
-                {confirmCard.closeBlockedReason && !(confirm.command === "deleteTable" && confirmCard.canDeleteDraft) ? (
-                  <div className="error">{confirmCard.closeBlockedReason}</div>
-                ) : null}
-                <button
-                  className="gold-button"
-                  type="button"
-                  disabled={
-                    confirm.command === "deleteTable"
-                      ? !(confirmCard.canDeleteDraft || confirmCard.canClose)
-                      : !confirmCard.canClose
-                  }
-                  onClick={() => {
-                    const next = confirm;
-                    setConfirm(null);
-                    void onTableCommand?.(next.tableId, next.command);
-                  }}
-                >
-                  Confirm
-                </button>
-                <button className="text-link" type="button" onClick={() => setConfirm(null)}>
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <h3>Join a table</h3>
-                <p className="muted">Open a QR invite link, or paste the join code from an invitation.</p>
-                <input
-                  aria-label="Join code or link"
-                  placeholder="Join link or code"
-                  value={joinValue}
-                  onChange={(event) => setJoinValue(event.target.value)}
-                />
-                {joinError ? <div className="error">{joinError}</div> : null}
-                <button className="gold-button" type="button" onClick={submitJoin}>
-                  Continue
-                </button>
-                <button className="text-link" type="button" onClick={() => setJoinOpen(false)}>
-                  Cancel
-                </button>
-              </>
-            )}
+                </div>
+              ))}
+              {confirmCard.closeBlockedReason && !(confirm.command === "deleteTable" && confirmCard.canDeleteDraft) ? (
+                <div className="error">{confirmCard.closeBlockedReason}</div>
+              ) : null}
+              <button
+                className="gold-button"
+                type="button"
+                disabled={
+                  confirm.command === "deleteTable"
+                    ? !(confirmCard.canDeleteDraft || confirmCard.canClose)
+                    : !confirmCard.canClose
+                }
+                onClick={() => {
+                  const next = confirm;
+                  setConfirm(null);
+                  void onTableCommand?.(next.tableId, next.command);
+                }}
+              >
+                Confirm
+              </button>
+              <button className="text-link" type="button" onClick={() => setConfirm(null)}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <h3>Join a table</h3>
+              <p className="muted">Open a QR invite link, or paste the join code from an invitation.</p>
+              <input
+                aria-label="Join code or link"
+                placeholder="Join link or code"
+                value={joinValue}
+                onChange={(event) => setJoinValue(event.target.value)}
+              />
+              {joinError ? <div className="error">{joinError}</div> : null}
+              <button className="gold-button" type="button" onClick={submitJoin}>
+                Continue
+              </button>
+              <button className="text-link" type="button" onClick={() => setJoinOpen(false)}>
+                Cancel
+              </button>
+            </>
+          )}
         </SheetOverlay>
       </main>
       <footer className="dock">

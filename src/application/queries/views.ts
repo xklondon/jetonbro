@@ -192,6 +192,7 @@ export type SetupTableView = {
   phase: "TABLE_SETUP";
   tableName: string;
   game: string;
+  gameId?: "BLACKJACK" | "POKER";
   gameOptions: { id: string; label: string; available: boolean }[];
   ownerName: string;
   bankName: string;
@@ -317,11 +318,13 @@ export type WaitingTableView = {
   phase: "TABLE_SETUP";
   tableName: string;
   game: string;
+  gameId?: "BLACKJACK" | "POKER";
   available: MoneyView;
   copy: string;
   bankName?: string;
   ownerName?: string;
   startingJetons?: MoneyView;
+  members?: MemberView[];
 };
 
 export type ClientSnapshot = {

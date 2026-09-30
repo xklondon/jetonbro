@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Prompt 6 — restore Create Table, invitations, and Phase 0
+
+- Home is a compact Saved Tables index with `CREATE TABLE`, `RESUME`, and owner-only `DELETE` / `CLOSE TABLE`.
+- `CREATE TABLE` opens one full setup screen on a draft table. `START TABLE` (`finalizeSetup`) opens Phase 0.
+- Phase 0 uses compact Player rows and `OPEN BETTING` / `START HAND`. The giant empty seat and start-game controls above setup are gone.
+- Invitations (email, QR, copy link) work on the draft before start. Unused drafts stay off Home.
+- Poker Phase 0 keeps `setup` / `waiting` on the snapshot while `TABLE_SETUP` so Start Table does not fall through to the live Poker Dealer screen.
+
 ### Prompt 5 — staging packaging repair
 
 - Railway `prebuild` runs guardrails. The image now includes `.cursorfile`, `CHANGELOG.md`, and `docs/architecture/CURSOR_GUARDRAILS.md`. Test screenshots and Playwright specs stay out of the runtime image.

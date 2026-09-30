@@ -61,14 +61,24 @@ Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay fr
 - `src/ui/skins/classic/tokens.css`
 - `src/ui/skins/classic/layouts.css`
 
-### Setup
+### Setup / Home / Phase 0 (Prompt 6)
 
-- `src/ui/skins/classic/components/ClassicSetupTable.tsx`
-- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
-- `src/ui/skins/classic/components/ClassicWaitingTable.tsx`
 - `src/ui/skins/classic/components/ClassicHome.tsx`
+- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
+- `src/ui/skins/classic/components/ClassicPhaseZero.tsx`
+- `src/ui/skins/classic/components/ClassicInvitePanel.tsx`
+- `src/ui/skins/classic/components/ClassicSetupTable.tsx` (adapter: incomplete → Create Table, completed → Phase 0)
+- `src/ui/skins/classic/components/ClassicWaitingTable.tsx` (player Phase 0)
+- `src/ui/core/TableSession.tsx`
+- `src/app/tables/new/page.tsx` (creates/reuses a draft and redirects to `/tables/{id}`)
+- `src/app/tables/new/create-table-client.tsx` **inactive** (no longer routed)
+- `e2e/setup-phase-zero.spec.ts`
 - `e2e/setup-invite-and-restart.spec.ts`
 - `e2e/welcome-home.spec.ts`
+- `e2e/home-delete.spec.ts`
+- `e2e/helpers.ts`
+
+`ClassicSetupTable` is no longer a giant felt with `START BLACKJACK` / `START POKER` in the phase dock. Do not route owners to that obsolete layout.
 
 ### Blackjack Player screens
 

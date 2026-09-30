@@ -812,6 +812,8 @@
 
 .classic-skin .sheet-panel {
   width: 100%;
+  max-height: min(78dvh, 640px);
+  overflow-y: auto;
   background: var(--panel);
   border-top: 1px solid rgba(223, 189, 105, 0.4);
   padding: 18px 16px 22px;

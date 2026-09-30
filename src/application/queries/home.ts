@@ -120,6 +120,9 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         pausedAt: table.pausedAt,
       });
       const pokerBlocked = table.game === "POKER" && (anyLocked || pokerHandIsOpen(table.currentPokerHand?.phase));
+      if (table.setupCompletedAt === null) {
+        return null;
+      }
       const emptyDraft =
         table.currentPhase === "TABLE_SETUP" &&
         table.game !== "POKER" &&
@@ -198,7 +201,8 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
           : null,
         closePreview,
       };
-    });
+    })
+    .filter((card): card is HomeTableCard => card !== null);
 
   return cards.sort((a, b) => {
     const rank = (PHASE_RANK[a.phase] ?? 9) - (PHASE_RANK[b.phase] ?? 9);
