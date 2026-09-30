@@ -4,29 +4,25 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Valid boards
 
-Store compressed WebP copies under `docs/design-reference/` when the source file can be copied safely. Do not store the blank/corrupt image. Do not regenerate mockups.
+Store copies under `docs/design-reference/` when the source file can be copied safely. Do not store the blank/corrupt image. Do not regenerate mockups.
 
-| Source filename | Role | Prompt |
-|---|---|---|
-| `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 2 |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup: Saved Tables, Create Table, Table Setup, Game Selection | 6 (primary setup authority) |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 2 |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases: Setup, Pre-flop, streets, Showdown, Hand Complete, game-change | 3 |
+| Source filename | Role | Prompt | Stored file |
+|---|---|---|---|
+| `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 7 | `blackjack-player-phases.jpg` (also `.webp`) |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup: Saved Tables, Create Table, Table Setup, Game Selection | 6–7 | `table-owner-setup.jpg` |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 7 | `blackjack-dealer-owner-phases.jpg` |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (4).png` | Poker Player phases | 7 | `poker-player-phases.jpg` |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases | 7 | `poker-dealer-owner-phases.jpg` |
 
 Ignore:
 
 - `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1).png` — blank/corrupt, not a reference.
 
-Repository copies:
+FAIL evidence (not design references):
 
-- `docs/design-reference/table-owner-setup.jpg` — Prompt 6 primary setup authority (`12_50_27 PM (2)`).
-- `docs/design-reference/fail-home-empty.png` — rejected Home (empty index).
-- `docs/design-reference/fail-create-table-incomplete.png` — rejected incomplete Create Table.
-- `docs/design-reference/fail-phase-zero-placeholder.png` — rejected Phase 0 giant placeholder + start controls above content.
-
-Those `fail-*` files are FAIL evidence, not design references.
-
-If a board file cannot be copied into this repository, keep this filename table as the authority and implement from the attached conversation images.
+- `docs/design-reference/fail-home-empty.png`
+- `docs/design-reference/fail-create-table-incomplete.png`
+- `docs/design-reference/fail-phase-zero-placeholder.png`
 
 ## Home / Create Table / Phase 0 (Prompt 6)
 
