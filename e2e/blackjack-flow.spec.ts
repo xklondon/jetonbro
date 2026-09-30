@@ -25,7 +25,7 @@ test("two player sessions join a table and open betting", async ({ page, context
   const alexPage = await alexContext.newPage();
   await openAs(alexContext, alexPage, alexEmail, "Alex");
   await alexPage.goto(invitePath);
-  await expect(alexPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(alexPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
   const data = (await snapshot.json()) as { setup?: { joinUrl: string | null } };
@@ -35,17 +35,17 @@ test("two player sessions join a table and open betting", async ({ page, context
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(new URL(data.setup!.joinUrl!).pathname);
-  await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   await page.reload();
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({
     timeout: 15000,
   });
-  await page.getByRole("button", { name: "QR" }).click();
+  await page.getByRole("button", { name: "Invite Player" }).click();
   await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
 
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await giveJetonsFromMenu(page);
   await page.locator("select").last().selectOption({ label: "Alex" });

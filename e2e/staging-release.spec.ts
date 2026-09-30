@@ -97,23 +97,24 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await page.screenshot({ path: join(out, "app-staging-home-390x844.png") });
 
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page).toHaveURL(/\/tables\/new/);
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
+  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await page.getByLabel("Table name").fill(tableName);
   await page.getByLabel("Starting jetons per player").fill("100");
   if (await page.getByLabel("Owner / host name").count()) {
     await page.getByLabel("Owner / host name").fill("Alex");
   }
   await page.screenshot({ path: join(out, "app-staging-create-390x844.png") });
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
   const tableId = page.url().split("/tables/")[1]!.split("?")[0]!;
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator("[data-table-name]")).toHaveText(tableName);
   await page.screenshot({ path: join(out, "app-staging-setup-390x844.png") });
   await noHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await expect(page.getByLabel("Player name")).toBeVisible();
   await page.screenshot({ path: join(out, "app-staging-invite-390x844.png") });
   await page.getByRole("button", { name: "Add local player" }).click();
@@ -137,7 +138,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await blairPage.setViewportSize({ width: 390, height: 844 });
   await signIn(blairPage, blairEmail);
   await blairPage.goto(joinPath);
-  await expect(blairPage.getByText(/Waiting for the Bank|TABLE SETUP|POKER/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(blairPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS|TABLE SETUP|POKER/i).first()).toBeVisible({ timeout: 20_000 });
 
   const caseyContext = await browser.newContext();
   const caseyPage = await caseyContext.newPage();
@@ -173,7 +174,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await expectRejected(caseyPage, tableId, "dealCards");
   await expectRejected(caseyPage, tableId, "giveJetons", { userId: (await tableSnapshot(caseyPage)).viewerId, amount: "10" });
 
-  await blairPage.getByRole("button", { name: "START BLACKJACK" }).click();
+  await blairPage.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   await caseyPage.reload();
   await expect(caseyPage.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);

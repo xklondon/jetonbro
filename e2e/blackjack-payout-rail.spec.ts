@@ -35,16 +35,16 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const joContext = await browser.newContext();
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
 
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
@@ -212,9 +212,9 @@ test("DEALER WON settles unresolved boxes as LOST and leaves Insurance alone", a
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
   await expect(samPage.locator("[data-box-id]").first()).toBeVisible();

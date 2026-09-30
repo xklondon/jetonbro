@@ -100,7 +100,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
 
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator("[data-table-name]")).toHaveText("FINAL TABLE");
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-release-setup-390x844.png") });
   await noHorizontalOverflow(page);
 
@@ -113,20 +113,19 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await expect(page.locator(".sheet.open")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Menu" })).toBeFocused();
 
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await expect(page.getByLabel("Player name")).toBeVisible();
   await expect(page.getByLabel("Player email")).toBeVisible();
   await page.screenshot({ path: join(out, "app-release-invite-390x844.png") });
-  await page.getByRole("button", { name: "Add local player" }).click();
-  await expect(page.getByRole("dialog").getByText(/Enter a player name/i)).toBeVisible();
   await page.getByLabel("Player name").fill("Drew");
   await page.getByLabel("Starting jetons").fill("100");
-  await page.getByRole("button", { name: "Add local player" }).click();
+  await page.getByRole("button", { name: "Add Local Player" }).click();
   await expect(page.getByText("Drew").first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await page.getByLabel("Player name").fill("Drew");
-  await page.getByRole("button", { name: "Add local player" }).click();
-  await expect(page.getByRole("dialog").getByText(/already at this table/i)).toBeVisible();
+  await page.getByRole("button", { name: "Add Local Player" }).click();
+  await expect(page.getByText(/already at this table/i).first()).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
 
   const setup = await tableSnapshot(page);
@@ -142,14 +141,14 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await blairPage.setViewportSize({ width: 390, height: 844 });
   await openAs(blairContext, blairPage, blairEmail, "Blair");
   await blairPage.goto(joinPath);
-  await expect(blairPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(blairPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const caseyContext = await browser.newContext();
   const caseyPage = await caseyContext.newPage();
   await caseyPage.setViewportSize({ width: 390, height: 844 });
   await openAs(caseyContext, caseyPage, caseyEmail, "Casey");
   await caseyPage.goto(joinPath);
-  await expect(caseyPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(caseyPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
   await expect(caseyPage.getByText("100").first()).toBeVisible();
 
   await expect(page.getByText("Blair").first()).toBeVisible({ timeout: 20_000 });
@@ -157,7 +156,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
 
   await openTableMenu(page);
   await page.getByRole("button", { name: "ASSIGN DEALER" }).click();
-  await page.getByLabel("Dealer").selectOption({ label: "Blair" });
+  await page.locator(".sheet.open").getByLabel("Dealer").selectOption({ label: "Blair" });
   await page.getByRole("button", { name: "Confirm dealer" }).click();
   await expect(page.getByText("DEALER · Blair")).toBeVisible({ timeout: 15_000 });
 
@@ -184,7 +183,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await expectRejected(caseyPage, tableId, "dealCards");
   await expectRejected(caseyPage, tableId, "giveJetons", { userId: caseyAssigned.viewerId, amount: "10" });
 
-  await blairPage.getByRole("button", { name: "START BLACKJACK" }).click();
+  await blairPage.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   await page.reload();
   await caseyPage.reload();

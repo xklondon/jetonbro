@@ -107,11 +107,11 @@ test("create table leaves home and does not keep a second setup form there", () 
   expect(html).not.toContain("Player email");
 });
 
-test("empty authenticated home shows create and join", () => {
+test("empty authenticated home shows create", () => {
   const html = renderToStaticMarkup(createElement(ClassicHome, { ...homeProps, tables: [] }));
   expect(html).toContain("Welcome, Alex");
   expect(html).toContain("CREATE TABLE");
-  expect(html).toContain("JOIN TABLE");
+  expect(html).not.toContain("JOIN TABLE");
 });
 
 test("Blackjack and Texas Hold’em are selectable while Zilch is not", () => {
@@ -183,7 +183,7 @@ test("non-owner home card hides other player balances", () => {
   expect(html).not.toContain("home-table-players");
 });
 
-test("simple create table asks only for name and starting jetons", () => {
+test("full create table setup includes game, bank and START TABLE", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicCreateTable, {
       defaultTableName: "Alex's table",
@@ -192,16 +192,16 @@ test("simple create table asks only for name and starting jetons", () => {
     }),
   );
   expect(html).toMatch(/Alex(&#x27;|')s table/);
-  expect(html).toContain("CREATE TABLE");
+  expect(html).toContain("START TABLE");
   expect(html).toContain("Starting jetons per Player");
-  expect(html).not.toContain("START TABLE");
-  expect(html).not.toContain("SCAN TO JOIN TABLE");
-  expect(html).not.toContain("OR INVITE BY EMAIL");
+  expect(html).toContain("Blackjack");
+  expect(html).toContain("OPEN BANK");
+  expect(html).toContain("Invite Player");
   expect(html).not.toContain("Maximum boxes per player");
   expect(html).not.toContain("CARD ASSIST");
 });
 
-test("one Table Setup screen shows felt, players and START actions", () => {
+test("Phase 0 shows compact waiting rows and OPEN BETTING", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({ setupCompleted: true }),
@@ -209,20 +209,20 @@ test("one Table Setup screen shows felt, players and START actions", () => {
     }),
   );
   expect(html).toContain("data-phase-heading");
-  expect(html).toContain("TABLE SETUP");
+  expect(html).toContain("WAITING FOR PLAYERS");
   expect(html).toContain("DEALER · Alex");
   expect(html).toContain("Owner · Alex");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
-  expect(html).toContain("ADD PLAYER");
-  expect(html).toContain(">QR<");
-  expect(html).toContain("START BLACKJACK");
-  expect(html).toContain("START POKER");
+  expect(html).toContain("Invite Player");
+  expect(html).toContain("OPEN BETTING");
+  expect(html).not.toContain("START BLACKJACK");
+  expect(html).not.toContain("START POKER");
   expect(html).toContain("data-phase-action");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
 });
 
-test("CREATE TABLE reveals dealer table seats, compact QR and START BLACKJACK", () => {
+test("START TABLE completed table does not keep a second setup form", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({
@@ -231,6 +231,24 @@ test("CREATE TABLE reveals dealer table seats, compact QR and START BLACKJACK", 
           { id: "bank", name: "Alex", status: "Bank / Dealer" },
           { id: "sam", name: "Sam", status: "Joined" },
         ],
+        members: [
+          {
+            userId: "bank",
+            name: "Alex",
+            email: "alex@example.com",
+            isOwner: true,
+            isBankDealer: true,
+            available: { millis: "0", label: "0" },
+          },
+          {
+            userId: "sam",
+            name: "Sam",
+            email: "sam@example.com",
+            isOwner: false,
+            isBankDealer: false,
+            available: { millis: "100000", label: "100" },
+          },
+        ],
         canStartBetting: true,
         startBlockedReason: null,
       }),
@@ -238,26 +256,21 @@ test("CREATE TABLE reveals dealer table seats, compact QR and START BLACKJACK", 
     }),
   );
   expect(html).not.toContain("SET UP TABLE");
-  expect(html).not.toContain("CREATE TABLE");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
-  expect(html).not.toContain("Waiting for players");
+  expect(html).not.toContain("data-seat-status=\"empty\"");
   expect(html).toContain("data-phase-heading");
-  expect(html).toContain("TABLE SETUP");
-  expect(html).toContain("DEALER · Alex");
+  expect(html).toContain("WAITING FOR PLAYERS");
   expect(html).toContain("Sam");
-  expect(html).toContain("Joined");
-  expect(html).toContain("ADD PLAYER");
-  expect(html).toContain(">QR<");
-  expect(html).toContain("START BLACKJACK");
-  expect(html).toContain("START POKER");
+  expect(html).toContain("Invite Player");
+  expect(html).toContain("OPEN BETTING");
   expect(html).toContain("data-game-controls");
   expect(html).toContain("dock");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
   expect(html).not.toContain("xklondon");
 });
 
-test("invited seats render as player boxes and Open Betting stays gated", () => {
+test("invited seats render as compact rows and Open Betting stays gated", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({ setupCompleted: true }),
@@ -270,6 +283,19 @@ test("invited seats render as player boxes and Open Betting stays gated", () => 
   expect(html).toContain("Waiting for a player to join");
 });
 
+test("incomplete setup still uses the full Create Table screen", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicSetupTable, {
+      view: setupView({ setupCompleted: false }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("START TABLE");
+  expect(html).toContain("OPEN BANK");
+  expect(html).not.toContain("OPEN BETTING");
+  expect(html).not.toContain("data-seat-status=\"empty\"");
+  expect(html).not.toContain("START BLACKJACK");
+});
 test("welcome celebration is decorative and session-limited", () => {
   const html = renderToStaticMarkup(createElement(WelcomeParticles));
   expect(html).toContain('aria-hidden="true"');

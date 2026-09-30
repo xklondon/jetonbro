@@ -40,14 +40,14 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await page.getByLabel("Table name").fill("QR table");
   await page.getByLabel("Starting jetons per player").fill("100");
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
-  await page.getByRole("button", { name: "QR" }).first().click();
+  await page.getByRole("button", { name: "START TABLE" }).click();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await expect(page.locator(".sheet.open img")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Copy link" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy Link" })).toBeVisible();
   const qrBox = await page.locator(".sheet.open img").boundingBox();
   const copyBox = await page.getByRole("button", { name: "Copy link" }).boundingBox();
-  const startBox = await page.getByRole("button", { name: "START BLACKJACK" }).boundingBox();
+  const startBox = await page.getByRole("button", { name: "OPEN BETTING" }).boundingBox();
   expect(qrBox).toBeTruthy();
   expect(copyBox).toBeTruthy();
   expect(startBox).toBeTruthy();
@@ -65,12 +65,12 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   expect(decoded).not.toMatch(/railway\.internal/i);
   expect(decoded).toContain("/join/");
 
-  await page.getByRole("button", { name: "Copy link" }).click();
+  await page.getByRole("button", { name: "Copy Link" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toBe(data.setup!.joinUrl);
 
   await page.reload();
-  await page.getByRole("button", { name: "QR" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await expect(page.locator(".sheet.open img")).toBeVisible();
   const afterReload = await decodeSetupQr(page);
   expect(afterReload.fallback).toBe(data.setup!.joinUrl);
@@ -87,14 +87,14 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, uniqueEmail("qr-sam"), "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const joContext = await browser.newContext();
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, uniqueEmail("qr-jo"), "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
+  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
 
   await samContext.close();
   await joContext.close();
@@ -115,10 +115,10 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, uniqueEmail("restart-sam"), "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await samPage.reload();
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click({ force: true });
   await expect(samPage.getByText("75", { exact: true }).first()).toBeVisible();

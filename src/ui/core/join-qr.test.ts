@@ -39,8 +39,8 @@ test("Table Setup keeps the shared join URL for QR and copy link", () => {
   };
   const html = renderToStaticMarkup(createElement(ClassicSetupTable, { view, onCommand: () => undefined }));
   expect(html).toContain(`data-join-url="${joinUrl}"`);
-  expect(html).toContain("ADD PLAYER");
-  expect(html).toContain("START BLACKJACK");
+  expect(html).toContain("Invite Player");
+  expect(html).toContain("OPEN BETTING");
   expect(isBlockedOrigin(joinUrl, "test")).toBe(false);
 });
 

@@ -58,7 +58,7 @@ test("two devices share heads-up blinds, CALL/RAISE, and reload state", async ({
   await samPage.setViewportSize({ width: 390, height: 844 });
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
   await command(page, tableId, "giveJetons", { userId: ownerId, amount: "100" });
   await command(page, tableId, "switchGame", { game: "POKER" });
   await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });

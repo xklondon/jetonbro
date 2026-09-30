@@ -102,7 +102,9 @@ describeDb("create table home journey", () => {
     expect(snapshot.poker?.phase).toBe("POKER_SETUP");
     expect(snapshot.bank).toBeNull();
     expect(snapshot.player).toBeNull();
-    expect(snapshot.setup).toBeNull();
+    expect(snapshot.setup?.setupCompleted).toBe(true);
+    expect(snapshot.setup?.gameId).toBe("POKER");
+    expect(snapshot.setup?.joinUrl).toContain("/join/");
     expect(await prisma.round.count({ where: { tableId: created.tableId } })).toBe(0);
   });
 

@@ -63,7 +63,7 @@ async function threeSeated(page: Page, context: BrowserContext, browser: Browser
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
 
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
   const ownerId = setupSnap.setup?.members?.find((member) => member.isOwner)?.userId ?? setupSnap.viewerId;
   await command(page, tableId, "giveJetons", { userId: ownerId, amount: "100" });
   return { tableId, samContext, samPage, joContext, joPage, ownerId };
@@ -89,7 +89,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   test.setTimeout(180_000);
   await mkdir(out, { recursive: true });
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
   await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await expect(page.locator("body")).not.toContainText("xklondon");
@@ -262,11 +262,11 @@ async function seatedDirectPoker(
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await page.getByLabel("Table name").fill("Direct Hold em");
   await page.getByLabel("Starting jetons per player").fill("0");
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await page.getByRole("button", { name: /Texas Hold/i }).click();
   const joinUrl = await setupJoinUrl(page);
   await shot(page, "app-poker-create-table-390x844.png");
-  await page.getByRole("button", { name: "START POKER" }).click();
-  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "START TABLE" }).click();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
   const joinPath = new URL(joinUrl!).pathname;
   const tableId = page.url().split("/tables/")[1]!.split("?")[0]!;
 
@@ -282,8 +282,8 @@ async function seatedDirectPoker(
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
 
-  await expect(page.getByText("Sam", { exact: true })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText("Jo", { exact: true })).toBeVisible();
+  await expect(page.getByText("Sam", { exact: true }).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText("Jo", { exact: true }).first()).toBeVisible();
   await page.reload();
   const snap = await tableSnapshot(page);
   const ownerId = snap.viewerId;
@@ -307,8 +307,8 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
     context,
     browser,
   );
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("POKER SETUP");
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
   await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "SEAT ORDER" }).click();
   if (joId && samId) {
