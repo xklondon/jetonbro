@@ -33,7 +33,7 @@ export function ClassicPokerPlayer({
 
   return (
     <TableShell onMenu={() => setSheet("menu")}>
-      <PhaseBar prefix="POKER" label={view.phaseLabel}>
+      <PhaseBar label={view.phaseLabel.replaceAll("_", " ")}>
         {turn ? (
           <div className={`poker-turn-banner${turn.you ? " is-you" : ""}`} data-turn-state={turn.you ? "you" : "other"}>
             {turn.label}
