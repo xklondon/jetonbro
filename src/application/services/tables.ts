@@ -676,7 +676,17 @@ export async function deleteTable(input: { actorId: string; tableId: string; ide
       throw new ForbiddenError("Only the table owner can do that.");
     }
     if (table.status === "ARCHIVED") {
-      return { ok: true, deleted: false, archived: true };
+      await prisma.$transaction(async (tx) => {
+        await tx.tableMember.updateMany({
+          where: { tableId: table.id, userId: input.actorId },
+          data: { leftAt: new Date() },
+        });
+        await tx.invitation.updateMany({
+          where: { tableId: table.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      });
+      return { ok: true, deleted: true, archived: true };
     }
     if (await isEmptyDraftTable(table.id)) {
       await prisma.$transaction(async (tx) => {

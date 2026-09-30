@@ -83,12 +83,12 @@ export function ClassicHome({
         ) : (
           <div className="home-table-list">
             {tables.map((table) => (
-              <article className="home-table-card home-table-row" key={table.id} data-table-id={table.id}>
+              <article className={`home-table-card home-table-row${table.closed ? " is-closed" : ""}`} key={table.id} data-table-id={table.id} data-closed={table.closed ? "true" : undefined}>
                 <header className="home-table-row-head">
                   <div>
                     <strong>{table.name}</strong>
                     <div className="muted">
-                      {table.game} · {table.headline}
+                      {table.headline.startsWith(table.game) ? table.headline : `${table.game} · ${table.headline}`}
                     </div>
                   </div>
                   {table.isOwner ? (
@@ -109,7 +109,7 @@ export function ClassicHome({
                 </div>
                 {menuId === table.id && table.isOwner ? (
                   <div className="home-table-overflow">
-                    {table.canDeleteDraft ? (
+                    {table.canDeleteDraft || table.canDeleteArchived ? (
                       <button
                         type="button"
                         className="panel-button danger"
@@ -155,9 +155,13 @@ export function ClassicHome({
                     )}
                   </div>
                 ) : null}
-                <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
-                  RESUME
-                </button>
+                {table.closed ? (
+                  <div className="muted">Closed · balances saved</div>
+                ) : (
+                  <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
+                    RESUME
+                  </button>
+                )}
               </article>
             ))}
           </div>
@@ -178,7 +182,9 @@ export function ClassicHome({
               <p className="muted">
                 {confirmCard.closePreview?.kind === "delete-draft"
                   ? "Permanent draft deletion."
-                  : "Historical archival. Ledger and rounds are kept."}
+                  : confirmCard.closePreview?.kind === "delete-archived"
+                    ? "Closed table removal. Ledger and rounds are kept."
+                    : "Historical archival. Ledger and rounds are kept."}
               </p>
               {(confirmCard.closePreview?.players ?? []).map((player) => (
                 <div className="member-row" key={player.name}>
@@ -197,7 +203,7 @@ export function ClassicHome({
                 type="button"
                 disabled={
                   confirm.command === "deleteTable"
-                    ? !(confirmCard.canDeleteDraft || confirmCard.canClose)
+                    ? !(confirmCard.canDeleteDraft || confirmCard.canDeleteArchived || confirmCard.canClose)
                     : !confirmCard.canClose
                 }
                 onClick={() => {
