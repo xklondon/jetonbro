@@ -222,6 +222,25 @@ test("Phase 0 shows compact waiting rows and OPEN BETTING", () => {
   expect(html).not.toContain("START POKER");
   expect(html).toContain("data-phase-action");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
+  expect(html).not.toContain('aria-label="Dealer"');
+});
+
+test("Phase 0 empty waiting is a compact card, not a blank placeholder", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicSetupTable, {
+      view: setupView({
+        setupCompleted: true,
+        invitations: [],
+        seats: [{ id: "bank", name: "Alex", status: "Bank / Dealer" }],
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("data-empty-waiting");
+  expect(html).toContain("Waiting for Players to join.");
+  expect(html).toContain("data-role=\"dealer\"");
+  expect(html).not.toContain("waiting-room");
+  expect(html).not.toContain("setup-mask");
 });
 
 test("START TABLE completed table does not keep a second setup form", () => {

@@ -246,6 +246,81 @@ test("player payout shows Hand complete after every box is resolved", () => {
   expect(html).not.toContain("outcome-celebration");
 });
 
+test("player payout stacks identity, MAIN, and Insurance on separate lines", () => {
+  const longName = "Alexandria-Maximilienne-of-the-Long-Table";
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: {
+        ...view,
+        phase: "PAYOUT",
+        boxes: [
+          {
+            ...view.boxes[0]!,
+            playerName: longName,
+            label: `YOUR BOX 1 · ${longName}`,
+            outcome: "WON",
+            returned: { millis: "50000", label: "50" },
+            insurance: { millis: "12500", label: "12.5" },
+            insuranceResult: "INSURANCE LOST",
+          },
+          {
+            ...view.boxes[1]!,
+            playerName: longName,
+            outcome: "LOST",
+            returned: { millis: "0", label: "0" },
+            insurance: null,
+            insuranceResult: null,
+          },
+        ],
+        actions: { ...view.actions, double: false, split: false, insurance: false },
+      },
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("is-payout");
+  expect(html).toContain('data-payout-main="true"');
+  expect(html).toContain('data-payout-insurance="true"');
+  expect(html).toContain("MAIN");
+  expect(html).toContain("Won +50");
+  expect(html).toContain("INSURANCE LOST");
+  expect(html).toContain("Lost");
+  expect(html.indexOf("data-payout-main")).toBeLessThan(html.indexOf("data-payout-insurance"));
+  expect(html).toContain("box-identity");
+  expect(html).toContain("box-owner");
+  expect(html).toContain(longName);
+  const box2 = html.slice(html.indexOf('data-box-slot="2"'));
+  expect(box2).not.toContain("data-payout-insurance");
+});
+
+test("player payout Insurance won stays on its own line", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPlayerTable, {
+      view: {
+        ...view,
+        phase: "PAYOUT",
+        boxes: [
+          {
+            ...view.boxes[0]!,
+            outcome: "LOST",
+            returned: { millis: "0", label: "0" },
+            insurance: { millis: "12500", label: "12.5" },
+            insuranceResult: "INSURANCE WON · return 37.5",
+          },
+        ],
+        actions: { ...view.actions, double: false, split: false, insurance: false },
+      },
+      selectedBoxId: "1",
+      onSelectBox: () => undefined,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("Won +37.5");
+  expect(html).toContain('data-insurance-result="INSURANCE WON · return 37.5"');
+  expect(html).toContain("Lost");
+});
+
 test("player Insurance uses short copy and keeps the fixed box stage", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicPlayerTable, {

@@ -19,7 +19,7 @@ export function PlayerWallet({
   onHover?: (targetId: string | null) => void;
 }) {
   return (
-    <div className="player-wallet" data-player-wallet="true">
+    <div className="player-wallet" data-player-wallet="true" data-wallet-available={available.label} data-wallet-millis={available.millis}>
       <div className="wallet-bar">
         <small>YOUR JETONS</small>
         <div className="wallet-available">

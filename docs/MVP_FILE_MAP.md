@@ -31,6 +31,17 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
+### Active UI areas (Prompt 8)
+
+Visual correction only. Engines, accounting, auth, invitations, and the Prompt 6 setup journey stay frozen. This slice is six production files because payout boxes, Phase 0 felt density, and Poker viewer-wallet identity share one board-correction prompt.
+
+- `src/ui/skins/classic/components/FeltBox.tsx`
+- `src/ui/skins/classic/layouts.css`
+- `src/ui/skins/classic/home.css`
+- `src/ui/skins/classic/components/ClassicPhaseZero.tsx`
+- `src/ui/skins/classic/components/PokerFelt.tsx`
+- `src/ui/skins/classic/components/PlayerWallet.tsx`
+
 ### Active UI areas (Prompt 7)
 
 Blackjack and Poker live phase screens plus owner close-then-delete. This slice is larger than five files because Player, Dealer, shared shell CSS, Poker felt/actions, Home, and `deleteTable` hide-after-archive share one board system.

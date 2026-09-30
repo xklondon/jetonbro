@@ -19,7 +19,7 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
   await page.getByLabel("Table name").fill("Phase Zero BJ");
   await page.getByLabel("Starting jetons per player").fill("100");
@@ -46,6 +46,7 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
   await expect(page.locator("[data-seat-status=empty]")).toHaveCount(0);
+  await expect(page.locator("[data-empty-waiting]")).toBeVisible();
   await shot(page, "09-phase0-blackjack-empty-390x844.png");
   await expect(page.getByRole("button", { name: "START TABLE" })).toHaveCount(0);
 

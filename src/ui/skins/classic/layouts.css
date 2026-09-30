@@ -184,6 +184,24 @@
   overflow: hidden;
 }
 
+.classic-skin main.felt.phase-zero-felt {
+  justify-content: center;
+}
+
+.classic-skin main.felt.phase-zero-felt::after {
+  display: none;
+}
+
+.classic-skin main.felt.phase-zero-felt .table-surface {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 8px;
+  width: calc(100% - 20px);
+  padding: 12px 10px;
+  border: 1px dashed var(--gold-line);
+  border-radius: 14px;
+}
+
 .classic-skin .setup-seats {
   width: 100%;
   display: flex;
@@ -1475,6 +1493,18 @@
 .classic-skin .poker-seat-player {
   min-width: 0;
 }
+.classic-skin .poker-seat-player strong,
+.classic-skin .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+}
+.classic-skin .poker-seat.is-you {
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
 .classic-skin .poker-seat-street,
 .classic-skin .poker-seat-available {
   text-align: right;
@@ -1784,6 +1814,77 @@
 .classic-skin .player-box-stage .box,
 .classic-skin .player-box-stage .box-slot {
   height: 154px;
+}
+
+.classic-skin .box.is-payout {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 8px 6px;
+  overflow: hidden;
+}
+
+.classic-skin .box.is-payout .box-identity,
+.classic-skin .box.is-payout .box-owner {
+  position: static;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.classic-skin .box.is-payout .box-owner {
+  color: rgba(244, 234, 213, 0.78);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.classic-skin .box-payout-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 6px;
+  width: 100%;
+  min-width: 0;
+  align-items: baseline;
+}
+
+.classic-skin .box-payout-line small {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(244, 234, 213, 0.62);
+}
+
+.classic-skin .box-payout-line strong {
+  font-size: 16px;
+  font-family: var(--font-display);
+  color: var(--ivory);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.classic-skin .box-payout-line .payout-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.classic-skin .box.is-payout .chip-pile,
+.classic-skin .box.is-payout .amount-label,
+.classic-skin .box.is-payout .amount {
+  display: none;
 }
 
 .classic-skin .player-context {

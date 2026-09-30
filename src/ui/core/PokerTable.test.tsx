@@ -645,6 +645,51 @@ test("a completed hand shows the award and never TO CALL or Waiting", () => {
   expect(html).not.toContain(">FOLD<");
 });
 
+test("Hand Complete wallet matches the authenticated viewer seat and awards the pot once", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicPokerPlayer, {
+      view: pokerView({
+        viewerId: "sam",
+        available: money("190"),
+        phase: "HAND_COMPLETE",
+        phaseLabel: "HAND COMPLETE",
+        pot: money("0", "0"),
+        potPaid: true,
+        toCall: money("0", "0"),
+        legalActions: [],
+        currentActorId: null,
+        waitingCopy: null,
+        winners: [{ userId: "owner", name: "Owner", amount: money("20") }],
+        seats: [
+          {
+            ...pokerView().seats[0]!,
+            isActor: false,
+            available: money("410"),
+            status: "ACTIVE",
+          },
+          {
+            ...pokerView().seats[1]!,
+            isActor: false,
+            available: money("190"),
+            status: "ACTIVE",
+          },
+        ],
+      }),
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain('data-viewer-seat="true"');
+  expect(html).toContain('data-wallet-available="190"');
+  expect(html).toContain('data-player-id="sam"');
+  expect(html).toContain("You · Sam");
+  expect(html).toContain("POT PAID");
+  expect(html.match(/WON 20/g)?.length).toBe(1);
+  expect(html).not.toContain("TO CALL");
+  expect(html).not.toContain("data-actor-controls");
+  const samSeat = html.slice(html.indexOf('data-player-id="sam"'));
+  expect(samSeat).toContain('data-seat-available="190"');
+});
+
 test("Hand Complete owner shows NEXT HAND without countdown or actor controls", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicPokerDealer, {

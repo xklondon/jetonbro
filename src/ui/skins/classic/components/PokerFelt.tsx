@@ -30,14 +30,17 @@ function seatStatus(seat: PokerSeatView, view: PokerTableView): string {
 function PokerSeatRow({ seat, index, view }: { seat: PokerSeatView; index: number; view: PokerTableView }) {
   const live = view.phase !== "POKER_SETUP";
   const status = seatStatus(seat, view);
+  const isYou = seat.userId === view.viewerId;
   return (
     <section
-      className={`dealer-player poker-seat seat-plaque${seat.isActor && view.phase !== "HAND_COMPLETE" ? " is-actor" : ""}${seat.isDealer ? " is-dealer" : ""}${seat.status === "FOLDED" ? " is-folded" : ""}${seat.status === "ALL_IN" ? " is-allin" : ""}`}
+      className={`dealer-player poker-seat seat-plaque${seat.isActor && view.phase !== "HAND_COMPLETE" ? " is-actor" : ""}${seat.isDealer ? " is-dealer" : ""}${seat.status === "FOLDED" ? " is-folded" : ""}${seat.status === "ALL_IN" ? " is-allin" : ""}${isYou ? " is-you" : ""}`}
       data-player-id={seat.userId}
       data-actor={seat.isActor && view.phase !== "HAND_COMPLETE" ? "true" : "false"}
       data-seat-status={seat.status}
       data-seat-index={index + 1}
       data-dealer={seat.isDealer ? "true" : "false"}
+      data-viewer-seat={isYou ? "true" : undefined}
+      data-seat-available={seat.available.label}
     >
       <div className="poker-seat-grid">
         <div className="poker-seat-player">
@@ -52,7 +55,7 @@ function PokerSeatRow({ seat, index, view }: { seat: PokerSeatView; index: numbe
               {seat.isBigBlind ? <span className="blind-badge">BB</span> : null}
             </div>
           ) : null}
-          <strong>{seat.name}</strong>
+          <strong className="truncate">{isYou ? `You · ${seat.name}` : seat.name}</strong>
           {status ? <div className="poker-seat-status">{status}</div> : null}
         </div>
         <div className="poker-seat-street" data-street-commit="true">

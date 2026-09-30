@@ -122,6 +122,9 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.reload();
   await expect.poll(async () => (await snapshot(playerPage)).player?.available.label).toBe("135");
   await expect(playerPage.locator("[data-player-wallet]")).toBeVisible();
+  await expect(playerPage.locator("[data-payout-main=true]").first()).toBeVisible();
+  await expect(playerPage.locator(`[data-box-id="${box1.id}"] [data-payout-insurance=true]`)).toBeVisible();
+  await expect(playerPage.locator(`[data-box-id="${box2.id}"] [data-payout-insurance]`)).toHaveCount(0);
   const box1AtPay = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();
   expect(Math.abs((box1AtPay!.x) - box1AtBet!.x)).toBeLessThan(8);
   expect(Math.abs((box1AtPay!.y) - box1AtBet!.y)).toBeLessThan(8);

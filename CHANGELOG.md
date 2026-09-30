@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Prompt 8 — payout overlap, viewer wallet, Phase 0 density
+
+- Player payout boxes stack identity, MAIN, and Insurance on separate lines inside the same 154px gold cards. Insurance is omitted when the box has none.
+- Poker Hand Complete marks the authenticated viewer’s seat as YOU and binds the tray AVAILABLE to that viewer’s snapshot balance.
+- Phase 0 keeps compact dealer/player rows and a small empty-waiting card. Assign Dealer stays in the table menu.
+
 ### Prompt 7 — approved Blackjack and Poker phase screens
 
 - Classic game screens follow the five stored boards in `docs/design-reference/`. Player boxes are rectangular gold cards; Dealer rows stay compact; Poker actions sit in one board-style row above the tray.

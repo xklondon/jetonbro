@@ -12,6 +12,16 @@ function resultCopy(box: BoxView): { kind: string; text: string } | null {
   return { kind: "blackjack", text: box.returned ? `Blackjack +${box.returned.label}` : "Blackjack" };
 }
 
+function insuranceState(result: string | null): string | null {
+  if (!result) return null;
+  if (/LOST/i.test(result)) return "INSURANCE LOST";
+  if (/WON/i.test(result)) {
+    const returned = result.match(/return ([0-9.]+)/)?.[1];
+    return returned ? `Won +${returned}` : "Won";
+  }
+  return result;
+}
+
 export function FeltBox({
   box,
   selected,
@@ -39,8 +49,31 @@ export function FeltBox({
 }) {
   const chips = chipsFromMillis(box.bet.millis);
   const result = resultCopy(box);
-  const className = `box${compact ? " is-compact" : ""}${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}${result ? ` is-${result.kind}` : ""}`;
-  const content = (
+  const payout = Boolean(result || box.insuranceResult);
+  const className = `box${compact ? " is-compact" : ""}${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}${result ? ` is-${result.kind}` : ""}${payout ? " is-payout" : ""}`;
+  const content = payout ? (
+    <>
+      <span className="box-identity">{box.label}</span>
+      {box.playerName ? <span className="box-owner">{box.playerName}</span> : null}
+      <div className="box-payout-line" data-payout-main="true">
+        <small>MAIN</small>
+        <strong>{box.bet.label}</strong>
+        {result ? (
+          <span className={`payout-state is-${result.kind}`} data-payout-state={box.outcome ?? ""}>
+            {result.text}
+          </span>
+        ) : null}
+      </div>
+      {box.insurance || box.insuranceResult ? (
+        <div className="box-payout-line" data-payout-insurance="true" data-insurance-result={box.insuranceResult ?? ""}>
+          <small>INSURANCE</small>
+          <strong>{box.insurance?.label ?? "—"}</strong>
+          {box.insuranceResult ? <span className="payout-state">{insuranceState(box.insuranceResult)}</span> : null}
+        </div>
+      ) : null}
+      {cardEntry}
+    </>
+  ) : (
     <>
       <span className="box-name">{box.label}</span>
       <span className="amount-label">MAIN</span>
@@ -69,8 +102,6 @@ export function FeltBox({
       ) : null}
       {box.insurance ? <span className="hint">INSURANCE {box.insurance.label}</span> : null}
       {box.isDoubled ? <span className="hint">Doubled</span> : null}
-      {result ? <span className="result">{result.text}</span> : null}
-      {box.insuranceResult ? <span className="result">{box.insuranceResult}</span> : null}
       {cardEntry}
       {showOutcomes && !box.outcome ? (
         <span className="outcome">
@@ -99,6 +130,7 @@ export function FeltBox({
         data-drop-box={box.id}
         data-box-id={box.id}
         data-box-slot={box.boxNumber}
+        data-payout-box={payout ? "true" : undefined}
         role="button"
         aria-label={box.label}
         tabIndex={0}
@@ -115,7 +147,13 @@ export function FeltBox({
     );
   }
   return (
-    <div className={className} data-drop-box={box.id} data-box-id={box.id} data-box-slot={box.boxNumber}>
+    <div
+      className={className}
+      data-drop-box={box.id}
+      data-box-id={box.id}
+      data-box-slot={box.boxNumber}
+      data-payout-box={payout ? "true" : undefined}
+    >
       {content}
     </div>
   );

@@ -46,10 +46,7 @@ export function ClassicPhaseZero({
   const gameLabel = game === "POKER" ? "Texas Hold’em" : "Blackjack";
   const ownerName = setup?.ownerName ?? waiting?.ownerName ?? "";
   const dealerName = setup?.bankName ?? waiting?.bankName ?? "";
-  const rows =
-    (setup?.members.filter((member) => game === "POKER" || !member.isBankDealer) ?? waiting?.members ?? members).filter(
-      (member) => game === "POKER" || !member.isBankDealer,
-    );
+  const rows = (setup?.members ?? waiting?.members ?? members).filter((member) => !member.isBankDealer);
   const invited = (setup?.invitations ?? []).filter((invite) => invite.pending);
   const startHand = poker ? pokerControls(poker).find((control) => control.id === "startHand") : null;
   const canOpenBetting = game === "BLACKJACK" && Boolean(setup?.canStartBetting) && isBank;
@@ -106,14 +103,22 @@ export function ClassicPhaseZero({
           </div>
           {notice ? <div className="error">{notice}</div> : null}
           <div className="phase-zero-rows">
+            <div className="phase-zero-row member-row" data-role="dealer">
+              <div>
+                <strong className="truncate">{dealerName || "Dealer"}</strong>
+                <div className="muted">Dealer{ownerName === dealerName ? " · Owner" : ""}</div>
+              </div>
+            </div>
             {rows.length === 0 && invited.length === 0 ? (
-              <p className="muted phase-zero-empty">No Players have joined yet.</p>
+              <p className="muted phase-zero-empty" data-empty-waiting="true">
+                Waiting for Players to join.
+              </p>
             ) : (
               <>
                 {rows.map((row) => (
                   <div className="phase-zero-row member-row" key={row.userId} data-player-row="true">
                     <div>
-                      <strong>{row.name}</strong>
+                      <strong className="truncate">{row.name}</strong>
                       <div className="muted">
                         {row.isOwner ? "Owner" : ""}
                         {row.isOwner && row.isBankDealer ? " · " : ""}
@@ -127,7 +132,7 @@ export function ClassicPhaseZero({
                 {invited.map((invite) => (
                   <div className="phase-zero-row member-row" key={invite.id} data-seat-status="Invited">
                     <div>
-                      <strong>{invite.email ?? "Player"}</strong>
+                      <strong className="truncate">{invite.email ?? "Player"}</strong>
                       <div className="muted">Invited</div>
                     </div>
                   </div>
@@ -135,25 +140,6 @@ export function ClassicPhaseZero({
               </>
             )}
           </div>
-          {isOwner && setup && setup.members.length > 0 ? (
-            <label className="phase-zero-dealer">
-              Dealer
-              <select
-                aria-label="Dealer"
-                value={dealerId}
-                onChange={(event) => {
-                  setDealerId(event.target.value);
-                  onCommand("assignBank", { userId: event.target.value });
-                }}
-              >
-                {setup.members.map((member) => (
-                  <option key={member.userId} value={member.userId}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
         </div>
       </main>
       <SheetOverlay open={inviteOpen} onClose={() => setInviteOpen(false)}>
