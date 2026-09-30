@@ -33,6 +33,7 @@ const homeCard = (overrides: Partial<HomeTableCard> = {}): HomeTableCard => ({
   canSave: true,
   canClose: true,
   canDeleteDraft: false,
+  canDeleteArchived: false,
   closeBlockedReason: null,
   closePreview: {
     kind: "archive",
@@ -168,6 +169,7 @@ test("non-owner home card hides other player balances", () => {
           canSave: false,
           canClose: false,
           canDeleteDraft: false,
+          canDeleteArchived: false,
           closePreview: null,
           players: [
             { userId: "sam", name: "Sam", available: { millis: "100000", label: "100" }, locked: null, isBankDealer: false },

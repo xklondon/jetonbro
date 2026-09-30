@@ -99,8 +99,8 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
   await page.screenshot({ path: join(shots, "insurance-dealer-390x844.png") });
   await playerPage.reload();
-  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE");
-  await expect(playerPage.getByText("Up to half the box stake")).toBeVisible();
+  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE OPEN");
+  await expect(playerPage.getByText("Max 50% of box stake")).toBeVisible();
   const box1AtIns = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();
   expect(Math.abs((box1AtIns!.x) - box1AtBet!.x)).toBeLessThan(8);
   expect(Math.abs((box1AtIns!.y) - box1AtBet!.y)).toBeLessThan(8);

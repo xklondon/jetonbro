@@ -31,7 +31,24 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
-## Active UI areas (Prompt 3)
+### Active UI areas (Prompt 7)
+
+Blackjack and Poker live phase screens plus owner close-then-delete. This slice is larger than five files because Player, Dealer, shared shell CSS, Poker felt/actions, Home, and `deleteTable` hide-after-archive share one board system.
+
+- `src/ui/skins/classic/components/ClassicPlayerTable.tsx`
+- `src/ui/skins/classic/components/ClassicBankTable.tsx`
+- `src/ui/skins/classic/components/ClassicPokerPlayer.tsx`
+- `src/ui/skins/classic/components/ClassicPokerDealer.tsx`
+- `src/ui/skins/classic/components/PokerFelt.tsx`
+- `src/ui/skins/classic/components/PokerGameControls.tsx`
+- `src/ui/skins/classic/layouts.css`
+- `src/ui/skins/classic/components/ClassicHome.tsx`
+- `src/application/queries/home.ts`
+- `src/application/services/tables.ts` (`deleteTable` hide of archived tables only)
+- `e2e/approved-game-screens.spec.ts`
+- `e2e/home-delete.spec.ts`
+
+Do not edit frozen accounting files for visual board work.
 
 ### Poker screens
 

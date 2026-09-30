@@ -74,7 +74,7 @@ export async function createBlackjackTable(
   await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);

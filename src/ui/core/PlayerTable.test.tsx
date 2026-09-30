@@ -218,9 +218,11 @@ test("player payout keeps the jeton dock visible under settlement status", () =>
     }),
   );
   expect(html).toContain("ROUND COMPLETE");
+  expect(html).toContain("PAYOUT / RESULT");
   expect(html).toContain("YOUR JETONS");
   expect(html.indexOf("ROUND COMPLETE")).toBeLessThan(html.indexOf("YOUR JETONS"));
-  expect(html).not.toContain("DOUBLE");
+  expect(html).toContain("DOUBLE");
+  expect(html).toContain("disabled");
 });
 
 test("player payout shows Hand complete after every box is resolved", () => {
@@ -257,8 +259,8 @@ test("player Insurance uses short copy and keeps the fixed box stage", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain(">INSURANCE<");
-  expect(html).toContain("Up to half the box stake");
+  expect(html).toContain("INSURANCE OPEN");
+  expect(html).toContain("Max 50% of box stake");
   expect(html).toContain("PLACE INSURANCE");
   expect(html).toContain("DOUBLE");
   expect(html).toContain("data-box-stage");

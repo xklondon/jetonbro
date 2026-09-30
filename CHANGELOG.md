@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Prompt 7 — approved Blackjack and Poker phase screens
+
+- Classic game screens follow the five stored boards in `docs/design-reference/`. Player boxes are rectangular gold cards; Dealer rows stay compact; Poker actions sit in one board-style row above the tray.
+- Owner close then delete: archived tables remain on Home without Resume; Owner Delete hides them without deleting ledger rows.
+- Contact sheets: `docs/screenshots/approval/`.
+
 ### Prompt 6 — restore Create Table, invitations, and Phase 0
 
 - Home is a compact Saved Tables index with `CREATE TABLE`, `RESUME`, and owner-only `DELETE` / `CLOSE TABLE`.

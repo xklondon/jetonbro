@@ -115,8 +115,14 @@ describeDb("home cards and table delete/archive", () => {
     const first = await deleteTable({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect(first.deleted).toBe(false);
     expect(first.archived).toBe(true);
+    const closedHome = (await listHomeTables(owner.id)).find((item) => item.id === tableId);
+    expect(closedHome?.closed).toBe(true);
+    expect(closedHome?.canDeleteArchived).toBe(true);
+    expect(closedHome?.canClose).toBe(false);
+
     const again = await deleteTable({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect(again.archived).toBe(true);
+    expect(again.deleted).toBe(true);
 
     const table = await prisma.table.findUniqueOrThrow({ where: { id: tableId } });
     expect(table.status).toBe("ARCHIVED");

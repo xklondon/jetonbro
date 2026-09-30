@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
 
 test("owner can permanently delete an empty draft from home", async ({ page, context }) => {
@@ -69,6 +71,21 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   await page.getByRole("button", { name: "CLOSE TABLE" }).click();
   await expect(page.getByText("Historical archival.")).toBeVisible();
   await expect(page.getByText("Saving 100")).toHaveCount(2);
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByText("Closed · balances saved")).toBeVisible();
+  await expect(page.getByText("Open salon")).toBeVisible();
+  await expect(page.getByRole("button", { name: "RESUME" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await page.getByRole("button", { name: "DELETE" }).click();
+  await expect(page.getByText("Open salon", { exact: true })).toBeVisible();
+  await expect(page.getByText("Closed table removal. Ledger and rounds are kept.")).toBeVisible();
+  await mkdir(join(process.cwd(), "docs", "screenshots", "approval"), { recursive: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: join(process.cwd(), "docs", "screenshots", "approval", "05-closed-delete-390x844.png") });
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByText("Open salon")).toBeVisible();
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await page.getByRole("button", { name: "DELETE" }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText("Open salon")).toHaveCount(0);
 
