@@ -563,6 +563,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     phaseLabel: activeGame.phaseLabel,
     headline: activeGame.headline,
     revision: table.updatedAt.getTime(),
+    seatedPlayerCount: playerMembers.length,
+    canStartBetting: Boolean(table.bankDealerId) && hasReadyPlayer,
     roundNumber: poker ? poker.handNumber : table.currentRound?.number ?? 0,
     turnNumber: poker?.turnNumber ?? 0,
     roundId: table.currentRound?.id ?? null,

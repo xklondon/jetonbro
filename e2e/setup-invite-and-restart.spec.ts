@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createBlackjackTable, decodeQrDataUrl, openAs, uniqueEmail, openTableMenu } from "./helpers";
+import { createBlackjackTable, decodeQrDataUrl, openAs, openInviteMask, uniqueEmail, openTableMenu } from "./helpers";
 
 async function decodeSetupQr(page: Page) {
   return page.evaluate(async () => {
@@ -42,6 +42,8 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await openInviteMask(page);
+  await page.getByRole("tab", { name: "VERIFIED QR" }).click();
   await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Copy Verified Link" })).toBeVisible();
   const qrBox = await page.getByAltText("Verified QR — email confirmation").boundingBox();
@@ -68,8 +70,12 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   await page.getByRole("button", { name: "Copy Verified Link" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toBe(expectedUrl);
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
 
   await page.reload();
+  await openInviteMask(page);
+  await page.getByRole("tab", { name: "VERIFIED QR" }).click();
   await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
   const afterReload = await decodeSetupQr(page);
   expect(afterReload.fallback).toBe(expectedUrl);

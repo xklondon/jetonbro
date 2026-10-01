@@ -9,8 +9,7 @@ import { PhaseBar } from "./PhaseBar";
 import { PhaseActionDock } from "./PhaseActionDock";
 import { TableIdentity } from "./TableIdentity";
 import { SheetOverlay } from "./SheetOverlay";
-import { ClassicInvitePanel } from "./ClassicInvitePanel";
-import { PlayerWallet } from "./PlayerWallet";
+import { ClassicInviteMask } from "./ClassicInvitePanel";
 import { SeatOrderList } from "./SeatOrderList";
 
 export function ClassicPhaseZero({
@@ -37,7 +36,9 @@ export function ClassicPhaseZero({
   game: "BLACKJACK" | "POKER";
 }) {
   const tableName = setup?.tableName ?? waiting?.tableName ?? poker?.tableName ?? "";
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [localOpen, setLocalOpen] = useState(false);
+  const [localName, setLocalName] = useState("");
   const [menuOpen, setMenuOpen] = useState<"menu" | "rename" | "close" | "seats" | "dealer" | null>(null);
   const [tableNameState, setTableNameState] = useState(tableName);
   const [dealerId, setDealerId] = useState(
@@ -61,8 +62,8 @@ export function ClassicPhaseZero({
   const guestJoinUrl = setup?.guestJoinUrl ?? null;
   const emailReady = setup?.emailConfigured !== false;
   const starting = setup?.startingJetonsPerPlayer.label ?? waiting?.startingJetons?.label ?? "100";
-  const viewer = waiting?.available ?? members.find((member) => member.userId === viewerId)?.available;
   const canManage = isOwner || isBank;
+  void viewerId;
 
   return (
     <TableShell badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
@@ -81,23 +82,22 @@ export function ClassicPhaseZero({
                   START HAND
                 </button>
               ) : null
-            ) : (
-              isBank ? (
-                <button
-                  className="gold-button"
-                  type="button"
-                  disabled={!canOpenBetting}
-                  onClick={() => onCommand("startBetting")}
-                >
-                  OPEN BETTING
-                </button>
-              ) : null
-            )}
+            ) : isBank ? (
+              <button
+                className="gold-button"
+                type="button"
+                disabled={!canOpenBetting}
+                onClick={() => onCommand("startBetting")}
+              >
+                OPEN BETTING
+              </button>
+            ) : null}
           </PhaseActionDock>
         ) : null}
       </PhaseBar>
       <main
         className="felt setup-felt phase-zero-felt"
+        data-table-board="PHASE_ZERO_DEALER"
         data-join-url={joinUrl ?? undefined}
         data-guest-join-url={guestJoinUrl ?? undefined}
         data-verified-join-url={joinUrl ?? undefined}
@@ -147,29 +147,54 @@ export function ClassicPhaseZero({
             )}
           </div>
           {canManage ? (
-            <ClassicInvitePanel
-              guestJoinUrl={guestJoinUrl}
-              verifiedJoinUrl={joinUrl}
-              emailConfigured={emailReady}
-              startingJetons={starting}
-              members={setup?.members ?? members}
-              invitations={setup?.invitations}
-              onCommand={onCommand}
-              notice={notice}
-            />
+            <button
+              className="gold-button add-player-button"
+              type="button"
+              data-add-player="true"
+              data-guest-join-url={guestJoinUrl ?? undefined}
+              data-verified-join-url={joinUrl ?? undefined}
+              onClick={() => setInviteOpen(true)}
+            >
+              ADD NEW PLAYER
+            </button>
           ) : null}
         </div>
       </main>
+      <ClassicInviteMask
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        guestJoinUrl={guestJoinUrl}
+        verifiedJoinUrl={joinUrl}
+        emailConfigured={emailReady}
+        startingJetons={starting}
+        members={setup?.members ?? members}
+        invitations={setup?.invitations}
+        onCommand={onCommand}
+        notice={notice}
+      />
       <SheetOverlay open={localOpen} onClose={() => setLocalOpen(false)}>
-        <ClassicInvitePanel
-          guestJoinUrl={null}
-          verifiedJoinUrl={null}
-          emailConfigured={false}
-          startingJetons={starting}
-          onCommand={onCommand}
-          notice={notice}
-          showLocalAdd
-        />
+        <h3>Add local player</h3>
+        <label>
+          Player name
+          <input
+            aria-label="Player name"
+            value={localName}
+            onChange={(event) => setLocalName(event.target.value)}
+          />
+        </label>
+        <button
+          className="gold-button"
+          type="button"
+          onClick={async () => {
+            const ok = await onCommand("addPlayer", { name: localName });
+            if (ok !== false) {
+              setLocalName("");
+              setLocalOpen(false);
+            }
+          }}
+        >
+          Add Local Player
+        </button>
         <button className="text-link" type="button" onClick={() => setLocalOpen(false)}>
           Close
         </button>
@@ -298,11 +323,7 @@ export function ClassicPhaseZero({
           </>
         ) : null}
       </SheetOverlay>
-      <footer className={`dock${canManage ? "" : " player-dock"}`}>
-        {canManage ? null : viewer ? (
-          <PlayerWallet available={viewer} trayEnabled={false} dropSelector="[data-drop-box]" />
-        ) : null}
-      </footer>
+      <footer className="dock" />
     </TableShell>
   );
 }

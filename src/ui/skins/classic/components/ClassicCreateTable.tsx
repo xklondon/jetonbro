@@ -6,7 +6,7 @@ import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 import type { CommandHandler } from "@/ui/skins/types";
 import { PhoneShell } from "./PhoneShell";
 import { ClassicGameCards } from "./ClassicGameCards";
-import { ClassicInvitePanel } from "./ClassicInvitePanel";
+import { ClassicInviteMask } from "./ClassicInvitePanel";
 
 function limitedReserve(value?: string | null) {
   const parsed = Number.parseInt(String(value ?? "").trim(), 10);
@@ -66,6 +66,7 @@ export function ClassicCreateTable({
   const [pending, setPending] = useState(false);
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     if (!view) return;
@@ -84,65 +85,72 @@ export function ClassicCreateTable({
   }
 
   const playerRows = (view?.members ?? []).filter((member) => game === "POKER" || !member.isBankDealer);
+  const pendingInvites = (view?.invitations ?? []).filter((invite) => invite.pending);
+  const guestJoinUrl = view?.guestJoinUrl ?? null;
+  const verifiedJoinUrl = view?.verifiedJoinUrl ?? view?.joinUrl ?? null;
 
   return (
     <PhoneShell>
-      <div className="phase-head home-head-compact">
+      <div className="phase-head home-head-compact" data-table-board="CREATE_TABLE">
         <strong>CREATE TABLE</strong>
-        <span>Configure the table, then start.</span>
       </div>
       <main
-        className="felt home-stack create-setup"
-        data-guest-join-url={view?.guestJoinUrl ?? undefined}
-        data-verified-join-url={(view?.verifiedJoinUrl ?? view?.joinUrl) ?? undefined}
-        data-join-url={(view?.verifiedJoinUrl ?? view?.joinUrl) ?? undefined}
+        className="felt home-stack create-setup compact-create"
+        data-guest-join-url={guestJoinUrl ?? undefined}
+        data-verified-join-url={verifiedJoinUrl ?? undefined}
+        data-join-url={verifiedJoinUrl ?? undefined}
       >
         {notice ? <div className="error">{notice}</div> : null}
-        <label>
-          Table name
-          <input
-            name="name"
-            aria-label="Table name"
-            value={name}
-            onChange={(event) => {
-              setNameDirty(true);
-              setName(event.target.value);
-            }}
-            onBlur={() => void persist({ name })}
-            required
-          />
-        </label>
-        {needsHostName || !view?.ownerName ? (
-          <label>
-            Owner / host name
-            <input
-              name="hostName"
-              aria-label="Owner / host name"
-              value={hostName}
-              onChange={(event) => setHostName(event.target.value)}
-              required={Boolean(needsHostName)}
-            />
-          </label>
-        ) : (
-          <div className="muted">Owner · {view.ownerName}</div>
-        )}
-        <label>
-          Starting jetons per Player
-          <input
-            name="startingJetonsPerPlayer"
-            aria-label="Starting jetons per player"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={startingJetonsPerPlayer}
-            onChange={(event) => {
-              setStartingDirty(true);
-              setStartingJetonsPerPlayer(event.target.value);
-            }}
-            onBlur={() => void persist({ startingJetonsPerPlayer })}
-          />
-        </label>
-        <div>
-          <div className="field-label">Game</div>
+        <section className="create-block">
+          <div className="field-label">TABLE</div>
+          <div className="compact-row">
+            <label>
+              Table name
+              <input
+                name="name"
+                aria-label="Table name"
+                value={name}
+                onChange={(event) => {
+                  setNameDirty(true);
+                  setName(event.target.value);
+                }}
+                onBlur={() => void persist({ name })}
+                required
+              />
+            </label>
+            <label>
+              Starting jetons
+              <input
+                name="startingJetonsPerPlayer"
+                aria-label="Starting jetons per player"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={startingJetonsPerPlayer}
+                onChange={(event) => {
+                  setStartingDirty(true);
+                  setStartingJetonsPerPlayer(event.target.value);
+                }}
+                onBlur={() => void persist({ startingJetonsPerPlayer })}
+              />
+            </label>
+          </div>
+          {needsHostName || !view?.ownerName ? (
+            <label>
+              Owner / host name
+              <input
+                name="hostName"
+                aria-label="Owner / host name"
+                value={hostName}
+                onChange={(event) => setHostName(event.target.value)}
+                required={Boolean(needsHostName)}
+              />
+            </label>
+          ) : (
+            <div className="muted owner-line">Owner · {view.ownerName}</div>
+          )}
+        </section>
+        <section className="create-block">
+          <div className="field-label">GAME</div>
           <ClassicGameCards
             selectedId={game}
             onSelect={(id) => {
@@ -150,10 +158,10 @@ export function ClassicCreateTable({
             }}
             compact
           />
-        </div>
-        {game === "BLACKJACK" ? (
-          <div>
-            <div className="field-label">Bank</div>
+        </section>
+        <section className="create-block">
+          <div className="field-label">{game === "POKER" ? "BLINDS / DEALER" : "BANK / DEALER"}</div>
+          {game === "BLACKJACK" ? (
             <div className="setting-row funding-toggle">
               <button
                 type="button"
@@ -181,70 +189,68 @@ export function ClassicCreateTable({
                 LIMITED BANK
               </button>
             </div>
-            {bankFundingMode === "LIMITED" ? (
+          ) : (
+            <div className="compact-row blind-row">
               <label>
-                Starting Bank jetons
+                Small blind
                 <input
-                  name="startingBank"
-                  aria-label="Starting Bank jetons"
+                  aria-label="Small blind"
                   inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={startingBank}
-                  onChange={(event) => setStartingBank(event.target.value)}
-                  onBlur={() =>
-                    onCommand?.("setBankFunding", { bankFundingMode: "LIMITED", startingBank })
-                  }
+                  value={smallBlind}
+                  onChange={(event) => setSmallBlind(event.target.value)}
                 />
               </label>
-            ) : null}
-          </div>
-        ) : (
-          <div className="blind-row">
+              <label>
+                Big blind
+                <input
+                  aria-label="Big blind"
+                  inputMode="numeric"
+                  value={bigBlind}
+                  onChange={(event) => setBigBlind(event.target.value)}
+                />
+              </label>
+            </div>
+          )}
+          {game === "BLACKJACK" && bankFundingMode === "LIMITED" ? (
             <label>
-              Small blind
+              Limited reserve
               <input
-                aria-label="Small blind"
+                name="startingBank"
+                aria-label="Starting Bank jetons"
                 inputMode="numeric"
-                value={smallBlind}
-                onChange={(event) => setSmallBlind(event.target.value)}
+                pattern="[0-9]*"
+                value={startingBank}
+                onChange={(event) => setStartingBank(event.target.value)}
+                onBlur={() => onCommand?.("setBankFunding", { bankFundingMode: "LIMITED", startingBank })}
               />
             </label>
+          ) : null}
+          {view?.members.length ? (
             <label>
-              Big blind
-              <input
-                aria-label="Big blind"
-                inputMode="numeric"
-                value={bigBlind}
-                onChange={(event) => setBigBlind(event.target.value)}
-              />
+              Dealer
+              <select
+                aria-label="Dealer"
+                value={dealerId}
+                onChange={(event) => {
+                  setDealerId(event.target.value);
+                  onCommand?.("assignBank", { userId: event.target.value });
+                }}
+              >
+                {view.members.map((member) => (
+                  <option key={member.userId} value={member.userId}>
+                    {member.name}
+                    {member.isOwner ? " (Owner)" : ""}
+                  </option>
+                ))}
+              </select>
             </label>
-          </div>
-        )}
-        {view?.members.length ? (
-          <label>
-            Dealer
-            <select
-              aria-label="Dealer"
-              value={dealerId}
-              onChange={(event) => {
-                setDealerId(event.target.value);
-                onCommand?.("assignBank", { userId: event.target.value });
-              }}
-            >
-              {view.members.map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {member.name}
-                  {member.isOwner ? " (Owner)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <div className="muted">Dealer · {view?.bankName ?? "Owner (default)"}</div>
-        )}
-        {playerRows.length > 0 ? (
-          <div>
-            <div className="field-label">Players</div>
+          ) : (
+            <div className="muted">Dealer · {view?.bankName ?? "Owner (default)"}</div>
+          )}
+        </section>
+        <section className="create-block">
+          <div className="field-label">PLAYERS</div>
+          {playerRows.length || pendingInvites.length ? (
             <div className="phase-zero-rows">
               {playerRows.map((member) => (
                 <div className="phase-zero-row member-row" key={member.userId} data-player-row="true">
@@ -258,22 +264,43 @@ export function ClassicCreateTable({
                   <span>{member.available?.label ?? "0"}</span>
                 </div>
               ))}
+              {pendingInvites.map((invite) => (
+                <div className="phase-zero-row member-row" key={invite.id} data-seat-status="Invited">
+                  <div>
+                    <strong>{invite.email ?? "Player"}</strong>
+                    <div className="muted">Pending</div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        ) : null}
-        <div className="field-label">Players & invitations</div>
-        <ClassicInvitePanel
-          guestJoinUrl={view?.guestJoinUrl}
-          verifiedJoinUrl={view?.verifiedJoinUrl ?? view?.joinUrl}
-          emailConfigured={view?.emailConfigured !== false}
-          startingJetons={startingJetonsPerPlayer}
-          members={view?.members}
-          invitations={view?.invitations}
-          onCommand={onCommand ?? (async () => undefined)}
-          notice={notice}
-        />
+          ) : (
+            <p className="muted compact-empty">No players yet.</p>
+          )}
+          <button
+            className="gold-button add-player-button"
+            type="button"
+            data-add-player="true"
+            data-guest-join-url={guestJoinUrl ?? undefined}
+            data-verified-join-url={verifiedJoinUrl ?? undefined}
+            onClick={() => setInviteOpen(true)}
+          >
+            ADD NEW PLAYER
+          </button>
+        </section>
       </main>
-      <footer className="dock">
+      <ClassicInviteMask
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        guestJoinUrl={guestJoinUrl}
+        verifiedJoinUrl={verifiedJoinUrl}
+        emailConfigured={view?.emailConfigured !== false}
+        startingJetons={startingJetonsPerPlayer}
+        members={view?.members}
+        invitations={view?.invitations}
+        onCommand={onCommand ?? (async () => undefined)}
+        notice={notice}
+      />
+      <footer className="dock create-dock">
         <button
           className="gold-button"
           type="button"

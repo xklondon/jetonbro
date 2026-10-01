@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
-import { createTable, ensureDraftTable, assignBankDealer } from "@/application/services/tables";
+import { createTable, ensureDraftTable, assignBankDealer, finalizeSetup } from "@/application/services/tables";
 import { joinAsGuest, joinWithToken } from "@/application/services/invitations";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import { placeOrRetractBet, startBetting } from "@/application/services/blackjack-round";
 import { DomainError, ForbiddenError } from "@/domain/errors";
+import { resolveActorFromIdentities } from "@/application/actor-resolve";
+import { selectTableBoard } from "@/ui/core/table-board";
 
 let hasDb = Boolean(process.env.DATABASE_URL);
 if (hasDb) {
@@ -103,6 +105,84 @@ describeDb("guest vs verified invitations", () => {
     await expect(ensureDraftTable({ actorId: joined.userId })).rejects.toBeInstanceOf(ForbiddenError);
   });
 
+  test("production actor resolution plus snapshots enable OPEN BETTING and keep boards split", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
+    const verified = await user(`verified-${randomUUID()}@jetonbro.test`, "Sam");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Actor table",
+      game: "BLACKJACK",
+      startingJetonsPerPlayer: "100",
+      emails: [],
+      draft: true,
+    });
+    await finalizeSetup({
+      actorId: owner.id,
+      tableId: created.tableId,
+      idempotencyKey: randomUUID(),
+      name: "Actor table",
+      startingJetonsPerPlayer: "100",
+      emails: [],
+    });
+    const guestInvite = await prisma.invitation.findFirstOrThrow({
+      where: { tableId: created.tableId, kind: "GUEST", revokedAt: null },
+    });
+    const verifiedInvite = await prisma.invitation.findFirstOrThrow({
+      where: { tableId: created.tableId, kind: "QR", revokedAt: null },
+    });
+
+    const before = await loadSnapshot(created.tableId, owner.id);
+    expect(before.canStartBetting).toBe(false);
+    expect(before.seatedPlayerCount).toBe(0);
+    expect(selectTableBoard(before)).toBe("PHASE_ZERO_DEALER");
+
+    const joined = await joinAsGuest({ token: guestInvite.token, playName: "Casey" });
+    const guestActor = resolveActorFromIdentities({
+      tableId: created.tableId,
+      verified: {
+        id: owner.id,
+        email: owner.email,
+        name: owner.name,
+        isGuest: false,
+        guestTableId: null,
+      },
+      guest: {
+        id: joined.userId,
+        email: "casey@guest.invalid",
+        name: "Casey",
+        isGuest: true,
+        guestTableId: created.tableId,
+      },
+    });
+    expect(guestActor?.id).toBe(joined.userId);
+
+    const ownerAfterGuest = await loadSnapshot(created.tableId, owner.id);
+    const guestSnap = await loadSnapshot(created.tableId, guestActor!.id);
+    expect(ownerAfterGuest.canStartBetting).toBe(true);
+    expect(ownerAfterGuest.seatedPlayerCount).toBe(1);
+    expect(ownerAfterGuest.isDealer).toBe(true);
+    expect(ownerAfterGuest.isSeatedPlayer).toBe(false);
+    expect(guestSnap.isSeatedPlayer).toBe(true);
+    expect(guestSnap.isDealer).toBe(false);
+    expect(selectTableBoard(ownerAfterGuest)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(guestSnap)).toBe("PHASE_ZERO_PLAYER");
+
+    await startBetting({ actorId: owner.id, tableId: created.tableId, idempotencyKey: randomUUID() });
+    const ownerBetting = await loadSnapshot(created.tableId, owner.id);
+    const guestBetting = await loadSnapshot(created.tableId, joined.userId);
+    expect(ownerBetting.phase).toBe("BETTING");
+    expect(guestBetting.phase).toBe("BETTING");
+    expect(selectTableBoard(ownerBetting)).toBe("BLACKJACK_DEALER");
+    expect(selectTableBoard(guestBetting)).toBe("BLACKJACK_PLAYER");
+
+    await joinWithToken({ userId: verified.id, token: verifiedInvite.token, userEmail: verified.email });
+    const verifiedSnap = await loadSnapshot(created.tableId, verified.id);
+    expect(verifiedSnap.isSeatedPlayer).toBe(true);
+    expect(verifiedSnap.isDealer).toBe(false);
+    expect(selectTableBoard(verifiedSnap)).toBe("BLACKJACK_PLAYER");
+  });
+
   test("role flags separate owner-dealer, seated player, and assigned dealer", async () => {
     const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Alex");
     const dealer = await user(`dealer-${randomUUID()}@jetonbro.test`, "Blair");
@@ -129,6 +209,14 @@ describeDb("guest vs verified invitations", () => {
       userId: dealer.id,
       idempotencyKey: randomUUID(),
     });
+    await finalizeSetup({
+      actorId: owner.id,
+      tableId: created.tableId,
+      idempotencyKey: randomUUID(),
+      name: "Roles",
+      startingJetonsPerPlayer: "100",
+      emails: [],
+    });
 
     const ownerSnap = await loadSnapshot(created.tableId, owner.id);
     expect(ownerSnap.isOwner).toBe(true);
@@ -152,6 +240,9 @@ describeDb("guest vs verified invitations", () => {
     expect(ownerSnap.player).toBeNull();
     expect(ownerSnap.setup).toBeTruthy();
     expect(playerSnap.waiting).toBeTruthy();
+    expect(selectTableBoard(ownerSnap)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(dealerSnap)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(playerSnap)).toBe("PHASE_ZERO_PLAYER");
   });
 
   test("duplicate guest play names are rejected", async () => {

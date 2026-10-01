@@ -38,10 +38,10 @@ test("two player sessions join a table and open betting", async ({ page, context
   await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   await page.reload();
-  await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({
+  await expect(page.locator("[data-player-row]").filter({ hasText: "Alex" })).toBeVisible({
     timeout: 15000,
   });
-  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
+  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
 
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");

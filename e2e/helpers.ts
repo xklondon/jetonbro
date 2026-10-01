@@ -54,10 +54,19 @@ export async function createPokerTable(
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
 }
 
+export async function openInviteMask(page: Page) {
+  const add = page.getByRole("button", { name: "ADD NEW PLAYER" });
+  await expect(add).toBeVisible({ timeout: 20_000 });
+  if (!(await page.locator(".sheet.open .invite-mask").count())) {
+    await add.click();
+  }
+  await expect(page.locator(".sheet.open .invite-mask")).toBeVisible();
+}
+
 export async function setupJoinUrl(page: Page, kind: "guest" | "verified" = "verified") {
   const attr = kind === "guest" ? "data-guest-join-url" : "data-verified-join-url";
   const el = page.locator(`[${attr}]`).first();
-  await expect(el).toBeVisible({ timeout: 20_000 });
+  await expect(el).toBeAttached({ timeout: 20_000 });
   const url = await el.getAttribute(attr);
   if (!url) throw new Error(`${kind} join URL missing`);
   return url;
@@ -81,8 +90,8 @@ export async function createBlackjackTable(
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
-  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
-  await expect(page.getByText("VERIFIED PLAYER")).toBeVisible();
+  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
+  await expect(page.getByAltText("Guest QR — no email")).toHaveCount(0);
   await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   if (options?.email) {
@@ -126,15 +135,19 @@ export async function addLocalPlayerFromMenu(page: Page, name: string) {
   await page.getByLabel("Player name").fill(name);
   await page.getByRole("button", { name: "Add Local Player" }).click();
   await expect(page.getByText(name).first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".sheet.open")).toHaveCount(0);
 }
 
 export async function invitePlayerFromLobby(page: Page, email: string) {
+  await openInviteMask(page);
+  await page.getByRole("tab", { name: "EMAIL INVITE" }).click();
   await expect(page.getByLabel("Player email")).toBeVisible();
   await page.getByLabel("Player email").fill(email);
   await page.getByRole("button", { name: "SEND INVITE" }).click();
   await expect(page.getByText("Pending")).toBeVisible();
+  await page.locator(".invite-mask").getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
@@ -150,6 +163,19 @@ export async function expectPokerPhase(page: Page, label: string, options?: { ti
   if (stop) {
     await expect(page.locator(`[data-rail="${stop}"][data-rail-state="current"]`)).toBeVisible();
   }
+}
+
+export async function expectNoPageScroll(page: Page) {
+  const scrolled = await page.evaluate(() => {
+    const phone = document.querySelector(".phone");
+    const felt = document.querySelector("main.felt");
+    return {
+      phone: phone ? phone.scrollHeight > phone.clientHeight + 2 : false,
+      felt: felt ? felt.scrollHeight > felt.clientHeight + 2 : false,
+    };
+  });
+  expect(scrolled.phone).toBe(false);
+  expect(scrolled.felt).toBe(false);
 }
 
 export async function noHorizontalOverflow(page: Page) {

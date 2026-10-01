@@ -188,9 +188,131 @@
   scrollbar-width: none;
 }
 
-.classic-skin main.felt.create-setup {
-  padding-bottom: 96px;
+.classic-skin main.felt.create-setup.compact-create {
+  overflow: hidden;
+  padding-bottom: 0;
+  gap: 6px;
+}
+
+.classic-skin .create-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.classic-skin .compact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+  min-width: 0;
+}
+
+.classic-skin .compact-row label {
+  min-width: 0;
+}
+
+.classic-skin .owner-line,
+.classic-skin .compact-empty {
+  margin: 0;
+  font-size: var(--label-size);
+}
+
+.classic-skin .add-player-button {
+  margin-top: 4px;
+}
+
+.classic-skin .game-pick.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.classic-skin .game-pick.segmented .game-card.segment {
+  aspect-ratio: auto;
+  min-height: var(--control-height);
+  flex-direction: row;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.classic-skin .game-pick.segmented .game-card-suit {
+  font-size: 16px;
+}
+
+.classic-skin .game-pick.segmented .coming-later {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.classic-skin .invite-mask {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  gap: 8px;
+}
+
+.classic-skin .invite-mask-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.classic-skin .invite-mask-head h3 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+
+.classic-skin .invite-mask-head .text-link {
+  width: auto;
+  min-height: 44px;
+}
+
+.classic-skin .invite-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.classic-skin .invite-tabs button {
+  min-height: 44px;
+  border: 1px solid var(--gold-line);
+  background: var(--panel);
+  color: var(--muted);
+  border-radius: 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.classic-skin .invite-tabs button.active {
+  color: var(--gold-ink);
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  border-color: transparent;
+}
+
+.classic-skin .invite-mask-body {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.classic-skin .invite-mask .qr-panel img,
+.classic-skin .invite-card .qr-panel img {
+  width: 168px;
+  height: 168px;
+}
+
+.classic-skin main.felt.create-setup {
+  padding-bottom: 0;
+  gap: 6px;
 }
 
 .classic-skin main.felt.home-stack::-webkit-scrollbar,
@@ -249,9 +371,11 @@
 .classic-skin .phase-zero-dealer {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(244, 234, 213, 0.82);
+  gap: 4px;
+  font-size: var(--label-size);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .classic-skin .create-setup input,
@@ -262,11 +386,12 @@
 .classic-skin .invite-card select {
   width: 100%;
   min-width: 0;
-  border: 1px solid rgba(223, 189, 105, 0.28);
-  background: var(--panel);
+  min-height: var(--control-height);
+  border: 1px solid var(--gold-line);
+  background: var(--control-surface);
   color: var(--ivory);
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: var(--radius-card);
+  padding: 8px 10px;
   font-size: 16px;
   appearance: none;
 }
@@ -416,14 +541,16 @@
 
 .classic-skin .create-setup .game-pick.compact .game-card {
   aspect-ratio: auto;
-  min-height: 52px;
-  padding: 4px 2px;
+  min-height: var(--control-height);
+  padding: 4px 6px;
 }
 
 .classic-skin .field-label {
-  font-size: 12px;
-  color: rgba(244, 234, 213, 0.82);
-  margin-bottom: 6px;
+  font-size: 10px;
+  color: var(--gold);
+  margin-bottom: 2px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .classic-skin .email-row {

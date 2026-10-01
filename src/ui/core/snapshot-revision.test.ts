@@ -54,6 +54,15 @@ test("prefers the newer round when timestamps match", () => {
   ).toBe(false);
 });
 
+test("a joined Player snapshot replaces a stale empty table at the same revision", () => {
+  expect(
+    shouldApplySnapshot(
+      { revision: 500, phase: "TABLE_SETUP", seatedPlayerCount: 0, canStartBetting: false },
+      { revision: 500, phase: "TABLE_SETUP", seatedPlayerCount: 1, canStartBetting: true },
+    ),
+  ).toBe(true);
+});
+
 test("a lower Poker turn cannot reverse the current actor or street", () => {
   expect(
     shouldApplySnapshot(

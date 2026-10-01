@@ -110,6 +110,7 @@ export function ClassicPlayerTable({
       <PhaseBar label={phase.label} kicker={phase.kicker} />
       <main
         className={`felt player-play-felt${view.phase === "BETTING" ? " betting-open" : ""}`}
+        data-table-board="BLACKJACK_PLAYER"
         data-selected-box={selected?.id ?? ""}
         data-box-count={view.boxes.length}
       >

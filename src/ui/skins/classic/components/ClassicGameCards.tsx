@@ -17,8 +17,35 @@ export function ClassicGameCards({
   onSelect: (gameId: GameId) => void;
   compact?: boolean;
 }) {
+  const playable = GAME_CATALOG.filter((game) => game.available);
+  const later = GAME_CATALOG.filter((game) => !game.available);
+  if (compact) {
+    return (
+      <div className="game-pick compact segmented">
+        {playable.map((game) => (
+          <button
+            key={game.id}
+            type="button"
+            className={`game-card segment${selectedId === game.id ? " is-selected" : ""}`}
+            aria-pressed={selectedId === game.id}
+            onClick={() => onSelect(game.id)}
+          >
+            <span className="game-card-suit" aria-hidden="true">
+              {SUITS[game.id]}
+            </span>
+            <strong>{game.label}</strong>
+          </button>
+        ))}
+        {later.map((game) => (
+          <p className="muted coming-later" key={game.id}>
+            {game.label} · Coming later
+          </p>
+        ))}
+      </div>
+    );
+  }
   return (
-    <div className={`game-pick${compact ? " compact" : ""}`}>
+    <div className="game-pick">
       {GAME_CATALOG.map((game) => {
         const available = game.available;
         return (

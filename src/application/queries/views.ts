@@ -345,6 +345,8 @@ export type ClientSnapshot = {
   phaseLabel?: string;
   headline?: string;
   revision?: number;
+  seatedPlayerCount?: number;
+  canStartBetting?: boolean;
   roundNumber?: number;
   turnNumber?: number;
   roundId?: string | null;

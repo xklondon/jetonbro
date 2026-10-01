@@ -69,11 +69,11 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ tableId: string }> },
 ) {
-  const actor = await getActor();
+  const { tableId } = await context.params;
+  const actor = await getActor({ tableId });
   if (!actor) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
-  const { tableId } = await context.params;
   try {
     assertActorCanAccessTable(actor, tableId);
   } catch (error) {

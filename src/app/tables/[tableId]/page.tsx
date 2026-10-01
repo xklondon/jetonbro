@@ -8,8 +8,8 @@ export default async function TablePage({
 }: {
   params: Promise<{ tableId: string }>;
 }) {
-  const actor = await getActor();
   const { tableId } = await params;
+  const actor = await getActor({ tableId });
   if (!actor) {
     redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/tables/${tableId}`)}`);
   }

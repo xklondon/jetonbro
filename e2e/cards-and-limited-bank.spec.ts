@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, openAs, uniqueEmail, openTableMenu } from "./helpers";
+import { createBlackjackTable, invitePlayerFromLobby, openAs, uniqueEmail, openTableMenu } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -24,9 +24,7 @@ async function twoSeatTable(
       await cancel.click();
     }
   }
-  await page.getByLabel("Player email").fill(playerEmail);
-  await page.getByRole("button", { name: "SEND INVITE" }).click();
-  await expect(page.getByText("Pending")).toBeVisible();
+  await invitePlayerFromLobby(page, playerEmail);
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };
   const invitePath = new URL(mail.messages[0]!.url!).pathname;
@@ -98,9 +96,7 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   if (await cancel.isVisible()) {
     await cancel.click();
   }
-  await page.getByLabel("Player email").fill(samEmail);
-  await page.getByRole("button", { name: "SEND INVITE" }).click();
-  await expect(page.getByText("Pending")).toBeVisible();
+  await invitePlayerFromLobby(page, samEmail);
   const samMail = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(samEmail)}`);
   const samInvite = new URL(((await samMail.json()) as { messages: { url?: string }[] }).messages[0]!.url!).pathname;
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);

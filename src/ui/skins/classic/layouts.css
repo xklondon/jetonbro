@@ -39,7 +39,7 @@
 }
 
 .classic-skin header.top-bar {
-  padding: 17px 17px 7px;
+  padding: 8px 14px 4px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,15 +67,16 @@
 
 .classic-skin .phase-head {
   text-align: center;
-  padding: 3px 14px 9px;
+  padding: 2px 12px 6px;
 }
 
 .classic-skin .phase-head strong {
   font-family: var(--font-display);
   color: var(--ivory);
-  font-size: 18px;
+  font-size: var(--title-size);
   display: block;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .classic-skin .phase-head [data-phase-heading] {
@@ -597,6 +598,7 @@
 .classic-skin .player-wallet {
   display: grid;
   gap: 6px;
+  min-height: var(--tray-height);
 }
 
 .classic-skin .wallet-bar {
@@ -838,6 +840,15 @@
   padding: 18px 16px 22px;
 }
 
+.classic-skin .sheet-panel.invite-mask-panel {
+  max-height: min(86dvh, 720px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 16px;
+  background: var(--control-surface);
+}
+
 .classic-skin .sheet-panel h3 {
   margin: 0 0 12px;
   font: 20px var(--font-display);
@@ -882,8 +893,8 @@
 }
 
 .classic-skin .muted {
-  opacity: 0.7;
-  font-size: 12px;
+  color: var(--muted);
+  font-size: var(--label-size);
 }
 
 .classic-skin .error {

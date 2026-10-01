@@ -9,11 +9,11 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ tableId: string }> },
 ) {
-  const actor = await getActor();
+  const { tableId } = await context.params;
+  const actor = await getActor({ tableId });
   if (!actor) {
     return new Response("Sign in required.", { status: 401 });
   }
-  const { tableId } = await context.params;
   try {
     assertActorCanAccessTable(actor, tableId);
   } catch (error) {

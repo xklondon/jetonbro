@@ -31,6 +31,21 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
+### Active UI areas (POST-RC3 repair)
+
+Compact Create Table, invitation mask, Classic tokens, and `selectTableBoard()` role routing. Invitation/membership wiring is in scope; Blackjack/Poker engines stay frozen.
+
+- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
+- `src/ui/skins/classic/components/ClassicInvitePanel.tsx`
+- `src/ui/skins/classic/components/ClassicPhaseZero.tsx`
+- `src/ui/skins/classic/components/ClassicWaitingTable.tsx`
+- `src/ui/skins/classic/components/SheetOverlay.tsx`
+- `src/ui/core/table-board.ts`
+- `src/ui/core/TableSession.tsx`
+- `src/application/actor-resolve.ts`
+- `src/application/queries/snapshot.ts`
+- `src/ui/skins/classic/tokens.css`
+
 ### Active UI areas (Prompt 10)
 
 Guest vs Verified invitations, Create Table inline QR, Phase 0 readiness, dealer payout ghost. Invitation/membership wiring is in scope; Blackjack/Poker engines stay frozen.
@@ -116,6 +131,8 @@ Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay fr
 - `src/ui/skins/classic/components/ClassicSetupTable.tsx` (adapter: incomplete → Create Table, completed → Phase 0)
 - `src/ui/skins/classic/components/ClassicWaitingTable.tsx` (player Phase 0)
 - `src/ui/core/TableSession.tsx`
+- `src/ui/core/table-board.ts`
+- `src/application/actor-resolve.ts`
 - `src/app/tables/new/page.tsx` (creates/reuses a draft and redirects to `/tables/{id}`)
 - `src/app/tables/new/create-table-client.tsx` **inactive** (no longer routed)
 - `e2e/setup-phase-zero.spec.ts`

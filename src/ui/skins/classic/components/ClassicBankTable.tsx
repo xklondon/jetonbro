@@ -78,9 +78,6 @@ export function ClassicBankTable({
           ) : null}
           {view.phase === "BETTING" ? (
             <div className="deal-actions next-round-row">
-              <button type="button" disabled>
-                OPEN BETTING
-              </button>
               <button
                 type="button"
                 className={view.primaryAction.enabled ? "gold-button" : undefined}
@@ -143,7 +140,7 @@ export function ClassicBankTable({
           )}
         </PhaseActionDock>
       </PhaseBar>
-      <main className="felt dealer-list-felt">
+      <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER">
         <div className="table-surface">
           <TableIdentity name={view.tableName} />
           <div className="dealer-ledger-head" aria-hidden="true">

@@ -8,6 +8,10 @@ test("classic tokens define one emerald, felt, cream, gold and black dock", () =
   expect(tokens).toContain("--felt:");
   expect(tokens).toContain("--cream:");
   expect(tokens).toContain("--gold:");
+  expect(tokens).toContain("--control-surface:");
+  expect(tokens).toContain("--muted:");
+  expect(tokens).toContain("--tray-height:");
+  expect(tokens).toContain("--title-size:");
   expect(tokens).toContain("--dock: #05080a");
   expect(tokens).toContain("--rail:");
   expect(tokens).toContain("--outcome-won:");

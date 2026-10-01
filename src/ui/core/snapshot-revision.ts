@@ -18,6 +18,8 @@ export type SnapshotOrder = {
   phase: string;
   roundNumber?: number;
   turnNumber?: number;
+  seatedPlayerCount?: number;
+  canStartBetting?: boolean;
 };
 
 /**
@@ -28,6 +30,12 @@ export function shouldApplySnapshot(current: SnapshotOrder, incoming: SnapshotOr
   if (incoming.revision == null) return current.revision == null;
   if (current.revision == null) return true;
   if (incoming.revision !== current.revision) return incoming.revision > current.revision;
+  const incomingPlayers = incoming.seatedPlayerCount ?? 0;
+  const currentPlayers = current.seatedPlayerCount ?? 0;
+  if (incomingPlayers !== currentPlayers) return incomingPlayers >= currentPlayers;
+  if (Boolean(incoming.canStartBetting) !== Boolean(current.canStartBetting)) {
+    return Boolean(incoming.canStartBetting);
+  }
   const incomingRound = incoming.roundNumber ?? 0;
   const currentRound = current.roundNumber ?? 0;
   if (incomingRound !== currentRound) return incomingRound >= currentRound;

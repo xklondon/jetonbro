@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import type { ClientSnapshot } from "@/application/queries/views";
 import { getSkin } from "@/ui/skins/registry";
 import { shouldApplySnapshot } from "@/ui/core/snapshot-revision";
+import { selectTableBoard } from "@/ui/core/table-board";
 
 async function sendCommand(tableId: string, command: string, payload: Record<string, string> = {}) {
-  const response = await fetch(`/api/tables/${tableId}/commands`, {
-    method: "POST",
+    const response = await fetch(`/api/tables/${tableId}/commands`, {
+      cache: "no-store",
+      method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       command,
@@ -44,7 +46,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   }, []);
 
   const refreshSnapshot = useCallback(async () => {
-    const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
+    const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`, { cache: "no-store" });
     if (!response.ok) {
       const failed = (await response.json()) as { error?: string };
       throw new Error(failed.error ?? "Could not refresh the table.");
@@ -61,7 +63,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     let cancelled = false;
     async function refresh() {
       try {
-        const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`);
+        const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`, { cache: "no-store" });
         if (!response.ok || cancelled) return;
         const next = (await response.json()) as ClientSnapshot;
         if (!cancelled) applySnapshot(next);
@@ -130,17 +132,9 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     [snapshot],
   );
 
-  const draftSetup = Boolean(snapshot.isOwner && snapshot.setup && !snapshot.setup.setupCompleted);
-  const phaseZeroBlackjack =
-    snapshot.game === "BLACKJACK" &&
-    snapshot.phase === "TABLE_SETUP" &&
-    Boolean(snapshot.setup?.setupCompleted || snapshot.waiting || (snapshot.isDealer && snapshot.setup));
-  const phaseZeroPoker =
-    snapshot.game === "POKER" &&
-    snapshot.poker?.phase === "POKER_SETUP" &&
-    Boolean(snapshot.setup?.setupCompleted || snapshot.waiting);
+  const board = selectTableBoard(snapshot);
 
-  if (draftSetup && snapshot.setup) {
+  if (board === "CREATE_TABLE" && snapshot.setup) {
     return (
       <skin.CreateTable
         defaultTableName={snapshot.setup.tableName}
@@ -154,12 +148,12 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       />
     );
   }
-  if (phaseZeroBlackjack || phaseZeroPoker) {
+  if (board === "PHASE_ZERO_DEALER") {
     return (
       <skin.PhaseZero
         setup={snapshot.setup}
         waiting={snapshot.waiting}
-        poker={phaseZeroPoker ? snapshot.poker : null}
+        poker={snapshot.game === "POKER" ? snapshot.poker : null}
         members={snapshot.members}
         onCommand={onCommand}
         notice={notice}
@@ -170,22 +164,34 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       />
     );
   }
-  if (snapshot.poker) {
-    if (snapshot.isOwner) {
-      return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={notice} />;
-    }
+  if (board === "PHASE_ZERO_PLAYER") {
+    return (
+      <skin.WaitingTable
+        view={
+          snapshot.waiting ?? {
+            role: "WAITING",
+            phase: "TABLE_SETUP",
+            tableName: snapshot.setup?.tableName ?? snapshot.player?.tableName ?? "JetonBro",
+            game: snapshot.gameLabel ?? (snapshot.game === "POKER" ? "Texas Hold’em" : "Blackjack"),
+            gameId: snapshot.game,
+            available: snapshot.player?.available ?? { millis: "0", label: "0" },
+            copy: "WAITING FOR PLAYERS",
+            members: snapshot.members,
+          }
+        }
+      />
+    );
+  }
+  if (board === "POKER_DEALER" && snapshot.poker) {
+    return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={notice} />;
+  }
+  if (board === "POKER_PLAYER" && snapshot.poker) {
     return <skin.PokerPlayer view={snapshot.poker} onCommand={onCommand} notice={notice} />;
   }
-  if (snapshot.setup && snapshot.isOwner) {
-    return <skin.SetupTable view={snapshot.setup} onCommand={onCommand} notice={notice} />;
-  }
-  if (snapshot.waiting && !snapshot.isDealer) {
-    return <skin.WaitingTable view={snapshot.waiting} />;
-  }
-  if (snapshot.isDealer && snapshot.bank) {
+  if (board === "BLACKJACK_DEALER" && snapshot.bank) {
     return <skin.BankTable view={snapshot.bank} members={playerMembers} onCommand={onCommand} notice={notice} />;
   }
-  if (snapshot.isSeatedPlayer && snapshot.player) {
+  if (board === "BLACKJACK_PLAYER" && snapshot.player) {
     return (
       <skin.PlayerTable
         view={snapshot.player}

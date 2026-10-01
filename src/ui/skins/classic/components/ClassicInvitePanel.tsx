@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 import { joinQrDataUrl } from "@/ui/core/join-qr";
 import type { CommandHandler } from "@/ui/skins/types";
 import type { InvitationView, MemberView } from "@/application/queries/views";
+import { SheetOverlay } from "./SheetOverlay";
 
-export function ClassicInvitePanel({
+type InviteTab = "guest" | "verified" | "email";
+
+export function ClassicInviteMask({
+  open,
+  onClose,
   guestJoinUrl,
   verifiedJoinUrl,
   emailConfigured,
@@ -14,41 +19,39 @@ export function ClassicInvitePanel({
   invitations,
   onCommand,
   notice,
-  showLocalAdd = false,
 }: {
+  open: boolean;
+  onClose: () => void;
   guestJoinUrl?: string | null;
   verifiedJoinUrl?: string | null;
-  joinUrl?: string | null;
   emailConfigured: boolean;
   startingJetons: string;
   members?: MemberView[];
   invitations?: InvitationView[];
   onCommand: CommandHandler;
   notice?: string | null;
-  showLocalAdd?: boolean;
 }) {
   const verifiedUrl = verifiedJoinUrl ?? null;
+  const [tab, setTab] = useState<InviteTab>("guest");
   const [emails, setEmails] = useState("");
-  const [localName, setLocalName] = useState("");
   const [guestQr, setGuestQr] = useState<string | null>(null);
   const [verifiedQr, setVerifiedQr] = useState<string | null>(null);
   const [copied, setCopied] = useState<"guest" | "verified" | null>(null);
 
   useEffect(() => {
-    if (!guestJoinUrl) {
-      setGuestQr(null);
-      return;
-    }
-    void joinQrDataUrl(guestJoinUrl).then(setGuestQr);
-  }, [guestJoinUrl]);
+    if (!open) return;
+    setTab("guest");
+  }, [open]);
 
   useEffect(() => {
-    if (!verifiedUrl) {
-      setVerifiedQr(null);
-      return;
-    }
+    if (!guestJoinUrl || tab !== "guest") return;
+    void joinQrDataUrl(guestJoinUrl).then(setGuestQr);
+  }, [guestJoinUrl, tab]);
+
+  useEffect(() => {
+    if (!verifiedUrl || tab !== "verified") return;
     void joinQrDataUrl(verifiedUrl).then(setVerifiedQr);
-  }, [verifiedUrl]);
+  }, [verifiedUrl, tab]);
 
   async function copy(kind: "guest" | "verified", url: string | null) {
     if (!url) return;
@@ -57,109 +60,107 @@ export function ClassicInvitePanel({
     window.setTimeout(() => setCopied(null), 1600);
   }
 
-  const joinedGuests = (members ?? []).filter((member) => !member.isBankDealer && member.userId);
   const pending = (invitations ?? []).filter((invite) => invite.pending);
+  const joined = (members ?? []).filter((member) => !member.isBankDealer);
 
   return (
-    <div className="invite-inline">
-      <section className="invite-card" data-invite-kind="guest" data-guest-join-url={guestJoinUrl ?? undefined}>
-        <h3>JOIN WITHOUT EMAIL</h3>
-        <p className="muted">Guest — no email. Limited to this table. Both devices need a connection. Starts with {startingJetons} jetons.</p>
-        {guestJoinUrl ? (
-          <div className="qr-panel compact-qr" data-join-url={guestJoinUrl} aria-label="Guest QR — no email">
-            {guestQr ? <img src={guestQr} alt="Guest QR — no email" /> : <div className="muted">Preparing guest QR…</div>}
-            <div className="qr-actions">
-              <button className="gold-button" type="button" onClick={() => void copy("guest", guestJoinUrl)}>
-                {copied === "guest" ? "Copied" : "Copy Guest Link"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className="muted">Guest link is not ready yet.</p>
-        )}
-        {joinedGuests.filter((member) => member.isGuest).map((member) => (
-          <div className="phase-zero-row member-row" key={member.userId} data-player-row="true">
-            <div>
-              <strong>{member.name}</strong>
-              <div className="muted">Guest</div>
-            </div>
-            <span>{member.available?.label ?? "0"}</span>
-          </div>
-        ))}
-      </section>
-
-      <section className="invite-card" data-invite-kind="verified" data-verified-join-url={verifiedUrl ?? undefined}>
-        <h3>VERIFIED PLAYER</h3>
-        <p className="muted">Verified — email confirmation. Scan, enter email, then confirm the magic link.</p>
-        {verifiedUrl ? (
-          <div className="qr-panel compact-qr" data-join-url={verifiedUrl} aria-label="Verified QR — email confirmation">
-            {verifiedQr ? <img src={verifiedQr} alt="Verified QR — email confirmation" /> : <div className="muted">Preparing verified QR…</div>}
-            <div className="qr-actions">
-              <button className="gold-button" type="button" onClick={() => void copy("verified", verifiedUrl)}>
-                {copied === "verified" ? "Copied" : "Copy Verified Link"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className="muted">Verified link is not ready yet.</p>
-        )}
-        <label>
-          Player email
-          <input
-            placeholder="one or more emails"
-            aria-label="Player email"
-            value={emails}
-            onChange={(event) => setEmails(event.target.value)}
-            disabled={!emailConfigured}
-          />
-        </label>
-        {!emailConfigured ? (
-          <p className="muted">Email delivery is not configured. Guest and verified QR still work when a connection is available.</p>
-        ) : null}
-        <button
-          className="gold-button"
-          type="button"
-          disabled={!emailConfigured}
-          onClick={() => {
-            onCommand("inviteByEmail", { emails });
-            setEmails("");
-          }}
-        >
-          SEND INVITE
-        </button>
-        {pending.map((invite) => (
-          <div className="phase-zero-row member-row" key={invite.id} data-seat-status="Invited">
-            <div>
-              <strong>{invite.email ?? "Player"}</strong>
-              <div className="muted">{invite.pending ? "Pending" : "Sent"}</div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {showLocalAdd ? (
-        <section className="invite-card">
-          <h3>Owner tool</h3>
-          <p className="muted">Same-device name only. Use Guest QR when the other person has their own phone.</p>
-          <label>
-            Player name
-            <input
-              placeholder="Player name"
-              aria-label="Player name"
-              value={localName}
-              onChange={(event) => setLocalName(event.target.value)}
-            />
-          </label>
-          <button
-            className="panel-button"
-            type="button"
-            onClick={() => onCommand("addPlayer", { name: localName, startingJetons })}
-          >
-            Add Local Player
+    <SheetOverlay open={open} onClose={onClose} labelledBy="invite-mask-title" panelClassName="invite-mask-panel">
+      <div className="invite-mask">
+        <header className="invite-mask-head">
+          <h3 id="invite-mask-title">ADD NEW PLAYER</h3>
+          <button className="text-link" type="button" onClick={onClose}>
+            Close
           </button>
-        </section>
-      ) : null}
-      {notice ? <div className="error">{notice}</div> : null}
-    </div>
+        </header>
+        <div className="invite-tabs" role="tablist" aria-label="Invitation method">
+          <button type="button" role="tab" aria-selected={tab === "guest"} className={tab === "guest" ? "active" : ""} onClick={() => setTab("guest")}>
+            GUEST QR
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "verified"} className={tab === "verified" ? "active" : ""} onClick={() => setTab("verified")}>
+            VERIFIED QR
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "email"} className={tab === "email" ? "active" : ""} onClick={() => setTab("email")}>
+            EMAIL INVITE
+          </button>
+        </div>
+        <div className="invite-mask-body">
+          {tab === "guest" ? (
+            <section className="invite-card" data-invite-kind="guest" data-guest-join-url={guestJoinUrl ?? undefined}>
+              <p className="muted">Join this table without email.</p>
+              <p className="muted">Starts with {startingJetons} jetons.</p>
+              <p className="muted">Connection required.</p>
+              {guestJoinUrl ? (
+                <div className="qr-panel compact-qr" data-join-url={guestJoinUrl} aria-label="Guest QR — no email">
+                  {guestQr ? <img src={guestQr} alt="Guest QR — no email" /> : <div className="muted">Preparing guest QR…</div>}
+                  <button className="gold-button" type="button" onClick={() => void copy("guest", guestJoinUrl)}>
+                    {copied === "guest" ? "Copied" : "Copy Guest Link"}
+                  </button>
+                </div>
+              ) : (
+                <p className="muted">Guest link is not ready yet.</p>
+              )}
+            </section>
+          ) : null}
+          {tab === "verified" ? (
+            <section className="invite-card" data-invite-kind="verified" data-verified-join-url={verifiedUrl ?? undefined}>
+              <p className="muted">Scan, enter email and confirm the magic link.</p>
+              {verifiedUrl ? (
+                <div className="qr-panel compact-qr" data-join-url={verifiedUrl} aria-label="Verified QR — email confirmation">
+                  {verifiedQr ? <img src={verifiedQr} alt="Verified QR — email confirmation" /> : <div className="muted">Preparing verified QR…</div>}
+                  <button className="gold-button" type="button" onClick={() => void copy("verified", verifiedUrl)}>
+                    {copied === "verified" ? "Copied" : "Copy Verified Link"}
+                  </button>
+                </div>
+              ) : (
+                <p className="muted">Verified link is not ready yet.</p>
+              )}
+            </section>
+          ) : null}
+          {tab === "email" ? (
+            <section className="invite-card" data-invite-kind="email">
+              <label>
+                Player email
+                <input
+                  placeholder="one or more emails"
+                  aria-label="Player email"
+                  value={emails}
+                  onChange={(event) => setEmails(event.target.value)}
+                  disabled={!emailConfigured}
+                />
+              </label>
+              {!emailConfigured ? <p className="muted">Email delivery is not configured.</p> : null}
+              <button
+                className="gold-button"
+                type="button"
+                disabled={!emailConfigured}
+                onClick={() => {
+                  onCommand("inviteByEmail", { emails });
+                  setEmails("");
+                }}
+              >
+                SEND INVITE
+              </button>
+              {pending.map((invite) => (
+                <div className="phase-zero-row member-row" key={invite.id} data-seat-status="Invited">
+                  <div>
+                    <strong>{invite.email ?? "Player"}</strong>
+                    <div className="muted">Pending</div>
+                  </div>
+                </div>
+              ))}
+              {joined.map((member) => (
+                <div className="phase-zero-row member-row" key={member.userId} data-player-row="true">
+                  <div>
+                    <strong>{member.name}</strong>
+                    <div className="muted">Joined</div>
+                  </div>
+                </div>
+              ))}
+            </section>
+          ) : null}
+          {notice ? <div className="error">{notice}</div> : null}
+        </div>
+      </div>
+    </SheetOverlay>
   );
 }

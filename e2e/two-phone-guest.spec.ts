@@ -4,8 +4,10 @@ import { join } from "node:path";
 import {
   createBlackjackTable,
   decodeQrDataUrl,
+  expectNoPageScroll,
   noHorizontalOverflow,
   openAs,
+  openInviteMask,
   openSetupSheet,
   setupJoinUrl,
   uniqueEmail,
@@ -53,10 +55,11 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await page.getByLabel("Table name").blur();
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByLabel("Starting jetons per player").blur();
-  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
-  await expect(page.getByAltText("Guest QR — no email")).toBeVisible();
-  await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
+  await expect(page.getByAltText("Guest QR — no email")).toHaveCount(0);
+  await expect(page.getByAltText("Verified QR — email confirmation")).toHaveCount(0);
   await expect(page.locator(".setup-mask")).toHaveCount(0);
+  await expectNoPageScroll(page);
   const guestUrl = await setupJoinUrl(page, "guest");
   const verifiedUrl = await setupJoinUrl(page, "verified");
   expect(guestUrl).toContain("/join/guest/");
@@ -64,15 +67,22 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   expect(guestUrl).not.toBe(verifiedUrl);
   expect(guestUrl).not.toMatch(/localhost|railway\.internal/i);
   expect(verifiedUrl).not.toMatch(/localhost|railway\.internal/i);
-  const guestSrc = await page.getByAltText("Guest QR — no email").getAttribute("src");
-  const verifiedSrc = await page.getByAltText("Verified QR — email confirmation").getAttribute("src");
-  expect(decodeQrDataUrl(guestSrc!)).toBe(guestUrl);
-  expect(decodeQrDataUrl(verifiedSrc!)).toBe(verifiedUrl);
   await shot(page, "01-create-table-invites-390x844.png");
-  await page.getByRole("button", { name: "Copy Guest Link" }).scrollIntoViewIfNeeded();
+  await openInviteMask(page);
+  await page.getByRole("tab", { name: "GUEST QR" }).click();
+  await expect(page.getByAltText("Guest QR — no email")).toBeVisible();
+  await expect(page.getByAltText("Verified QR — email confirmation")).toHaveCount(0);
+  const guestSrc = await page.getByAltText("Guest QR — no email").getAttribute("src");
+  expect(decodeQrDataUrl(guestSrc!)).toBe(guestUrl);
   await shot(page, "02-guest-qr-390x844.png");
-  await page.getByRole("button", { name: "Copy Verified Link" }).scrollIntoViewIfNeeded();
+  await page.getByRole("tab", { name: "VERIFIED QR" }).click();
+  await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
+  await expect(page.getByAltText("Guest QR — no email")).toHaveCount(0);
+  const verifiedSrc = await page.getByAltText("Verified QR — email confirmation").getAttribute("src");
+  expect(decodeQrDataUrl(verifiedSrc!)).toBe(verifiedUrl);
   await shot(page, "03-verified-qr-390x844.png");
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();
@@ -173,10 +183,12 @@ test("email invitation uses the verified path and joins the intended table", asy
   await page.getByLabel("Table name").fill("Email invite table");
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByLabel("Starting jetons per player").blur();
+  await openInviteMask(page);
+  await page.getByRole("tab", { name: "EMAIL INVITE" }).click();
   await page.getByLabel("Player email").fill(playerEmail);
   await page.getByRole("button", { name: "SEND INVITE" }).click();
-  await expect(page.getByText("Pending")).toBeVisible();
-  await page.getByText("Pending").scrollIntoViewIfNeeded();
+  await expect(page.getByText("Pending").first()).toBeVisible();
+  await page.getByText("Pending").first().scrollIntoViewIfNeeded();
   await shot(page, "04-email-invite-rows-390x844.png");
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };

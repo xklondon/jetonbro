@@ -121,7 +121,8 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await page.getByLabel("Player name").fill("Drew");
   await page.getByRole("button", { name: "Add Local Player" }).click();
   await expect(page.getByText(/already at this table/i).first()).toBeVisible();
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
 
   const setup = await tableSnapshot(page);
   const drew = setup.members.find((member) => member.name === "Drew");

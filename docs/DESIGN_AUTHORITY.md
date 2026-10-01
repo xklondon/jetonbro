@@ -47,11 +47,11 @@ Compact JetonBro header. `CREATE TABLE`. Compact saved-table cards: name, select
 
 ### Create Table
 
-One full setup screen: table name, Owner identity, starting jetons, Blackjack/Poker game cards (selected obvious), Open/Limited Bank with the existing Limited reserve control, Dealer (Owner default), compact Player rows, Invite (email / QR / copy link), Add Local Player, primary `START TABLE`.
+One compact 390×844 screen that does not scroll the phone frame: table name and starting jetons, Owner identity, Blackjack/Poker segmented selector (Zilch as a coming-later note), Open/Limited Bank with Limited reserve only when Limited is selected, Poker blinds only when Poker is selected, Dealer, compact Player rows, one `ADD NEW PLAYER` control, primary `START TABLE`. QR codes and email invitation live in the invitation mask, not on the felt.
 
 ### Phase 0
 
-The created table waiting for Players — not the setup form. Compact Player rows from the Table Setup board. No giant empty placeholder. `WAITING FOR PLAYERS` until the engine’s start command is legal. Blackjack `OPEN BETTING`. Poker `START HAND` follows existing `pokerControls()` / command legality. Invite/QR/email/copy/local-add remain available to the Owner.
+The created table waiting for Players — not the setup form. Compact Player rows from the Table Setup board. No giant empty placeholder. `WAITING FOR PLAYERS` until the engine’s start command is legal. Blackjack `OPEN BETTING` is Dealer-only. Poker `START HAND` follows existing `pokerControls()` / command legality. `ADD NEW PLAYER` opens the same invitation mask used on Create Table. A seated Player sees the Player waiting board with their wallet, not Dealer controls. An Owner who assigned the Bank to someone else still sees the Owner Phase 0 admin board.
 
 ## Behaviour versus presentation
 
@@ -96,7 +96,37 @@ Phase lives in the phase header. Player available balance lives with the tray. P
 
 ## Shared colour and type
 
-Classic tokens already match the boards: `--emerald` / `--felt` felt, `--gold` metal, `--ivory` / `--cream` type, `--dock` / `--black` chrome. Display headings use the serif stack. UI labels use the sans stack. Do not introduce a second palette.
+Classic tokens already match the boards. Canonical values live in `src/ui/skins/classic/tokens.css` and are consumed by `layouts.css` / `home.css`, not per-phase sheets:
+
+| Token | Role |
+|---|---|
+| `--felt` / `--felt-deep` / `--emerald` | casino felt |
+| `--panel` / `--control-surface` / `--dock` | deep black-green surfaces |
+| `--gold` / `--gold-hi` / `--gold-dim` | restrained metal |
+| `--ivory` / `--cream` | primary type |
+| `--muted` | secondary type |
+| `--gold-line` | borders |
+| `--radius` / `--radius-card` | radii |
+| `--shadow` | elevation |
+| `--font-display` / `--title-size` | display headings |
+| `--font-ui` / `--label-size` / `--body-size` | operational labels |
+| `--space-1`…`--space-4` | compact spacing |
+| `--control-height` (44px) | interactive targets |
+| `--tray-height` | fixed Player tray |
+
+Shared components: `TableShell`, `PhaseBar`, `PhaseActionDock`, `TableIdentity`, `SheetOverlay`, `ClassicInviteMask`, `PlayerWallet` / `JetonTray`. Create Table and Phase 0 reuse one invitation mask.
+
+## Screen routing (`selectTableBoard`)
+
+| Viewer | Blackjack TABLE_SETUP | Blackjack live | Poker with `setup` | Poker live / switch |
+|---|---|---|---|---|
+| Owner, setup not completed | CREATE_TABLE | — | CREATE_TABLE | — |
+| Owner or Dealer | PHASE_ZERO_DEALER | Dealer board if `isDealer`, else Player if seated | PHASE_ZERO_DEALER | POKER_DEALER if Owner |
+| Seated Player, not Owner/Dealer | PHASE_ZERO_PLAYER | BLACKJACK_PLAYER | PHASE_ZERO_PLAYER | POKER_PLAYER |
+| Dealer who is also seated | PHASE_ZERO_DEALER | BLACKJACK_DEALER (primary) | PHASE_ZERO_DEALER | POKER_DEALER if Owner |
+| Owner only, not seated, not Dealer | PHASE_ZERO_DEALER after start | WAITING | PHASE_ZERO_DEALER | POKER_DEALER |
+
+Never infer role from name, email, or a leftover Auth.js session. Guest cookie wins on the invited table.
 
 ## Blackjack Player screen contract
 

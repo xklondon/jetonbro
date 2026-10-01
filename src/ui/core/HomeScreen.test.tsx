@@ -197,10 +197,12 @@ test("full create table setup includes game, bank and START TABLE", () => {
   );
   expect(html).toMatch(/Alex(&#x27;|')s table/);
   expect(html).toContain("START TABLE");
-  expect(html).toContain("Starting jetons per Player");
+  expect(html).toContain("Starting jetons");
   expect(html).toContain("Blackjack");
   expect(html).toContain("OPEN BANK");
-  expect(html).toContain("JOIN WITHOUT EMAIL");
+  expect(html).toContain("ADD NEW PLAYER");
+  expect(html).not.toContain("JOIN WITHOUT EMAIL");
+  expect(html).not.toContain("Guest QR — no email");
   expect(html).not.toContain("Maximum boxes per player");
   expect(html).not.toContain("CARD ASSIST");
 });
@@ -218,7 +220,9 @@ test("Phase 0 shows compact waiting rows and OPEN BETTING", () => {
   expect(html).toContain("Owner · Alex");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
-  expect(html).toContain("JOIN WITHOUT EMAIL");
+  expect(html).toContain("ADD NEW PLAYER");
+  expect(html).not.toContain("JOIN WITHOUT EMAIL");
+  expect(html).not.toContain("Guest QR — no email");
   expect(html).toContain("OPEN BETTING");
   expect(html).not.toContain("START BLACKJACK");
   expect(html).not.toContain("START POKER");
@@ -285,7 +289,8 @@ test("START TABLE completed table does not keep a second setup form", () => {
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("WAITING FOR PLAYERS");
   expect(html).toContain("Sam");
-  expect(html).toContain("JOIN WITHOUT EMAIL");
+  expect(html).toContain("ADD NEW PLAYER");
+  expect(html).not.toContain("JOIN WITHOUT EMAIL");
   expect(html).toContain("OPEN BETTING");
   expect(html).toContain("dock");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);

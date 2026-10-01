@@ -12,7 +12,7 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
-  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
+  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
 
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
   const data = (await snapshot.json()) as { setup?: { joinUrl: string | null }; phase?: string };

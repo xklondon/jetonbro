@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### POST-RC3 repair 1 — compact shell, invitation mask, live role routing
+
+- Create Table is a dense 390×844 app screen. `ADD NEW PLAYER` opens one Classic invitation mask with exclusive Guest QR, Verified QR, and Email Invite tabs.
+- Guest cookie wins over an unrelated Auth.js session for the invited table. `selectTableBoard()` chooses Player vs Dealer boards from snapshot flags. Blackjack Phase 0 keeps the Owner on the admin board after they assign a different Dealer. `canStartBetting` follows a real seated non-bank Player.
+- Shared Classic tokens: deep felt, control surface, gold, ivory, compact spacing, 44px targets, fixed Player tray.
+
 ### Prompt 10 — two-phone Guest vs Verified invitations
 
 - Create Table keeps the specified hierarchy and shows Guest QR and Verified QR inline before START TABLE, with dock padding so pending email rows stay visible. Add Local Player is Owner-menu only.
