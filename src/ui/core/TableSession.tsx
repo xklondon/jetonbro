@@ -130,11 +130,11 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     [snapshot],
   );
 
-  const draftSetup = Boolean(snapshot.setup && !snapshot.setup.setupCompleted);
+  const draftSetup = Boolean(snapshot.isOwner && snapshot.setup && !snapshot.setup.setupCompleted);
   const phaseZeroBlackjack =
     snapshot.game === "BLACKJACK" &&
     snapshot.phase === "TABLE_SETUP" &&
-    Boolean(snapshot.setup?.setupCompleted || snapshot.waiting);
+    Boolean(snapshot.setup?.setupCompleted || snapshot.waiting || (snapshot.isDealer && snapshot.setup));
   const phaseZeroPoker =
     snapshot.game === "POKER" &&
     snapshot.poker?.phase === "POKER_SETUP" &&
@@ -171,21 +171,21 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     );
   }
   if (snapshot.poker) {
-    if (snapshot.poker.isOwner) {
+    if (snapshot.isOwner) {
       return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={notice} />;
     }
     return <skin.PokerPlayer view={snapshot.poker} onCommand={onCommand} notice={notice} />;
   }
-  if (snapshot.setup) {
+  if (snapshot.setup && snapshot.isOwner) {
     return <skin.SetupTable view={snapshot.setup} onCommand={onCommand} notice={notice} />;
   }
-  if (snapshot.waiting) {
+  if (snapshot.waiting && !snapshot.isDealer) {
     return <skin.WaitingTable view={snapshot.waiting} />;
   }
-  if (snapshot.bank) {
+  if (snapshot.isDealer && snapshot.bank) {
     return <skin.BankTable view={snapshot.bank} members={playerMembers} onCommand={onCommand} notice={notice} />;
   }
-  if (snapshot.player) {
+  if (snapshot.isSeatedPlayer && snapshot.player) {
     return (
       <skin.PlayerTable
         view={snapshot.player}

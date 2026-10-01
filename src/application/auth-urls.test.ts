@@ -63,5 +63,7 @@ test("publicOrigin ignores railway internal request hosts", () => {
 test("join destination parses existing invitation tokens only", () => {
   expect(parseJoinDestination("https://jetonbro.example/join/QrToken_abc")).toBe("/join/QrToken_abc");
   expect(parseJoinDestination("QrToken_abc")).toBe("/join/QrToken_abc");
+  expect(parseJoinDestination("https://jetonbro.example/join/guest/GuestTok_1")).toBe("/join/guest/GuestTok_1");
+  expect(parseJoinDestination("https://jetonbro.example/join/verified/VerTok_1")).toBe("/join/verified/VerTok_1");
   expect(parseJoinDestination("nope")).toBe(null);
 });

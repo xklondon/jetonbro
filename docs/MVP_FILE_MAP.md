@@ -31,6 +31,17 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
+### Active UI areas (Prompt 10)
+
+Guest vs Verified invitations, Create Table inline QR, Phase 0 readiness, dealer payout ghost. Invitation/membership wiring is in scope; Blackjack/Poker engines stay frozen.
+
+- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
+- `src/ui/skins/classic/components/ClassicInvitePanel.tsx`
+- `src/ui/skins/classic/components/ClassicPhaseZero.tsx`
+- `src/ui/skins/classic/components/DealerBlackjackBoxRow.tsx`
+- `src/application/services/invitations.ts`
+- `src/application/queries/snapshot.ts`
+
 ### Active UI areas (Prompt 9)
 
 Player Blackjack phase-control correction, plus Create Table snapshot no longer clobbering an in-progress name. Engines, accounting, auth, invitations, and Prompt 7/8 screens stay frozen.

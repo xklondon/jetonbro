@@ -1,6 +1,6 @@
 import { DomainError } from "../errors";
 
-export const INVITATION_KINDS = ["EMAIL", "QR"] as const;
+export const INVITATION_KINDS = ["EMAIL", "QR", "GUEST"] as const;
 export type InvitationKind = (typeof INVITATION_KINDS)[number];
 
 export type InvitationRecord = {

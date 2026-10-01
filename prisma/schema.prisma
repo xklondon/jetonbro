@@ -34,6 +34,7 @@ enum BlackjackPayoutRule {
 enum InvitationKind {
   EMAIL
   QR
+  GUEST
 }
 
 enum BoxOutcome {
@@ -126,6 +127,8 @@ model User {
   email                 String    @unique
   emailVerified         DateTime?
   image                 String?
+  isGuest               Boolean   @default(false)
+  guestTableId          String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -144,6 +147,8 @@ model User {
   pokerActions       PokerAction[]
   idempotency        IdempotencyRecord[]
   playerAccount      PlayerAccount?
+
+  @@index([guestTableId])
 }
 
 model PlayerAccount {

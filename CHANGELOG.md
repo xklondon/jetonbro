@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Prompt 10 — two-phone Guest vs Verified invitations
+
+- Create Table keeps the specified hierarchy and shows Guest QR and Verified QR inline before START TABLE, with dock padding so pending email rows stay visible. Add Local Player is Owner-menu only.
+- A table-scoped signed guest session replaces same-device “Add Local Player” as the second-phone journey. Verified join still uses Auth.js/Resend.
+- Join bumps table revision so the Dealer snapshot sees the seated Player and `OPEN BETTING` can enable. Guest QR requires a connection to JetBro II Web.
+- Unresolved Dealer payout rows no longer render a WON swipe ghost.
+
 ### Prompt 9 — player payout phase controls and RC2
 
 - Player DOUBLE / SPLIT / INSURANCE render only during PLAYING and only dispatch when the snapshot legal flags allow them. Payout keeps the wallet and tray, not playing or betting commands.

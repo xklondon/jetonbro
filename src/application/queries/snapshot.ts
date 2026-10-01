@@ -4,6 +4,7 @@ import { formatJetons } from "@/domain/money";
 import { ForbiddenError, NotFoundError } from "@/domain/errors";
 import { GAME_CATALOG } from "@/domain/games";
 import { publicOrigin } from "@/application/auth-urls";
+import { guestJoinUrl, verifiedJoinUrl } from "@/application/invite-urls";
 import { isEmailDeliveryConfigured } from "@/application/mail";
 import { alignTablePhase, ensureBettingClosedIfDue, ensureNextRoundIfDue } from "@/application/services/blackjack-round";
 import { ensureNextPokerHandIfDue } from "@/application/services/poker-hand";
@@ -93,9 +94,17 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
 
   const isBank = table.bankDealerId === viewerId;
   const isOwner = table.ownerId === viewerId;
+  const isSeatedPlayer = viewer.userId !== table.bankDealerId && !viewer.isBankDealer;
+  const isGuest = Boolean(viewer.user.isGuest);
   const origin = publicOrigin();
   const qr = table.invitations.find((invite) => invite.kind === "QR" && !invite.revokedAt);
-  const joinUrl = isOwner || isBank ? (qr ? `${origin}/join/${qr.token}` : null) : null;
+  const guestInvite = table.invitations.find((invite) => invite.kind === "GUEST" && !invite.revokedAt);
+  const verifiedUrl = isOwner || isBank ? (qr ? verifiedJoinUrl(origin, qr.token) : null) : null;
+  const guestUrl = isOwner || isBank ? (guestInvite ? guestJoinUrl(origin, guestInvite.token) : null) : null;
+  const joinUrl = verifiedUrl;
+  const hasReadyPlayer = table.members.some(
+    (member) => member.userId !== table.bankDealerId && !member.isBankDealer,
+  );
 
   const dealerRanks = ranksFromJson(table.currentRound?.dealerRanks);
   const dealerHand = handView(table.currentRound?.dealerRanks, false, table.currentRound?.dealerCompletedAt ?? null);
@@ -230,6 +239,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             email: member.user.email,
             isOwner: member.isOwner,
             isBankDealer: member.isBankDealer,
+            isGuest: Boolean(member.user.isGuest),
             available: money(member.availableMillis),
           })),
           invitations: table.invitations
@@ -241,6 +251,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
               pending: !invite.usedAt && !invite.revokedAt,
             })),
           joinUrl,
+          guestJoinUrl: guestUrl,
+          verifiedJoinUrl: verifiedUrl,
           minBet: table.minBetMillis !== null ? money(table.minBetMillis) : null,
           maxBet: table.maxBetMillis !== null ? money(table.maxBetMillis) : null,
           blackjackPayout: table.blackjackPayout,
@@ -250,10 +262,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           cardAssist: table.cardAssist,
           bankFundingMode: table.bankFundingMode,
           startingBank: table.startingBankMillis !== null ? money(table.startingBankMillis) : money(table.bankAvailableMillis),
-          canStartBetting: Boolean(table.bankDealerId) && table.members.some((member) => member.userId !== table.bankDealerId),
+          canStartBetting: Boolean(table.bankDealerId) && hasReadyPlayer,
           startBlockedReason: !table.bankDealerId
             ? "Assign a Bank/Dealer"
-              : !table.members.some((member) => member.userId !== table.bankDealerId)
+              : !hasReadyPlayer
                 ? "Waiting for a player to join"
                 : null,
           isOwner,
@@ -286,6 +298,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             email: member.user.email,
             isOwner: member.isOwner,
             isBankDealer: member.isBankDealer,
+            isGuest: Boolean(member.user.isGuest),
             available: money(member.availableMillis),
           })),
         }
@@ -541,6 +554,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     viewerName: displayName(viewer.user),
     isOwner,
     isBank,
+    isDealer: isBank,
+    isSeatedPlayer,
+    isGuest,
     game: activeGame.game,
     gameLabel: activeGame.gameLabel,
     phase: activeGame.phase,
@@ -557,6 +573,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       email: isOwner || isBank ? member.user.email : "",
       isOwner: member.isOwner,
       isBankDealer: member.isBankDealer,
+      isGuest: Boolean(member.user.isGuest),
       available: isOwner || isBank || member.userId === viewerId ? money(member.availableMillis) : null,
     })),
     setup,

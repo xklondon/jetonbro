@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/application/auth";
+import { getActor, assertVerifiedActor } from "@/application/actor";
 import { DomainError } from "@/domain/errors";
 import { createTable, ensureDraftTable } from "@/application/services/tables";
 import { publicOrigin } from "@/application/auth-urls";
@@ -26,15 +26,16 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const actor = await getActor();
+  if (!actor) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
   try {
+    assertVerifiedActor(actor);
     const body = schema.parse(await request.json());
     if (body.draft) {
       const result = await ensureDraftTable({
-        actorId: session.user.id,
+        actorId: actor.id,
         name: body.name,
       });
       return NextResponse.json(result);
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "A table name is required." }, { status: 400 });
     }
     const result = await createTable({
-      actorId: session.user.id,
+      actorId: actor.id,
       name: body.name,
       game: body.game,
       startingJetonsPerPlayer: body.startingJetonsPerPlayer ?? body.startingAllocation ?? BLACKJACK_TABLE_DEFAULTS.startingAllocation,
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Check the table details and try again." }, { status: 400 });
     }
-    console.error("[jetonbro-command] command=createTable table=new actor=" + session.user.id + " phase=TABLE_SETUP code=UNEXPECTED");
+    console.error("[jetonbro-command] command=createTable table=new actor=" + actor.id + " phase=TABLE_SETUP code=UNEXPECTED");
     return NextResponse.json({ error: "Could not create the table." }, { status: 500 });
   }
 }

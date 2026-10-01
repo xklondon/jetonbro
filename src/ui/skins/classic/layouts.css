@@ -185,7 +185,8 @@
 }
 
 .classic-skin main.felt.phase-zero-felt {
-  justify-content: center;
+  justify-content: flex-start;
+  overflow-y: auto;
 }
 
 .classic-skin main.felt.phase-zero-felt::after {
@@ -1021,6 +1022,11 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   pointer-events: none;
+  opacity: 0;
+}
+
+.classic-skin .payout-row.is-swiping .payout-reveal {
+  opacity: 1;
 }
 
 .classic-skin .payout-reveal.win {
@@ -1044,7 +1050,7 @@
   gap: 6px;
   align-items: center;
   padding: 6px 8px;
-  background: rgba(7, 28, 24, 0.92);
+  background: #071c18;
   color: var(--ivory);
   min-height: 52px;
 }

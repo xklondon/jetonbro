@@ -288,8 +288,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("table-rail");
   expect(html).toContain("Box 2");
-  expect(html).toContain("payout-reveal win");
-  expect(html).toContain("payout-reveal loss");
+  expect(html).not.toContain("payout-reveal");
   expect(html).toContain(">WON<");
   expect(html).toContain(">LOST<");
   expect(html).toContain("LOST");

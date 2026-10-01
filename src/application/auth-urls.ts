@@ -99,8 +99,13 @@ export function rewriteMagicLinkUrl(url: string, nodeEnv = process.env.NODE_ENV)
 export function parseJoinDestination(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  const fromUrl = trimmed.match(/\/join\/([A-Za-z0-9_-]+)/);
-  if (fromUrl) return `/join/${fromUrl[1]}`;
+  const fromUrl = trimmed.match(/\/join\/(?:guest|verified)\/([A-Za-z0-9_-]+)/) ?? trimmed.match(/\/join\/([A-Za-z0-9_-]+)/);
+  if (fromUrl) {
+    const token = fromUrl[1];
+    if (/\/join\/guest\//.test(trimmed)) return `/join/guest/${token}`;
+    if (/\/join\/verified\//.test(trimmed)) return `/join/verified/${token}`;
+    return `/join/${token}`;
+  }
   if (/^[A-Za-z0-9_-]{8,}$/.test(trimmed)) return `/join/${trimmed}`;
   return null;
 }

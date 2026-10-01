@@ -1,6 +1,7 @@
 import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
+import { verifiedJoinUrl } from "@/application/invite-urls";
 import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
@@ -15,6 +16,7 @@ import { ensurePokerSeat } from "@/application/services/poker-seats";
 import { DomainError, NotFoundError } from "@/domain/errors";
 import { assertInvitationUsable } from "@/domain/invitations/types";
 import { formatJetons, parseWholeJetons } from "@/domain/money";
+import type { Prisma } from "@prisma/client";
 
 const EMAIL_INVITE_HOURS = 48;
 const QR_INVITE_DAYS = 14;
@@ -59,7 +61,7 @@ export async function inviteByEmail(input: {
           createdById: input.actorId,
         },
       });
-      const url = `${input.origin}/join/${token}`;
+      const url = verifiedJoinUrl(input.origin, token);
       try {
         await sendInvitationEmail({
           to: email,
@@ -90,19 +92,11 @@ export async function rotateQrInvitation(input: {
     const table = await requireOwnerOrBank(input.tableId, input.actorId);
     await prisma.$transaction(async (tx) => {
       await tx.invitation.updateMany({
-        where: { tableId: table.id, kind: "QR", revokedAt: null },
+        where: { tableId: table.id, kind: { in: ["QR", "GUEST"] }, revokedAt: null },
         data: { revokedAt: new Date() },
       });
       if (!input.disable) {
-        await tx.invitation.create({
-          data: {
-            tableId: table.id,
-            kind: "QR",
-            token: randomToken(),
-            expiresAt: hoursFromNow(QR_INVITE_DAYS * 24),
-            createdById: input.actorId,
-          },
-        });
+        await createJoinInvitations(tx, table.id, input.actorId);
       }
       await tx.table.update({
         where: { id: table.id },
@@ -118,6 +112,9 @@ export async function joinWithToken(input: { userId: string; token: string; user
   const invitation = await prisma.invitation.findUnique({ where: { token: input.token } });
   if (!invitation) {
     throw new NotFoundError("This invitation is not valid.");
+  }
+  if (invitation.kind === "GUEST") {
+    throw new DomainError("INVITE_MISMATCH", "This is a guest invitation. Join without email.");
   }
 
   const table = await prisma.table.findUniqueOrThrow({ where: { id: invitation.tableId } });
@@ -156,6 +153,7 @@ export async function joinWithToken(input: { userId: string; token: string; user
       if (table.game === "POKER") {
         await ensurePokerSeat(tx, table.id, input.userId);
       }
+      await touchTable(tx, table.id);
       return;
     }
 
@@ -207,6 +205,7 @@ export async function joinWithToken(input: { userId: string; token: string; user
     if (member && table.game === "POKER") {
       await ensurePokerSeat(tx, table.id, input.userId);
     }
+    await touchTable(tx, table.id);
   });
   publishTable(table.id);
   return { tableId: table.id };
@@ -265,6 +264,7 @@ async function addLocalPlayer(input: {
       if (table.game === "POKER") {
         await ensurePokerSeat(tx, table.id, user.id);
       }
+      await touchTable(tx, table.id);
       return { userId: user.id, starting: table.startingJetonsPerPlayerMillis };
     });
     if (requested && requested > created.starting) {
@@ -350,3 +350,115 @@ export async function addPlayerManually(input: {
     return { joined: false as const, invited: true as const };
   });
 }
+
+export async function joinAsGuest(input: {
+  token: string;
+  playName: string;
+  existingGuestUserId?: string | null;
+}) {
+  const playName = input.playName.trim();
+  const invitation = await prisma.invitation.findUnique({ where: { token: input.token } });
+  if (!invitation) {
+    throw new NotFoundError("This invitation is not valid.");
+  }
+  if (invitation.kind !== "GUEST") {
+    throw new DomainError("INVITE_MISMATCH", "This invitation requires email confirmation.");
+  }
+  assertInvitationUsable(invitation, new Date());
+
+  const table = await prisma.table.findUniqueOrThrow({ where: { id: invitation.tableId } });
+  if (table.status === "ARCHIVED" || !table.joinEnabled) {
+    throw new DomainError("JOIN_DISABLED", "This table is not accepting new players.");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    if (input.existingGuestUserId) {
+      const existingUser = await tx.user.findUnique({ where: { id: input.existingGuestUserId } });
+      if (existingUser?.isGuest && existingUser.guestTableId === table.id) {
+        const existing = await tx.tableMember.findUnique({
+          where: { tableId_userId: { tableId: table.id, userId: existingUser.id } },
+        });
+        if (existing && !existing.leftAt) {
+          await creditStartingJetonsOnce(tx, {
+            tableId: table.id,
+            memberId: existing.id,
+            userId: existingUser.id,
+            actorId: existingUser.id,
+            startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+            isBankDealer: false,
+            game: table.game,
+          });
+          if (table.game === "POKER") {
+            await ensurePokerSeat(tx, table.id, existingUser.id);
+          }
+          await touchTable(tx, table.id);
+          return { tableId: table.id, userId: existingUser.id };
+        }
+      }
+    }
+
+    if (!playName) {
+      throw new DomainError("INVALID_PLAYER_NAME", "Enter a play name.");
+    }
+
+    const members = await tx.tableMember.findMany({
+      where: { tableId: table.id, leftAt: null },
+      include: { user: { select: { name: true, email: true } } },
+    });
+    if (members.some((member) => memberDisplayName(member.user).toLowerCase() === playName.toLowerCase())) {
+      throw new DomainError("DUPLICATE_PLAYER_NAME", "That player name is already at this table.");
+    }
+
+    const guestUser = await tx.user.create({
+      data: {
+        name: playName,
+        email: `guest.${randomToken(12)}@guest.invalid`,
+        isGuest: true,
+        guestTableId: table.id,
+      },
+    });
+    const member = await tx.tableMember.create({
+      data: {
+        tableId: table.id,
+        userId: guestUser.id,
+        isOwner: false,
+        isBankDealer: false,
+      },
+    });
+    await creditStartingJetonsOnce(tx, {
+      tableId: table.id,
+      memberId: member.id,
+      userId: guestUser.id,
+      actorId: guestUser.id,
+      startingJetonsPerPlayerMillis: table.startingJetonsPerPlayerMillis,
+      isBankDealer: false,
+      game: table.game,
+    });
+    if (table.game === "POKER") {
+      await ensurePokerSeat(tx, table.id, guestUser.id);
+    }
+    await touchTable(tx, table.id);
+    return { tableId: table.id, userId: guestUser.id };
+  });
+  publishTable(result.tableId);
+  return result;
+}
+
+export async function createJoinInvitations(
+  tx: Prisma.TransactionClient,
+  tableId: string,
+  createdById: string,
+) {
+  const expiresAt = hoursFromNow(QR_INVITE_DAYS * 24);
+  await tx.invitation.create({
+    data: { tableId, kind: "QR", token: randomToken(), expiresAt, createdById },
+  });
+  await tx.invitation.create({
+    data: { tableId, kind: "GUEST", token: randomToken(), expiresAt, createdById },
+  });
+}
+
+async function touchTable(tx: Prisma.TransactionClient, tableId: string) {
+  await tx.table.update({ where: { id: tableId }, data: { updatedAt: new Date() } });
+}
+

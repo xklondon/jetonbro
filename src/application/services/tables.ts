@@ -1,6 +1,7 @@
 import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
+import { verifiedJoinUrl } from "@/application/invite-urls";
 import { sendInvitationEmail } from "@/application/mail";
 import { appendLedger, creditPlayerPocket, creditTableAvailable } from "@/application/services/ledger";
 import { publishTable } from "@/application/realtime/bus";
@@ -29,6 +30,13 @@ async function findOpenDraft(ownerId: string) {
     },
     orderBy: { createdAt: "desc" },
   });
+}
+
+async function assertNotGuest(actorId: string) {
+  const user = await prisma.user.findUnique({ where: { id: actorId } });
+  if (user?.isGuest) {
+    throw new ForbiddenError("Guest access is limited to this table.");
+  }
 }
 
 function parseOptionalJetons(value: string | undefined): JetonMillis | null {
@@ -125,6 +133,7 @@ export async function createTable(input: {
   if (input.game && !isPlayableGame(input.game)) {
     throw new DomainError("GAME_UNAVAILABLE", "That game is coming later.");
   }
+  await assertNotGuest(input.actorId);
   const emails = collectInviteEmails(input.emails ?? []);
   return withIdempotency(input.actorId, input.idempotencyKey, "createTable", input, async () => {
     const bankDealerId = input.bankDealerId ?? input.actorId;
@@ -223,6 +232,15 @@ export async function createTable(input: {
           createdById: input.actorId,
         },
       });
+      await tx.invitation.create({
+        data: {
+          tableId: created.id,
+          kind: "GUEST",
+          token: randomToken(),
+          expiresAt: hoursFromNow(24 * 14),
+          createdById: input.actorId,
+        },
+      });
 
       for (const email of emails) {
         await tx.invitation.create({
@@ -260,7 +278,7 @@ export async function createTable(input: {
           await sendInvitationEmail({
             to: invite.email,
             tableName: table.name,
-            url: `${input.origin}/join/${invite.token}`,
+            url: verifiedJoinUrl(input.origin, invite.token),
           });
         } catch {
           console.error("[jetonbro-command] command=createTable table=" + table.id + " actor=" + input.actorId + " phase=TABLE_SETUP code=INVITE_EMAIL_FAILED");
@@ -274,6 +292,7 @@ export async function createTable(input: {
 }
 
 export async function ensureDraftTable(input: { actorId: string; name?: string }) {
+  await assertNotGuest(input.actorId);
   const existing = await findOpenDraft(input.actorId);
   if (existing) return { tableId: existing.id };
   try {
@@ -427,7 +446,7 @@ export async function finalizeSetup(input: {
           await sendInvitationEmail({
             to: invite.email,
             tableName: input.name.trim(),
-            url: `${input.origin}/join/${invite.token}`,
+            url: verifiedJoinUrl(input.origin, invite.token),
           });
         } catch {
           console.error(

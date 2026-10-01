@@ -134,7 +134,7 @@ export function DealerBlackjackBoxRow({
       }}
     >
       <div className="payout-swipe">
-        {unresolved ? (
+        {unresolved && dragging ? (
           <>
             <div className="payout-reveal win" aria-hidden="true">
               WON

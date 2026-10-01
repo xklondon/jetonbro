@@ -41,9 +41,7 @@ test("two player sessions join a table and open betting", async ({ page, context
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({
     timeout: 15000,
   });
-  await page.getByRole("button", { name: "Invite Player" }).click();
-  await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
-  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
 
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
