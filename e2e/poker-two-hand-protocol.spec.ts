@@ -182,10 +182,15 @@ test("two-player complete hand conserves 200, pays once, and rotates", async ({ 
   await expectPokerPhase(page, "FLOP");
 
   async function act(type: "CHECK" | "CALL" | "BET") {
+    await expect.poll(async () => (await tableSnapshot(page)).poker?.currentActorId ?? "").not.toBe("");
     const snap = await tableSnapshot(page);
     const current = snap.poker?.currentActorId === snap.viewerId ? page : samPage;
-    await current.reload();
+    await expect.poll(async () => {
+      const actor = await tableSnapshot(current);
+      return actor.poker?.legalActions.some((action) => action.type === type) ?? false;
+    }).toBe(true);
     if (type === "BET") {
+      if (!(await current.getByRole("button", { name: "BET" }).count())) await current.reload();
       await expect(current.getByRole("button", { name: "BET" })).toBeVisible({ timeout: 15_000 });
       await current.getByRole("button", { name: "BET" }).click();
       await expect(current.getByRole("button", { name: "CONFIRM BET" })).toBeVisible();
@@ -193,10 +198,12 @@ test("two-player complete hand conserves 200, pays once, and rotates", async ({ 
       return;
     }
     if (type === "CALL") {
+      if (!(await current.getByRole("button", { name: /CALL / }).count())) await current.reload();
       await expect(current.getByRole("button", { name: /CALL / })).toBeVisible({ timeout: 15_000 });
       await current.getByRole("button", { name: /CALL / }).click();
       return;
     }
+    if (!(await current.getByRole("button", { name: "CHECK" }).count())) await current.reload();
     await expect(current.getByRole("button", { name: "CHECK" })).toBeVisible({ timeout: 15_000 });
     await current.getByRole("button", { name: "CHECK" }).click();
   }

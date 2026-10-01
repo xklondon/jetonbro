@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   createBlackjackTable,
   createPokerTable,
+  expectPlayerPayoutIdle,
   expectPokerPhase,
   openAs,
   openSetupSheet,
@@ -147,6 +148,7 @@ test("approved setup, blackjack, poker screens and owner delete", async ({ page,
   await samPage.reload();
   await expect(samPage.locator("[data-payout-box=true]").first()).toBeVisible();
   await expect(samPage.locator("[data-payout-main=true]").first()).toBeVisible();
+  await expectPlayerPayoutIdle(samPage);
   await shot(samPage, "09-bj-player-payout-390x844.png");
   await shot(samPage, "09-bj-player-payout-insurance-lost-390x844.png");
   await shot(page, "13-bj-dealer-payout-390x844.png");
@@ -166,6 +168,7 @@ test("approved setup, blackjack, poker screens and owner delete", async ({ page,
   await page.locator(`[data-box-id="${noInsBoxes[0]!.id}"]`).getByRole("button", { name: "LOST" }).click();
   await samPage.reload();
   await expect(samPage.locator("[data-payout-insurance]")).toHaveCount(0);
+  await expectPlayerPayoutIdle(samPage);
   await shot(samPage, "09-bj-player-payout-no-insurance-390x844.png");
 
   await page.getByRole("button", { name: "START NEXT ROUND" }).click();
@@ -189,6 +192,7 @@ test("approved setup, blackjack, poker screens and owner delete", async ({ page,
   await page.getByRole("button", { name: "INS WON" }).click();
   await samPage.reload();
   await expect(samPage.locator("[data-insurance-result*='INSURANCE WON']")).toBeVisible();
+  await expectPlayerPayoutIdle(samPage);
   await shot(samPage, "09-bj-player-payout-insurance-won-390x844.png");
 
   await page.goto("/");

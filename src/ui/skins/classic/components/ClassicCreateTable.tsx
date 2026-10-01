@@ -66,17 +66,19 @@ export function ClassicCreateTable({
   const [dealerId, setDealerId] = useState(view?.members.find((member) => member.isBankDealer)?.userId ?? "");
   const [pending, setPending] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [nameDirty, setNameDirty] = useState(false);
+  const [startingDirty, setStartingDirty] = useState(false);
 
   useEffect(() => {
     if (!view) return;
-    setName(view.tableName);
-    setStartingJetonsPerPlayer(view.startingJetonsPerPlayer.label);
+    if (!nameDirty) setName(view.tableName);
+    if (!startingDirty) setStartingJetonsPerPlayer(view.startingJetonsPerPlayer.label);
     setBankFundingMode(view.bankFundingMode ?? "OPEN");
     if (view.bankFundingMode === "LIMITED" && view.startingBank?.label) {
       setStartingBank(limitedReserve(view.startingBank.label));
     }
     setDealerId(view.members.find((member) => member.isBankDealer)?.userId ?? "");
-  }, [view]);
+  }, [view, nameDirty, startingDirty]);
 
   async function persist(payload: Record<string, string>) {
     if (!onCommand) return;
@@ -100,7 +102,10 @@ export function ClassicCreateTable({
             name="name"
             aria-label="Table name"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setNameDirty(true);
+              setName(event.target.value);
+            }}
             onBlur={() => void persist({ name })}
             required
           />
@@ -127,7 +132,10 @@ export function ClassicCreateTable({
             inputMode="numeric"
             pattern="[0-9]*"
             value={startingJetonsPerPlayer}
-            onChange={(event) => setStartingJetonsPerPlayer(event.target.value)}
+            onChange={(event) => {
+              setStartingDirty(true);
+              setStartingJetonsPerPlayer(event.target.value);
+            }}
             onBlur={() => void persist({ startingJetonsPerPlayer })}
           />
         </label>

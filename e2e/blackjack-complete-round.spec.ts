@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, expectPlayerPayoutIdle, openAs, uniqueEmail } from "./helpers";
 
 const shots = join(process.cwd(), "test-results", "prompt2");
 
@@ -84,7 +84,8 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.reload();
   await expect(playerPage.getByRole("button", { name: "DOUBLE" })).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "SPLIT" })).toBeVisible();
-  await expect(playerPage.getByRole("button", { name: "INSURANCE" })).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "PLACE INSURANCE" })).toHaveCount(0);
   await expect(playerPage.locator("[data-player-wallet]")).toBeVisible();
   await playerPage.locator(`[data-box-id="${box1.id}"]`).click();
   await playerPage.getByRole("button", { name: "DOUBLE" }).click();
@@ -101,6 +102,8 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.reload();
   await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE OPEN");
   await expect(playerPage.getByText("Max 50% of box stake")).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "PLACE INSURANCE" })).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
   const box1AtIns = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();
   expect(Math.abs((box1AtIns!.x) - box1AtBet!.x)).toBeLessThan(8);
   expect(Math.abs((box1AtIns!.y) - box1AtBet!.y)).toBeLessThan(8);
@@ -125,6 +128,7 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expect(playerPage.locator("[data-payout-main=true]").first()).toBeVisible();
   await expect(playerPage.locator(`[data-box-id="${box1.id}"] [data-payout-insurance=true]`)).toBeVisible();
   await expect(playerPage.locator(`[data-box-id="${box2.id}"] [data-payout-insurance]`)).toHaveCount(0);
+  await expectPlayerPayoutIdle(playerPage);
   const box1AtPay = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();
   expect(Math.abs((box1AtPay!.x) - box1AtBet!.x)).toBeLessThan(8);
   expect(Math.abs((box1AtPay!.y) - box1AtBet!.y)).toBeLessThan(8);

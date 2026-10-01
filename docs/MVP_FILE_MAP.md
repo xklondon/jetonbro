@@ -31,6 +31,13 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
+### Active UI areas (Prompt 9)
+
+Player Blackjack phase-control correction, plus Create Table snapshot no longer clobbering an in-progress name. Engines, accounting, auth, invitations, and Prompt 7/8 screens stay frozen.
+
+- `src/ui/skins/classic/components/ClassicPlayerTable.tsx`
+- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
+
 ### Active UI areas (Prompt 8)
 
 Visual correction only. Engines, accounting, auth, invitations, and the Prompt 6 setup journey stay frozen. This slice is six production files because payout boxes, Phase 0 felt density, and Poker viewer-wallet identity share one board-correction prompt.

@@ -38,13 +38,16 @@ export async function createPokerTable(
 ) {
   await openSetupSheet(page);
   await page.getByLabel("Table name").fill(name);
+  await page.getByLabel("Table name").blur();
   await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
+  await page.getByLabel("Starting jetons per player").blur();
   await page.getByRole("button", { name: /Texas Hold/i }).click();
   await expect(page.locator("[data-selected-game=POKER]")).toBeVisible();
   if (options?.smallBlind) await page.getByLabel("Small blind").fill(options.smallBlind);
   if (options?.bigBlind) await page.getByLabel("Big blind").fill(options.bigBlind);
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
+  await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
@@ -71,10 +74,13 @@ export async function createBlackjackTable(
 ) {
   await openSetupSheet(page);
   await page.getByLabel("Table name").fill(name);
+  await page.getByLabel("Table name").blur();
   await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
+  await page.getByLabel("Starting jetons per player").blur();
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
+  await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
@@ -144,6 +150,19 @@ export async function noHorizontalOverflow(page: Page) {
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
   );
   expect(overflow).toBe(false);
+}
+
+export async function expectPlayerPayoutIdle(page: Page) {
+  await expect(page.getByRole("button", { name: "DOUBLE" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "SPLIT" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "PLACE BET", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "RETRACT" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START ADDITIONAL BOX" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "PLACE INSURANCE" })).toHaveCount(0);
+  await expect(page.locator("[data-play-controls]")).toHaveCount(0);
+  await expect(page.locator("[data-player-wallet]")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add 25 jetons" })).toBeDisabled();
 }
 
 export async function swipePlayerBoxes(

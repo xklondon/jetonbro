@@ -220,7 +220,7 @@ export function ClassicPlayerTable({
               </div>
             </div>
           ) : null}
-          {playing && view.insuranceWindowOpen ? (
+          {playing && view.actions.insurance ? (
             <div className="insurance-dock" data-insurance-controls="true">
               <strong>INSURANCE BET</strong>
               <span className="muted">Max 50% of box stake</span>
@@ -242,50 +242,61 @@ export function ClassicPlayerTable({
                 <button
                   className="gold-button"
                   type="button"
-                  disabled={!view.actions.insurance || !selected || selected.coverage?.insurance === false}
-                  onClick={() =>
-                    selected &&
+                  disabled={!selected || selected.coverage?.insurance === false}
+                  onClick={() => {
+                    if (!playing || !view.actions.insurance || !selected) return;
                     onCommand("buyInsurance", {
                       boxId: selected.id,
                       amount: insuranceAmount || selected.insuranceMax.label,
-                    })
-                  }
+                    });
+                  }}
                 >
                   PLACE INSURANCE
                 </button>
               </div>
             </div>
           ) : null}
-          {playing || resolved ? (
-            <div className="play-controls">
+          {playing ? (
+            <div className="play-controls" data-play-controls="true">
               <button
                 type="button"
                 className="primary"
-                disabled={!playing || !view.actions.double || !selected || selected.coverage?.double === false}
-                onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
+                data-player-action="double"
+                disabled={!view.actions.double || !selected || selected.coverage?.double === false}
+                onClick={() => {
+                  if (!playing || !view.actions.double || !selected) return;
+                  onCommand("doubleBox", { boxId: selected.id });
+                }}
               >
                 DOUBLE
               </button>
               <button
                 type="button"
-                disabled={!playing || !view.actions.split || !selected || selected.coverage?.split === false}
-                onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
+                data-player-action="split"
+                disabled={!view.actions.split || !selected || selected.coverage?.split === false}
+                onClick={() => {
+                  if (!playing || !view.actions.split || !selected) return;
+                  onCommand("splitBox", { boxId: selected.id });
+                }}
               >
                 SPLIT
               </button>
-              <button
-                type="button"
-                disabled={!playing || !view.actions.insurance || !selected || selected.coverage?.insurance === false}
-                onClick={() =>
-                  selected &&
-                  onCommand("buyInsurance", {
-                    boxId: selected.id,
-                    amount: insuranceAmount || selected.insuranceMax.label,
-                  })
-                }
-              >
-                INSURANCE
-              </button>
+              {view.actions.insurance ? (
+                <button
+                  type="button"
+                  data-player-action="insurance"
+                  disabled={!selected || selected.coverage?.insurance === false}
+                  onClick={() => {
+                    if (!playing || !view.actions.insurance || !selected) return;
+                    onCommand("buyInsurance", {
+                      boxId: selected.id,
+                      amount: insuranceAmount || selected.insuranceMax.label,
+                    });
+                  }}
+                >
+                  INSURANCE
+                </button>
+              ) : null}
             </div>
           ) : null}
           {resolved ? <div className="payout-wait">ROUND COMPLETE</div> : null}
@@ -295,9 +306,11 @@ export function ClassicPlayerTable({
           trayEnabled={Boolean(view.actions.bet && selected && selected.coverage?.bet !== false)}
           dropSelector="[data-drop-box]"
           onTap={(amount) => {
-            if (selected) place(amount, selected.id);
+            if (!view.actions.bet || !selected) return;
+            place(amount, selected.id);
           }}
           onDrop={(amount, targetId) => {
+            if (!view.actions.bet) return;
             setHoverBoxId(null);
             place(amount, targetId);
           }}

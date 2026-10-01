@@ -240,7 +240,7 @@ Full acceptance means:
 
 - Repository: Blackjack MVP and Texas Hold’em MVP with authenticated welcome / create-table journey
 - Current game: Blackjack MVP and Texas Hold’em MVP
-- Next milestone: Prompt 8 visual correction is complete on `recovery/setup-phase-zero`. Awaiting human inspection of payout, wallet, and Phase 0 screens. Do not merge, tag, or deploy. Zilch remains coming later.
+- Next milestone: Prompt 9 RC2 merge of `recovery/setup-phase-zero` onto `main`, tag `v1.0.0-rc.2`, and deploy JetBro II Web only. Player payout must not render DOUBLE / SPLIT / INSURANCE. Zilch remains coming later.
 - Staging host: Railway project `tranquil-unity`, service `JetBro II Web`, public URL `https://jetbro-ii-web-production.up.railway.app`. Railway’s only environment in that project is default-named `production`. This is the JetBro II service linked to this repository, not Lite and not the old `jetonbro-staging` project. `ALLOW_DEV_MAILBOX=false`. `/api/dev/*` 404s. Release candidate tag `v1.0.0-rc.1` points at `c21fc8b`.
 - Current skin: Classic
 - Accepted references: `design/reference/classic/`
@@ -272,3 +272,4 @@ Full acceptance means:
 - Player Blackjack boxes occupy a fixed 3-slot stage and do not recentre or jump across Betting → Playing → Insurance → Payout.
 - Owner utilities and Card Assist live in the table menu. Phase-action only progresses the round. Insurance copy is `MAIN` / `INSURANCE` / `INS WON` / `INS LOST`.
 - Prompt 8 corrects Player payout overlap, marks the Poker viewer seat against the tray AVAILABLE, and compact Phase 0 empty/joined states. Engines unchanged.
+- Player Blackjack DOUBLE / SPLIT / INSURANCE render only during PLAYING and dispatch only when snapshot legal flags allow them. Player Payout and ROUND_COMPLETE show settlement results plus the wallet and a disabled tray; they do not render playing or betting commands.

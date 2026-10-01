@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Prompt 9 — player payout phase controls and RC2
+
+- Player DOUBLE / SPLIT / INSURANCE render only during PLAYING and only dispatch when the snapshot legal flags allow them. Payout keeps the wallet and tray, not playing or betting commands.
+- Create Table keeps the typed name and starting jetons when a later snapshot arrives.
+
 ### Prompt 8 — payout overlap, viewer wallet, Phase 0 density
 
 - Player payout boxes stack identity, MAIN, and Insurance on separate lines inside the same 154px gold cards. Insurance is omitted when the box has none.

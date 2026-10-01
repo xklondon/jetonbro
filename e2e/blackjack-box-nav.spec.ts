@@ -39,12 +39,13 @@ test("player taps a box to select it and targets its controls", async ({ page, c
   await expect(samPage.getByRole("button", { name: "START ADDITIONAL BOX" })).toBeVisible();
   await samPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click();
   await expect.poll(async () => (await tableSnapshot(samPage)).player?.boxes.length).toBe(2);
+  await expect(samPage.locator("[data-box-id]")).toHaveCount(2);
   await expect(samPage.locator("[data-selected-box]")).toHaveAttribute("data-selected-box", /./);
   const firstSelected = await samPage.locator("[data-selected-box]").getAttribute("data-selected-box");
   await expect(samPage.locator(`[data-box-id="${firstSelected}"]`)).toHaveClass(/selected/);
 
-  const ids = await samPage.locator("[data-box-id]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-box-id")));
-  const other = ids.find((id) => id && id !== firstSelected);
+  const boxes = (await tableSnapshot(samPage)).player?.boxes ?? [];
+  const other = boxes.find((box) => box.id !== firstSelected)?.id;
   expect(other).toBeTruthy();
   await samPage.locator(`[data-box-id="${other}"]`).click();
   await expect(samPage.locator("[data-selected-box]")).toHaveAttribute("data-selected-box", other!);
