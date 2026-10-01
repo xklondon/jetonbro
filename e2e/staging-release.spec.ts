@@ -1,11 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { expectPokerPhase, noHorizontalOverflow, openTableMenu } from "./helpers";
+import { expectPokerPhase, expectPlayerPayoutIdle, noHorizontalOverflow, openTableMenu } from "./helpers";
 import { currentMailId, requestStagingMagicLink, waitForStagingMagicLink } from "./staging-login";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL?.replace(/\/$/, "") ?? "";
 const out = join(process.cwd(), "docs", "screenshots", "classic");
+const prod = join(process.cwd(), "docs", "screenshots", "production");
 
 test.skip(!origin.includes("railway.app"), "staging-only: set PLAYWRIGHT_BASE_URL to the JetBro II Railway origin");
 
@@ -82,8 +83,9 @@ function tableStack(snap: Snap): number {
 }
 
 test("staging release: three roles, Blackjack, Poker, save and resume", async ({ page, context, browser }) => {
-  test.setTimeout(360_000);
+  test.setTimeout(420_000);
   await mkdir(out, { recursive: true });
+  await mkdir(prod, { recursive: true });
   await page.setViewportSize({ width: 390, height: 844 });
 
   const stamp = Date.now();
@@ -95,6 +97,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await signIn(page, alexEmail);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-staging-home-390x844.png") });
+  await page.screenshot({ path: join(prod, "01-home-390x844.png") });
 
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
@@ -105,6 +108,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
     await page.getByLabel("Owner / host name").fill("Alex");
   }
   await page.screenshot({ path: join(out, "app-staging-create-390x844.png") });
+  await page.screenshot({ path: join(prod, "02-create-table-390x844.png") });
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
@@ -112,6 +116,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator("[data-table-name]")).toHaveText(tableName);
   await page.screenshot({ path: join(out, "app-staging-setup-390x844.png") });
+  await page.screenshot({ path: join(prod, "03-phase0-waiting-390x844.png") });
   await noHorizontalOverflow(page);
 
   await page.getByRole("button", { name: "Invite Player" }).first().click();
@@ -149,6 +154,11 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
 
   await expect(page.getByText(/Blair/i).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/Casey/i).first()).toBeVisible();
+  if (await page.locator(".sheet.open").count()) {
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.locator(".sheet.open")).toHaveCount(0);
+  }
+  await page.screenshot({ path: join(prod, "04-phase0-joined-390x844.png") });
 
   await page.reload();
   await blairPage.reload();
@@ -176,6 +186,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
 
   await blairPage.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await blairPage.screenshot({ path: join(prod, "09-bj-dealer-betting-390x844.png") });
   await caseyPage.reload();
   await expect(caseyPage.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
 
@@ -185,6 +196,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await expect(caseyPage.getByText("MAIN").first()).toBeVisible();
   await expect(caseyPage.locator(".felt").getByText("25", { exact: true }).first()).toBeVisible();
   await caseyPage.screenshot({ path: join(out, "app-staging-bj-player-betting-390x844.png") });
+  await caseyPage.screenshot({ path: join(prod, "05-bj-player-betting-390x844.png") });
   await caseyPage.reload();
   expect((await tableSnapshot(caseyPage)).player?.available.label).toBe("75");
   await expect(caseyPage.locator("[data-player-wallet] .wallet-available strong")).toHaveText("75");
@@ -195,6 +207,16 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await blairPage.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await blairPage.screenshot({ path: join(out, "app-staging-bj-dealer-playing-390x844.png") });
+  await caseyPage.reload();
+  await expect(caseyPage.getByRole("button", { name: "DOUBLE" })).toBeVisible();
+  await expect(caseyPage.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await caseyPage.screenshot({ path: join(prod, "06-bj-player-playing-390x844.png") });
+  await blairPage.getByRole("button", { name: "Open Insurance" }).click();
+  await expect(blairPage.locator("[data-phase-heading]")).toHaveText("INSURANCE");
+  await caseyPage.reload();
+  await expect(caseyPage.getByRole("button", { name: "PLACE INSURANCE" })).toBeVisible();
+  await caseyPage.screenshot({ path: join(prod, "07-bj-player-insurance-390x844.png") });
+  await blairPage.getByRole("button", { name: "Close Insurance" }).click();
   await expectRejected(page, tableId, "doubleBox", { boxId: caseyBox!.id });
   await expectRejected(blairPage, tableId, "doubleBox", { boxId: caseyBox!.id });
   await expectRejected(page, tableId, "switchGame", { game: "POKER" });
@@ -202,7 +224,14 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await blairPage.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("PAYOUT");
   await blairPage.screenshot({ path: join(out, "app-staging-bj-payout-390x844.png") });
+  await blairPage.screenshot({ path: join(prod, "10-bj-dealer-payout-390x844.png") });
+  await caseyPage.reload();
+  await expectPlayerPayoutIdle(caseyPage);
   await blairPage.locator(`[data-box-id="${caseyBox!.id}"]`).getByRole("button", { name: "LOST" }).click();
+  await caseyPage.reload();
+  await expectPlayerPayoutIdle(caseyPage);
+  await expect(caseyPage.getByText("Lost").first()).toBeVisible();
+  await caseyPage.screenshot({ path: join(prod, "08-bj-player-payout-390x844.png") });
   await blairPage.getByRole("button", { name: "START NEXT ROUND" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   expect((await tableSnapshot(caseyPage)).player?.available.label).toBe("75");
@@ -239,8 +268,10 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await expect(firstActor.getByRole("button", { name: "FOLD" })).toBeVisible();
   await expect(firstActor.getByText("YOUR TURN").first()).toBeVisible();
   await firstActor.screenshot({ path: join(out, "app-staging-poker-player-action-390x844.png") });
+  await firstActor.screenshot({ path: join(prod, "11-poker-player-action-390x844.png") });
   await expect(page.getByRole("button", { name: "DEAL FLOP" })).toBeDisabled();
   await page.screenshot({ path: join(out, "app-staging-poker-dealer-street-390x844.png") });
+  await page.screenshot({ path: join(prod, "12-poker-dealer-street-390x844.png") });
   await expect(caseyPage.getByRole("button", { name: "DEAL FLOP" })).toHaveCount(0);
   expect(pokerStart.poker?.legalActions.some((action) => action.label === "CALL 0")).toBeFalsy();
 
@@ -264,6 +295,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await expect(page.getByText("POT PAID")).toBeVisible();
   await expect(page.getByText(/TO CALL/i)).toHaveCount(0);
   await page.screenshot({ path: join(out, "app-staging-poker-hand-complete-390x844.png") });
+  await page.screenshot({ path: join(prod, "13-poker-hand-complete-390x844.png") });
   const firstDealer = complete.poker?.seats.find((seat) => seat.isDealer)?.userId;
   await page.getByRole("button", { name: "NEXT HAND", exact: true }).click();
   await expectPokerPhase(page, "PRE-FLOP");
@@ -292,6 +324,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await expect(page.getByText(tableName)).toBeVisible();
   await expect(page.getByRole("button", { name: "RESUME" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-staging-home-saved-390x844.png") });
+  await page.screenshot({ path: join(prod, "14-save-resume-home-390x844.png") });
   await page.getByRole("button", { name: "RESUME" }).click();
   await expectPokerPhase(page, "HAND COMPLETE");
   await expect(page.locator("[data-table-name]")).toHaveText(tableName);
@@ -301,6 +334,21 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   expect((await tableSnapshot(page)).members.find((member) => member.isOwner)?.name).toMatch(/Alex/i);
   await page.screenshot({ path: join(out, "app-staging-reopened-390x844.png") });
   await noHorizontalOverflow(page);
+
+  await openTableMenu(page);
+  await page.getByRole("button", { name: "CLOSE TABLE & SAVE BALANCES" }).click();
+  await expect(page.getByRole("button", { name: "Confirm close" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm close" }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+  await expect(page.getByText("Closed · balances saved")).toBeVisible({ timeout: 20_000 });
+  const card = page.locator("[data-table-id]").filter({ hasText: tableName }).first();
+  await expect(card).toHaveAttribute("data-closed", "true");
+  await card.getByRole("button", { name: "Table menu" }).click();
+  await page.getByRole("button", { name: "DELETE" }).click();
+  await expect(page.getByText("Closed table removal. Ledger and rounds are kept.")).toBeVisible();
+  await page.screenshot({ path: join(prod, "15-owner-delete-confirm-390x844.png") });
+  await expectRejected(caseyPage, tableId, "deleteTable");
+  await page.getByRole("button", { name: "Confirm" }).click();
 
   await blairContext.close();
   await caseyContext.close();

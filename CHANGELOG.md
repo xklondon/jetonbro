@@ -6,6 +6,7 @@
 
 - Player DOUBLE / SPLIT / INSURANCE render only during PLAYING and only dispatch when the snapshot legal flags allow them. Payout keeps the wallet and tray, not playing or betting commands.
 - Create Table keeps the typed name and starting jetons when a later snapshot arrives.
+- `v1.0.0-rc.2` merge commit `8b3aafe` deployed to JetBro II Web (`81005e2a`). Production screenshots: `docs/screenshots/production/`.
 
 ### Prompt 8 — payout overlap, viewer wallet, Phase 0 density
 
