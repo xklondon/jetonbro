@@ -39,6 +39,11 @@ export default defineConfig({
         command: "npm run dev",
         url: baseURL,
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
+        timeout: 180_000,
+        env: {
+          ...process.env,
+          ALLOW_DEV_MAILBOX: "true",
+          NODE_OPTIONS: "--max-old-space-size=8192",
+        },
       },
 });

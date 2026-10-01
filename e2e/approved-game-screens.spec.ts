@@ -32,7 +32,13 @@ type Snap = {
 };
 
 async function snapshot(page: Page): Promise<Snap> {
-  return page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((r) => r.json()) as Promise<Snap>;
+  const match = page.url().match(/\/tables\/([^/?#]+)/);
+  if (!match) throw new Error(`Expected a table URL, received ${page.url()}`);
+  const response = await page.request.get(`/api/tables/${match[1]}/snapshot`);
+  if (!response.ok()) {
+    throw new Error(`snapshot ${response.status()} from ${page.url()}`);
+  }
+  return response.json() as Promise<Snap>;
 }
 
 async function command(page: Page, tableId: string, commandName: string, extra: Record<string, string> = {}) {

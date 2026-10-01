@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  addLocalPlayerFromMenu,
   createBlackjackTable,
   expectPokerPhase,
   noHorizontalOverflow,
@@ -113,16 +114,10 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await expect(page.locator(".sheet.open")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Menu" })).toBeFocused();
 
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
-  await expect(page.getByLabel("Player name")).toBeVisible();
-  await expect(page.getByLabel("Player email")).toBeVisible();
-  await page.screenshot({ path: join(out, "app-release-invite-390x844.png") });
-  await page.getByLabel("Player name").fill("Drew");
-  await page.getByLabel("Starting jetons").fill("100");
-  await page.getByRole("button", { name: "Add Local Player" }).click();
+  await addLocalPlayerFromMenu(page, "Drew");
   await expect(page.getByText("Drew").first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
+  await openTableMenu(page);
+  await page.getByRole("button", { name: "ADD LOCAL PLAYER" }).click();
   await page.getByLabel("Player name").fill("Drew");
   await page.getByRole("button", { name: "Add Local Player" }).click();
   await expect(page.getByText(/already at this table/i).first()).toBeVisible();

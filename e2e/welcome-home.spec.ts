@@ -33,14 +33,13 @@ test("authenticated welcome, create table, then the dealer setup table", async (
   await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
   await expect(page.getByText("DEALER · Alex")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Invite Player" }).first()).toBeVisible();
+  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
   await expect(page.getByText("Waiting for a player to join")).toBeVisible();
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
-  await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
-  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByAltText("Guest QR — no email")).toBeVisible();
+  await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
   await expect(page.getByText("DEALER · Alex")).toBeVisible();
   await page.screenshot({ path: join(out, "app-blackjack-setup-390x844.png") });
   await page.screenshot({ path: join(out, "app-table-lobby-invites-390x844.png") });

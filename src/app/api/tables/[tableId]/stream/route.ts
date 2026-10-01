@@ -1,4 +1,4 @@
-import { auth } from "@/application/auth";
+import { getActor, assertActorCanAccessTable } from "@/application/actor";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import { subscribeToTables } from "@/application/realtime/bus";
 import { DomainError } from "@/domain/errors";
@@ -9,12 +9,20 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ tableId: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const actor = await getActor();
+  if (!actor) {
     return new Response("Sign in required.", { status: 401 });
   }
   const { tableId } = await context.params;
-  const viewerId = session.user.id;
+  try {
+    assertActorCanAccessTable(actor, tableId);
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return new Response(error.message, { status: error.httpStatus });
+    }
+    throw error;
+  }
+  const viewerId = actor.id;
 
   try {
     await loadSnapshot(tableId, viewerId);

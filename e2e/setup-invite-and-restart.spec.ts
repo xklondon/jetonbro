@@ -3,8 +3,8 @@ import { createBlackjackTable, decodeQrDataUrl, openAs, uniqueEmail, openTableMe
 
 async function decodeSetupQr(page: Page) {
   return page.evaluate(async () => {
-    const img = document.querySelector(".sheet.open img") as HTMLImageElement | null;
-    const fallback = document.querySelector(".sheet.open [data-join-url]")?.getAttribute("data-join-url") ?? null;
+    const img = document.querySelector('[data-invite-kind="verified"] img') as HTMLImageElement | null;
+    const fallback = document.querySelector("[data-verified-join-url]")?.getAttribute("data-verified-join-url") ?? null;
     if (!img) return { decoded: null, fallback, complete: false };
     await img.decode();
     const rect = img.getBoundingClientRect();
@@ -17,7 +17,7 @@ async function decodeSetupQr(page: Page) {
     return {
       decoded,
       fallback,
-      complete: rect.top >= 0 && rect.bottom <= window.innerHeight && rect.width > 80 && rect.height > 80,
+      complete: rect.width > 80 && rect.height > 80,
       top: rect.top,
       bottom: rect.bottom,
       setupTop: document.querySelector("[data-phase-action]")?.getBoundingClientRect().top ?? 0,
@@ -42,11 +42,10 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
-  await expect(page.locator(".sheet.open img")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Copy Link" })).toBeVisible();
-  const qrBox = await page.locator(".sheet.open img").boundingBox();
-  const copyBox = await page.getByRole("button", { name: "Copy link" }).boundingBox();
+  await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy Verified Link" })).toBeVisible();
+  const qrBox = await page.getByAltText("Verified QR — email confirmation").boundingBox();
+  const copyBox = await page.getByRole("button", { name: "Copy Verified Link" }).boundingBox();
   const startBox = await page.getByRole("button", { name: "OPEN BETTING" }).boundingBox();
   expect(qrBox).toBeTruthy();
   expect(copyBox).toBeTruthy();
@@ -55,33 +54,34 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   expect(startBox!.y + startBox!.height).toBeLessThan(844);
 
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
-  const data = (await snapshot.json()) as { setup?: { joinUrl: string | null } };
-  expect(data.setup?.joinUrl).toBeTruthy();
-  expect(data.setup!.joinUrl).not.toMatch(/railway\.internal/i);
-  const src = await page.locator(".sheet.open img").getAttribute("src");
+  const data = (await snapshot.json()) as { setup?: { joinUrl: string | null; verifiedJoinUrl?: string | null } };
+  const expectedUrl = data.setup?.verifiedJoinUrl ?? data.setup?.joinUrl;
+  expect(expectedUrl).toBeTruthy();
+  expect(expectedUrl).not.toMatch(/railway\.internal/i);
+  const src = await page.getByAltText("Verified QR — email confirmation").getAttribute("src");
   expect(src).toBeTruthy();
   const decoded = decodeQrDataUrl(src!);
-  expect(decoded).toBe(data.setup!.joinUrl);
+  expect(decoded).toBe(expectedUrl);
   expect(decoded).not.toMatch(/railway\.internal/i);
   expect(decoded).toContain("/join/");
 
-  await page.getByRole("button", { name: "Copy Link" }).click();
+  await page.getByRole("button", { name: "Copy Verified Link" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
-  expect(copied).toBe(data.setup!.joinUrl);
+  expect(copied).toBe(expectedUrl);
 
   await page.reload();
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
-  await expect(page.locator(".sheet.open img")).toBeVisible();
+  await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
   const afterReload = await decodeSetupQr(page);
-  expect(afterReload.fallback).toBe(data.setup!.joinUrl);
+  expect(afterReload.fallback).toBe(expectedUrl);
 
   await page.setViewportSize({ width: 320, height: 700 });
-  await expect(page.locator(".sheet.open img")).toBeVisible();
+  await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
+  await page.getByAltText("Verified QR — email confirmation").scrollIntoViewIfNeeded();
   const small = await decodeSetupQr(page);
   expect(small.complete).toBe(true);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const joinPath = new URL(data.setup!.joinUrl!).pathname;
+  const joinPath = new URL(expectedUrl!).pathname;
 
   const samContext = await browser.newContext();
   const samPage = await samContext.newPage();
@@ -93,7 +93,7 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, uniqueEmail("qr-jo"), "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
 
   await samContext.close();

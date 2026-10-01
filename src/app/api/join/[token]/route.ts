@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/application/auth";
-import { joinWithToken } from "@/application/services/invitations";
 import { prisma } from "@/application/db";
-import { DomainError } from "@/domain/errors";
-import { assertInvitationUsable } from "@/domain/invitations/types";
+import { guestJoinPath, verifiedJoinPath } from "@/application/invite-urls";
 
 export async function GET(
-  _request: Request,
+  request: Request,
+  context: { params: Promise<{ token: string }> },
+) {
+  const { token } = await context.params;
+  const invitation = await prisma.invitation.findUnique({ where: { token } });
+  const url = new URL(request.url);
+  if (!invitation) {
+    return NextResponse.json({ error: "This invitation is not valid." }, { status: 404 });
+  }
+  const path = invitation.kind === "GUEST" ? guestJoinPath(token) : verifiedJoinPath(token);
+  return NextResponse.redirect(new URL(path, url.origin));
+}
+
+export async function POST(
+  request: Request,
   context: { params: Promise<{ token: string }> },
 ) {
   const { token } = await context.params;
@@ -14,40 +25,7 @@ export async function GET(
   if (!invitation) {
     return NextResponse.json({ error: "This invitation is not valid." }, { status: 404 });
   }
-  try {
-    assertInvitationUsable(invitation, new Date());
-  } catch (error) {
-    if (error instanceof DomainError) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.httpStatus });
-    }
-  }
-  return NextResponse.json({
-    tableId: invitation.tableId,
-    emailBound: invitation.kind === "EMAIL" ? invitation.email : null,
-  });
-}
-
-export async function POST(
-  _request: Request,
-  context: { params: Promise<{ token: string }> },
-) {
-  const session = await auth();
-  if (!session?.user?.id || !session.user.email) {
-    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  }
-  const { token } = await context.params;
-  try {
-    const result = await joinWithToken({
-      userId: session.user.id,
-      userEmail: session.user.email,
-      token,
-    });
-    return NextResponse.json(result);
-  } catch (error) {
-    if (error instanceof DomainError) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.httpStatus });
-    }
-    console.error(error);
-    return NextResponse.json({ error: "Could not join this table." }, { status: 500 });
-  }
+  const url = new URL(request.url);
+  const path = invitation.kind === "GUEST" ? `/api/join/guest/${token}` : `/api/join/verified/${token}`;
+  return NextResponse.redirect(new URL(path, url.origin), 307);
 }

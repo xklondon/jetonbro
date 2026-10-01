@@ -65,12 +65,13 @@ export type MemberView = {
   email: string;
   isOwner: boolean;
   isBankDealer: boolean;
+  isGuest?: boolean;
   available: MoneyView | null;
 };
 
 export type InvitationView = {
   id: string;
-  kind: "EMAIL" | "QR";
+  kind: "EMAIL" | "QR" | "GUEST";
   email: string | null;
   pending: boolean;
 };
@@ -201,6 +202,8 @@ export type SetupTableView = {
   members: MemberView[];
   invitations: InvitationView[];
   joinUrl: string | null;
+  guestJoinUrl?: string | null;
+  verifiedJoinUrl?: string | null;
   minBet: MoneyView | null;
   maxBet: MoneyView | null;
   blackjackPayout: "THREE_TWO" | "SIX_FIVE";
@@ -333,6 +336,9 @@ export type ClientSnapshot = {
   viewerName: string;
   isOwner: boolean;
   isBank: boolean;
+  isDealer?: boolean;
+  isSeatedPlayer?: boolean;
+  isGuest?: boolean;
   game: "BLACKJACK" | "POKER";
   gameLabel?: string;
   phase: RoundPhase | string;

@@ -1,16 +1,19 @@
-import { auth } from "@/application/auth";
+import { getActor } from "@/application/actor";
 import { listHomeTables } from "@/application/queries/home";
 import { defaultTableName, firstName } from "@/application/auth-urls";
 import { redirect } from "next/navigation";
 import { HomeClient } from "./home-client";
 
 export default async function HomePage() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const actor = await getActor();
+  if (!actor) {
     redirect("/sign-in?callbackUrl=/");
   }
-  const tables = await listHomeTables(session.user.id);
-  const displayName = firstName(session.user.name || session.user.email || "Player");
+  if (actor.isGuest && actor.guestTableId) {
+    redirect(`/tables/${actor.guestTableId}`);
+  }
+  const tables = await listHomeTables(actor.id);
+  const displayName = firstName(actor.name || actor.email || "Player");
   return (
     <HomeClient
       displayName={displayName}

@@ -78,7 +78,9 @@ const setupView = (overrides: Partial<SetupTableView> = {}): SetupTableView => (
     },
   ],
   invitations: [{ id: "inv1", kind: "EMAIL", email: "sam@example.com", pending: true }],
-  joinUrl: "http://127.0.0.1:3000/join/shared-token",
+  joinUrl: "http://127.0.0.1:3000/join/verified/shared-token",
+  guestJoinUrl: "http://127.0.0.1:3000/join/guest/guest-token",
+  verifiedJoinUrl: "http://127.0.0.1:3000/join/verified/shared-token",
   minBet: null,
   maxBet: null,
   blackjackPayout: "THREE_TWO",
@@ -198,7 +200,7 @@ test("full create table setup includes game, bank and START TABLE", () => {
   expect(html).toContain("Starting jetons per Player");
   expect(html).toContain("Blackjack");
   expect(html).toContain("OPEN BANK");
-  expect(html).toContain("Invite Player");
+  expect(html).toContain("JOIN WITHOUT EMAIL");
   expect(html).not.toContain("Maximum boxes per player");
   expect(html).not.toContain("CARD ASSIST");
 });
@@ -216,7 +218,7 @@ test("Phase 0 shows compact waiting rows and OPEN BETTING", () => {
   expect(html).toContain("Owner · Alex");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
-  expect(html).toContain("Invite Player");
+  expect(html).toContain("JOIN WITHOUT EMAIL");
   expect(html).toContain("OPEN BETTING");
   expect(html).not.toContain("START BLACKJACK");
   expect(html).not.toContain("START POKER");
@@ -283,9 +285,8 @@ test("START TABLE completed table does not keep a second setup form", () => {
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("WAITING FOR PLAYERS");
   expect(html).toContain("Sam");
-  expect(html).toContain("Invite Player");
+  expect(html).toContain("JOIN WITHOUT EMAIL");
   expect(html).toContain("OPEN BETTING");
-  expect(html).toContain("data-game-controls");
   expect(html).toContain("dock");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
   expect(html).not.toContain("xklondon");

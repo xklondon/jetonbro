@@ -24,15 +24,12 @@ async function twoSeatTable(
       await cancel.click();
     }
   }
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await page.getByLabel("Player email").fill(playerEmail);
-  await page.getByRole("button", { name: "Invite by Email" }).click();
-  await expect(page.getByText("Invited")).toBeVisible();
+  await page.getByRole("button", { name: "SEND INVITE" }).click();
+  await expect(page.getByText("Pending")).toBeVisible();
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };
   const invitePath = new URL(mail.messages[0]!.url!).pathname;
-  await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".sheet.open")).toHaveCount(0);
   const playerContext = await browser.newContext();
   const playerPage = await playerContext.newPage();
   await playerPage.setViewportSize({ width: 390, height: 844 });
@@ -101,11 +98,9 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   if (await cancel.isVisible()) {
     await cancel.click();
   }
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await page.getByLabel("Player email").fill(samEmail);
-  await page.getByRole("button", { name: "Invite by Email" }).click();
-  await expect(page.getByText("Invited")).toBeVisible();
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "SEND INVITE" }).click();
+  await expect(page.getByText("Pending")).toBeVisible();
   const samMail = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(samEmail)}`);
   const samInvite = new URL(((await samMail.json()) as { messages: { url?: string }[] }).messages[0]!.url!).pathname;
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
@@ -119,12 +114,17 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(new URL(data.setup!.joinUrl!).pathname);
-  await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("Jo").first()).toBeVisible({ timeout: 15_000 });
+  await expect(joPage.getByText(/WAITING FOR PLAYERS|Waiting for the Bank/i)).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator("[data-player-row]").filter({ hasText: "Sam" }).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator("[data-player-row]").filter({ hasText: "Jo" }).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
   await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await samPage.reload();
   await joPage.reload();
+  await expect(samPage.getByText("YOUR JETONS")).toBeVisible({ timeout: 20_000 });
+  await expect(joPage.getByText("YOUR JETONS")).toBeVisible({ timeout: 20_000 });
+  await expect(samPage.getByRole("button", { name: "Add 25 jetons" })).toBeEnabled({ timeout: 20_000 });
+  await expect(joPage.getByRole("button", { name: "Add 25 jetons" })).toBeEnabled({ timeout: 20_000 });
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await joPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });

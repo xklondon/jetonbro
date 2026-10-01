@@ -61,8 +61,10 @@ export function ClassicEntry({
               name={field.name}
               type={field.type ?? "text"}
               placeholder={field.placeholder ?? field.label}
+              aria-label={field.label}
               value={extra[field.name] ?? ""}
               onChange={(event) => setExtra((current) => ({ ...current, [field.name]: event.target.value }))}
+              required
             />
           ))}
           <button className="gold-button" type="submit" disabled={pending}>

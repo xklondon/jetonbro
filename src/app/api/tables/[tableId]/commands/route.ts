@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/application/auth";
+import { getActor, assertActorCanAccessTable } from "@/application/actor";
 import { DomainError } from "@/domain/errors";
 import {
   abandonDraft,
@@ -69,12 +69,20 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ tableId: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const actor = await getActor();
+  if (!actor) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
   const { tableId } = await context.params;
-  const actorId = session.user.id;
+  try {
+    assertActorCanAccessTable(actor, tableId);
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.httpStatus });
+    }
+    throw error;
+  }
+  const actorId = actor.id;
   let json: unknown;
   try {
     json = await request.json();

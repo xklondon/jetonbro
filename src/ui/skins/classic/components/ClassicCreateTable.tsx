@@ -6,7 +6,6 @@ import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 import type { CommandHandler } from "@/ui/skins/types";
 import { PhoneShell } from "./PhoneShell";
 import { ClassicGameCards } from "./ClassicGameCards";
-import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInvitePanel } from "./ClassicInvitePanel";
 
 function limitedReserve(value?: string | null) {
@@ -65,7 +64,6 @@ export function ClassicCreateTable({
   const [bigBlind, setBigBlind] = useState("10");
   const [dealerId, setDealerId] = useState(view?.members.find((member) => member.isBankDealer)?.userId ?? "");
   const [pending, setPending] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
 
@@ -86,7 +84,6 @@ export function ClassicCreateTable({
   }
 
   const playerRows = (view?.members ?? []).filter((member) => game === "POKER" || !member.isBankDealer);
-  const invited = (view?.invitations ?? []).filter((invite) => invite.pending);
 
   return (
     <PhoneShell>
@@ -94,7 +91,12 @@ export function ClassicCreateTable({
         <strong>CREATE TABLE</strong>
         <span>Configure the table, then start.</span>
       </div>
-      <main className="felt home-stack create-setup">
+      <main
+        className="felt home-stack create-setup"
+        data-guest-join-url={view?.guestJoinUrl ?? undefined}
+        data-verified-join-url={(view?.verifiedJoinUrl ?? view?.joinUrl) ?? undefined}
+        data-join-url={(view?.verifiedJoinUrl ?? view?.joinUrl) ?? undefined}
+      >
         {notice ? <div className="error">{notice}</div> : null}
         <label>
           Table name
@@ -240,50 +242,37 @@ export function ClassicCreateTable({
         ) : (
           <div className="muted">Dealer · {view?.bankName ?? "Owner (default)"}</div>
         )}
-        <div>
-          <div className="field-label">Players</div>
-          <div className="phase-zero-rows">
-            {playerRows.map((member) => (
-              <div className="phase-zero-row member-row" key={member.userId}>
-                <div>
-                  <strong>{member.name}</strong>
-                  <div className="muted">
-                    {member.isOwner ? "Owner" : "Player"}
-                    {member.isBankDealer ? " · Dealer" : ""}
+        {playerRows.length > 0 ? (
+          <div>
+            <div className="field-label">Players</div>
+            <div className="phase-zero-rows">
+              {playerRows.map((member) => (
+                <div className="phase-zero-row member-row" key={member.userId} data-player-row="true">
+                  <div>
+                    <strong>{member.name}</strong>
+                    <div className="muted">
+                      {member.isOwner ? "Owner" : "Player"}
+                      {member.isBankDealer ? " · Dealer" : ""}
+                    </div>
                   </div>
+                  <span>{member.available?.label ?? "0"}</span>
                 </div>
-                <span>{member.available?.label ?? "0"}</span>
-              </div>
-            ))}
-            {invited.map((invite) => (
-              <div className="phase-zero-row member-row" key={invite.id}>
-                <div>
-                  <strong>{invite.email ?? "Player"}</strong>
-                  <div className="muted">Invited</div>
-                </div>
-              </div>
-            ))}
-            {playerRows.length === 0 && invited.length === 0 ? (
-              <p className="muted phase-zero-empty">Invite Players before you start, or add a local Player.</p>
-            ) : null}
+              ))}
+            </div>
           </div>
-        </div>
-        <button className="panel-button" type="button" onClick={() => setInviteOpen(true)}>
-          Invite Player
-        </button>
-      </main>
-      <SheetOverlay open={inviteOpen} onClose={() => setInviteOpen(false)}>
+        ) : null}
+        <div className="field-label">Players & invitations</div>
         <ClassicInvitePanel
-          joinUrl={view?.joinUrl ?? null}
+          guestJoinUrl={view?.guestJoinUrl}
+          verifiedJoinUrl={view?.verifiedJoinUrl ?? view?.joinUrl}
           emailConfigured={view?.emailConfigured !== false}
           startingJetons={startingJetonsPerPlayer}
+          members={view?.members}
+          invitations={view?.invitations}
           onCommand={onCommand ?? (async () => undefined)}
           notice={notice}
         />
-        <button className="text-link" type="button" onClick={() => setInviteOpen(false)}>
-          Close
-        </button>
-      </SheetOverlay>
+      </main>
       <footer className="dock">
         <button
           className="gold-button"

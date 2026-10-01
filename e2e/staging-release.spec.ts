@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { expectPokerPhase, expectPlayerPayoutIdle, noHorizontalOverflow, openTableMenu } from "./helpers";
+import { expectPokerPhase, expectPlayerPayoutIdle, noHorizontalOverflow, openTableMenu, addLocalPlayerFromMenu } from "./helpers";
 import { currentMailId, requestStagingMagicLink, waitForStagingMagicLink } from "./staging-login";
 
 const origin = process.env.PLAYWRIGHT_BASE_URL?.replace(/\/$/, "") ?? "";
@@ -119,14 +119,7 @@ test("staging release: three roles, Blackjack, Poker, save and resume", async ({
   await page.screenshot({ path: join(prod, "03-phase0-waiting-390x844.png") });
   await noHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
-  await expect(page.getByLabel("Player name")).toBeVisible();
-  await page.screenshot({ path: join(out, "app-staging-invite-390x844.png") });
-  await page.getByRole("button", { name: "Add local player" }).click();
-  await expect(page.getByRole("dialog").getByText(/Enter a player name/i)).toBeVisible();
-  await page.getByLabel("Player name").fill("Drew");
-  await page.getByLabel("Starting jetons").fill("100");
-  await page.getByRole("button", { name: "Add local player" }).click();
+  await addLocalPlayerFromMenu(page, "Drew");
   await expect(page.getByText("Drew").first()).toBeVisible({ timeout: 15_000 });
   const drew = (await tableSnapshot(page)).members.find((member) => member.name === "Drew");
   expect(drew?.available?.label).toBe("100");

@@ -37,7 +37,7 @@ export function ClassicPhaseZero({
   game: "BLACKJACK" | "POKER";
 }) {
   const tableName = setup?.tableName ?? waiting?.tableName ?? poker?.tableName ?? "";
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState<"menu" | "rename" | "close" | "seats" | "dealer" | null>(null);
   const [tableNameState, setTableNameState] = useState(tableName);
   const [dealerId, setDealerId] = useState(
@@ -49,7 +49,7 @@ export function ClassicPhaseZero({
   const rows = (setup?.members ?? waiting?.members ?? members).filter((member) => !member.isBankDealer);
   const invited = (setup?.invitations ?? []).filter((invite) => invite.pending);
   const startHand = poker ? pokerControls(poker).find((control) => control.id === "startHand") : null;
-  const canOpenBetting = game === "BLACKJACK" && Boolean(setup?.canStartBetting) && isBank;
+  const canOpenBetting = game === "BLACKJACK" && Boolean(setup?.canStartBetting && setup.setupCompleted) && isBank;
   const startBlocked =
     game === "POKER"
       ? startHand && !startHand.enabled
@@ -57,7 +57,8 @@ export function ClassicPhaseZero({
         : null
       : setup?.startBlockedReason;
   const waitingForPlayers = game === "POKER" ? !startHand?.enabled : !canOpenBetting;
-  const joinUrl = setup?.joinUrl ?? null;
+  const joinUrl = setup?.verifiedJoinUrl ?? setup?.joinUrl ?? null;
+  const guestJoinUrl = setup?.guestJoinUrl ?? null;
   const emailReady = setup?.emailConfigured !== false;
   const starting = setup?.startingJetonsPerPlayer.label ?? waiting?.startingJetons?.label ?? "100";
   const viewer = waiting?.available ?? members.find((member) => member.userId === viewerId)?.available;
@@ -95,7 +96,12 @@ export function ClassicPhaseZero({
           </PhaseActionDock>
         ) : null}
       </PhaseBar>
-      <main className="felt setup-felt phase-zero-felt" data-join-url={joinUrl ?? undefined}>
+      <main
+        className="felt setup-felt phase-zero-felt"
+        data-join-url={joinUrl ?? undefined}
+        data-guest-join-url={guestJoinUrl ?? undefined}
+        data-verified-join-url={joinUrl ?? undefined}
+      >
         <div className="table-surface">
           <TableIdentity name={tableName} />
           <div className="muted phase-zero-meta">
@@ -140,17 +146,31 @@ export function ClassicPhaseZero({
               </>
             )}
           </div>
+          {canManage ? (
+            <ClassicInvitePanel
+              guestJoinUrl={guestJoinUrl}
+              verifiedJoinUrl={joinUrl}
+              emailConfigured={emailReady}
+              startingJetons={starting}
+              members={setup?.members ?? members}
+              invitations={setup?.invitations}
+              onCommand={onCommand}
+              notice={notice}
+            />
+          ) : null}
         </div>
       </main>
-      <SheetOverlay open={inviteOpen} onClose={() => setInviteOpen(false)}>
+      <SheetOverlay open={localOpen} onClose={() => setLocalOpen(false)}>
         <ClassicInvitePanel
-          joinUrl={joinUrl}
-          emailConfigured={emailReady}
+          guestJoinUrl={null}
+          verifiedJoinUrl={null}
+          emailConfigured={false}
           startingJetons={starting}
           onCommand={onCommand}
           notice={notice}
+          showLocalAdd
         />
-        <button className="text-link" type="button" onClick={() => setInviteOpen(false)}>
+        <button className="text-link" type="button" onClick={() => setLocalOpen(false)}>
           Close
         </button>
       </SheetOverlay>
@@ -168,6 +188,16 @@ export function ClassicPhaseZero({
             </button>
             <button className="panel-button" type="button" onClick={() => setMenuOpen("dealer")}>
               ASSIGN DEALER
+            </button>
+            <button
+              className="panel-button"
+              type="button"
+              onClick={() => {
+                setMenuOpen(null);
+                setLocalOpen(true);
+              }}
+            >
+              ADD LOCAL PLAYER
             </button>
             <div className="field-label">CARD ASSIST</div>
             <div className="setting-row">
@@ -269,15 +299,7 @@ export function ClassicPhaseZero({
         ) : null}
       </SheetOverlay>
       <footer className={`dock${canManage ? "" : " player-dock"}`}>
-        {canManage ? (
-          <div className="game-controls setup-dock" data-game-controls="true">
-            <div className="owner-controls">
-              <button className="panel-button" type="button" onClick={() => setInviteOpen(true)}>
-                Invite Player
-              </button>
-            </div>
-          </div>
-        ) : viewer ? (
+        {canManage ? null : viewer ? (
           <PlayerWallet available={viewer} trayEnabled={false} dropSelector="[data-drop-box]" />
         ) : null}
       </footer>

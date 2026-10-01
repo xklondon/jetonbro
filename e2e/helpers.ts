@@ -39,6 +39,7 @@ export async function createPokerTable(
   await openSetupSheet(page);
   await page.getByLabel("Table name").fill(name);
   await page.getByLabel("Table name").blur();
+  await expect(page.getByLabel("Table name")).toHaveValue(name);
   await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
   await page.getByLabel("Starting jetons per player").blur();
   await page.getByRole("button", { name: /Texas Hold/i }).click();
@@ -53,17 +54,12 @@ export async function createPokerTable(
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
 }
 
-export async function setupJoinUrl(page: Page) {
-  const fromMain = page.locator("main[data-join-url]");
-  if (await fromMain.count()) {
-    const url = await fromMain.getAttribute("data-join-url");
-    if (url) return url;
-  }
-  await page.getByRole("button", { name: "Invite Player" }).click();
-  await expect(page.locator(".sheet.open .qr-panel[data-join-url]")).toBeVisible();
-  const url = await page.locator(".sheet.open .qr-panel").getAttribute("data-join-url");
-  await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".sheet.open")).toHaveCount(0);
+export async function setupJoinUrl(page: Page, kind: "guest" | "verified" = "verified") {
+  const attr = kind === "guest" ? "data-guest-join-url" : "data-verified-join-url";
+  const el = page.locator(`[${attr}]`).first();
+  await expect(el).toBeVisible({ timeout: 20_000 });
+  const url = await el.getAttribute(attr);
+  if (!url) throw new Error(`${kind} join URL missing`);
   return url;
 }
 
@@ -75,6 +71,7 @@ export async function createBlackjackTable(
   await openSetupSheet(page);
   await page.getByLabel("Table name").fill(name);
   await page.getByLabel("Table name").blur();
+  await expect(page.getByLabel("Table name")).toHaveValue(name);
   await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
   await page.getByLabel("Starting jetons per player").blur();
   await page.getByRole("button", { name: "START TABLE" }).click();
@@ -84,7 +81,8 @@ export async function createBlackjackTable(
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Invite Player" }).first()).toBeVisible();
+  await expect(page.getByText("JOIN WITHOUT EMAIL")).toBeVisible();
+  await expect(page.getByText("VERIFIED PLAYER")).toBeVisible();
   await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   if (options?.email) {
@@ -122,12 +120,21 @@ export async function scheduleDealFromMenu(page: Page) {
   await page.locator(".sheet.open").getByRole("button", { name: "DEAL IN 7 SECONDS" }).click();
 }
 
-export async function invitePlayerFromLobby(page: Page, email: string) {
-  await page.getByRole("button", { name: "Invite Player" }).first().click();
-  await page.getByLabel("Player email").fill(email);
-  await page.getByRole("button", { name: "Invite by Email" }).click();
-  await expect(page.getByText("Invited")).toBeVisible();
+export async function addLocalPlayerFromMenu(page: Page, name: string) {
+  await openTableMenu(page);
+  await page.getByRole("button", { name: "ADD LOCAL PLAYER" }).click();
+  await page.getByLabel("Player name").fill(name);
+  await page.getByRole("button", { name: "Add Local Player" }).click();
+  await expect(page.getByText(name).first()).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
+}
+
+export async function invitePlayerFromLobby(page: Page, email: string) {
+  await expect(page.getByLabel("Player email")).toBeVisible();
+  await page.getByLabel("Player email").fill(email);
+  await page.getByRole("button", { name: "SEND INVITE" }).click();
+  await expect(page.getByText("Pending")).toBeVisible();
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {

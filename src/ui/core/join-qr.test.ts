@@ -23,6 +23,8 @@ test("Table Setup keeps the shared join URL for QR and copy link", () => {
     members: [],
     invitations: [],
     joinUrl,
+    guestJoinUrl: "http://127.0.0.1:3000/join/guest/guest-token",
+    verifiedJoinUrl: joinUrl,
     minBet: null,
     maxBet: null,
     blackjackPayout: "THREE_TWO",
@@ -39,7 +41,7 @@ test("Table Setup keeps the shared join URL for QR and copy link", () => {
   };
   const html = renderToStaticMarkup(createElement(ClassicSetupTable, { view, onCommand: () => undefined }));
   expect(html).toContain(`data-join-url="${joinUrl}"`);
-  expect(html).toContain("Invite Player");
+  expect(html).toContain("JOIN WITHOUT EMAIL");
   expect(html).toContain("OPEN BETTING");
   expect(isBlockedOrigin(joinUrl, "test")).toBe(false);
 });

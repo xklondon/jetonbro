@@ -1,4 +1,4 @@
-import { auth } from "@/application/auth";
+import { getActor, assertActorCanAccessTable } from "@/application/actor";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import { TableSession } from "@/ui/core/TableSession";
 import { redirect } from "next/navigation";
@@ -8,11 +8,12 @@ export default async function TablePage({
 }: {
   params: Promise<{ tableId: string }>;
 }) {
-  const session = await auth();
+  const actor = await getActor();
   const { tableId } = await params;
-  if (!session?.user?.id) {
+  if (!actor) {
     redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/tables/${tableId}`)}`);
   }
-  const snapshot = await loadSnapshot(tableId, session.user.id);
+  assertActorCanAccessTable(actor, tableId);
+  const snapshot = await loadSnapshot(tableId, actor.id);
   return <TableSession initial={snapshot} />;
 }

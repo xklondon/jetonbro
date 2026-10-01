@@ -189,7 +189,7 @@
 }
 
 .classic-skin main.felt.create-setup {
-  padding-bottom: 18px;
+  padding-bottom: 96px;
   gap: 8px;
 }
 
@@ -257,7 +257,9 @@
 .classic-skin .create-setup input,
 .classic-skin .create-setup select,
 .classic-skin .phase-zero-dealer select,
-.classic-skin .invite-panel input {
+.classic-skin .invite-panel input,
+.classic-skin .invite-card input,
+.classic-skin .invite-card select {
   width: 100%;
   min-width: 0;
   border: 1px solid rgba(223, 189, 105, 0.28);
@@ -287,6 +289,47 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.classic-skin .invite-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.classic-skin .invite-card {
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(7, 28, 24, 0.55);
+}
+
+.classic-skin .invite-card h3 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+
+.classic-skin .invite-card .qr-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.classic-skin .invite-card .qr-panel img {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  background: #f4ead5;
+}
+
+.classic-skin .invite-card .gold-button,
+.classic-skin .invite-card .panel-button {
+  min-height: 44px;
 }
 
 .classic-skin .home-table-card {
@@ -369,6 +412,12 @@
   aspect-ratio: 1.35;
   min-height: 58px;
   padding: 6px 4px;
+}
+
+.classic-skin .create-setup .game-pick.compact .game-card {
+  aspect-ratio: auto;
+  min-height: 52px;
+  padding: 4px 2px;
 }
 
 .classic-skin .field-label {
