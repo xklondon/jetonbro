@@ -97,7 +97,7 @@ async function threeSeated(page: Page, context: BrowserContext, browser: Browser
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
 
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
   const ownerId = setupSnap.setup?.members?.find((member) => member.isOwner)?.userId ?? setupSnap.viewerId;
   await page.request.post(`/api/tables/${tableId}/commands`, {
     data: { command: "giveJetons", userId: ownerId, amount: "100", idempotencyKey: crypto.randomUUID() },
@@ -112,10 +112,13 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
 }) => {
   test.setTimeout(180_000);
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
+  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
   await openTableMenu(page);
-  await expect(page.locator(".sheet.open").getByText("OPEN BANK")).toBeVisible();
-  await expect(page.locator(".sheet.open").getByText("LIMITED BANK")).toBeVisible();
+  await expect(page.locator(".sheet.open .sheet-panel")).toContainText("Table");
+  await expect(page.locator(".sheet.open .sheet-panel")).toContainText("OPEN BANK");
+  await expect(page.locator(".sheet.open .sheet-panel")).toContainText("LIMITED BANK");
   await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();

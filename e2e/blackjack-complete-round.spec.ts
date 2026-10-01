@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
+import { createBlackjackTable, expectPlayerPayoutIdle, openAs, uniqueEmail } from "./helpers";
 
 const shots = join(process.cwd(), "test-results", "prompt2");
 
@@ -23,10 +23,10 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await page.setViewportSize({ width: 390, height: 844 });
   await openAs(context, page, ownerEmail, "Alex");
   await createBlackjackTable(page, "Round table", { starting: "100" });
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator("[data-phase-action]")).toBeVisible();
-  const startBox = await page.getByRole("button", { name: "START BLACKJACK" }).boundingBox();
+  const startBox = await page.getByRole("button", { name: "OPEN BETTING" }).boundingBox();
   expect(startBox).toBeTruthy();
   expect(startBox!.y).toBeGreaterThan(0);
   expect(startBox!.y + startBox!.height).toBeLessThan(844);
@@ -40,14 +40,14 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.setViewportSize({ width: 390, height: 844 });
   await openAs(playerContext, playerPage, playerEmail, "Sam");
   await playerPage.goto(joinPath);
-  await expect(playerPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(playerPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
   await expect(playerPage.getByText("100").first()).toBeVisible();
-  await expect(playerPage.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
-  await expect(playerPage.getByRole("button", { name: "ADD PLAYER" })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "Invite Player" })).toHaveCount(0);
   await playerPage.screenshot({ path: join(shots, "setup-player-390x844.png") });
 
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByRole("button", { name: "DEAL CARDS", exact: true })).toHaveCount(0);
 
@@ -84,7 +84,8 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.reload();
   await expect(playerPage.getByRole("button", { name: "DOUBLE" })).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "SPLIT" })).toBeVisible();
-  await expect(playerPage.getByRole("button", { name: "INSURANCE" })).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "PLACE INSURANCE" })).toHaveCount(0);
   await expect(playerPage.locator("[data-player-wallet]")).toBeVisible();
   await playerPage.locator(`[data-box-id="${box1.id}"]`).click();
   await playerPage.getByRole("button", { name: "DOUBLE" }).click();
@@ -99,8 +100,10 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
   await page.screenshot({ path: join(shots, "insurance-dealer-390x844.png") });
   await playerPage.reload();
-  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE");
-  await expect(playerPage.getByText("Up to half the box stake")).toBeVisible();
+  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE OPEN");
+  await expect(playerPage.getByText("Max 50% of box stake")).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "PLACE INSURANCE" })).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
   const box1AtIns = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();
   expect(Math.abs((box1AtIns!.x) - box1AtBet!.x)).toBeLessThan(8);
   expect(Math.abs((box1AtIns!.y) - box1AtBet!.y)).toBeLessThan(8);
@@ -122,6 +125,10 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.reload();
   await expect.poll(async () => (await snapshot(playerPage)).player?.available.label).toBe("135");
   await expect(playerPage.locator("[data-player-wallet]")).toBeVisible();
+  await expect(playerPage.locator("[data-payout-main=true]").first()).toBeVisible();
+  await expect(playerPage.locator(`[data-box-id="${box1.id}"] [data-payout-insurance=true]`)).toBeVisible();
+  await expect(playerPage.locator(`[data-box-id="${box2.id}"] [data-payout-insurance]`)).toHaveCount(0);
+  await expectPlayerPayoutIdle(playerPage);
   const box1AtPay = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();
   expect(Math.abs((box1AtPay!.x) - box1AtBet!.x)).toBeLessThan(8);
   expect(Math.abs((box1AtPay!.y) - box1AtBet!.y)).toBeLessThan(8);

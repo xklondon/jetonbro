@@ -189,6 +189,7 @@ async function dispatch(
         smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
         bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
         seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
+        hostName: p.hostName ? String(p.hostName) : undefined,
       });
     case "abandonDraft":
       return abandonDraft(ctx);
@@ -233,6 +234,7 @@ async function dispatch(
         cardAssist: p.cardAssist ? String(p.cardAssist) : undefined,
         bankFundingMode: p.bankFundingMode ? String(p.bankFundingMode) : undefined,
         startingBank: p.startingBank ? String(p.startingBank) : undefined,
+        startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
       });
     case "addCard":
       return mutateCards({

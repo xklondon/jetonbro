@@ -4,20 +4,54 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Valid boards
 
-Store compressed WebP copies under `docs/design-reference/` when the source file can be copied safely. Do not store the blank/corrupt image. Do not regenerate mockups.
+Store copies under `docs/design-reference/` when the source file can be copied safely. Do not store the blank/corrupt image. Do not regenerate mockups.
 
-| Source filename | Role | Prompt |
-|---|---|---|
-| `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 2 |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup | 2 (structure) / later polish |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 2 |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases: Setup, Pre-flop, streets, Showdown, Hand Complete, game-change | 3 |
+| Source filename | Role | Prompt | Stored file |
+|---|---|---|---|
+| `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 7 | `blackjack-player-phases.jpg` (also `.webp`) |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup: Saved Tables, Create Table, Table Setup, Game Selection | 6–7 | `table-owner-setup.jpg` |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 7 | `blackjack-dealer-owner-phases.jpg` |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (4).png` | Poker Player phases | 7 | `poker-player-phases.jpg` |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases | 7 | `poker-dealer-owner-phases.jpg` |
 
 Ignore:
 
 - `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1).png` — blank/corrupt, not a reference.
 
-If a board file cannot be copied into this repository, keep this filename table as the authority and implement from the attached conversation images.
+FAIL evidence (not design references):
+
+- `docs/design-reference/fail-home-empty.png`
+- `docs/design-reference/fail-create-table-incomplete.png`
+- `docs/design-reference/fail-phase-zero-placeholder.png`
+
+## Home / Create Table / Phase 0 (Prompt 6)
+
+Dominant board: Table Owner and Setup (`12_50_27 PM (2)` / `table-owner-setup.jpg`).
+
+Canonical journey:
+
+```text
+HOME / TABLE INDEX
+    → CREATE TABLE (complete setup on this screen, including invitations)
+    → START TABLE
+    → PHASE 0 waiting table
+    → OPEN BETTING / START HAND when legal
+    → existing Blackjack or Poker phase screens
+```
+
+There is no second configuration screen after `START TABLE`. There is no later game-selection journey. Draft persistence for QR/email is internal; the owner stays on Create Table until `START TABLE`.
+
+### Saved Tables / Home
+
+Compact JetonBro header. `CREATE TABLE`. Compact saved-table cards: name, selected game, phase/status, player count, Owner/Dealer, `RESUME`, owner overflow. Owner-only `DELETE` (empty draft) or `CLOSE TABLE` (archive). No duplicate Resume label, no giant cards, no raw browser controls, no History. Join-by-code is not a second primary Home action.
+
+### Create Table
+
+One full setup screen: table name, Owner identity, starting jetons, Blackjack/Poker game cards (selected obvious), Open/Limited Bank with the existing Limited reserve control, Dealer (Owner default), compact Player rows, Invite (email / QR / copy link), Add Local Player, primary `START TABLE`.
+
+### Phase 0
+
+The created table waiting for Players — not the setup form. Compact Player rows from the Table Setup board. No giant empty placeholder. `WAITING FOR PLAYERS` until the engine’s start command is legal. Blackjack `OPEN BETTING`. Poker `START HAND` follows existing `pokerControls()` / command legality. Invite/QR/email/copy/local-add remain available to the Owner.
 
 ## Behaviour versus presentation
 

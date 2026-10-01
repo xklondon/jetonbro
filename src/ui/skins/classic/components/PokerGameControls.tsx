@@ -7,11 +7,23 @@ import {
   pokerComposeSeed,
   pokerTrayEnabled,
   visiblePokerLegalActions,
+  type PokerActorLayout,
   type PokerComposeKind,
 } from "@/application/queries/poker-controls";
-import type { PokerTableView } from "@/application/queries/views";
+import type { PokerLegalActionView, PokerTableView } from "@/application/queries/views";
 import { addChipToAmount } from "@/ui/core/poker-chip-action";
 import { PlayerWallet } from "./PlayerWallet";
+
+function boardRow(layout: PokerActorLayout): PokerLegalActionView[] {
+  const actions = [layout.primary, ...layout.secondary].filter((action): action is PokerLegalActionView => Boolean(action));
+  const pick = (type: string) => actions.find((action) => action.type === type);
+  if (layout.owed) {
+    return [pick("FOLD"), pick("CALL"), pick("RAISE"), pick("ALL_IN")].filter((action): action is PokerLegalActionView => Boolean(action));
+  }
+  return [pick("FOLD"), pick("CHECK"), pick("BET") ?? pick("RAISE"), pick("ALL_IN")].filter(
+    (action): action is PokerLegalActionView => Boolean(action),
+  );
+}
 
 export function PokerGameControls({
   view,
@@ -67,41 +79,30 @@ export function PokerGameControls({
         <div className="game-controls" data-game-controls="true">
           {notice ? <div className="error">{notice}</div> : null}
           {layout.primary || layout.secondary.length > 0 ? (
-            <div className="actor-actions" data-actor-controls="true" data-compose={compose ?? "closed"}>
-              {layout.primary ? (
+            <div className="actor-actions board-actions" data-actor-controls="true" data-compose={compose ?? "closed"}>
+              {boardRow(layout).map((action) => (
                 <button
+                  key={action.type}
                   type="button"
-                  className="actor-primary gold-button"
+                  className={action.type === "CALL" || action.type === "CHECK" ? "gold-button" : "panel-button"}
                   disabled={busy}
-                  onClick={() => send(layout.primary!.type)}
-                >
-                  {layout.primary.label}
-                </button>
-              ) : null}
-              <div className="actor-secondary">
-                {layout.secondary.map((action) => (
-                  <button
-                    key={action.type}
-                    type="button"
-                    disabled={busy}
-                    aria-pressed={compose === action.type}
-                    onClick={() => {
-                      if (action.type === "BET" || action.type === "RAISE") {
-                        if (compose === action.type) {
-                          setCompose(null);
-                          setStaged("");
-                          return;
-                        }
-                        openCompose(action.type);
+                  aria-pressed={compose === action.type}
+                  onClick={() => {
+                    if (action.type === "BET" || action.type === "RAISE") {
+                      if (compose === action.type) {
+                        setCompose(null);
+                        setStaged("");
                         return;
                       }
-                      send(action.type);
-                    }}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
+                      openCompose(action.type);
+                      return;
+                    }
+                    send(action.type);
+                  }}
+                >
+                  {action.label}
+                </button>
+              ))}
               {compose ? (
                 <div className="actor-compose" data-raise-composer="true">
                   <small data-raise-convention={pokerComposeBounds(view, compose).convention}>

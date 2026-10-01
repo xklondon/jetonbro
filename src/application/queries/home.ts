@@ -16,7 +16,7 @@ export type HomePlayerLine = {
 };
 
 export type HomeClosePreview = {
-  kind: "delete-draft" | "archive";
+  kind: "delete-draft" | "archive" | "delete-archived";
   confirmation: string;
   players: { name: string; available: string; locked: string }[];
 };
@@ -40,6 +40,7 @@ export type HomeTableCard = {
   canSave: boolean;
   canClose: boolean;
   canDeleteDraft: boolean;
+  canDeleteArchived: boolean;
   closeBlockedReason: string | null;
   closePreview: HomeClosePreview | null;
 };
@@ -75,7 +76,11 @@ function money(millis: bigint): HomeMoney {
 
 export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
   const memberships = await prisma.tableMember.findMany({
-    where: { userId, leftAt: null, table: { status: { not: "ARCHIVED" } } },
+    where: {
+      userId,
+      leftAt: null,
+      OR: [{ table: { status: { not: "ARCHIVED" } } }, { table: { status: "ARCHIVED", ownerId: userId } }],
+    },
     include: {
       table: {
         include: {
@@ -120,6 +125,10 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         pausedAt: table.pausedAt,
       });
       const pokerBlocked = table.game === "POKER" && (anyLocked || pokerHandIsOpen(table.currentPokerHand?.phase));
+      if (table.setupCompletedAt === null && table.status !== "ARCHIVED") {
+        return null;
+      }
+      const archived = table.status === "ARCHIVED";
       const emptyDraft =
         table.currentPhase === "TABLE_SETUP" &&
         table.game !== "POKER" &&
@@ -147,10 +156,12 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
       });
       const closePreview: HomeClosePreview | null = isOwner
         ? {
-            kind: emptyDraft ? "delete-draft" : "archive",
+            kind: emptyDraft ? "delete-draft" : archived ? "delete-archived" : "archive",
             confirmation: emptyDraft
               ? "Permanently delete this unused draft? Invitations and join codes will be removed. There are no Player balances to save."
-              : "Save each Player’s remaining jetons to their personal ledger, archive this table, and remove it from Open Tables? Round and ledger history is kept.",
+              : archived
+                ? `Remove ${table.name} from Saved Tables? Ledger and round history are kept.`
+                : "Save each Player’s remaining jetons to their personal ledger, archive this table, and remove it from Open Tables? Round and ledger history is kept.",
             players: playerMembers.map((member) => ({
               name: displayName(member.user),
               available: formatJetons(member.availableMillis),
@@ -165,7 +176,9 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         game: active.gameLabel,
         phase: active.phase,
         headline:
-          active.phase === "TABLE_SETUP" || active.phase === "POKER_SETUP"
+          archived
+            ? "CLOSED"
+            : active.phase === "TABLE_SETUP" || active.phase === "POKER_SETUP"
             ? "SETUP"
             : table.pausedAt
               ? `${active.gameLabel} · SAVED`
@@ -177,12 +190,13 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         role: roleLabel(isBank, isOwner),
         updatedAt: table.updatedAt.toISOString(),
         saved: table.pausedAt !== null,
-        closed: false,
+        closed: archived,
         isOwner,
         players,
-        canSave: isOwner && !emptyDraft && !pokerBlocked,
-        canClose,
-        canDeleteDraft: isOwner && emptyDraft,
+        canSave: isOwner && !emptyDraft && !pokerBlocked && !archived,
+        canClose: canClose && !archived,
+        canDeleteDraft: isOwner && emptyDraft && !archived,
+        canDeleteArchived: isOwner && archived,
         closeBlockedReason: isOwner
           ? anyLocked || pokerBlocked
             ? table.game === "POKER"
@@ -198,7 +212,8 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
           : null,
         closePreview,
       };
-    });
+    })
+    .filter((card): card is HomeTableCard => card !== null);
 
   return cards.sort((a, b) => {
     const rank = (PHASE_RANK[a.phase] ?? 9) - (PHASE_RANK[b.phase] ?? 9);

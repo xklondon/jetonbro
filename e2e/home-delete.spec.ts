@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { createBlackjackTable, openAs, uniqueEmail } from "./helpers";
 
 test("owner can permanently delete an empty draft from home", async ({ page, context }) => {
@@ -13,9 +15,9 @@ test("owner can permanently delete an empty draft from home", async ({ page, con
   await expect(page.getByRole("button", { name: "RESUME" })).toBeVisible();
   await page.getByRole("button", { name: "Table menu" }).click();
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "CLOSE TABLE & SAVE BALANCES" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "CLOSE TABLE" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CLOSE & REMOVE TABLE" })).toHaveCount(0);
-  await page.getByRole("button", { name: "DELETE TABLE" }).click();
+  await page.getByRole("button", { name: "DELETE" }).click();
   await expect(page.getByText("Permanent draft deletion.")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.locator("[data-table-id]")).toHaveCount(0);
@@ -38,7 +40,7 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   await page.goto("/");
   await expect(page.getByText("Open salon")).toBeVisible();
@@ -55,7 +57,7 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   await samPage.goto("/");
   await expect(samPage.getByText("2 players")).toBeVisible();
@@ -65,10 +67,25 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   await page.getByRole("button", { name: "Table menu" }).click();
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: "CLOSE & REMOVE TABLE" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "DELETE TABLE" })).toHaveCount(0);
-  await page.getByRole("button", { name: "CLOSE TABLE & SAVE BALANCES" }).click();
+  await expect(page.getByRole("button", { name: "DELETE" })).toHaveCount(0);
+  await page.getByRole("button", { name: "CLOSE TABLE" }).click();
   await expect(page.getByText("Historical archival.")).toBeVisible();
   await expect(page.getByText("Saving 100")).toHaveCount(2);
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByText("Closed · balances saved")).toBeVisible();
+  await expect(page.getByText("Open salon")).toBeVisible();
+  await expect(page.getByRole("button", { name: "RESUME" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await page.getByRole("button", { name: "DELETE" }).click();
+  await expect(page.getByText("Open salon", { exact: true })).toBeVisible();
+  await expect(page.getByText("Closed table removal. Ledger and rounds are kept.")).toBeVisible();
+  await mkdir(join(process.cwd(), "docs", "screenshots", "approval"), { recursive: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: join(process.cwd(), "docs", "screenshots", "approval", "05-closed-delete-390x844.png") });
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByText("Open salon")).toBeVisible();
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await page.getByRole("button", { name: "DELETE" }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText("Open salon")).toHaveCount(0);
 
@@ -93,8 +110,8 @@ test("locked bets block close and remove from home", async ({ page, context, bro
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await samPage.reload();
   await samPage.evaluate(() => document.querySelector("nextjs-portal")?.remove());
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click({ force: true });
@@ -102,7 +119,7 @@ test("locked bets block close and remove from home", async ({ page, context, bro
   await page.goto("/");
   await page.getByRole("button", { name: "Table menu" }).click();
   await expect(page.getByRole("button", { name: "CLOSE & REMOVE TABLE" })).toHaveCount(0);
-  await page.getByRole("button", { name: "CLOSE TABLE & SAVE BALANCES" }).click();
+  await page.getByRole("button", { name: "CLOSE TABLE" }).click();
   await expect(page.getByText(/locked bets or Insurance/i)).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm" })).toBeDisabled();
   await page.getByRole("button", { name: "Cancel" }).click();

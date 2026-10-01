@@ -25,11 +25,11 @@ test("real Player and Bank phases with Insurance", async ({ page, context, brows
   const alexPage = await alexContext.newPage();
   await openAs(alexContext, alexPage, alexEmail, "Alex");
   await alexPage.goto(invitePath);
-  await expect(alexPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(alexPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   await page.reload();
   await expect(page.locator(".member-row strong").filter({ hasText: "Alex" })).toBeVisible({ timeout: 15000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.locator("[data-table-name]").first()).toHaveText("Acceptance table");

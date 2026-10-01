@@ -24,22 +24,24 @@ async function twoSeatTable(
       await cancel.click();
     }
   }
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await page.getByLabel("Player email").fill(playerEmail);
-  await page.getByRole("button", { name: "Invite by email" }).click();
+  await page.getByRole("button", { name: "Invite by Email" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };
   const invitePath = new URL(mail.messages[0]!.url!).pathname;
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
   const playerContext = await browser.newContext();
   const playerPage = await playerContext.newPage();
   await playerPage.setViewportSize({ width: 390, height: 844 });
   await openAs(playerContext, playerPage, playerEmail, "Sam");
   await playerPage.goto(invitePath);
-  await expect(playerPage.getByText(/Waiting for the Bank/i)).toBeVisible();
-  await expect(page.locator(".member-row").filter({ hasText: /Joined|Ready/ })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(playerPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   if (options?.limited) {
     await openTableMenu(page);
@@ -91,7 +93,7 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   await openAs(context, page, ownerEmail, "Alex");
   await page.setViewportSize({ width: 390, height: 844 });
   await createBlackjackTable(page, "Auto table", { starting: "100" });
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await page.getByRole("button", { name: "Menu" }).click();
   await expect(page.getByRole("button", { name: "AUTO", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "AUTO", exact: true }).click();
@@ -99,10 +101,11 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   if (await cancel.isVisible()) {
     await cancel.click();
   }
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await page.getByLabel("Player email").fill(samEmail);
-  await page.getByRole("button", { name: "Invite by email" }).click();
+  await page.getByRole("button", { name: "Invite by Email" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
+  await page.getByRole("button", { name: "Close" }).click();
   const samMail = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(samEmail)}`);
   const samInvite = new URL(((await samMail.json()) as { messages: { url?: string }[] }).messages[0]!.url!).pathname;
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
@@ -116,10 +119,10 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(new URL(data.setup!.joinUrl!).pathname);
-  await expect(page.getByText("Sam")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("Jo")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Jo").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await samPage.reload();
   await joPage.reload();
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click();

@@ -30,14 +30,17 @@ function seatStatus(seat: PokerSeatView, view: PokerTableView): string {
 function PokerSeatRow({ seat, index, view }: { seat: PokerSeatView; index: number; view: PokerTableView }) {
   const live = view.phase !== "POKER_SETUP";
   const status = seatStatus(seat, view);
+  const isYou = seat.userId === view.viewerId;
   return (
     <section
-      className={`dealer-player poker-seat seat-plaque${seat.isActor && view.phase !== "HAND_COMPLETE" ? " is-actor" : ""}${seat.isDealer ? " is-dealer" : ""}${seat.status === "FOLDED" ? " is-folded" : ""}${seat.status === "ALL_IN" ? " is-allin" : ""}`}
+      className={`dealer-player poker-seat seat-plaque${seat.isActor && view.phase !== "HAND_COMPLETE" ? " is-actor" : ""}${seat.isDealer ? " is-dealer" : ""}${seat.status === "FOLDED" ? " is-folded" : ""}${seat.status === "ALL_IN" ? " is-allin" : ""}${isYou ? " is-you" : ""}`}
       data-player-id={seat.userId}
       data-actor={seat.isActor && view.phase !== "HAND_COMPLETE" ? "true" : "false"}
       data-seat-status={seat.status}
       data-seat-index={index + 1}
       data-dealer={seat.isDealer ? "true" : "false"}
+      data-viewer-seat={isYou ? "true" : undefined}
+      data-seat-available={seat.available.label}
     >
       <div className="poker-seat-grid">
         <div className="poker-seat-player">
@@ -52,7 +55,7 @@ function PokerSeatRow({ seat, index, view }: { seat: PokerSeatView; index: numbe
               {seat.isBigBlind ? <span className="blind-badge">BB</span> : null}
             </div>
           ) : null}
-          <strong>{seat.name}</strong>
+          <strong className="truncate">{isYou ? `You · ${seat.name}` : seat.name}</strong>
           {status ? <div className="poker-seat-status">{status}</div> : null}
         </div>
         <div className="poker-seat-street" data-street-commit="true">
@@ -86,7 +89,23 @@ export function PokerFelt({ view }: { view: PokerTableView }) {
             </span>
           </div>
         ) : (
-          <div className="poker-pot" data-drop-pot="pot" data-pot-paid={view.potPaid ? "true" : "false"}>
+          <div className="poker-pot poker-pot-bar" data-drop-pot="pot" data-pot-paid={view.potPaid ? "true" : "false"}>
+            <div className="poker-pot-cell">
+              <small>{view.potPaid ? "POT PAID" : "POT"}</small>
+              {view.potPaid ? null : <strong>{view.pot.label}</strong>}
+            </div>
+            {view.potPaid || view.phase === "HAND_COMPLETE" || view.phase === "SHOWDOWN" ? (
+              <div className="poker-pot-cell">
+                <small>&nbsp;</small>
+                <strong>&nbsp;</strong>
+              </div>
+            ) : (
+              <div className="poker-pot-cell">
+                <small>TO CALL</small>
+                {owed ? <strong>{view.toCall.label}</strong> : <strong>&nbsp;</strong>}
+                {owed ? <span className="visually-hidden">TO CALL {view.toCall.label}</span> : null}
+              </div>
+            )}
             {!view.potPaid && view.pot.millis !== "0" ? (
               <span className="chip-pile compact poker-pot-chips">
                 {potChips.map((chip, index) => (
@@ -96,9 +115,6 @@ export function PokerFelt({ view }: { view: PokerTableView }) {
                 ))}
               </span>
             ) : null}
-            <small>{view.potPaid ? "POT PAID" : "POT"}</small>
-            {view.potPaid ? null : <strong>{view.pot.label}</strong>}
-            {owed ? <div className="poker-to-call">TO CALL {view.toCall.label}</div> : null}
             {sidePots ? (
               <ul className="poker-pot-list">
                 {view.pots.map((pot) => (

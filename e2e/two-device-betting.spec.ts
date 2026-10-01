@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { openAs, uniqueEmail } from "./helpers";
+import { invitePlayerFromLobby, openAs, uniqueEmail } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -17,11 +17,9 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await page.getByLabel("Table name").fill("Salon table");
   await page.getByLabel("Starting jetons per player").fill("100");
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
-  await page.getByLabel("Player email").fill(playerEmail);
-  await page.getByRole("button", { name: "Invite by email" }).click();
-  await expect(page.getByText("Invited")).toBeVisible();
+  await page.getByRole("button", { name: "START TABLE" }).click();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await invitePlayerFromLobby(page, playerEmail);
 
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };
@@ -33,15 +31,13 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await playerPage.setViewportSize({ width: 390, height: 844 });
   await openAs(playerContext, playerPage, playerEmail, "Sam");
   await playerPage.goto(invitePath);
-  await expect(playerPage.getByText(/Waiting for the Bank/i)).toBeVisible();
+  await expect(playerPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
   await expect(playerPage.getByText("100").first()).toBeVisible();
 
-  await expect(page.locator(".member-row").filter({ hasText: /Joined|Ready/ })).toBeVisible({
-    timeout: 15_000,
-  });
+  await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 15_000 });
   await page.screenshot({ path: join(out, "app-bank-lobby-invited-joined-390x844.png") });
 
-  await page.getByRole("button", { name: "START BLACKJACK" }).click();
+  await page.getByRole("button", { name: "OPEN BETTING" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
 
   await playerPage.reload();

@@ -310,6 +310,7 @@ export async function finalizeSetup(input: {
   smallBlind?: string;
   bigBlind?: string;
   seatOrder?: string[];
+  hostName?: string;
 }) {
   if (!input.name.trim()) {
     throw new DomainError("INVALID_TABLE_NAME", "A table name is required.");
@@ -340,8 +341,15 @@ export async function finalizeSetup(input: {
     );
     const newEmails = emails.filter((email) => !alreadyInvited.has(email));
     const createdInvites: { email: string; token: string }[] = [];
+    const hostName = input.hostName?.trim();
 
     await prisma.$transaction(async (tx) => {
+      if (hostName) {
+        const actor = await tx.user.findUnique({ where: { id: input.actorId } });
+        if (actor && !actor.name?.trim()) {
+          await tx.user.update({ where: { id: actor.id }, data: { name: hostName } });
+        }
+      }
       await tx.table.update({
         where: { id: table.id },
         data: {
@@ -668,7 +676,17 @@ export async function deleteTable(input: { actorId: string; tableId: string; ide
       throw new ForbiddenError("Only the table owner can do that.");
     }
     if (table.status === "ARCHIVED") {
-      return { ok: true, deleted: false, archived: true };
+      await prisma.$transaction(async (tx) => {
+        await tx.tableMember.updateMany({
+          where: { tableId: table.id, userId: input.actorId },
+          data: { leftAt: new Date() },
+        });
+        await tx.invitation.updateMany({
+          where: { tableId: table.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      });
+      return { ok: true, deleted: true, archived: true };
     }
     if (await isEmptyDraftTable(table.id)) {
       await prisma.$transaction(async (tx) => {
@@ -704,6 +722,7 @@ export async function updateTableSettings(input: {
   cardAssist?: string;
   bankFundingMode?: string;
   startingBank?: string;
+  startingJetonsPerPlayer?: string;
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "updateTableSettings", input, async () => {
     const wantsName = input.name !== undefined;
@@ -717,7 +736,8 @@ export async function updateTableSettings(input: {
       input.game !== undefined ||
       input.cardAssist !== undefined ||
       input.bankFundingMode !== undefined ||
-      input.startingBank !== undefined;
+      input.startingBank !== undefined ||
+      input.startingJetonsPerPlayer !== undefined;
     if (wantsName) {
       const table = await requireOwner(input.tableId, input.actorId);
       const name = input.name!.trim();
@@ -753,6 +773,9 @@ export async function updateTableSettings(input: {
             insuranceEnabled: input.insuranceEnabled,
             bankMayDistributeJetons: input.bankMayDistributeJetons,
             cardAssist: input.cardAssist ? parseCardAssist(input.cardAssist, table.cardAssist) : undefined,
+            startingJetonsPerPlayerMillis: input.startingJetonsPerPlayer
+              ? parseWholeJetons(input.startingJetonsPerPlayer)
+              : undefined,
           },
         });
         if (input.bankFundingMode || input.startingBank) {

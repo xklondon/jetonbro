@@ -117,7 +117,9 @@ describeDb("Batch 3 Poker acceptance gaps", () => {
     expect(snap.phase).toBe("POKER_SETUP");
     expect(snap.poker?.phase).toBe("POKER_SETUP");
     expect(snap.bank).toBeNull();
-    expect(snap.setup).toBeNull();
+    expect(snap.setup?.setupCompleted).toBe(true);
+    expect(snap.setup?.joinUrl).toContain("/join/");
+    expect(snap.setup?.gameId).toBe("POKER");
   });
 
   test("owner can reorder seats before the first hand and non-owners cannot", async () => {

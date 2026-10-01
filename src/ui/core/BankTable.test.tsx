@@ -113,6 +113,7 @@ test("Bank betting keeps deal controls at the top", () => {
   expect(html).toContain('data-phase-heading');
   expect(html).toContain("BETTING");
   expect(html).toContain("CLOSE BETTING");
+  expect(html).toContain("OPEN BETTING");
   expect(html).not.toContain("CURRENT PHASE:");
   expect(html).not.toContain("CLOSE BETTING closes Betting and starts Playing.");
   expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("CLOSE BETTING"));

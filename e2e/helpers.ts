@@ -25,8 +25,8 @@ export async function openSetupSheet(page: Page) {
   const create = page.getByRole("button", { name: "CREATE TABLE" });
   await expect(create).toBeVisible();
   await create.click();
-  await expect(page).toHaveURL(/\/tables\/new/);
-  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
+  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/, { timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByLabel("Table name")).toBeVisible();
   await expect(page.getByLabel("Starting jetons per player")).toBeVisible();
 }
@@ -36,9 +36,18 @@ export async function createPokerTable(
   name: string,
   options?: { starting?: string; smallBlind?: string; bigBlind?: string },
 ) {
-  await createBlackjackTable(page, name, { starting: options?.starting ?? "0" });
-  await page.getByRole("button", { name: "START POKER" }).click();
-  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
+  await openSetupSheet(page);
+  await page.getByLabel("Table name").fill(name);
+  await page.getByLabel("Table name").blur();
+  await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
+  await page.getByLabel("Starting jetons per player").blur();
+  await page.getByRole("button", { name: /Texas Hold/i }).click();
+  await expect(page.locator("[data-selected-game=POKER]")).toBeVisible();
+  if (options?.smallBlind) await page.getByLabel("Small blind").fill(options.smallBlind);
+  if (options?.bigBlind) await page.getByLabel("Big blind").fill(options.bigBlind);
+  await page.getByRole("button", { name: "START TABLE" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
+  await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
@@ -47,12 +56,14 @@ export async function createPokerTable(
 export async function setupJoinUrl(page: Page) {
   const fromMain = page.locator("main[data-join-url]");
   if (await fromMain.count()) {
-    return fromMain.getAttribute("data-join-url");
+    const url = await fromMain.getAttribute("data-join-url");
+    if (url) return url;
   }
-  await page.getByRole("button", { name: "QR" }).click();
-  await expect(page.locator(".sheet.open [data-join-url]")).toBeVisible();
-  const url = await page.locator(".sheet.open [data-join-url]").getAttribute("data-join-url");
+  await page.getByRole("button", { name: "Invite Player" }).click();
+  await expect(page.locator(".sheet.open .qr-panel[data-join-url]")).toBeVisible();
+  const url = await page.locator(".sheet.open .qr-panel").getAttribute("data-join-url");
   await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
   return url;
 }
 
@@ -63,14 +74,17 @@ export async function createBlackjackTable(
 ) {
   await openSetupSheet(page);
   await page.getByLabel("Table name").fill(name);
+  await page.getByLabel("Table name").blur();
   await page.getByLabel("Starting jetons per player").fill(options?.starting ?? "0");
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await page.getByLabel("Starting jetons per player").blur();
+  await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "START POKER" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "ADD PLAYER" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "QR" }).first()).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
+  await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Invite Player" }).first()).toBeVisible();
   await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   if (options?.email) {
@@ -79,15 +93,21 @@ export async function createBlackjackTable(
 }
 
 export async function openTableMenu(page: Page) {
-  if (await page.locator(".sheet.open").count()) return;
+  if (await page.locator(".sheet.open").count()) {
+    await closeTableMenu(page);
+  }
   await page.getByRole("button", { name: "Menu" }).click();
   await expect(page.locator(".sheet.open")).toBeVisible();
 }
 
 export async function closeTableMenu(page: Page) {
-  const cancel = page.locator(".sheet.open").getByRole("button", { name: "Cancel" });
-  if (await cancel.count()) {
-    await cancel.click();
+  const sheet = page.locator(".sheet.open");
+  if (!(await sheet.count())) return;
+  const dismiss = sheet.getByRole("button", { name: /^(Cancel|Close)$/ });
+  if (await dismiss.count()) {
+    await dismiss.last().click();
+  } else {
+    await page.keyboard.press("Escape");
   }
   await expect(page.locator(".sheet.open")).toHaveCount(0);
 }
@@ -103,10 +123,11 @@ export async function scheduleDealFromMenu(page: Page) {
 }
 
 export async function invitePlayerFromLobby(page: Page, email: string) {
-  await page.getByRole("button", { name: "ADD PLAYER" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await page.getByLabel("Player email").fill(email);
-  await page.getByRole("button", { name: "Invite by email" }).click();
+  await page.getByRole("button", { name: "Invite by Email" }).click();
   await expect(page.getByText("Invited")).toBeVisible();
+  await page.getByRole("button", { name: "Close" }).click();
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
@@ -129,6 +150,19 @@ export async function noHorizontalOverflow(page: Page) {
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
   );
   expect(overflow).toBe(false);
+}
+
+export async function expectPlayerPayoutIdle(page: Page) {
+  await expect(page.getByRole("button", { name: "DOUBLE" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "SPLIT" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "PLACE BET", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "RETRACT" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START ADDITIONAL BOX" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "PLACE INSURANCE" })).toHaveCount(0);
+  await expect(page.locator("[data-play-controls]")).toHaveCount(0);
+  await expect(page.locator("[data-player-wallet]")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add 25 jetons" })).toBeDisabled();
 }
 
 export async function swipePlayerBoxes(

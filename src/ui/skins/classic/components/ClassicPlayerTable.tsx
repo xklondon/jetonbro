@@ -15,10 +15,20 @@ import {
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
 
-function phaseLabel(view: PlayerTableView) {
-  if (view.insuranceWindowOpen) return "INSURANCE";
-  if (view.phase === "ROUND_COMPLETE") return "PAYOUT";
-  return view.phase.replaceAll("_", " ");
+function seatTone(id: string) {
+  let hash = 0;
+  for (const char of id) hash = (hash + char.charCodeAt(0) * 17) % 360;
+  return `hsl(${hash} 42% 42%)`;
+}
+
+function phaseCopy(view: PlayerTableView): { label: string; kicker: string } {
+  if (view.insuranceWindowOpen) return { label: "INSURANCE OPEN", kicker: "TAKE INSURANCE (OPTIONAL)" };
+  if (view.phase === "BETTING") return { label: "BETTING", kicker: "PLACE YOUR BETS" };
+  if (view.phase === "PLAYING") return { label: "PLAYING", kicker: "MAKE YOUR MOVE" };
+  if (view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE") {
+    return { label: "PAYOUT / RESULT", kicker: "ROUND COMPLETE" };
+  }
+  return { label: view.phase.replaceAll("_", " "), kicker: "" };
 }
 
 export function ClassicPlayerTable({
@@ -67,6 +77,8 @@ export function ClassicPlayerTable({
   const seenInsurance = useRef(new Set(view.boxes.filter((box) => box.insuranceResult).map((box) => box.id)));
   const playing = view.phase === "PLAYING";
   const resolved = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const phase = phaseCopy(view);
+  const others = members.filter((member) => !member.isBankDealer);
 
   useEffect(() => {
     for (const box of view.boxes) {
@@ -95,7 +107,7 @@ export function ClassicPlayerTable({
   return (
     <TableShell badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
       <OutcomeCelebrationOverlay celebration={celebration} />
-      <PhaseBar label={phaseLabel(view)} />
+      <PhaseBar label={phase.label} kicker={phase.kicker} />
       <main
         className={`felt player-play-felt${view.phase === "BETTING" ? " betting-open" : ""}`}
         data-selected-box={selected?.id ?? ""}
@@ -103,8 +115,21 @@ export function ClassicPlayerTable({
       >
         <div className="table-surface">
           <TableIdentity name={view.tableName} />
-          <div className="player-dealer-ring" data-dealer-row="true">
-            DEALER
+          <div className="player-context">
+            {others.length > 1 ? (
+              <div className="player-orbit" aria-label="Other players">
+                {others.map((member) => (
+                  <div className="player-orbit-chip" key={member.userId}>
+                    <span className="player-dot" style={{ background: seatTone(member.userId) }} />
+                    <strong>{member.name}</strong>
+                    <small>{member.available?.label ?? ""}</small>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <div className="player-dealer-ring" data-dealer-row="true">
+              DEALER
+            </div>
           </div>
           <div className="player-box-stage" data-box-stage="true">
             {slots.map((box, index) =>
@@ -160,16 +185,18 @@ export function ClassicPlayerTable({
               >
                 START ADDITIONAL BOX
               </button>
-              <div className="exact">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Amount"
-                  value={exact}
-                  onChange={(event) => setExact(event.target.value)}
-                  aria-label="Exact bet amount"
-                />
+              <input
+                type="text"
+                className="felt-input"
+                inputMode="decimal"
+                placeholder="Amount"
+                value={exact}
+                onChange={(event) => setExact(event.target.value)}
+                aria-label="Exact bet amount"
+              />
+              <div className="exact bet-pair">
                 <button
+                  className="panel-button"
                   type="button"
                   disabled={!selected || selected.bet.label === "0"}
                   onClick={() =>
@@ -193,18 +220,19 @@ export function ClassicPlayerTable({
               </div>
             </div>
           ) : null}
-          {playing && view.insuranceWindowOpen ? (
+          {playing && view.actions.insurance ? (
             <div className="insurance-dock" data-insurance-controls="true">
-              <strong>INSURANCE</strong>
-              <span className="muted">Up to half the box stake</span>
+              <strong>INSURANCE BET</strong>
+              <span className="muted">Max 50% of box stake</span>
               {selected?.insurance ? (
                 <span className="insurance-placed">
                   INSURANCE {selected.insurance.label}
                 </span>
               ) : null}
-              <div className="exact">
+              <div className="exact bet-pair">
                 <input
                   type="text"
+                  className="felt-input"
                   inputMode="decimal"
                   placeholder="Amount"
                   value={insuranceAmount}
@@ -214,14 +242,14 @@ export function ClassicPlayerTable({
                 <button
                   className="gold-button"
                   type="button"
-                  disabled={!view.actions.insurance || !selected || selected.coverage?.insurance === false}
-                  onClick={() =>
-                    selected &&
+                  disabled={!selected || selected.coverage?.insurance === false}
+                  onClick={() => {
+                    if (!playing || !view.actions.insurance || !selected) return;
                     onCommand("buyInsurance", {
                       boxId: selected.id,
                       amount: insuranceAmount || selected.insuranceMax.label,
-                    })
-                  }
+                    });
+                  }}
                 >
                   PLACE INSURANCE
                 </button>
@@ -229,35 +257,46 @@ export function ClassicPlayerTable({
             </div>
           ) : null}
           {playing ? (
-            <div className="play-controls">
+            <div className="play-controls" data-play-controls="true">
               <button
                 type="button"
                 className="primary"
+                data-player-action="double"
                 disabled={!view.actions.double || !selected || selected.coverage?.double === false}
-                onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
+                onClick={() => {
+                  if (!playing || !view.actions.double || !selected) return;
+                  onCommand("doubleBox", { boxId: selected.id });
+                }}
               >
                 DOUBLE
               </button>
               <button
                 type="button"
+                data-player-action="split"
                 disabled={!view.actions.split || !selected || selected.coverage?.split === false}
-                onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
+                onClick={() => {
+                  if (!playing || !view.actions.split || !selected) return;
+                  onCommand("splitBox", { boxId: selected.id });
+                }}
               >
                 SPLIT
               </button>
-              <button
-                type="button"
-                disabled={!view.actions.insurance || !selected || selected.coverage?.insurance === false}
-                onClick={() =>
-                  selected &&
-                  onCommand("buyInsurance", {
-                    boxId: selected.id,
-                    amount: insuranceAmount || selected.insuranceMax.label,
-                  })
-                }
-              >
-                INSURANCE
-              </button>
+              {view.actions.insurance ? (
+                <button
+                  type="button"
+                  data-player-action="insurance"
+                  disabled={!selected || selected.coverage?.insurance === false}
+                  onClick={() => {
+                    if (!playing || !view.actions.insurance || !selected) return;
+                    onCommand("buyInsurance", {
+                      boxId: selected.id,
+                      amount: insuranceAmount || selected.insuranceMax.label,
+                    });
+                  }}
+                >
+                  INSURANCE
+                </button>
+              ) : null}
             </div>
           ) : null}
           {resolved ? <div className="payout-wait">ROUND COMPLETE</div> : null}
@@ -267,9 +306,11 @@ export function ClassicPlayerTable({
           trayEnabled={Boolean(view.actions.bet && selected && selected.coverage?.bet !== false)}
           dropSelector="[data-drop-box]"
           onTap={(amount) => {
-            if (selected) place(amount, selected.id);
+            if (!view.actions.bet || !selected) return;
+            place(amount, selected.id);
           }}
           onDrop={(amount, targetId) => {
+            if (!view.actions.bet) return;
             setHoverBoxId(null);
             place(amount, targetId);
           }}

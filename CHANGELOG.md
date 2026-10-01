@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Prompt 9 — player payout phase controls and RC2
+
+- Player DOUBLE / SPLIT / INSURANCE render only during PLAYING and only dispatch when the snapshot legal flags allow them. Payout keeps the wallet and tray, not playing or betting commands.
+- Create Table keeps the typed name and starting jetons when a later snapshot arrives.
+
+### Prompt 8 — payout overlap, viewer wallet, Phase 0 density
+
+- Player payout boxes stack identity, MAIN, and Insurance on separate lines inside the same 154px gold cards. Insurance is omitted when the box has none.
+- Poker Hand Complete marks the authenticated viewer’s seat as YOU and binds the tray AVAILABLE to that viewer’s snapshot balance.
+- Phase 0 keeps compact dealer/player rows and a small empty-waiting card. Assign Dealer stays in the table menu.
+
+### Prompt 7 — approved Blackjack and Poker phase screens
+
+- Classic game screens follow the five stored boards in `docs/design-reference/`. Player boxes are rectangular gold cards; Dealer rows stay compact; Poker actions sit in one board-style row above the tray.
+- Owner close then delete: archived tables remain on Home without Resume; Owner Delete hides them without deleting ledger rows.
+- Contact sheets: `docs/screenshots/approval/`.
+
+### Prompt 6 — restore Create Table, invitations, and Phase 0
+
+- Home is a compact Saved Tables index with `CREATE TABLE`, `RESUME`, and owner-only `DELETE` / `CLOSE TABLE`.
+- `CREATE TABLE` opens one full setup screen on a draft table. `START TABLE` (`finalizeSetup`) opens Phase 0.
+- Phase 0 uses compact Player rows and `OPEN BETTING` / `START HAND`. The giant empty seat and start-game controls above setup are gone.
+- Invitations (email, QR, copy link) work on the draft before start. Unused drafts stay off Home.
+- Poker Phase 0 keeps `setup` / `waiting` on the snapshot while `TABLE_SETUP` so Start Table does not fall through to the live Poker Dealer screen.
+
 ### Prompt 5 — staging packaging repair
 
 - Railway `prebuild` runs guardrails. The image now includes `.cursorfile`, `CHANGELOG.md`, and `docs/architecture/CURSOR_GUARDRAILS.md`. Test screenshots and Playwright specs stay out of the runtime image.

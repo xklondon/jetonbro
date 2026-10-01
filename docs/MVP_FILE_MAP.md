@@ -31,7 +31,42 @@ Do not edit these unless a failing acceptance test proves a defect in ledger, ph
 
 Related unit tests under `src/application/` and `src/domain/` prove these files. Do not regenerate that library.
 
-## Active UI areas (Prompt 3)
+### Active UI areas (Prompt 9)
+
+Player Blackjack phase-control correction, plus Create Table snapshot no longer clobbering an in-progress name. Engines, accounting, auth, invitations, and Prompt 7/8 screens stay frozen.
+
+- `src/ui/skins/classic/components/ClassicPlayerTable.tsx`
+- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
+
+### Active UI areas (Prompt 8)
+
+Visual correction only. Engines, accounting, auth, invitations, and the Prompt 6 setup journey stay frozen. This slice is six production files because payout boxes, Phase 0 felt density, and Poker viewer-wallet identity share one board-correction prompt.
+
+- `src/ui/skins/classic/components/FeltBox.tsx`
+- `src/ui/skins/classic/layouts.css`
+- `src/ui/skins/classic/home.css`
+- `src/ui/skins/classic/components/ClassicPhaseZero.tsx`
+- `src/ui/skins/classic/components/PokerFelt.tsx`
+- `src/ui/skins/classic/components/PlayerWallet.tsx`
+
+### Active UI areas (Prompt 7)
+
+Blackjack and Poker live phase screens plus owner close-then-delete. This slice is larger than five files because Player, Dealer, shared shell CSS, Poker felt/actions, Home, and `deleteTable` hide-after-archive share one board system.
+
+- `src/ui/skins/classic/components/ClassicPlayerTable.tsx`
+- `src/ui/skins/classic/components/ClassicBankTable.tsx`
+- `src/ui/skins/classic/components/ClassicPokerPlayer.tsx`
+- `src/ui/skins/classic/components/ClassicPokerDealer.tsx`
+- `src/ui/skins/classic/components/PokerFelt.tsx`
+- `src/ui/skins/classic/components/PokerGameControls.tsx`
+- `src/ui/skins/classic/layouts.css`
+- `src/ui/skins/classic/components/ClassicHome.tsx`
+- `src/application/queries/home.ts`
+- `src/application/services/tables.ts` (`deleteTable` hide of archived tables only)
+- `e2e/approved-game-screens.spec.ts`
+- `e2e/home-delete.spec.ts`
+
+Do not edit frozen accounting files for visual board work.
 
 ### Poker screens
 
@@ -61,14 +96,24 @@ Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay fr
 - `src/ui/skins/classic/tokens.css`
 - `src/ui/skins/classic/layouts.css`
 
-### Setup
+### Setup / Home / Phase 0 (Prompt 6)
 
-- `src/ui/skins/classic/components/ClassicSetupTable.tsx`
-- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
-- `src/ui/skins/classic/components/ClassicWaitingTable.tsx`
 - `src/ui/skins/classic/components/ClassicHome.tsx`
+- `src/ui/skins/classic/components/ClassicCreateTable.tsx`
+- `src/ui/skins/classic/components/ClassicPhaseZero.tsx`
+- `src/ui/skins/classic/components/ClassicInvitePanel.tsx`
+- `src/ui/skins/classic/components/ClassicSetupTable.tsx` (adapter: incomplete → Create Table, completed → Phase 0)
+- `src/ui/skins/classic/components/ClassicWaitingTable.tsx` (player Phase 0)
+- `src/ui/core/TableSession.tsx`
+- `src/app/tables/new/page.tsx` (creates/reuses a draft and redirects to `/tables/{id}`)
+- `src/app/tables/new/create-table-client.tsx` **inactive** (no longer routed)
+- `e2e/setup-phase-zero.spec.ts`
 - `e2e/setup-invite-and-restart.spec.ts`
 - `e2e/welcome-home.spec.ts`
+- `e2e/home-delete.spec.ts`
+- `e2e/helpers.ts`
+
+`ClassicSetupTable` is no longer a giant felt with `START BLACKJACK` / `START POKER` in the phase dock. Do not route owners to that obsolete layout.
 
 ### Blackjack Player screens
 

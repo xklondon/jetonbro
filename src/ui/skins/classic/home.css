@@ -160,18 +160,142 @@
   gap: 4px;
 }
 
-.classic-skin .home-table-overflow button {
+.classic-skin .home-table-overflow button,
+.classic-skin .panel-button,
+.classic-skin .sheet-panel > button:not(.gold-button):not(.text-link),
+.classic-skin .sheet-panel .panel-button {
   width: 100%;
-  border: 1px solid rgba(223, 189, 105, 0.28);
+  border: 1px solid rgba(223, 189, 105, 0.38);
   background: var(--panel);
   color: var(--ivory);
   border-radius: 8px;
-  padding: 8px;
+  padding: 10px;
   font-size: 12px;
+  letter-spacing: 0.06em;
 }
 
-.classic-skin .home-table-overflow button.danger {
+.classic-skin .home-table-overflow button.danger,
+.classic-skin .panel-button.danger {
   color: #ffd0d0;
+  border-color: rgba(184, 55, 63, 0.45);
+}
+
+.classic-skin main.felt.home-stack,
+.classic-skin main.felt.create-setup {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.classic-skin main.felt.create-setup {
+  padding-bottom: 18px;
+  gap: 8px;
+}
+
+.classic-skin main.felt.home-stack::-webkit-scrollbar,
+.classic-skin main.felt.create-setup::-webkit-scrollbar,
+.classic-skin .phase-zero-rows::-webkit-scrollbar {
+  display: none;
+}
+
+.classic-skin .phase-zero-felt {
+  justify-content: center;
+}
+
+.classic-skin .phase-zero-felt .table-surface {
+  flex: 0 0 auto;
+}
+
+.classic-skin .phase-zero-meta {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.classic-skin .waiting-kicker {
+  text-align: center;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  margin: 4px 0 8px;
+}
+
+.classic-skin .phase-zero-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.classic-skin .phase-zero-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  min-height: 44px;
+}
+
+.classic-skin .phase-zero-empty {
+  text-align: center;
+  margin: 0;
+  padding: 10px 12px;
+  width: 100%;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 10px;
+  background: rgba(2, 23, 18, 0.28);
+}
+
+.classic-skin .create-setup label,
+.classic-skin .phase-zero-dealer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(244, 234, 213, 0.82);
+}
+
+.classic-skin .create-setup input,
+.classic-skin .create-setup select,
+.classic-skin .phase-zero-dealer select,
+.classic-skin .invite-panel input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background: var(--panel);
+  color: var(--ivory);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 16px;
+  appearance: none;
+}
+
+.classic-skin .blind-row {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.classic-skin .blind-row {
+  grid-template-columns: 1fr 1fr;
+}
+
+.classic-skin .funding-toggle {
+  grid-template-columns: 1fr 1fr;
+}
+
+.classic-skin .invite-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.classic-skin .home-table-card {
+  gap: 4px;
+  padding: 8px 10px;
+}
+
+.classic-skin .home-create {
+  letter-spacing: 0.1em;
 }
 
 .classic-skin .home-table-card .gold-button {
@@ -242,8 +366,9 @@
 }
 
 .classic-skin .game-pick.compact .game-card {
-  aspect-ratio: 1.1;
-  min-height: 72px;
+  aspect-ratio: 1.35;
+  min-height: 58px;
+  padding: 6px 4px;
 }
 
 .classic-skin .field-label {
@@ -396,19 +521,21 @@
 
 .classic-skin .qr-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
   width: min(100%, 260px);
 }
 
 .classic-skin .qr-actions button {
-  border: 1px solid rgba(223, 189, 105, 0.4);
-  background: var(--panel);
-  color: var(--gold);
+  width: 100%;
+  border: 0;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-dim));
+  color: var(--gold-ink);
   border-radius: 10px;
-  padding: 8px 6px;
+  padding: 10px 8px;
   letter-spacing: 0.08em;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .classic-skin .setup-email {

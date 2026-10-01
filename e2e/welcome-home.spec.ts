@@ -19,26 +19,26 @@ test("authenticated welcome, create table, then the dealer setup table", async (
   await page.screenshot({ path: join(out, "app-welcome-empty-390x844.png") });
 
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page).toHaveURL(/\/tables\/new/);
+  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await expect(page.getByLabel("Table name")).toHaveValue("Alex's table");
   await expect(page.getByLabel("Starting jetons per player")).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-welcome-games-390x844.png") });
 
   await page.getByLabel("Starting jetons per player").fill("0");
-  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
-  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START TABLE" })).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
   await expect(page.locator(".setup-mask")).toHaveCount(0);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
-  await expect(page.getByText("TABLE SETUP", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
   await expect(page.getByText("DEALER · Alex")).toBeVisible();
-  await expect(page.getByRole("button", { name: "ADD PLAYER" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "START POKER" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "START BLACKJACK" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Invite Player" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
   await expect(page.getByText("Waiting for a player to join")).toBeVisible();
-  await page.getByRole("button", { name: "QR" }).first().click();
+  await page.getByRole("button", { name: "Invite Player" }).first().click();
   await expect(page.locator(".sheet.open").getByAltText("Shared table join QR code")).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.getByText("DEALER · Alex")).toBeVisible();
@@ -60,7 +60,7 @@ test("welcome animation is non-blocking, session-limited and respects reduced mo
   await page.goto("/");
   await expect(page.locator(".welcome-celebration")).toBeVisible();
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
-  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible();
 
   await page.goto("/");
   await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
