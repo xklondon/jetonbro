@@ -7,8 +7,6 @@ import { blackjackDealerSetupControls } from "@/ui/core/blackjack-phase-controls
 import type { CommandHandler } from "@/ui/skins/types";
 import { TableShell } from "./TableShell";
 import { PhaseBar } from "./PhaseBar";
-import { PhaseActionDock } from "./PhaseActionDock";
-import { TableIdentity } from "./TableIdentity";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
 import { SeatOrderList } from "./SeatOrderList";
@@ -68,38 +66,10 @@ export function ClassicPhaseZero({
   void viewerId;
 
   return (
-    <TableShell badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
-      <PhaseBar label="WAITING FOR PLAYERS">
-        {canManage ? (
-          <PhaseActionDock>
-            {waitingForPlayers && startBlocked ? <p className="muted phase-hint">{startBlocked}</p> : null}
-            {game === "POKER" ? (
-              isOwner ? (
-                <button
-                  className="gold-button"
-                  type="button"
-                  disabled={!startHand?.enabled}
-                  onClick={() => onCommand("startTexasHoldem")}
-                >
-                  START HAND
-                </button>
-              ) : null
-            ) : isBank && dealerSetup.primary ? (
-              <button
-                className="gold-button"
-                type="button"
-                disabled={!dealerSetup.primary.enabled}
-                onClick={() => onCommand(dealerSetup.primary!.command)}
-              >
-                {dealerSetup.primary.label}
-              </button>
-            ) : null}
-            {canManage && dealerSetup.showAddPlayer ? (
-              <button className="panel-button" type="button" data-add-player="true" onClick={() => setInviteOpen(true)}>
-                ADD PLAYER
-              </button>
-            ) : null}
-          </PhaseActionDock>
+    <TableShell title={tableName} badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
+      <PhaseBar label="WAITING FOR PLAYERS" kicker="Invite players to start">
+        {waitingForPlayers && startBlocked ? (
+          <p className="muted phase-hint">{startBlocked}</p>
         ) : null}
       </PhaseBar>
       <main
@@ -110,7 +80,6 @@ export function ClassicPhaseZero({
         data-verified-join-url={joinUrl ?? undefined}
       >
         <div className="table-surface">
-          <TableIdentity name={tableName} />
           <div className="muted phase-zero-meta">
             {gameLabel} · Owner · {ownerName} · DEALER · {dealerName}
           </div>
@@ -318,7 +287,40 @@ export function ClassicPhaseZero({
           </>
         ) : null}
       </SheetOverlay>
-      <footer className="dock" />
+      <footer className="dock dealer-dock dealer-primary-dock" data-phase-action="true">
+        {canManage && dealerSetup.showAddPlayer ? (
+          <div className="dealer-secondary">
+            <button type="button" data-add-player="true" onClick={() => setInviteOpen(true)}>
+              ADD PLAYER
+            </button>
+          </div>
+        ) : null}
+        {game === "POKER"
+          ? isOwner
+            ? (
+              <button
+                className="gold-button dealer-primary"
+                type="button"
+                disabled={!startHand?.enabled}
+                onClick={() => onCommand("startTexasHoldem")}
+              >
+                START HAND
+              </button>
+            )
+            : null
+          : isBank && dealerSetup.primary
+            ? (
+              <button
+                className="gold-button dealer-primary"
+                type="button"
+                disabled={!dealerSetup.primary.enabled}
+                onClick={() => onCommand(dealerSetup.primary!.command)}
+              >
+                {dealerSetup.primary.label}
+              </button>
+            )
+            : null}
+      </footer>
     </TableShell>
   );
 }

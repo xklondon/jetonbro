@@ -48,19 +48,27 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   context,
   browser,
 }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
   await mkdir(shots, { recursive: true });
   const ownerEmail = uniqueEmail("pack-owner");
   const playerEmail = uniqueEmail("pack-player");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await openAs(context, page, ownerEmail, "Alex");
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
+  await page.screenshot({ path: join(shots, "home-390x844.png") });
+  await page.getByRole("button", { name: "CREATE TABLE" }).click();
+  await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible({ timeout: 20_000 });
+  await page.screenshot({ path: join(shots, "create-table-390x844.png") });
+  await page.goto("/");
   await createBlackjackTable(page, "Classic pack", { starting: "100" });
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
   await assertNoForbiddenCopy(page);
   await page.screenshot({ path: join(shots, "dealer-phase0-390x844.png") });
+  await page.screenshot({ path: join(shots, "table-setup-390x844.png") });
 
   const joinPath = new URL((await snapshot(page)).setup!.joinUrl!).pathname;
   const playerContext = await browser.newContext();
@@ -78,7 +86,6 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toHaveCount(0);
   await assertNoForbiddenCopy(page);
-  await page.screenshot({ path: join(shots, "dealer-betting-390x844.png") });
 
   await page.getByRole("button", { name: "ADD PLAYER" }).click();
   await expect(page.locator(".sheet.open .invite-mask")).toBeVisible();
@@ -89,16 +96,32 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   const guestUrl = await setupJoinUrl(page, "guest");
   await page.locator(".invite-mask").getByRole("button", { name: "Close" }).click();
 
-  const guestContext = await browser.newContext();
-  const guestPage = await guestContext.newPage();
-  await guestPage.setViewportSize({ width: 390, height: 844 });
-  await guestPage.goto(new URL(guestUrl).pathname);
-  await expect(guestPage.getByText("Join without email")).toBeVisible();
-  await guestPage.getByLabel("Play name").fill("Casey");
-  await guestPage.getByRole("button", { name: "Join table" }).click();
-  await expect(guestPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
-  await expect.poll(async () => (await snapshot(page)).members?.some((member) => member.name === "Casey")).toBe(true);
-  await expect(page.getByText("Casey").first()).toBeVisible({ timeout: 20_000 });
+  async function joinGuest(name: string) {
+    const guestContext = await browser.newContext();
+    const guestPage = await guestContext.newPage();
+    await guestPage.setViewportSize({ width: 390, height: 844 });
+    await guestPage.goto(new URL(guestUrl).pathname);
+    await expect(guestPage.getByText("Join without email")).toBeVisible();
+    await guestPage.getByLabel("Play name").fill(name);
+    await guestPage.getByRole("button", { name: "Join table" }).click();
+    await expect(guestPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
+    await expect.poll(async () => (await snapshot(page)).members?.some((member) => member.name === name)).toBe(true);
+    return { guestContext, guestPage };
+  }
+
+  const casey = await joinGuest("Casey");
+  const jo = await joinGuest("Jo");
+  const riley = await joinGuest("Riley");
+  const guestPage = casey.guestPage;
+  const guestContext = casey.guestContext;
+  await expect.poll(async () => (await snapshot(page)).members?.filter((member) => !member.isBankDealer).length ?? 0).toBeGreaterThanOrEqual(4);
+  await page.screenshot({ path: join(shots, "dealer-betting-390x844.png") });
+  await page.setViewportSize({ width: 360, height: 800 });
+  await overflowAt(page, 360, 800);
+  await page.screenshot({ path: join(shots, "dealer-betting-360x800.png") });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.screenshot({ path: join(shots, "desktop-centered-dealer-betting.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
   await guestPage.reload();
   await expect(guestPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(guestPage.getByRole("button", { name: "PLACE BET" })).toBeVisible();
@@ -111,7 +134,7 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(playerPage.getByRole("button", { name: "2×" })).toHaveCount(0);
   await expect(playerPage.getByRole("button", { name: "SPLIT" })).toHaveCount(0);
   await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
-  await expect(playerPage.locator("[data-box-count]")).toHaveAttribute("data-box-count", "1");
+  await expect(playerPage.locator("[data-box-count]")).toHaveAttribute("data-box-count", "1", { timeout: 15_000 });
   const box1 = playerPage.locator("[data-box-stage] [data-box-id]").first();
   await expect(playerPage.locator('[data-empty-slot="1"]')).toBeAttached();
   await expect(playerPage.locator('[data-empty-slot="3"]')).toBeAttached();
@@ -156,7 +179,6 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(page.getByRole("button", { name: "CLOSE INSURANCE" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toHaveCount(0);
   await assertNoForbiddenCopy(page);
-  await page.screenshot({ path: join(shots, "dealer-playing-open-insurance-390x844.png") });
 
   await playerPage.reload();
   await expect(playerPage.getByRole("button", { name: "2×" })).toBeVisible();
@@ -164,9 +186,18 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(playerPage.getByRole("button", { name: "ADD BOX" })).toHaveCount(0);
   await expect(playerPage.getByRole("button", { name: "PLACE BET" })).toHaveCount(0);
   await expect(playerPage.getByRole("button", { name: "RETRACT" })).toHaveCount(0);
-  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeDisabled();
   await expect(playerPage.getByRole("button", { name: "Add 25 jetons" })).toBeDisabled();
+  await playerPage.getByRole("button", { name: "2×" }).click();
   await playerPage.screenshot({ path: join(shots, "player-playing-390x844.png") });
+  await playerPage.setViewportSize({ width: 430, height: 932 });
+  await overflowAt(playerPage, 430, 932);
+  await playerPage.screenshot({ path: join(shots, "player-playing-430x932.png") });
+  await playerPage.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "ENTER PAYOUT" })).toBeVisible();
+  await page.screenshot({ path: join(shots, "dealer-playing-open-insurance-390x844.png") });
 
   await guestPage.reload();
   await expect(guestPage.getByRole("button", { name: "PLACE BET" })).toHaveCount(0);
@@ -218,8 +249,15 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expectPlayerPayoutIdle(playerPage);
   await playerPage.screenshot({ path: join(shots, "player-payout-390x844.png") });
 
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "CREATE TABLE" })).toBeVisible();
+  await expect(page.locator(".home-table-card").first()).toBeVisible({ timeout: 15_000 });
+  await page.screenshot({ path: join(shots, "home-390x844.png") });
+
   await playerContext.close();
   await guestContext.close();
+  await jo.guestContext.close();
+  await riley.guestContext.close();
 });
 
 test("Poker smoke: START HAND opens PRE-FLOP without Blackjack deal chrome", async ({ page, context, browser }) => {

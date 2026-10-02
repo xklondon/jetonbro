@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import type { MemberView, PlayerTableView } from "@/application/queries/views";
 import { TableShell } from "./TableShell";
 import { PhaseBar } from "./PhaseBar";
-import { TableIdentity } from "./TableIdentity";
 import { BlackjackBox } from "./BlackjackBox";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { PlayerWallet } from "./PlayerWallet";
@@ -61,7 +60,8 @@ export function ClassicPlayerTable({
   );
   const seenInsurance = useRef(new Set(view.boxes.filter((box) => box.insuranceResult).map((box) => box.id)));
   const playing = view.phase === "PLAYING";
-  const others = members.filter((member) => !member.isBankDealer);
+  const selfId = view.boxes[0]?.playerId;
+  const others = members.filter((member) => !member.isBankDealer && member.userId !== selfId);
 
   useEffect(() => {
     for (const box of view.boxes) {
@@ -88,9 +88,9 @@ export function ClassicPlayerTable({
   }
 
   return (
-    <TableShell badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
+    <TableShell title={view.tableName} balance={view.available.label} badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
       <OutcomeCelebrationOverlay celebration={celebration} />
-      <PhaseBar label={controls.phaseLabel} />
+      <PhaseBar label={controls.phaseLabel} kicker={controls.instruction} />
       <main
         className={`felt player-play-felt${view.phase === "BETTING" ? " betting-open" : ""}`}
         data-table-board="BLACKJACK_PLAYER"
@@ -98,9 +98,8 @@ export function ClassicPlayerTable({
         data-box-count={view.boxes.length}
       >
         <div className="table-surface">
-          <TableIdentity name={view.tableName} />
           <div className="player-context">
-            {others.length > 1 ? (
+            {others.length > 0 ? (
               <div className="player-orbit" aria-label="Other players">
                 {others.map((member) => (
                   <div className="player-orbit-chip" key={member.userId}>
@@ -155,6 +154,13 @@ export function ClassicPlayerTable({
               />
             ))}
           </div>
+          {controls.addBox ? (
+            <div className="add-box-row">
+              <button type="button" onClick={() => onCommand("addBox")}>
+                ADD BOX
+              </button>
+            </div>
+          ) : null}
         </div>
       </main>
       <footer className="dock player-dock">
@@ -163,7 +169,7 @@ export function ClassicPlayerTable({
           {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
           {controls.placeBet ? (
             <div className="betting-controls">
-              <div className="exact bet-pair">
+              <div className="exact">
                 <input
                   type="text"
                   className="felt-input"
@@ -173,6 +179,18 @@ export function ClassicPlayerTable({
                   onChange={(event) => setExact(event.target.value)}
                   aria-label="Exact bet amount"
                 />
+              </div>
+              <div className="exact bet-pair">
+                <button
+                  className="panel-button"
+                  type="button"
+                  disabled={!controls.retract || !selected}
+                  onClick={() =>
+                    selected && onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })
+                  }
+                >
+                  RETRACT
+                </button>
                 <button
                   className="gold-button"
                   type="button"
@@ -186,64 +204,41 @@ export function ClassicPlayerTable({
                   PLACE BET
                 </button>
               </div>
-              {controls.retract || controls.addBox ? (
-                <div className="deal-actions betting-extra">
-                  {controls.retract ? (
-                    <button
-                      className="panel-button"
-                      type="button"
-                      onClick={() =>
-                        selected && onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })
-                      }
-                    >
-                      RETRACT
-                    </button>
-                  ) : null}
-                  {controls.addBox ? (
-                    <button className="panel-button" type="button" onClick={() => onCommand("addBox")}>
-                      ADD BOX
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
           ) : null}
-          {playing && (controls.double || controls.split || controls.insurance) ? (
+          {playing ? (
             <div className="play-controls" data-play-controls="true">
-              {controls.double ? (
-                <button
-                  type="button"
-                  className="primary"
-                  data-player-action="double"
-                  onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
-                >
-                  2×
-                </button>
-              ) : null}
-              {controls.split ? (
-                <button
-                  type="button"
-                  data-player-action="split"
-                  onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
-                >
-                  SPLIT
-                </button>
-              ) : null}
-              {controls.insurance ? (
-                <button
-                  type="button"
-                  data-player-action="insurance"
-                  onClick={() => {
-                    if (!selected) return;
-                    onCommand("buyInsurance", {
-                      boxId: selected.id,
-                      amount: selected.insuranceMax.label,
-                    });
-                  }}
-                >
-                  INSURANCE
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="primary"
+                data-player-action="double"
+                disabled={!controls.double}
+                onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
+              >
+                2×
+              </button>
+              <button
+                type="button"
+                data-player-action="split"
+                disabled={!controls.split}
+                onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
+              >
+                SPLIT
+              </button>
+              <button
+                type="button"
+                data-player-action="insurance"
+                disabled={!controls.insurance}
+                onClick={() => {
+                  if (!selected || !controls.insurance) return;
+                  onCommand("buyInsurance", {
+                    boxId: selected.id,
+                    amount: selected.insuranceMax.label,
+                  });
+                }}
+              >
+                INSURANCE
+              </button>
             </div>
           ) : null}
         </div>

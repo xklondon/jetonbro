@@ -85,7 +85,8 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.reload();
   await expect(playerPage.getByRole("button", { name: "2×" })).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "SPLIT" })).toBeVisible();
-  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
+  await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeDisabled();
   await expect(playerPage.getByRole("button", { name: "ADD BOX" })).toHaveCount(0);
   await expect(playerPage.locator("[data-player-wallet]")).toBeVisible();
   await playerPage.locator(`[data-box-id="${box1.id}"]`).click();

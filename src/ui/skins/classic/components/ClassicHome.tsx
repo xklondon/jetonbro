@@ -66,7 +66,7 @@ export function ClassicHome({
       brandClassName={brandShimmer ? "brand-shimmer" : undefined}
     >
       <div className="phase-head home-head-compact">
-        <strong>{empty ? "JETONBRO" : "SAVED TABLES"}</strong>
+        <strong>SAVED TABLES</strong>
         <span>{empty ? `Welcome, ${displayName}` : "Resume a table or create a new one."}</span>
       </div>
       <main className="felt home-stack">

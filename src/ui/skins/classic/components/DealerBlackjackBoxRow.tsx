@@ -2,7 +2,6 @@
 
 import { useRef, useState, type PointerEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
-import { chipsFromMillis } from "./chips";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import { endPayoutDrag, movePayoutDrag, startPayoutDrag, type PayoutDragSession } from "@/ui/core/payout-gesture";
 
@@ -59,13 +58,15 @@ export function DealerBlackjackBoxRow({
   const session = useRef<PayoutDragSession | null>(null);
   const lastTap = useRef(0);
   const ignoreClickUntil = useRef(0);
-  const chips = chipsFromMillis(box.bet.millis);
   const unresolved = payoutEnabled && !box.outcome && !submitted && Boolean(onSettle);
   const railActions = PAYOUT_RAIL_ORDER.map(
     (outcome) => box.payoutActions.find((action) => action.outcome === outcome) ?? { outcome, label: RAIL_TITLE[outcome], title: RAIL_TITLE[outcome] },
   );
   const settled = resultCopy(box);
   const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
+  let hue = 0;
+  for (const char of box.playerId || title) hue = (hue + char.charCodeAt(0) * 17) % 360;
+  const commitment = box.isDoubled ? `Double ${box.bet.label}` : box.isSplit ? `Split ${box.bet.label}` : null;
 
   function settle(outcome: BoxView["payoutActions"][number]["outcome"]) {
     if (!unresolved || !onSettle) return;
@@ -120,7 +121,7 @@ export function DealerBlackjackBoxRow({
 
   return (
     <div
-      className={`box dealer-box payout-row blackjack-box-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
+      className={`ledger-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
       data-box-id={box.id}
       data-blackjack-box-row="true"
       data-box-phase={phase}
@@ -140,71 +141,40 @@ export function DealerBlackjackBoxRow({
         }
       }}
     >
-      <div className="payout-swipe">
-        {unresolved && dragging ? (
-          <>
-            <div className="payout-reveal win" aria-hidden="true">
-              WON
-            </div>
-            <div className="payout-reveal loss" aria-hidden="true">
-              LOST
-            </div>
-          </>
-        ) : null}
-        <div
-          className="payout-row-inner"
-          style={{
-            transform: unresolved && dx ? `translateX(${dx}px)` : undefined,
-          }}
-        >
-          <span className="box-name">{title}</span>
-          <span className="amount-label">MAIN</span>
-          <span className="amount">{box.bet.label}</span>
-          {box.insurance || phase !== "BETTING" ? (
-            <span className="hint">INSURANCE {box.insurance?.label ?? "—"}</span>
-          ) : null}
-          <span className="chip-pile compact">
-            {chips.map((chip, index) => (
-              <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
-                {chip.label}
-              </span>
+      <span className="ledger-num">{box.boxNumber}</span>
+      <span className="ledger-player">
+        <span className="ledger-avatar" style={{ background: `hsl(${hue} 42% 42%)` }} />
+        <strong>{title}</strong>
+      </span>
+      <span className="ledger-bet">{box.bet.label}</span>
+      <span className="ledger-meta">
+        {unresolved ? (
+          <span className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
+            {railActions.map((action) => (
+              <button
+                key={action.outcome}
+                type="button"
+                className={action.outcome.toLowerCase()}
+                data-payout-action="true"
+                onPointerDown={stopActionPointer}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (Date.now() < ignoreClickUntil.current) return;
+                  settle(action.outcome);
+                }}
+              >
+                <span className="rail-title">{action.title ?? RAIL_TITLE[action.outcome]}</span>
+              </button>
             ))}
           </span>
-          {available || locked ? (
-            <span className="dealer-box-meta">
-              {available ? `AVAILABLE ${available}` : ""}
-              {available && locked ? " · " : ""}
-              {locked ? `LOCKED ${locked}` : ""}
-            </span>
-          ) : null}
-          <span className="result payout-state">
-            {settled ?? (unresolved ? "Unresolved" : phase === "PLAYING" ? "In play" : phase === "BETTING" ? "Betting" : "")}
-            {box.isDoubled ? " · Doubled" : ""}
-            {box.insuranceResult ? ` · ${box.insuranceResult}` : ""}
-          </span>
-        </div>
-      </div>
-      {unresolved ? (
-        <div className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
-          {railActions.map((action) => (
-            <button
-              key={action.outcome}
-              type="button"
-              className={action.outcome.toLowerCase()}
-              data-payout-action="true"
-              onPointerDown={stopActionPointer}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (Date.now() < ignoreClickUntil.current) return;
-                settle(action.outcome);
-              }}
-            >
-              <span className="rail-title">{action.title ?? RAIL_TITLE[action.outcome]}</span>
-              {action.returnLine ? <span className="rail-return">{action.returnLine}</span> : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
+        ) : (
+          <>
+            {commitment ?? settled ?? (phase === "PLAYING" ? "In play" : box.insurance ? `Ins ${box.insurance.label}` : "")}
+            {box.insurance && phase !== "BETTING" && !commitment ? ` · Ins ${box.insurance.label}` : ""}
+            {available ? ` · ${available}` : ""}
+          </>
+        )}
+      </span>
     </div>
   );
 }

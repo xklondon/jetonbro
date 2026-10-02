@@ -100,6 +100,9 @@ export function ClassicCreateTable({
         data-join-url={verifiedJoinUrl ?? undefined}
       >
         {notice ? <div className="error">{notice}</div> : null}
+        <div className="create-table-mark" aria-hidden="true">
+          <strong>{name || "New Table"}</strong>
+        </div>
         <section className="create-block">
           <div className="field-label">TABLE</div>
           <div className="compact-row">

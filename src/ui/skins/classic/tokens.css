@@ -4,7 +4,7 @@
   --felt-hi: #0b7056;
   --felt-deep: #03241c;
   --night: #071714;
-  --dock: #071714;
+  --dock: #05080a;
   --panel: #0a241e;
   --control-surface: #10241f;
   --gold: #dfbd69;
@@ -28,8 +28,11 @@
   --shadow: 0 12px 28px rgba(0, 0, 0, 0.42);
   --shadow-inset: inset 0 0 36px rgba(0, 0, 0, 0.32);
   --control-height: 44px;
-  --control-height-compact: 40px;
+  --control-height-compact: 36px;
   --tray-height: 72px;
+  --header-height: 60px;
+  --phase-rail-height: 78px;
+  --ledger-row-height: 52px;
   --radius: 10px;
   --radius-card: 8px;
   --box-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
@@ -42,7 +45,7 @@
   --title-size: 20px;
   --label-size: 11px;
   --body-size: 13px;
-  color: var(--ivory);
+  color: var(--cream);
   font-family: var(--font-ui);
 }
 

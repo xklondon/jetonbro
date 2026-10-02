@@ -12,6 +12,7 @@ export type BlackjackControl = {
 
 export type BlackjackDealerPresentation = {
   phaseLabel: string;
+  instruction: string;
   primary: BlackjackControl | null;
   secondary: BlackjackControl[];
   insurance: BlackjackControl | null;
@@ -22,6 +23,7 @@ export type BlackjackDealerPresentation = {
 
 export type BlackjackPlayerPresentation = {
   phaseLabel: string;
+  instruction: string;
   placeBet: boolean;
   retract: boolean;
   addBox: boolean;
@@ -55,6 +57,22 @@ export function blackjackPhaseLabel(input: {
   return input.phase.replaceAll("_", " ");
 }
 
+export function blackjackPhaseInstruction(input: {
+  role: "DEALER" | "PLAYER";
+  phase: string;
+  insuranceOpen?: boolean;
+}): string {
+  if (input.role === "PLAYER" && input.insuranceOpen && input.phase === "PLAYING") return "Take insurance (optional)";
+  if (input.role === "DEALER" && input.insuranceOpen && input.phase === "PLAYING") return "Offer and manage insurance";
+  if (input.phase === "TABLE_SETUP") return "Waiting for players";
+  if (input.phase === "BETTING") return input.role === "PLAYER" ? "Place your bets" : "Place your wagers";
+  if (input.phase === "PLAYING") return input.role === "PLAYER" ? "Make your move" : "Manage player actions";
+  if (input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") {
+    return input.role === "PLAYER" ? "Round complete" : "Set results for each hand";
+  }
+  return "";
+}
+
 export function blackjackDealerControls(view: BankTableView): BlackjackDealerPresentation {
   const insuranceOpen = view.insurance.window === "OPEN";
   const phaseLabel = blackjackPhaseLabel({
@@ -62,9 +80,15 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
     phase: view.phase,
     insuranceOpen,
   });
+  const instruction = blackjackPhaseInstruction({
+    role: "DEALER",
+    phase: view.phase,
+    insuranceOpen,
+  });
   if (view.phase === "BETTING") {
     return {
       phaseLabel,
+      instruction,
       primary: {
         id: "dealCards",
         label: "DEAL CARDS",
@@ -99,6 +123,7 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
         : null;
     return {
       phaseLabel,
+      instruction,
       primary: {
         id: "enterPayout",
         label: "ENTER PAYOUT",
@@ -116,6 +141,7 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
   if (view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE") {
     return {
       phaseLabel,
+      instruction,
       primary: {
         id: "startBetting",
         label: "START BETTING",
@@ -135,6 +161,7 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
   }
   return {
     phaseLabel,
+    instruction,
     primary: null,
     secondary: [],
     insurance: null,
@@ -147,6 +174,7 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
 export function blackjackDealerSetupControls(canStartBetting: boolean): BlackjackDealerPresentation {
   return {
     phaseLabel: blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" }),
+    instruction: blackjackPhaseInstruction({ role: "DEALER", phase: "TABLE_SETUP" }),
     primary: {
       id: "startBetting",
       label: "START BETTING",
@@ -169,6 +197,11 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
   const owned = Boolean(selected && selected.playerId);
   return {
     phaseLabel: blackjackPhaseLabel({
+      role: "PLAYER",
+      phase: view.phase,
+      insuranceOpen: view.insuranceWindowOpen,
+    }),
+    instruction: blackjackPhaseInstruction({
       role: "PLAYER",
       phase: view.phase,
       insuranceOpen: view.insuranceWindowOpen,

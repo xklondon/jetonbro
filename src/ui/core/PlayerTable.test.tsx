@@ -87,7 +87,8 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toContain("2×");
   expect(html).toContain("SPLIT");
   expect(html).toContain('data-play-controls="true"');
-  expect(html).not.toContain('data-player-action="insurance"');
+  expect(html).toContain('data-player-action="insurance"');
+  expect(html).toMatch(/data-player-action="insurance"[^>]*disabled/);
   expect(html).not.toContain("PLACE INSURANCE");
   expect(html).toContain("data-box-stage");
   expect(html).toContain("MAIN");
@@ -172,7 +173,7 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
   expect(html).toContain("Amount");
   expect(html).toContain("PLACE BET");
   expect(html).toContain("ADD BOX");
-  expect(html.indexOf("PLACE BET")).toBeLessThan(html.indexOf("ADD BOX"));
+  expect(html.indexOf("ADD BOX")).toBeLessThan(html.indexOf("PLACE BET"));
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("Retract 25 jetons from Box 1");
   expect(html).toContain("data-box-stage");

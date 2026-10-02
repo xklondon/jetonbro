@@ -9,15 +9,26 @@ export function TableShell({
   overlay,
   badges,
   onMenu,
+  title,
+  balance,
 }: {
   children: ReactNode;
   rightLabel?: string;
   overlay?: ReactNode;
   badges?: string[];
   onMenu?: () => void;
+  title?: string;
+  balance?: string;
 }) {
   return (
-    <PhoneShell rightLabel={rightLabel} overlay={overlay} badges={badges} onMenu={onMenu}>
+    <PhoneShell
+      rightLabel={rightLabel}
+      overlay={overlay}
+      badges={badges}
+      onMenu={onMenu}
+      title={title}
+      balance={balance}
+    >
       {children}
     </PhoneShell>
   );

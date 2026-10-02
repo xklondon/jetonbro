@@ -6,6 +6,7 @@ import "./table.css";
 import "./jetons.css";
 import "./home.css";
 import "./welcome-celebration.css";
+import "./board.css";
 import { ClassicPlayerTable } from "./components/ClassicPlayerTable";
 import { ClassicBankTable } from "./components/ClassicBankTable";
 import { ClassicSetupTable } from "./components/ClassicSetupTable";

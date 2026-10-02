@@ -1,0 +1,522 @@
+/* Approved-board reconstruction. Last imported Classic sheet. */
+
+.classic-skin .phone {
+  width: min(100vw, 480px);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.classic-skin header.top-bar {
+  height: var(--header-height);
+  min-height: var(--header-height);
+  max-height: var(--header-height);
+  padding: 8px 12px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(3, 25, 20, 0.94), rgba(3, 25, 20, 0.2));
+}
+
+.classic-skin .brand {
+  font-family: var(--font-display);
+  color: var(--gold);
+  letter-spacing: 0.18em;
+  font-size: 13px;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.classic-skin .brand.is-table-title {
+  letter-spacing: 0.08em;
+  font-size: 15px;
+  color: var(--cream);
+  text-transform: uppercase;
+}
+
+.classic-skin .header-balance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--cream);
+  line-height: 1.1;
+}
+
+.classic-skin .header-balance small {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.classic-skin .header-balance strong {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--gold);
+}
+
+.classic-skin .role-badges {
+  max-width: none;
+  justify-content: flex-end;
+}
+
+.classic-skin .phase-head {
+  min-height: 0;
+  padding: 0 14px 4px;
+  text-align: center;
+}
+
+.classic-skin .phase-head strong,
+.classic-skin .phase-head [data-phase-heading] {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  color: var(--cream);
+}
+
+.classic-skin .phase-kicker,
+.classic-skin .phase-head em {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.classic-skin .bank-phase-control {
+  margin: 0 12px 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.classic-skin .phase-rail .deal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.classic-skin .phase-rail .deal-actions > button {
+  flex: 1 1 auto;
+  max-width: 168px;
+  min-height: 36px;
+}
+
+.classic-skin .gold-button,
+.classic-skin .bank-phase-control button,
+.classic-skin .panel-button {
+  width: auto;
+  min-height: var(--control-height-compact);
+  padding: 8px 12px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.classic-skin .gold-button.is-block,
+.classic-skin .home-create,
+.classic-skin .dealer-primary {
+  width: 100%;
+  min-height: var(--control-height);
+}
+
+.classic-skin .deal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.classic-skin .deal-actions > button {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.classic-skin .phase-rail {
+  max-height: var(--phase-rail-height);
+}
+
+.classic-skin main.felt {
+  padding: 0 10px 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.classic-skin main.felt.phase-zero-felt,
+.classic-skin main.felt.home-stack {
+  justify-content: flex-start;
+}
+
+.classic-skin main.felt:not(.poker-felt)::after {
+  content: none;
+}
+
+.classic-skin .player-play-felt .table-surface,
+.classic-skin .dealer-list-felt .table-surface,
+.classic-skin .phase-zero-felt .table-surface {
+  border: 0;
+  padding: 4px 0 0;
+  width: 100%;
+  gap: 6px;
+}
+
+.classic-skin .player-play-felt .cloth-name,
+.classic-skin .dealer-list-felt .cloth-name,
+.classic-skin .phase-zero-felt .cloth-name {
+  display: none;
+}
+
+.classic-skin .player-context {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  min-height: 64px;
+  margin-bottom: 4px;
+}
+
+.classic-skin .player-orbit {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 12px;
+  max-width: 100%;
+}
+
+.classic-skin .player-orbit-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+}
+
+.classic-skin .player-orbit-chip strong {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--cream);
+}
+
+.classic-skin .player-orbit-chip small {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.classic-skin .player-dealer-ring {
+  width: 54px;
+  height: 54px;
+  margin: 0;
+  border-radius: 50%;
+  border: 1px solid var(--gold-line);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+.classic-skin .player-box-stage {
+  grid-auto-rows: minmax(108px, 132px);
+  gap: 8px;
+  margin-top: 4px;
+  flex: 0 0 auto;
+}
+
+.classic-skin .player-box-stage .stage-cell,
+.classic-skin .player-box-stage .box,
+.classic-skin .player-box-stage .box-slot {
+  min-height: 108px;
+  max-height: 140px;
+  height: auto;
+}
+
+.classic-skin .player-box-stage .box {
+  border-radius: 18px 18px 12px 12px;
+  padding: 18px 6px 8px;
+}
+
+.classic-skin .player-box-stage .amount {
+  font-size: 22px;
+}
+
+.classic-skin .add-box-row {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 0;
+}
+
+.classic-skin .add-box-row button {
+  min-height: 36px;
+  padding: 8px 16px;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.classic-skin .betting-controls .bet-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.classic-skin .play-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.classic-skin .play-controls button,
+.classic-skin .betting-controls .bet-pair button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.classic-skin footer.dock {
+  background: linear-gradient(180deg, rgba(7, 23, 20, 0.96), var(--dock));
+  border-top: 1px solid rgba(223, 189, 105, 0.4);
+  padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+.classic-skin .dealer-stats {
+  display: none;
+}
+
+.classic-skin .dealer-summary {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--gold-line);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.classic-skin .dealer-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  font: 12px var(--font-display);
+}
+
+.classic-skin .dealer-summary .dealer-kicker,
+.classic-skin .dealer-summary strong {
+  position: static;
+  display: block;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.classic-skin .dealer-summary .hint {
+  position: static;
+  display: block;
+  font-size: 11px;
+  color: var(--cream);
+  margin: 0;
+  opacity: 1;
+}
+
+.classic-skin .dealer-summary-copy,
+.classic-skin .dealer-summary-meta {
+  min-width: 0;
+}
+
+.classic-skin .dealer-summary-meta {
+  text-align: right;
+}
+
+.classic-skin .dealer-rules {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.classic-skin .dealer-list.dealer-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 0;
+  grid-template-columns: none;
+}
+
+.classic-skin .dealer-list.dealer-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.classic-skin .ledger-head {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1.4fr) minmax(52px, 0.8fr) minmax(72px, 1.2fr);
+  gap: 6px;
+  padding: 0 8px 4px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.classic-skin .ledger-row,
+.classic-skin .dealer-grid .ledger-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1.4fr) minmax(52px, 0.8fr) minmax(72px, 1.2fr);
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ledger-row-height);
+  height: auto;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 10px;
+  background: rgba(2, 23, 18, 0.28);
+  overflow: visible;
+}
+
+.classic-skin .ledger-num {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.classic-skin .ledger-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.classic-skin .ledger-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(223, 189, 105, 0.35);
+}
+
+.classic-skin .ledger-player strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.classic-skin .ledger-bet {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--cream);
+  text-align: right;
+}
+
+.classic-skin .ledger-meta {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.classic-skin .ledger-row .payout-access {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  width: 100%;
+}
+
+.classic-skin .ledger-row .payout-access button {
+  min-height: 28px;
+  min-width: 0;
+  padding: 4px 2px;
+  font-size: 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.classic-skin .dealer-primary-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.classic-skin .dealer-primary,
+.classic-skin .dealer-primary:disabled {
+  width: 100%;
+  min-height: var(--control-height);
+  border: 0;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-dim));
+  color: var(--gold-ink);
+}
+
+.classic-skin .dealer-primary:disabled {
+  opacity: 0.38;
+}
+
+.classic-skin .create-table-mark {
+  width: min(240px, 72%);
+  margin: 8px auto 10px;
+  aspect-ratio: 2.2 / 1;
+  border: 1px solid var(--gold-line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, rgba(223, 189, 105, 0.16), transparent 58%);
+}
+
+.classic-skin .create-table-mark strong {
+  font-family: var(--font-display);
+  color: var(--cream);
+  letter-spacing: 0.04em;
+  font-size: 16px;
+}
+
+.classic-skin .home-head-compact strong {
+  font-family: var(--font-display);
+  letter-spacing: 0.16em;
+}
+
+.classic-skin .c100 {
+  background: radial-gradient(circle at 35% 30%, #3a3a3a, #111 58%, #000);
+}
+
+.classic-skin .dealer-secondary {
+  display: flex;
+  justify-content: center;
+}
+
+.classic-skin .dealer-secondary button {
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid var(--gold-line);
+  background: transparent;
+  color: var(--ivory);
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+@media (max-width: 360px) {
+  .classic-skin .player-box-stage .stage-cell,
+  .classic-skin .player-box-stage .box,
+  .classic-skin .player-box-stage .box-slot {
+    min-height: 96px;
+    max-height: 120px;
+  }
+
+  .classic-skin .ledger-row {
+    min-height: 48px;
+  }
+}

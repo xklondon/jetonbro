@@ -7,6 +7,8 @@ export function PhoneShell({
   brandClassName,
   badges,
   onMenu,
+  title,
+  balance,
 }: {
   children: React.ReactNode;
   rightLabel?: string;
@@ -14,6 +16,8 @@ export function PhoneShell({
   brandClassName?: string;
   badges?: string[];
   onMenu?: () => void;
+  title?: string;
+  balance?: string;
 }) {
   return (
     <div className="classic-page classic-skin">
@@ -29,8 +33,18 @@ export function PhoneShell({
           >
             ☰
           </button>
-          <div className={`brand${brandClassName ? ` ${brandClassName}` : ""}`}>JETONBRO</div>
-          {badges?.length ? (
+          <div
+            className={`brand${title ? " is-table-title" : ""}${brandClassName ? ` ${brandClassName}` : ""}`}
+            data-table-name={title || undefined}
+          >
+            {title || "JETONBRO"}
+          </div>
+          {balance ? (
+            <div className="header-balance">
+              <small>Balance</small>
+              <strong>{balance}</strong>
+            </div>
+          ) : badges?.length ? (
             <div className="role-badges" data-role-badges="true">
               {badges.map((badge) => (
                 <span key={badge} className="role-badge">

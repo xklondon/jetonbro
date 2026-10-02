@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-const DENOMS = ["5", "10", "25", "50"] as const;
+const DENOMS = ["5", "10", "25", "50", "100"] as const;
 
 export function JetonTray({
   enabled,

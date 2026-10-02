@@ -57,12 +57,7 @@
 }
 
 .classic-skin main.felt:not(.poker-felt)::after {
-  content: "";
-  position: absolute;
-  inset: 6px;
-  border: 1px dashed var(--gold-line);
-  border-radius: 14px;
-  pointer-events: none;
+  content: none;
 }
 
 .classic-skin .poker-pot-ring {

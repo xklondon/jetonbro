@@ -14,7 +14,7 @@ export function PhaseBar({
   children?: ReactNode;
 }) {
   return (
-    <div>
+    <div className="phase-rail">
       <div className="phase-head">
         <span>
           {prefix ? `${prefix} · ` : null}

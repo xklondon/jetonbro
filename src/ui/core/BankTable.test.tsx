@@ -106,7 +106,7 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
   };
 }
 
-test("Bank betting keeps deal controls at the top", () => {
+test("Bank betting anchors DEAL CARDS under the compact ledger", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicBankTable, { view: bankView({}), members, onCommand: () => undefined }),
   );
@@ -117,7 +117,7 @@ test("Bank betting keeps deal controls at the top", () => {
   expect(html).not.toContain("CURRENT PHASE:");
   expect(html).not.toContain("DEAL CARDS closes Betting and starts Playing.");
   expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS"));
-  expect(html.indexOf("DEAL CARDS")).toBeLessThan(html.indexOf("ON TABLE"));
+  expect(html).not.toContain("ON TABLE");
   expect(html).toContain('data-blackjack-box-row="true"');
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");

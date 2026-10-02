@@ -4,21 +4,36 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Valid boards
 
-Store copies under `docs/design-reference/` when the source file can be copied safely. Do not store the blank/corrupt image. Do not regenerate mockups.
+Primary visual authority is the approved PNG set under `design/reference/classic/approved/`. Those files outrank historical HTML prototypes, existing CSS, previously generated screenshots, verbal “oval” descriptions, and any earlier rule that Dealer rows must not resemble the compact reference ledger.
 
-| Source filename | Role | Prompt | Stored file |
-|---|---|---|---|
-| `ChatGPT Image Sep 22, 2026, 12_49_42 PM (1).png` | Blackjack Player phases: Betting, Playing, Insurance Open, Payout/Result | 7 | `blackjack-player-phases.jpg` (also `.webp`) |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2).png` | Table Owner and Setup: Saved Tables, Create Table, Table Setup, Game Selection | 6–7 | `table-owner-setup.jpg` |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3).png` | Blackjack Dealer / Owner phases | 7 | `blackjack-dealer-owner-phases.jpg` |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (4).png` | Poker Player phases | 7 | `poker-player-phases.jpg` |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases | 7 | `poker-dealer-owner-phases.jpg` |
+| Approved file | Role |
+|---|---|
+| `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png` | Blackjack Player phases |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2)(2).png` | Home, Create Table, Table Setup, Game Selection |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png` | Blackjack Dealer/Owner phases (compact ledger rows) |
 
-Classic screen pack (tokens, box anatomy, tray, gold/outline buttons): `design/reference/classic/jetonbro-player-bank-insurance.html` and `design/reference/classic/README.md`. There is no directory named `jetbro-classic-screenpack`. Typography: Georgia display, Inter UI. Palette: `--emerald #063d31`, `--felt #075744`, `--gold #dfbd69`, `--ivory #f4ead5`, `--night #071714`. Dealer ChatGPT board spreadsheet headings are not copied.
+Aliases: `blackjack-player-phases.png`, `table-owner-setup.png`, `blackjack-dealer-owner-phases.png`. Historical copies under `docs/design-reference/` remain for Poker boards only.
 
-Ignore:
+The PNGs control composition, sizing, spacing, typography, hierarchy, control shape, player positioning, table density, chip appearance, and header/footer structure. `blackjack-phase-controls.ts` still controls which buttons exist, enabled state, command semantics, and accepted labels (`START BETTING`, `DEAL CARDS`, `ENTER PAYOUT`, `ADD PLAYER`, `INS WON` / `INS LOST`). Do not restore obsolete board wording (`OPEN BETTING`, `CLOSE BETTING`, `START NEXT ROUND`, `START ADDITIONAL BOX`).
 
-- `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1).png` — blank/corrupt, not a reference.
+Do not render Dealer Players/boxes as giant cards or large ovals. The Dealer ledger is a dense compact-row overview.
+
+## Reference-to-component mapping
+
+| Board region | Component / slot |
+|---|---|
+| Phone chrome, 56–64px header, centred table name, Owner badge, Player balance | `PhoneShell` / `TableShell` |
+| Compact phase title + one instruction (~70–90px) | `PhaseBar` |
+| Dealer insurance toggle in the phase rail | `PhaseActionDock` + `blackjackDealerControls().insurance` |
+| Dealer compact identity/bank/status strip | `DealerHandBox` |
+| Dealer Player ledger (one short row per Player/box) | `DealerBlackjackBoxRow` inside `dealer-list` |
+| Dealer primary (`DEAL CARDS` / `ENTER PAYOUT` / `START BETTING`) | footer `.dealer-primary` |
+| Dealer Betting `ADD PLAYER` | small secondary control, invitation mask unchanged |
+| Player orbit + Dealer ring | `.player-context` |
+| Player boxes | `BlackjackBox` / `FeltBox` in `player-box-stage` |
+| Player action row above tray | `.game-controls` |
+| Player tray | `PlayerWallet` / `JetonTray` |
+| Home cards / Create Table / Phase 0 list | `ClassicHome`, `ClassicCreateTable`, `ClassicPhaseZero` |
 
 FAIL evidence (not design references):
 
@@ -80,7 +95,7 @@ Boards control screen anatomy, element position, hierarchy, density, the green/g
 
 Do not reproduce generated-image mistakes (fake USD, invented names, duplicate table titles, made-up payout math).
 
-The live table name appears exactly once, on the felt (`data-table-name`).
+The live table name appears exactly once, in the compact gameplay header (`data-table-name`). Do not also print it as a giant felt heading or a JETONBRO brand row during active play.
 
 ## Seven-zone mobile grid (390×844)
 
@@ -92,9 +107,9 @@ Maximum game width approximately 480px. Minimum touch target 44px. At 360×800, 
 4. Felt and table identity
 5. Players and Blackjack boxes
 6. Current Blackjack controls
-7. Fixed jeton/balance tray (Player), or compact Dealer stats (Dealer who is not personally betting)
+7. Fixed jeton tray (Player) or anchored Dealer primary action (Dealer)
 
-Phase lives in the phase header. Player available balance lives with the tray. Phase controls sit directly above the tray for Players, and in zone 3 for Dealer round progression.
+Phase lives in the compact phase rail. Player available balance appears at the header right and with the tray. Player actions sit directly above the tray. Dealer round-progression primary is anchored at the bottom. There is no PLAYERS / BOXES / ON TABLE footer. Bank reserve lives in the Dealer summary or table menu.
 
 ## Shared colour and type
 
@@ -134,7 +149,7 @@ Never infer role from name, email, or a leftover Auth.js session. Guest cookie w
 
 ## Blackjack Player screen contract
 
-Dominant board: Player phases (`12_49_42 PM (1)`).
+Dominant board: approved Player PNG (`12_50_26 PM (1)(2)`).
 
 **Fixed three-slot stage.** Box 1 begins in the centre slot. Adding Box 2 places it to the left of Box 1 without moving Box 1. Box 3 fills the remaining right slot. Boxes must not jump when phases or chrome change. Empty slots keep their space. Extra split boxes wrap to the next row of the same three columns. Controls never live inside the box stage.
 
@@ -175,29 +190,29 @@ Waiting state. Player identity and AVAILABLE jetons. No Dealer commands.
 
 ## Blackjack Dealer / Owner screen contract
 
-Visual tokens, box anatomy, felt, gold/outline buttons and the Player tray come from `design/reference/classic/jetonbro-player-bank-insurance.html` (Classic screen pack) plus the Player phase board. Do not copy the Dealer ChatGPT board’s spreadsheet headings or illustrative arithmetic.
+Dominant board: approved Dealer/Owner PNG (`12_50_27 PM (3)(2)`). Compact ledger rows are required. Do not render giant Player/Dealer cards or large ovals. Tokens (Georgia display, Inter UI, emerald/gold/ivory) still come from `src/ui/skins/classic/tokens.css`.
 
 Visible controls follow `blackjackDealerControls()`. Engine commands: `startBetting`, `dealCards`, `openInsurance` / `closeInsurance`, `enterPayout`, `startNextRound`.
 
 ### Role header
 
-Separate badges: `OWNER`, `DEALER`. A Dealer who also plays may show `DEALER · PLAYING`. Do not create a duplicate Player seat for the Dealer.
+Compact 56–64px header: hamburger, table name centred, `OWNER` badge right. One compact Dealer summary row under the phase rail: Dealer identity, available/bank information, current status. No JETONBRO brand row during live play.
 
 ### TABLE_SETUP / Phase 0
 
-Primary `START BETTING`, enabled only when a real seated Player exists. Secondary `ADD PLAYER`. No `DEAL CARDS`. No payout controls.
+Primary `START BETTING`, enabled only when a real seated Player exists. Secondary `ADD PLAYER`. No `DEAL CARDS`. No payout controls. Compact Player list, not giant empty seats.
 
 ### Betting
 
-Phase once (`BETTING`). Primary `DEAL CARDS` (`dealCards`; do not show `CLOSE BETTING`). Secondary `ADD PLAYER` opens the existing invitation mask (Guest QR, Verified QR, Email). A Player may join and receive starting jetons during Betting, may create/place a box only while Betting remains open, and cannot enter the current round after `DEAL CARDS`. Dealer sees every Player on the screen-pack two-column oval grid: available, locked amount and box stakes. No Player jeton tray unless the Dealer is placing a personal bet. No `WAITING FOR THE FIRST BET` subtitle.
+Phase once (`BETTING`). Compact Player ledger: number, Player, main bet, action. Each Player/box is one short row. `DEAL CARDS` is the anchored bottom primary (`dealCards`; do not show `CLOSE BETTING`). `ADD PLAYER` is a small secondary control that opens the existing invitation mask. A Player may join and receive starting jetons during Betting. 4–6 Players must fit without giant cards or document scrolling. No PLAYERS / BOXES / ON TABLE footer.
 
 ### Playing
 
-Same two-column oval dealer boxes as the Classic screen pack (`dealer-grid`). Each box is `{name} · BOX {n}` with MAIN, INSURANCE, chips, AVAILABLE and LOCKED. Do not use spreadsheet player headings. Primary `ENTER PAYOUT`. If table settings permit insurance and the window is closed, show `OPEN INSURANCE` only. If the window is open, show `CLOSE INSURANCE` only. Never both. `ADD PLAYER` is not required during Playing.
+Same compact ledger. Show commitments (`Double` / `Split`) on the row. `ENTER PAYOUT` is the bottom primary. `OPEN INSURANCE` or `CLOSE INSURANCE`, never both, in the compact phase rail. `ADD PLAYER` is not required during Playing.
 
 ### Payout
 
-Same Player/box structure and the same compact Dealer identity as Betting/Playing (`DEALER` + name + status). Do not render a felt `DEALER WON` banner. Settle `LOST` / `STAND-OFF` / `WON` / `BLACKJACK` inside each Player oval. Insurance separately: `INS WON` / `INS LOST`. Primary remains disabled until every required box/insurance result is resolved, then `START BETTING` (`startNextRound`). Do not show `START NEXT ROUND` or `DEAL CARDS` until the next Betting phase. No Player play controls.
+Same compact rows. Main result controls (`LOST` / `STAND OFF` / `BLACKJACK` / `WON`) and insurance result (`INS WON` / `INS LOST`) stay dense per row/table command. Do not convert each Player into a giant card. `START BETTING` is fixed at the bottom and disabled until every required result is resolved.
 
 ## Owner utilities
 

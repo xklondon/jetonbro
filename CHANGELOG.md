@@ -7,7 +7,7 @@
 - Classic table UI follows `design/reference/classic/jetonbro-player-bank-insurance.html` tokens (Georgia + Inter, emerald/gold/ivory) and `blackjack-phase-controls.ts` for visible actions.
 - Dealer: Phase 0 `START BETTING` + `ADD PLAYER`; Betting `DEAL CARDS` + `ADD PLAYER`; Playing exclusive insurance + `ENTER PAYOUT`; Payout `START BETTING` after resolution.
 - Player: Betting `PLACE BET` / `RETRACT` / `ADD BOX`; Playing `2×` / `SPLIT` / conditional `INSURANCE`; Payout idle tray. Box 1 starts centred; Box 2 fills left without jumping.
-- Dealer live boxes use the screen-pack two-column oval grid (`NAME · BOX n`, MAIN, chips, AVAILABLE/LOCKED). Spreadsheet player headings are gone. Dealer Payout uses the same compact `DEALER` identity as Betting/Playing, with no felt `DEALER WON` bar and no title clipping. Owner `DEALER WON` is a table-menu action.
+- Dealer live boxes use the approved compact ledger (one short row per Player/box). Giant oval cards, the dashed felt frame, and the PLAYERS / BOXES / ON TABLE footer are gone. Gameplay header shows the table name once. Dealer primary actions sit in the bottom dock. Player Playing keeps a consistent `2×` / `SPLIT` / `INSURANCE` row. Owner `DEALER WON` remains a table-menu action.
 
 ### Live identity repair — request cookies, inline Create Table invites
 
