@@ -6,7 +6,7 @@ import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 import type { CommandHandler } from "@/ui/skins/types";
 import { PhoneShell } from "./PhoneShell";
 import { ClassicGameCards } from "./ClassicGameCards";
-import { ClassicInviteInline } from "./ClassicInvitePanel";
+import { ClassicInviteInline, type InviteTab } from "./ClassicInvitePanel";
 
 function limitedReserve(value?: string | null) {
   const parsed = Number.parseInt(String(value ?? "").trim(), 10);
@@ -66,6 +66,7 @@ export function ClassicCreateTable({
   const [pending, setPending] = useState(false);
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
+  const [inviteMethod, setInviteMethod] = useState<InviteTab | null>(null);
   useEffect(() => {
     if (!view) return;
     if (!nameDirty) setName(view.tableName);
@@ -282,6 +283,8 @@ export function ClassicCreateTable({
             members={view?.members}
             invitations={view?.invitations}
             onCommand={onCommand ?? (async () => undefined)}
+            selectedMethod={inviteMethod}
+            onSelectMethod={setInviteMethod}
           />
         </section>
       </main>

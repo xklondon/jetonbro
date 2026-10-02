@@ -189,7 +189,8 @@
 }
 
 .classic-skin main.felt.create-setup.compact-create {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-bottom: 0;
   gap: 6px;
 }
@@ -861,6 +862,44 @@
     animation: none;
     transform: none;
   }
+}
+
+.classic-skin .invite-inline .invite-card.invite-inline-row {
+  padding: 8px;
+}
+
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  width: 100%;
+}
+
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr img,
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr .qr-slot {
+  width: 128px;
+  height: 128px;
+  padding: 6px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #f4ead5;
+  object-fit: contain;
+}
+
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr .gold-button {
+  flex: 1;
+  min-height: 40px;
+  width: auto;
+}
+
+.classic-skin .invite-inline .invite-inline-row label {
+  gap: 4px;
+}
+
+.classic-skin .invite-inline .invite-inline-row .gold-button {
+  min-height: 40px;
 }
 
 @media (max-width: 360px) {

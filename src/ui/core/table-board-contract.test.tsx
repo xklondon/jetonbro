@@ -390,8 +390,10 @@ test("invitation mask expands only one method", () => {
   expect(html).toContain("GUEST QR");
   expect(html).toContain("VERIFIED QR");
   expect(html).toContain("EMAIL");
-  expect(html).toContain("No email · starts with 100");
-  expect(html).not.toContain("Email confirmation");
+  expect(html).toContain("Join this table without email. Starts with 100 jetons.");
+  expect(html).toContain("Copy Link");
+  expect(html).toContain("/join/guest/g");
+  expect(html).not.toContain("Confirm email to become a verified user");
   expect(html).not.toContain("Player email");
 });
 
