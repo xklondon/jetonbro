@@ -36,13 +36,13 @@
 }
 
 .classic-skin .game-card-suit {
-  font: 28px Georgia, serif;
+  font: 28px var(--font-display);
   color: var(--gold);
   line-height: 1;
 }
 
 .classic-skin .game-card strong {
-  font: 13px Georgia, serif;
+  font: 13px var(--font-display);
   letter-spacing: 0.04em;
 }
 
@@ -533,7 +533,7 @@
   color: var(--ivory);
   border-radius: 10px;
   padding: 10px;
-  font: 16px Georgia, serif;
+  font: 16px var(--font-display);
 }
 
 .classic-skin .payout-pick button.is-selected {
@@ -780,7 +780,7 @@
 
 .classic-skin .deal-countdown {
   margin: 6px 0 8px;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 22px;
   color: var(--gold);
   animation: countdown-pop 0.45s ease;

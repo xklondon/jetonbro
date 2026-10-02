@@ -84,7 +84,7 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).not.toContain("xklondon");
   expect(html).not.toContain("AVAILABLE VALUE");
   expect(html).toContain("75");
-  expect(html).toContain("DOUBLE");
+  expect(html).toContain("2×");
   expect(html).toContain("SPLIT");
   expect(html).toContain('data-play-controls="true"');
   expect(html).not.toContain('data-player-action="insurance"');
@@ -95,7 +95,7 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).not.toContain("+ ADD CARDS");
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("table-rail");
-  expect(html.indexOf("DOUBLE")).toBeLessThan(html.indexOf("YOUR JETONS"));
+  expect(html.indexOf("2×")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).toContain("selected");
   expect(html).not.toContain("OPEN BANK");
   expect(html).not.toContain("LIMITED BANK");
@@ -171,12 +171,14 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
   );
   expect(html).toContain("Amount");
   expect(html).toContain("PLACE BET");
-  expect(html).toContain("START ADDITIONAL BOX");
+  expect(html).toContain("ADD BOX");
+  expect(html.indexOf("PLACE BET")).toBeLessThan(html.indexOf("ADD BOX"));
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("Retract 25 jetons from Box 1");
   expect(html).toContain("data-box-stage");
-  expect(html).toContain('data-box-slot="1"');
-  expect(html).toContain('data-box-slot="2"');
+  expect(html).toContain('data-stage-slot="1"');
+  expect(html).toContain('data-stage-slot="2"');
+  expect(html).toContain('data-empty-slot="3"');
   expect(html).not.toContain("player-boxes two");
   expect(html.indexOf("Amount")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).not.toContain("DOUBLE");
@@ -185,7 +187,7 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
   expect(html).not.toContain("PLACE INSURANCE");
 });
 
-test("a single player box stays in slot 1 of the fixed stage", () => {
+test("a single player box begins centred on the fixed stage", () => {
   const oneBox: PlayerTableView = {
     ...view,
     phase: "BETTING",
@@ -202,8 +204,8 @@ test("a single player box stays in slot 1 of the fixed stage", () => {
     }),
   );
   expect(html).toContain("data-box-stage");
-  expect(html).toContain('data-box-slot="1"');
-  expect(html).toContain('data-empty-slot="2"');
+  expect(html).toContain('data-stage-slot="2"');
+  expect(html).toContain('data-empty-slot="1"');
   expect(html).toContain('data-empty-slot="3"');
   expect(html).not.toContain("player-boxes one");
 });
@@ -223,15 +225,13 @@ test("player payout keeps the jeton dock visible under settlement status", () =>
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("ROUND COMPLETE");
-  expect(html).toContain("PAYOUT / RESULT");
+  expect(html).toContain("PAYOUT");
   expect(html).toContain("YOUR JETONS");
-  expect(html.indexOf("ROUND COMPLETE")).toBeLessThan(html.indexOf("YOUR JETONS"));
-  expect(html).not.toContain("DOUBLE");
+  expect(html).not.toContain("2×");
   expect(html).not.toContain("SPLIT");
   expect(html).not.toContain("data-play-controls");
   expect(html).not.toContain("PLACE BET");
-  expect(html).not.toContain("START ADDITIONAL BOX");
+  expect(html).not.toContain("ADD BOX");
   expect(html).not.toContain("PLACE INSURANCE");
   expect(html).not.toContain('data-player-action="insurance"');
 });
@@ -252,7 +252,6 @@ test("player payout shows Hand complete after every box is resolved", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("ROUND COMPLETE");
   expect(html).toContain("YOUR JETONS");
   expect(html).not.toContain("outcome-celebration");
 });
@@ -301,7 +300,7 @@ test("player payout stacks identity, MAIN, and Insurance on separate lines", () 
   expect(html).toContain("box-identity");
   expect(html).toContain("box-owner");
   expect(html).toContain(longName);
-  const box2 = html.slice(html.indexOf('data-box-slot="2"'));
+  const box2 = html.slice(html.indexOf('data-box-id="2"'), html.indexOf('data-box-id="1"'));
   expect(box2).not.toContain("data-payout-insurance");
   expect(html).not.toContain("DOUBLE");
   expect(html).not.toContain("data-play-controls");
@@ -350,9 +349,8 @@ test("player Insurance uses short copy and keeps the fixed box stage", () => {
     }),
   );
   expect(html).toContain("INSURANCE OPEN");
-  expect(html).toContain("Max 50% of box stake");
-  expect(html).toContain("PLACE INSURANCE");
-  expect(html).toContain("DOUBLE");
+  expect(html).toContain("INSURANCE");
+  expect(html).toContain("2×");
   expect(html).toContain('data-player-action="insurance"');
   expect(html).toContain("data-box-stage");
   expect(html).toContain('data-box-slot="1"');

@@ -14,21 +14,12 @@ import {
   selectOutcomeCelebration,
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
+import { blackjackPlayerControls, playerBoxSlots } from "@/ui/core/blackjack-phase-controls";
 
 function seatTone(id: string) {
   let hash = 0;
   for (const char of id) hash = (hash + char.charCodeAt(0) * 17) % 360;
   return `hsl(${hash} 42% 42%)`;
-}
-
-function phaseCopy(view: PlayerTableView): { label: string; kicker: string } {
-  if (view.insuranceWindowOpen) return { label: "INSURANCE OPEN", kicker: "TAKE INSURANCE (OPTIONAL)" };
-  if (view.phase === "BETTING") return { label: "BETTING", kicker: "PLACE YOUR BETS" };
-  if (view.phase === "PLAYING") return { label: "PLAYING", kicker: "MAKE YOUR MOVE" };
-  if (view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE") {
-    return { label: "PAYOUT / RESULT", kicker: "ROUND COMPLETE" };
-  }
-  return { label: view.phase.replaceAll("_", " "), kicker: "" };
 }
 
 export function ClassicPlayerTable({
@@ -47,7 +38,6 @@ export function ClassicPlayerTable({
   members?: MemberView[];
 }) {
   const [exact, setExact] = useState("");
-  const [insuranceAmount, setInsuranceAmount] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"menu" | "close" | "game" | "poker" | "rename" | "dealer" | "player" | "jetons" | null>(null);
   const [tableName, setTableName] = useState(view.tableName);
@@ -59,13 +49,8 @@ export function ClassicPlayerTable({
   const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
   const [dealerId, setDealerId] = useState(members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "");
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
-  const slots: Array<(typeof view.boxes)[number] | null> = [null, null, null];
-  const extras: typeof view.boxes = [];
-  for (const box of view.boxes) {
-    const index = box.boxNumber >= 1 && box.boxNumber <= 3 ? box.boxNumber - 1 : -1;
-    if (index >= 0 && !slots[index]) slots[index] = box;
-    else extras.push(box);
-  }
+  const { slots, extras } = playerBoxSlots(view.boxes);
+  const controls = blackjackPlayerControls(view, selected);
   const reducedMotion =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const [celebration, setCelebration] = useState<OutcomeCelebration | null>(null);
@@ -76,8 +61,6 @@ export function ClassicPlayerTable({
   );
   const seenInsurance = useRef(new Set(view.boxes.filter((box) => box.insuranceResult).map((box) => box.id)));
   const playing = view.phase === "PLAYING";
-  const resolved = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
-  const phase = phaseCopy(view);
   const others = members.filter((member) => !member.isBankDealer);
 
   useEffect(() => {
@@ -107,7 +90,7 @@ export function ClassicPlayerTable({
   return (
     <TableShell badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
       <OutcomeCelebrationOverlay celebration={celebration} />
-      <PhaseBar label={phase.label} kicker={phase.kicker} />
+      <PhaseBar label={controls.phaseLabel} />
       <main
         className={`felt player-play-felt${view.phase === "BETTING" ? " betting-open" : ""}`}
         data-table-board="BLACKJACK_PLAYER"
@@ -135,22 +118,24 @@ export function ClassicPlayerTable({
           <div className="player-box-stage" data-box-stage="true">
             {slots.map((box, index) =>
               box ? (
-                <BlackjackBox
-                  key={box.id}
-                  box={box}
-                  selected={box.id === selected?.id}
-                  dropHighlight={hoverBoxId === box.id}
-                  onSelect={() => onSelectBox(box.id)}
-                  retractable={view.actions.retract}
-                  onRetractChip={(amount) =>
-                    onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
-                  }
-                />
+                <div className="stage-cell" key={box.id} data-stage-slot={index + 1}>
+                  <BlackjackBox
+                    box={box}
+                    selected={box.id === selected?.id}
+                    dropHighlight={hoverBoxId === box.id}
+                    onSelect={() => onSelectBox(box.id)}
+                    retractable={view.actions.retract}
+                    onRetractChip={(amount) =>
+                      onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
+                    }
+                  />
+                </div>
               ) : (
                 <div
                   key={`slot-${index + 1}`}
                   className="box-slot"
                   data-empty-slot={index + 1}
+                  data-stage-slot={index + 1}
                   data-box-slot={index + 1}
                   aria-hidden="true"
                 />
@@ -176,36 +161,18 @@ export function ClassicPlayerTable({
         <div className="game-controls" data-game-controls="true">
           {notice ? <div className="error">{notice}</div> : null}
           {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
-          {view.actions.bet ? (
+          {controls.placeBet ? (
             <div className="betting-controls">
-              <button
-                className="start-box"
-                type="button"
-                disabled={!view.actions.addBox}
-                onClick={() => view.actions.addBox && onCommand("addBox")}
-              >
-                START ADDITIONAL BOX
-              </button>
-              <input
-                type="text"
-                className="felt-input"
-                inputMode="decimal"
-                placeholder="Amount"
-                value={exact}
-                onChange={(event) => setExact(event.target.value)}
-                aria-label="Exact bet amount"
-              />
               <div className="exact bet-pair">
-                <button
-                  className="panel-button"
-                  type="button"
-                  disabled={!selected || selected.bet.label === "0"}
-                  onClick={() =>
-                    selected && onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })
-                  }
-                >
-                  RETRACT
-                </button>
+                <input
+                  type="text"
+                  className="felt-input"
+                  inputMode="decimal"
+                  placeholder="Amount"
+                  value={exact}
+                  onChange={(event) => setExact(event.target.value)}
+                  aria-label="Exact bet amount"
+                />
                 <button
                   className="gold-button"
                   type="button"
@@ -219,79 +186,58 @@ export function ClassicPlayerTable({
                   PLACE BET
                 </button>
               </div>
-            </div>
-          ) : null}
-          {playing && view.actions.insurance ? (
-            <div className="insurance-dock" data-insurance-controls="true">
-              <strong>INSURANCE BET</strong>
-              <span className="muted">Max 50% of box stake</span>
-              {selected?.insurance ? (
-                <span className="insurance-placed">
-                  INSURANCE {selected.insurance.label}
-                </span>
+              {controls.retract || controls.addBox ? (
+                <div className="deal-actions betting-extra">
+                  {controls.retract ? (
+                    <button
+                      className="panel-button"
+                      type="button"
+                      onClick={() =>
+                        selected && onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })
+                      }
+                    >
+                      RETRACT
+                    </button>
+                  ) : null}
+                  {controls.addBox ? (
+                    <button className="panel-button" type="button" onClick={() => onCommand("addBox")}>
+                      ADD BOX
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
-              <div className="exact bet-pair">
-                <input
-                  type="text"
-                  className="felt-input"
-                  inputMode="decimal"
-                  placeholder="Amount"
-                  value={insuranceAmount}
-                  onChange={(event) => setInsuranceAmount(event.target.value)}
-                  aria-label="Insurance amount"
-                />
-                <button
-                  className="gold-button"
-                  type="button"
-                  disabled={!selected || selected.coverage?.insurance === false}
-                  onClick={() => {
-                    if (!playing || !view.actions.insurance || !selected) return;
-                    onCommand("buyInsurance", {
-                      boxId: selected.id,
-                      amount: insuranceAmount || selected.insuranceMax.label,
-                    });
-                  }}
-                >
-                  PLACE INSURANCE
-                </button>
-              </div>
             </div>
           ) : null}
-          {playing ? (
+          {playing && (controls.double || controls.split || controls.insurance) ? (
             <div className="play-controls" data-play-controls="true">
-              <button
-                type="button"
-                className="primary"
-                data-player-action="double"
-                disabled={!view.actions.double || !selected || selected.coverage?.double === false}
-                onClick={() => {
-                  if (!playing || !view.actions.double || !selected) return;
-                  onCommand("doubleBox", { boxId: selected.id });
-                }}
-              >
-                DOUBLE
-              </button>
-              <button
-                type="button"
-                data-player-action="split"
-                disabled={!view.actions.split || !selected || selected.coverage?.split === false}
-                onClick={() => {
-                  if (!playing || !view.actions.split || !selected) return;
-                  onCommand("splitBox", { boxId: selected.id });
-                }}
-              >
-                SPLIT
-              </button>
-              {view.actions.insurance ? (
+              {controls.double ? (
+                <button
+                  type="button"
+                  className="primary"
+                  data-player-action="double"
+                  onClick={() => selected && onCommand("doubleBox", { boxId: selected.id })}
+                >
+                  2×
+                </button>
+              ) : null}
+              {controls.split ? (
+                <button
+                  type="button"
+                  data-player-action="split"
+                  onClick={() => selected && onCommand("splitBox", { boxId: selected.id })}
+                >
+                  SPLIT
+                </button>
+              ) : null}
+              {controls.insurance ? (
                 <button
                   type="button"
                   data-player-action="insurance"
-                  disabled={!selected || selected.coverage?.insurance === false}
                   onClick={() => {
-                    if (!playing || !view.actions.insurance || !selected) return;
+                    if (!selected) return;
                     onCommand("buyInsurance", {
                       boxId: selected.id,
-                      amount: insuranceAmount || selected.insuranceMax.label,
+                      amount: selected.insuranceMax.label,
                     });
                   }}
                 >
@@ -300,11 +246,10 @@ export function ClassicPlayerTable({
               ) : null}
             </div>
           ) : null}
-          {resolved ? <div className="payout-wait">ROUND COMPLETE</div> : null}
         </div>
         <PlayerWallet
           available={view.available}
-          trayEnabled={Boolean(view.actions.bet && selected && selected.coverage?.bet !== false)}
+          trayEnabled={controls.trayEnabled}
           dropSelector="[data-drop-box]"
           onTap={(amount) => {
             if (!view.actions.bet || !selected) return;

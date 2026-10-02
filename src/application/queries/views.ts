@@ -178,6 +178,11 @@ export type BankTableView = {
   canSwitchGame?: boolean;
   switchBlockedReason?: string | null;
   waitingForFirstBet?: boolean;
+  guestJoinUrl?: string | null;
+  verifiedJoinUrl?: string | null;
+  invitations?: InvitationView[];
+  emailConfigured?: boolean;
+  startingJetons?: MoneyView;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";

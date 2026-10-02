@@ -101,7 +101,7 @@ test("Create Table selector mounts Guest QR, Verified QR, and Email controls", a
   await shot(page, "03-email-390x844.png");
 });
 
-test("isolated Guest join seats a Player and enables OPEN BETTING", async ({ page, context, browser }) => {
+test("isolated Guest join seats a Player and enables START BETTING", async ({ page, context, browser }) => {
   test.setTimeout(180_000);
   await openCreateTable(page, context, "Guest Join");
   await page.getByRole("tab", { name: "GUEST QR" }).click();
@@ -121,14 +121,14 @@ test("isolated Guest join seats a Player and enables OPEN BETTING", async ({ pag
   await expect(page.locator("[data-player-row]").filter({ hasText: "Casey" })).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.locator("[data-table-board=PHASE_ZERO_DEALER]")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "ADD PLAYERS" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await expect(page.locator("[data-player-row]").filter({ hasText: "Casey" })).toBeVisible();
   await shot(page, "04-owner-phase0-open-betting-390x844.png");
 
   await guestPage.reload();
   await expect(guestPage.locator("[data-table-board=PHASE_ZERO_PLAYER]")).toBeVisible();
-  await expect(guestPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await expect(guestPage.getByText("YOUR JETONS")).toBeVisible();
   await expect(guestPage.getByText("100")).toBeVisible();
   await shot(guestPage, "05-guest-player-phase0-390x844.png");

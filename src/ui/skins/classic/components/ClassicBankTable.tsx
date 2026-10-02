@@ -12,16 +12,8 @@ import { DealerBlackjackBoxRow } from "./DealerBlackjackBoxRow";
 import { DealerHandBox } from "./DealerHandBox";
 import { BankrollPanel } from "./BankrollPanel";
 import { SheetOverlay } from "./SheetOverlay";
-
-function phaseCopy(view: BankTableView): { label: string; kicker: string } {
-  if (view.insurance.window === "OPEN") return { label: "INSURANCE", kicker: "INSURANCE PHASE" };
-  if (view.phase === "BETTING") return { label: "BETTING", kicker: "BETTING PHASE" };
-  if (view.phase === "PLAYING") return { label: "PLAYING", kicker: "PLAYING PHASE" };
-  if (view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE") {
-    return { label: "PAYOUT", kicker: "PAYOUT PHASE" };
-  }
-  return { label: view.phaseLabel.replaceAll("_", " "), kicker: "" };
-}
+import { ClassicInviteMask } from "./ClassicInvitePanel";
+import { blackjackDealerControls } from "@/ui/core/blackjack-phase-controls";
 
 export function ClassicBankTable({
   view,
@@ -37,6 +29,7 @@ export function ClassicBankTable({
   const [sheet, setSheet] = useState<
     "player" | "jetons" | "menu" | "close" | "funding" | "game" | "poker" | "rename" | "dealer" | null
   >(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -60,101 +53,72 @@ export function ClassicBankTable({
     dealerMember && view.players.some((player) => player.userId === dealerMember.userId && player.boxes.length > 0),
   );
   const badges = [...(view.isOwner ? ["OWNER"] : []), dealerPlays ? "DEALER · PLAYING" : "DEALER"];
+  const dealerControls = blackjackDealerControls(view);
 
   function runPrimary() {
-    if (view.primaryAction.id === "dealCards") onCommand("dealCards");
-    if (view.primaryAction.id === "payoutPhase") onCommand("enterPayout");
-    if (view.primaryAction.id === "nextHand") onCommand("startNextRound");
+    const command = dealerControls.primary?.command;
+    if (command) onCommand(command);
   }
 
   return (
     <TableShell badges={badges} onMenu={() => setSheet("menu")}>
-      <PhaseBar label={phaseCopy(view).label} kicker={phaseCopy(view).kicker}>
+      <PhaseBar label={dealerControls.phaseLabel}>
         <PhaseActionDock>
           <DealCountdown deadline={view.bettingCloseDeadlineAt} />
           <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
           {view.phase === "BETTING" && (view.waitingForFirstBet || !view.hasValidBet) ? (
             <p className="waiting-first-bet">WAITING FOR THE FIRST BET</p>
           ) : null}
-          {view.phase === "BETTING" ? (
-            <div className="deal-actions next-round-row">
+          <div className="deal-actions">
+            {dealerControls.insurance ? (
               <button
                 type="button"
-                className={view.primaryAction.enabled ? "gold-button" : undefined}
-                disabled={!view.primaryAction.enabled}
-                onClick={runPrimary}
+                className={dealerControls.insurance.id === "closeInsurance" ? "gold-button" : "panel-button"}
+                disabled={!dealerControls.insurance.enabled}
+                onClick={() => onCommand(dealerControls.insurance!.command)}
               >
-                {view.primaryAction.label}
+                {dealerControls.insurance.label}
               </button>
-            </div>
-          ) : view.phase === "PLAYING" ? (
-            <div className="deal-actions">
-              {view.actions.openInsurance || view.actions.closeInsurance || view.insurance.window === "OPEN" ? (
-                <div className="deal-actions next-round-row">
-                  <button type="button" disabled={!view.actions.openInsurance} onClick={() => onCommand("openInsurance")}>
-                    OPEN INSURANCE
-                  </button>
-                  <button type="button" disabled={!view.actions.closeInsurance} onClick={() => onCommand("closeInsurance")}>
-                    CLOSE INSURANCE
-                  </button>
-                </div>
-              ) : null}
-              <button
-                type="button"
-                className={view.primaryAction.enabled ? "gold-button" : undefined}
-                disabled={!view.primaryAction.enabled}
-                onClick={runPrimary}
-              >
-                {view.primaryAction.label}
-              </button>
-            </div>
-          ) : (
-            <div className="deal-actions">
-              {view.actions.settleInsurance ? (
-                <div className="deal-actions next-round-row">
-                  <button
-                    type="button"
-                    className="insurance-win"
-                    onClick={() => onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}
-                  >
-                    INS WON
-                  </button>
-                  <button
-                    type="button"
-                    className="insurance-lose"
-                    onClick={() => onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}
-                  >
-                    INS LOST
-                  </button>
-                </div>
-              ) : null}
+            ) : null}
+            {dealerControls.primary ? (
               <button
                 type="button"
                 className="gold-button"
-                disabled={!view.primaryAction.enabled}
+                disabled={!dealerControls.primary.enabled}
                 onClick={runPrimary}
               >
-                {view.primaryAction.label}
+                {dealerControls.primary.label}
               </button>
-            </div>
-          )}
+            ) : null}
+            {dealerControls.showAddPlayer ? (
+              <button className="panel-button" type="button" data-add-player="true" onClick={() => setInviteOpen(true)}>
+                ADD PLAYER
+              </button>
+            ) : null}
+            {dealerControls.showInsuranceSettle ? (
+              <div className="deal-actions next-round-row">
+                <button
+                  type="button"
+                  className="insurance-win"
+                  onClick={() => onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}
+                >
+                  INS WON
+                </button>
+                <button
+                  type="button"
+                  className="insurance-lose"
+                  onClick={() => onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}
+                >
+                  INS LOST
+                </button>
+              </div>
+            ) : null}
+          </div>
         </PhaseActionDock>
       </PhaseBar>
-      <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER">
+      <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER" data-guest-join-url={view.guestJoinUrl ?? undefined} data-verified-join-url={view.verifiedJoinUrl ?? undefined}>
         <div className="table-surface">
           <TableIdentity name={view.tableName} />
-          <div className="dealer-ledger-head" aria-hidden="true">
-            <span>#</span>
-            <span>PLAYER</span>
-            <span>{view.insurance.window === "OPEN" || view.phase === "PAYOUT" ? "MAIN" : "MAIN BET"}</span>
-            <span>
-              {view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE"
-                ? "MAIN RESULT"
-                : view.insurance.window === "OPEN" || view.phase === "PLAYING"
-                  ? "INSURANCE"
-                  : "ACTION"}
-            </span>
-          </div>
           <div className="dealer-list">
             <DealerHandBox
               name={view.dealerName ?? "Dealer"}
@@ -219,6 +183,18 @@ export function ClassicBankTable({
           ) : null}
         </div>
       </footer>
+      <ClassicInviteMask
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        guestJoinUrl={view.guestJoinUrl}
+        verifiedJoinUrl={view.verifiedJoinUrl}
+        emailConfigured={view.emailConfigured !== false}
+        startingJetons={view.startingJetons?.label ?? "100"}
+        members={members}
+        invitations={view.invitations}
+        onCommand={onCommand}
+        notice={notice}
+      />
       <SheetOverlay open={Boolean(sheet)} onClose={() => setSheet(null)}>
         {sheet === "game" ? (
             <>
@@ -319,7 +295,11 @@ export function ClassicBankTable({
                   IN 7 SECONDS
                 </button>
               ) : null}
-              {view.isOwner && view.actions.addPlayer ? (
+              {view.phase === "BETTING" ? (
+                <button type="button" onClick={() => { setSheet(null); setInviteOpen(true); }}>
+                  ADD PLAYER
+                </button>
+              ) : view.isOwner && view.actions.addPlayer ? (
                 <button type="button" onClick={() => setSheet("player")}>
                   ADD PLAYER
                 </button>

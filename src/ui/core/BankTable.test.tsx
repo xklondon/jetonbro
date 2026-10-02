@@ -47,7 +47,7 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
     title: "Take bets",
     copy: "Close when ready",
     phaseLabel: "BETTING",
-    primaryAction: { id: "dealCards", label: "CLOSE BETTING", enabled: true },
+    primaryAction: { id: "dealCards", label: "DEAL CARDS", enabled: true },
     boxes: [box({ insurance: null })],
     playerCount: 1,
     boxCount: 1,
@@ -112,12 +112,12 @@ test("Bank betting keeps deal controls at the top", () => {
   );
   expect(html).toContain('data-phase-heading');
   expect(html).toContain("BETTING");
-  expect(html).toContain("CLOSE BETTING");
-  expect(html).not.toContain("OPEN BETTING");
+  expect(html).toContain("DEAL CARDS");
+  expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("CURRENT PHASE:");
-  expect(html).not.toContain("CLOSE BETTING closes Betting and starts Playing.");
-  expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("CLOSE BETTING"));
-  expect(html.indexOf("CLOSE BETTING")).toBeLessThan(html.indexOf("ON TABLE"));
+  expect(html).not.toContain("DEAL CARDS closes Betting and starts Playing.");
+  expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS"));
+  expect(html.indexOf("DEAL CARDS")).toBeLessThan(html.indexOf("ON TABLE"));
   expect(html).toContain('data-blackjack-box-row="true"');
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");
@@ -131,7 +131,7 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
       view: bankView({
         hasValidBet: false,
         waitingForFirstBet: true,
-        primaryAction: { id: "dealCards", label: "CLOSE BETTING", enabled: false },
+        primaryAction: { id: "dealCards", label: "DEAL CARDS", enabled: false },
         actions: { ...bankView({}).actions, dealCards: false, scheduleDeal: false, switchGame: true },
       }),
       members,
@@ -142,7 +142,7 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
   expect(html).toContain('data-table-name="Salon"');
   expect(html).not.toContain("xklondon");
   expect(html).not.toContain("OPEN BANK");
-  expect(html).toMatch(/<button[^>]*disabled[^>]*>CLOSE BETTING/);
+  expect(html).toMatch(/<button[^>]*disabled[^>]*>DEAL CARDS/);
 });
 
 test("funding toggle stays visible but locked after a stake exists", () => {
@@ -217,8 +217,8 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
   expect(html).toContain("ENTER PAYOUT");
   expect(html).not.toContain("ENTER PAYOUT moves Playing to Payout.");
   expect(html).not.toContain("Settle every box");
-  expect(html).toContain("OPEN INSURANCE");
   expect(html).toContain("CLOSE INSURANCE");
+  expect(html).not.toContain("OPEN INSURANCE");
   expect(html).toContain("MAIN");
   expect(html).not.toContain("INSURANCE · OPEN");
   expect(html).not.toContain("insurance pot");
@@ -243,7 +243,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
         phase: "PAYOUT",
         phaseLabel: "PAYOUT",
         title: "Settle the round",
-        primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: false },
+        primaryAction: { id: "nextHand", label: "START BETTING", enabled: false },
         boxes: [box()],
         players: [
           {
@@ -280,7 +280,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
     }),
   );
   expect(html).toContain("PAYOUT");
-  expect(html).toContain("START NEXT ROUND");
+  expect(html).toContain("START BETTING");
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain("DEALER WON");
   expect(html).toContain("dealer-list");
@@ -300,7 +300,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).toContain("INS WON");
   expect(html).toContain("INS LOST");
   expect(html).not.toContain("Deal cards");
-  expect(html).toMatch(/<button[^>]*disabled[^>]*>START NEXT ROUND/);
+  expect(html).toMatch(/<button[^>]*disabled[^>]*>START BETTING/);
   expect(html).not.toContain("outcome-celebration");
   expect(html).not.toContain("WINNER!");
   expect(html).not.toContain("OPEN BANK");
@@ -361,7 +361,7 @@ test("ROUND_COMPLETE keeps the dealer box and one compact next-round row", () =>
       view: bankView({
         phase: "ROUND_COMPLETE",
         phaseLabel: "ROUND_COMPLETE",
-        primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: true },
+        primaryAction: { id: "nextHand", label: "START BETTING", enabled: true },
         dealerHand: { ranks: ["K", "7"], complete: true, label: "17", suggestedOutcome: null, canEdit: false },
         dealerName: "Alex",
         actions: {
@@ -378,7 +378,7 @@ test("ROUND_COMPLETE keeps the dealer box and one compact next-round row", () =>
   );
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain(">DEALER<");
-  expect(html).toContain("START NEXT ROUND");
+  expect(html).toContain("START BETTING");
   expect(html).not.toContain("NEXT ROUND IN 7 SECONDS");
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("DEALER WON");

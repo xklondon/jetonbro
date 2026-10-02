@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { MemberView, PokerTableView, SetupTableView, WaitingTableView } from "@/application/queries/views";
 import { pokerControls } from "@/application/queries/poker-controls";
+import { blackjackDealerSetupControls } from "@/ui/core/blackjack-phase-controls";
 import type { CommandHandler } from "@/ui/skins/types";
 import { TableShell } from "./TableShell";
 import { PhaseBar } from "./PhaseBar";
@@ -51,6 +52,7 @@ export function ClassicPhaseZero({
   const invited = (setup?.invitations ?? []).filter((invite) => invite.pending);
   const startHand = poker ? pokerControls(poker).find((control) => control.id === "startHand") : null;
   const canOpenBetting = game === "BLACKJACK" && Boolean(setup?.canStartBetting && setup.setupCompleted) && isBank;
+  const dealerSetup = blackjackDealerSetupControls(canOpenBetting);
   const startBlocked =
     game === "POKER"
       ? startHand && !startHand.enabled
@@ -82,14 +84,19 @@ export function ClassicPhaseZero({
                   START HAND
                 </button>
               ) : null
-            ) : isBank ? (
+            ) : isBank && dealerSetup.primary ? (
               <button
                 className="gold-button"
                 type="button"
-                disabled={!canOpenBetting}
-                onClick={() => onCommand("startBetting")}
+                disabled={!dealerSetup.primary.enabled}
+                onClick={() => onCommand(dealerSetup.primary!.command)}
               >
-                OPEN BETTING
+                {dealerSetup.primary.label}
+              </button>
+            ) : null}
+            {canManage && dealerSetup.showAddPlayer ? (
+              <button className="panel-button" type="button" data-add-player="true" onClick={() => setInviteOpen(true)}>
+                ADD PLAYER
               </button>
             ) : null}
           </PhaseActionDock>
@@ -146,18 +153,6 @@ export function ClassicPhaseZero({
               </>
             )}
           </div>
-          {canManage ? (
-            <button
-              className="gold-button add-player-button"
-              type="button"
-              data-add-player="true"
-              data-guest-join-url={guestJoinUrl ?? undefined}
-              data-verified-join-url={joinUrl ?? undefined}
-              onClick={() => setInviteOpen(true)}
-            >
-              ADD PLAYERS
-            </button>
-          ) : null}
         </div>
       </main>
       <ClassicInviteMask

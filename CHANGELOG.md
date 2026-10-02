@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Classic screen pack and Blackjack phase-control matrix
+
+- Classic table UI follows `design/reference/classic/jetonbro-player-bank-insurance.html` tokens (Georgia + Inter, emerald/gold/ivory) and `blackjack-phase-controls.ts` for visible actions.
+- Dealer: Phase 0 `START BETTING` + `ADD PLAYER`; Betting `DEAL CARDS` + `ADD PLAYER`; Playing exclusive insurance + `ENTER PAYOUT`; Payout `START BETTING` after resolution.
+- Player: Betting `PLACE BET` / `RETRACT` / `ADD BOX`; Playing `2×` / `SPLIT` / conditional `INSURANCE`; Payout idle tray. Box 1 starts centred; Box 2 fills left without jumping.
+- Table frame is `100dvh` with no document scroll. Dealer Add Player during Betting reuses the existing invitation mask.
+
 ### Live identity repair — request cookies, inline Create Table invites
 
 - Guest join writes `jetonbro.guest` and reloads `/tables/{id}` as a full document. Snapshot, stream, command, and table page resolve the actor from the request Cookie header; a matching guest cookie wins over leftover Auth.js.

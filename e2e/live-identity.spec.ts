@@ -37,7 +37,7 @@ async function tableSnapshot(page: Page) {
   }>;
 }
 
-test("isolated Guest cookie selects Player board and enables OPEN BETTING", async ({ page, context, browser }) => {
+test("isolated Guest cookie selects Player board and enables START BETTING", async ({ page, context, browser }) => {
   test.setTimeout(180_000);
   await openAs(context, page, uniqueEmail("live-owner"), "Alex");
   await page.setViewportSize({ width: 390, height: 844 });
@@ -78,13 +78,13 @@ test("isolated Guest cookie selects Player board and enables OPEN BETTING", asyn
 
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.locator("[data-table-board=PHASE_ZERO_DEALER]")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "ADD PLAYERS" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await shot(page, "04-dealer-phase0-open-betting-390x844.png");
 
   await guestPage.reload();
   await expect(guestPage.locator("[data-table-board=PHASE_ZERO_PLAYER]")).toBeVisible();
-  await expect(guestPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await expect(guestPage.getByText("YOUR JETONS")).toBeVisible();
   const guestSnap = await tableSnapshot(guestPage);
   expect(guestSnap.isOwner).toBe(false);
@@ -100,7 +100,7 @@ test("isolated Guest cookie selects Player board and enables OPEN BETTING", asyn
   await shot(guestPage, "03-guest-phase0-390x844.png");
 
   const bettingStarted = Date.now();
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await page.getByRole("button", { name: "START BETTING" }).click();
   await expect(page.locator("[data-table-board=BLACKJACK_DEALER]")).toBeVisible({ timeout: 2000 });
   await expect.poll(async () => (await tableSnapshot(guestPage)).phase, { timeout: 2000 }).toBe("BETTING");
   expect(Date.now() - bettingStarted).toBeLessThan(2000);
@@ -132,10 +132,10 @@ test("verified join uses the Player board", async ({ page, context, browser }) =
   await playerPage.goto(new URL(verifiedUrl).pathname);
   await expect(playerPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await playerPage.reload();
   await expect(playerPage.locator("[data-table-board=PHASE_ZERO_PLAYER]")).toBeVisible();
-  await expect(playerPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await playerContext.close();
 });
 

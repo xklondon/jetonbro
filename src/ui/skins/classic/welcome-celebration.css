@@ -46,7 +46,7 @@
   content: "$";
   display: block;
   text-align: center;
-  font: 9px Georgia, serif;
+  font: 9px var(--font-display);
   color: rgba(18, 48, 28, 0.7);
   line-height: 14px;
 }

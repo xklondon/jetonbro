@@ -208,7 +208,7 @@ test("full create table setup includes game, bank and START TABLE", () => {
   expect(html).not.toContain("CARD ASSIST");
 });
 
-test("Phase 0 shows compact waiting rows and OPEN BETTING", () => {
+test("Phase 0 shows compact waiting rows and START BETTING", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({ setupCompleted: true }),
@@ -221,10 +221,10 @@ test("Phase 0 shows compact waiting rows and OPEN BETTING", () => {
   expect(html).toContain("Owner · Alex");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
-  expect(html).toContain("ADD PLAYERS");
+  expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("JOIN WITHOUT EMAIL");
   expect(html).not.toContain("Guest QR — no email");
-  expect(html).toContain("OPEN BETTING");
+  expect(html).toContain("START BETTING");
   expect(html).not.toContain("START BLACKJACK");
   expect(html).not.toContain("START POKER");
   expect(html).toContain("data-phase-action");
@@ -290,15 +290,15 @@ test("START TABLE completed table does not keep a second setup form", () => {
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("WAITING FOR PLAYERS");
   expect(html).toContain("Sam");
-  expect(html).toContain("ADD PLAYERS");
+  expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("JOIN WITHOUT EMAIL");
-  expect(html).toContain("OPEN BETTING");
+  expect(html).toContain("START BETTING");
   expect(html).toContain("dock");
   expect(html).toMatch(/data-table-name="Alex[^"]*table"/);
   expect(html).not.toContain("xklondon");
 });
 
-test("invited seats render as compact rows and Open Betting stays gated", () => {
+test("invited seats render as compact rows and START BETTING stays gated", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicSetupTable, {
       view: setupView({ setupCompleted: true }),
@@ -320,7 +320,7 @@ test("incomplete setup still uses the full Create Table screen", () => {
   );
   expect(html).toContain("START TABLE");
   expect(html).toContain("OPEN BANK");
-  expect(html).not.toContain("OPEN BETTING");
+  expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("data-seat-status=\"empty\"");
   expect(html).not.toContain("START BLACKJACK");
 });

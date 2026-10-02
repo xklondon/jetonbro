@@ -14,6 +14,8 @@ Store copies under `docs/design-reference/` when the source file can be copied s
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (4).png` | Poker Player phases | 7 | `poker-player-phases.jpg` |
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (5).png` | Poker Dealer / Owner phases | 7 | `poker-dealer-owner-phases.jpg` |
 
+Classic screen pack (tokens, box anatomy, tray, gold/outline buttons): `design/reference/classic/jetonbro-player-bank-insurance.html` and `design/reference/classic/README.md`. There is no directory named `jetbro-classic-screenpack`. Typography: Georgia display, Inter UI. Palette: `--emerald #063d31`, `--felt #075744`, `--gold #dfbd69`, `--ivory #f4ead5`, `--night #071714`. Dealer ChatGPT board spreadsheet headings are not copied.
+
 Ignore:
 
 - `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1).png` — blank/corrupt, not a reference.
@@ -35,7 +37,7 @@ HOME / TABLE INDEX
     → CREATE TABLE (complete setup on this screen, including invitations)
     → START TABLE
     → PHASE 0 waiting table
-    → OPEN BETTING / START HAND when legal
+    → START BETTING / START HAND when legal
     → existing Blackjack or Poker phase screens
 ```
 
@@ -47,11 +49,11 @@ Compact JetonBro header. `CREATE TABLE`. Compact saved-table cards: name, select
 
 ### Create Table
 
-One compact 390×844 screen that does not scroll the phone frame: table name and starting jetons, Owner identity, Blackjack/Poker segmented selector (Zilch as a coming-later note), Open/Limited Bank with Limited reserve only when Limited is selected, Poker blinds only when Poker is selected, Dealer, compact Player rows, inline Guest / Verified / Email invitation expanders, primary `START TABLE`. After `START TABLE`, Phase 0 uses `ADD PLAYERS` to open the invitation dialog.
+One compact 390×844 screen that does not scroll the phone frame: table name and starting jetons, Owner identity, Blackjack/Poker segmented selector (Zilch as a coming-later note), Open/Limited Bank with Limited reserve only when Limited is selected, Poker blinds only when Poker is selected, Dealer, compact Player rows, inline Guest / Verified / Email invitation expanders, primary `START TABLE`. After `START TABLE`, Phase 0 uses `ADD PLAYER` to open the invitation dialog.
 
 ### Phase 0
 
-The created table waiting for Players — not the setup form. Compact Player rows from the Table Setup board. No giant empty placeholder. `WAITING FOR PLAYERS` until the engine’s start command is legal. Blackjack `OPEN BETTING` is Dealer-only. Poker `START HAND` follows existing `pokerControls()` / command legality. `ADD NEW PLAYER` opens the same invitation mask used on Create Table. A seated Player sees the Player waiting board with their wallet, not Dealer controls. An Owner who assigned the Bank to someone else still sees the Owner Phase 0 admin board.
+The created table waiting for Players — not the setup form. Compact Player rows from the Table Setup board. No giant empty placeholder. `WAITING FOR PLAYERS` until the engine’s start command is legal. Blackjack `START BETTING` (`startBetting`) is Dealer-only and enabled only when a real seated Player exists. Poker `START HAND` follows existing `pokerControls()` / command legality. `ADD PLAYER` opens the same invitation mask used on Create Table. A seated Player sees the Player waiting board with their wallet, not Dealer controls. An Owner who assigned the Bank to someone else still sees the Owner Phase 0 admin board.
 
 ## Behaviour versus presentation
 
@@ -82,7 +84,7 @@ The live table name appears exactly once, on the felt (`data-table-name`).
 
 ## Seven-zone mobile grid (390×844)
 
-Maximum game width approximately 480px. Minimum touch target 44px. Felt may scroll internally. The tray never covers controls. Avoid full-page body scroll during active play.
+Maximum game width approximately 480px. Minimum touch target 44px. At 360×800, 390×844 and 430×932 the table occupies `100dvh`. The document must not scroll (`scrollHeight <= innerHeight + 2`, `scrollWidth <= clientWidth + 2`). Only the Dealer Player/box list may scroll internally, with hidden scrollbars. Header, phase actions and Player tray stay fixed. The tray never covers controls.
 
 1. Compact app header
 2. Phase header
@@ -114,7 +116,9 @@ Classic tokens already match the boards. Canonical values live in `src/ui/skins/
 | `--control-height` (44px) | interactive targets |
 | `--tray-height` | fixed Player tray |
 
-Shared components: `TableShell`, `PhaseBar`, `PhaseActionDock`, `TableIdentity`, `SheetOverlay`, `ClassicInviteMask`, `PlayerWallet` / `JetonTray`. Create Table and Phase 0 reuse one invitation mask.
+Shared components: `TableShell`, `PhaseBar`, `PhaseActionDock`, `TableIdentity`, `SheetOverlay`, `ClassicInviteMask`, `PlayerWallet` / `JetonTray`. Create Table, Phase 0 and Dealer Betting reuse one invitation mask.
+
+Visible Blackjack controls are derived from `src/ui/core/blackjack-phase-controls.ts` (`blackjackDealerControls` / `blackjackPlayerControls` / `playerBoxSlots`). Engine command ids are unchanged. Presentation labels override snapshot strings `CLOSE BETTING` and `START NEXT ROUND`. Do not scatter phase conditions across Player and Dealer JSX.
 
 ## Screen routing (`selectTableBoard`)
 
@@ -132,61 +136,68 @@ Never infer role from name, email, or a leftover Auth.js session. Guest cookie w
 
 Dominant board: Player phases (`12_49_42 PM (1)`).
 
-**Fixed box stage (user correction).** Player boxes occupy a permanent 3-slot grid (box 1 / 2 / 3). A box never recentres, resizes, or slides when another box is added, dropped, or when Insurance, Playing, or Payout chrome appears. Empty slots keep their space. Extra split boxes wrap to the next row of the same three columns. Controls, Insurance copy, and Card Assist never live inside the box stage.
+**Fixed three-slot stage.** Box 1 begins in the centre slot. Adding Box 2 places it to the left of Box 1 without moving Box 1. Box 3 fills the remaining right slot. Boxes must not jump when phases or chrome change. Empty slots keep their space. Extra split boxes wrap to the next row of the same three columns. Controls never live inside the box stage.
+
+### TABLE_SETUP / Phase 0
+
+Waiting state. Player identity and AVAILABLE jetons. No Dealer commands.
 
 ### Betting
 
-- Table name near the top of the felt.
+- Table name once on the felt.
 - Compact Dealer state only — do not fill the felt with other Players’ complete boxes.
 - The Player’s own boxes occupy the fixed stage.
 - Selected box: restrained gold border.
 - Each box shows stake and chip pile.
-- `START ADDITIONAL BOX`, `RETRACT`, `PLACE BET` in the control dock.
+- Action row immediately above the tray: `PLACE BET`; `RETRACT` only when a retractable stake exists; `ADD BOX` only when another box can legally be created.
+- Do not show `2×`, `SPLIT` or `INSURANCE`.
 - Jeton tray fixed at the bottom; available balance beside/above the tray.
 
 ### Playing
 
 - Same owned boxes in the same slots.
-- `DOUBLE` / `SPLIT` / `INSURANCE` directly above the tray.
+- Tray remains visible; betting chips are disabled.
+- Action row contains only legal card actions for the selected owned box: `2×` (Double), `SPLIT`, and `INSURANCE` only while the Dealer has opened insurance and that box may insure.
+- No `ADD BOX`, `PLACE BET` or `RETRACT`.
 - No cards or totals on the default surface.
 
-### Insurance
+### Insurance open
 
-- Same selected box and main stake.
-- Insurance as a separate side bet.
-- Copy: `INSURANCE` / `Up to half the box stake`.
-- Place Insurance when legal. Do not invent a retract-Insurance command.
-- Keep the Double/Split/Insurance row structurally consistent.
+- Show `INSURANCE` only where legal for the selected owned box.
+- Keep `2×` and `SPLIT` only if the engine still reports them legal.
+- Never allow a Player to act on another Player’s box.
 
 ### Payout / Result
 
 - Same box component: Won, Lost, Stand-off, Blackjack, returned/won amount, updated available balance.
-- Do not show Double/Split/Insurance as enabled controls.
+- No `PLACE BET`, `RETRACT`, `ADD BOX`, `2×`, `SPLIT` or `INSURANCE`.
 - Tray remains visible and disabled.
 
 ## Blackjack Dealer / Owner screen contract
 
-Dominant board: Dealer/Owner phases (`12_50_27 PM (3)`). Do not copy its illustrative arithmetic.
+Visual tokens, box anatomy, felt, gold/outline buttons and the Player tray come from `design/reference/classic/jetonbro-player-bank-insurance.html` (Classic screen pack) plus the Player phase board. Do not copy the Dealer ChatGPT board’s spreadsheet headings or illustrative arithmetic.
+
+Visible controls follow `blackjackDealerControls()`. Engine commands: `startBetting`, `dealCards`, `openInsurance` / `closeInsurance`, `enterPayout`, `startNextRound`.
 
 ### Role header
 
 Separate badges: `OWNER`, `DEALER`. A Dealer who also plays may show `DEALER · PLAYING`. Do not create a duplicate Player seat for the Dealer.
 
+### TABLE_SETUP / Phase 0
+
+Primary `START BETTING`, enabled only when a real seated Player exists. Secondary `ADD PLAYER`. No `DEAL CARDS`. No payout controls.
+
 ### Betting
 
-Phase; `CLOSE BETTING` in the phase-action row; every Player; balances; main stakes; boxes; compact actions. No Player jeton tray unless the Dealer is placing a personal bet.
+Phase once (`BETTING`). Primary `DEAL CARDS` (`dealCards`; do not show `CLOSE BETTING`). Secondary `ADD PLAYER` opens the existing invitation mask (Guest QR, Verified QR, Email). A Player may join and receive starting jetons during Betting, may create/place a box only while Betting remains open, and cannot enter the current round after `DEAL CARDS`. Dealer sees every Player, available, locked amount and box stakes. No Player jeton tray unless the Dealer is placing a personal bet.
 
 ### Playing
 
-Same Player rows and boxes. Show Double/Split and Insurance state. `ENTER PAYOUT`.
-
-### Insurance
-
-`OPEN INSURANCE` / `CLOSE INSURANCE` in the phase-action row. Main bet and Insurance in separate fields labelled `MAIN` and `INSURANCE`. Do not call per-box Insurance an “insurance pot”.
+Same Player rows and boxes. Primary `ENTER PAYOUT`. If table settings permit insurance and the window is closed, show `OPEN INSURANCE` only. If the window is open, show `CLOSE INSURANCE` only. Never both. `ADD PLAYER` is not required during Playing.
 
 ### Payout
 
-Same Player/box structure. Settle `LOST` / `STAND-OFF` / `WON` / `BLACKJACK`. Insurance separately: `INS WON` / `INS LOST`. `START NEXT ROUND` stays disabled until everything is resolved.
+Same Player/box structure. Settle `LOST` / `STAND-OFF` / `WON` / `BLACKJACK`. Insurance separately: `INS WON` / `INS LOST`. Primary remains disabled until every required box/insurance result is resolved, then `START BETTING` (`startNextRound`). Do not show `START NEXT ROUND` or `DEAL CARDS` until the next Betting phase. No Player play controls.
 
 ## Owner utilities
 
@@ -201,14 +212,14 @@ These stay available and must not compete with play. They live in the compact me
 - optional Card Assist
 - countdown extras (`DEAL IN 7 SECONDS`, `IN 7 SECONDS`)
 
-The main phase-action row only progresses the round:
+The main phase-action row only progresses the round (plus Betting `ADD PLAYER`):
 
 ```text
-START BLACKJACK
-CLOSE BETTING
-OPEN INSURANCE / CLOSE INSURANCE
+START BETTING
+DEAL CARDS
+OPEN INSURANCE | CLOSE INSURANCE
 ENTER PAYOUT
-START NEXT ROUND
+START BETTING (after payout resolution)
 ```
 
 ## Card Assist
@@ -242,7 +253,8 @@ Card Assist, community/hole-card graphics, `NEXT HAND IN 7 SECONDS`, seat orderi
 ## Must never appear
 
 - Duplicate table name in the header
-- `CURRENT PHASE:` and long instructional sentences
+- Duplicate phase copy (`BETTING PHASE`, `PLAYING PHASE`, `PAYOUT PHASE`, `CURRENT PHASE:`)
+- Long instructional sentences under the phase heading
 - Other Players’ complete boxes on the Player felt
 - Cards or totals on the default Player surface
 - Spreadsheet / generic-form layouts for live play

@@ -121,10 +121,10 @@ function bank(phase: BankTableView["phase"], extra: Partial<BankTableView> = {})
     phaseLabel: phase,
     primaryAction:
       phase === "BETTING"
-        ? { id: "dealCards", label: "CLOSE BETTING", enabled: true }
+        ? { id: "dealCards", label: "DEAL CARDS", enabled: true }
         : phase === "PLAYING"
           ? { id: "payoutPhase", label: "ENTER PAYOUT", enabled: true }
-          : { id: "nextHand", label: "START NEXT ROUND", enabled: false },
+          : { id: "nextHand", label: "START BETTING", enabled: false },
     boxes: [box({ label: "1" })],
     playerCount: 1,
     boxCount: 1,
@@ -208,8 +208,8 @@ test("Owner/Dealer Phase 0 is the Dealer board, never the Player tray", () => {
     }),
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
-  expect(html).toContain("OPEN BETTING");
-  expect(html).toContain("ADD PLAYERS");
+  expect(html).toContain("START BETTING");
+  expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("YOUR JETONS");
   expect(html).not.toContain("PLACE BET");
 });
@@ -240,9 +240,9 @@ test("Guest Player Phase 0 is the Player waiting board", () => {
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_PLAYER"');
   expect(html).toContain("YOUR JETONS");
-  expect(html).not.toContain("OPEN BETTING");
-  expect(html).not.toContain("ADD PLAYERS");
-  expect(html).not.toContain("CLOSE BETTING");
+  expect(html).not.toContain("START BETTING");
+  expect(html).not.toContain("ADD PLAYER");
+  expect(html).not.toContain("DEAL CARDS");
 });
 
 test("Blackjack Dealer and Player boards keep exclusive controls by phase", () => {
@@ -250,8 +250,9 @@ test("Blackjack Dealer and Player boards keep exclusive controls by phase", () =
     createElement(ClassicBankTable, { view: bank("BETTING"), members, onCommand: () => undefined }),
   );
   expect(bettingDealer).toContain('data-table-board="BLACKJACK_DEALER"');
-  expect(bettingDealer).toContain("CLOSE BETTING");
-  expect(bettingDealer).not.toContain("OPEN BETTING");
+  expect(bettingDealer).toContain("DEAL CARDS");
+  expect(bettingDealer).toContain("ADD PLAYER");
+  expect(bettingDealer).not.toContain("START BETTING");
   expect(bettingDealer).not.toContain("YOUR JETONS");
   expect(bettingDealer).not.toContain("PLACE BET");
 
@@ -266,8 +267,8 @@ test("Blackjack Dealer and Player boards keep exclusive controls by phase", () =
   expect(bettingPlayer).toContain('data-table-board="BLACKJACK_PLAYER"');
   expect(bettingPlayer).toContain("PLACE BET");
   expect(bettingPlayer).toContain("YOUR JETONS");
-  expect(bettingPlayer).not.toContain("OPEN BETTING");
-  expect(bettingPlayer).not.toContain("CLOSE BETTING");
+  expect(bettingPlayer).not.toContain("START BETTING");
+  expect(bettingPlayer).not.toContain("DEAL CARDS");
 
   const playingDealer = renderToStaticMarkup(
     createElement(ClassicBankTable, { view: bank("PLAYING"), members, onCommand: () => undefined }),
@@ -283,9 +284,9 @@ test("Blackjack Dealer and Player boards keep exclusive controls by phase", () =
       onCommand: () => undefined,
     }),
   );
-  expect(playingPlayer).toContain("DOUBLE");
+  expect(playingPlayer).toContain("2×");
   expect(playingPlayer).not.toContain("ENTER PAYOUT");
-  expect(playingPlayer).not.toContain("OPEN BETTING");
+  expect(playingPlayer).not.toContain("START BETTING");
 
   const insuranceDealer = renderToStaticMarkup(
     createElement(ClassicBankTable, {
@@ -305,8 +306,8 @@ test("Blackjack Dealer and Player boards keep exclusive controls by phase", () =
       onCommand: () => undefined,
     }),
   );
-  expect(insurancePlayer).toContain("PLACE INSURANCE");
-  expect(insurancePlayer).not.toContain("OPEN BETTING");
+  expect(insurancePlayer).toContain("INSURANCE");
+  expect(insurancePlayer).not.toContain("START BETTING");
   expect(insurancePlayer).not.toContain("CLOSE INSURANCE");
 
   const payoutDealer = renderToStaticMarkup(
@@ -324,8 +325,8 @@ test("Blackjack Dealer and Player boards keep exclusive controls by phase", () =
     }),
   );
   expect(payoutPlayer).toContain("YOUR JETONS");
-  expect(payoutPlayer).not.toContain("OPEN BETTING");
-  expect(payoutPlayer).not.toContain("DOUBLE");
+  expect(payoutPlayer).not.toContain("START BETTING");
+  expect(payoutPlayer).not.toContain("2×");
 });
 
 test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
@@ -358,8 +359,8 @@ test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
   expect(html).toContain("DEALER · Blair");
-  expect(html).toContain("ADD PLAYERS");
-  expect(html).not.toContain("OPEN BETTING");
+  expect(html).toContain("ADD PLAYER");
+  expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("YOUR JETONS");
 });
 

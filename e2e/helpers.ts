@@ -90,10 +90,10 @@ export async function createBlackjackTable(
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
   await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
   await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /ADD PLAYERS/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /ADD PLAYER/i })).toBeVisible();
   await expect(page.getByAltText("Guest QR — no email")).toHaveCount(0);
   await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
@@ -181,6 +181,17 @@ export async function expectNoPageScroll(page: Page) {
   expect(scrolled.felt).toBe(false);
 }
 
+export async function expectNoDocumentScroll(page: Page) {
+  const metrics = await page.evaluate(() => ({
+    scrollHeight: document.documentElement.scrollHeight,
+    innerHeight: window.innerHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.innerHeight + 2);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 2);
+}
+
 export async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
@@ -190,11 +201,12 @@ export async function noHorizontalOverflow(page: Page) {
 
 export async function expectPlayerPayoutIdle(page: Page) {
   await expect(page.getByRole("button", { name: "DOUBLE" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "2×" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "SPLIT" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "INSURANCE", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "PLACE BET", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "RETRACT" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "START ADDITIONAL BOX" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "ADD BOX" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "PLACE INSURANCE" })).toHaveCount(0);
   await expect(page.locator("[data-play-controls]")).toHaveCount(0);
   await expect(page.locator("[data-player-wallet]")).toBeVisible();

@@ -496,7 +496,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             !tableClosed &&
             boxes.some((box) => !box.outcome),
           settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance && !tableClosed,
-          addPlayer: isOwner && table.currentPhase === "BETTING" && !tableClosed,
+          addPlayer: (isOwner || isBank) && table.currentPhase === "BETTING" && !tableClosed,
           giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
           changeBank: table.currentPhase === "BETTING" && isOwner && !tableClosed,
           saveTable: isOwner && !tableClosed && !pokerOpen && !anyLocked,
@@ -524,6 +524,18 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           ? "Finish or clear the current hand before switching games"
           : null,
         waitingForFirstBet: table.currentPhase === "BETTING" && !hasValidBet,
+        guestJoinUrl: guestUrl,
+        verifiedJoinUrl: verifiedUrl,
+        invitations: table.invitations
+          .filter((invite) => invite.kind === "EMAIL")
+          .map((invite) => ({
+            id: invite.id,
+            kind: invite.kind,
+            email: invite.email,
+            pending: !invite.usedAt && !invite.revokedAt,
+          })),
+        emailConfigured: isEmailDeliveryConfigured(),
+        startingJetons: money(table.startingJetonsPerPlayerMillis),
       }
     : null;
 
