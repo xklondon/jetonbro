@@ -98,7 +98,8 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
   await expect(page.locator("[data-dealer-box]")).toBeVisible();
-  await expect(page.getByRole("button", { name: "DEALER WON" })).toBeVisible();
+  await expect(page.locator("[data-dealer-box]")).toContainText("DEALER");
+  await expect(page.locator("[data-table-board=BLACKJACK_DEALER]").getByRole("button", { name: "DEALER WON" })).toHaveCount(0);
   await page.screenshot({ path: join(process.cwd(), "docs", "screenshots", "classic", "app-blackjack-dealer-payout-390x844.png") });
 
   const payoutSnap = (await tableSnapshot(page)) as {
@@ -252,9 +253,11 @@ test("DEALER WON settles unresolved boxes as LOST and leaves Insurance alone", a
   expect(boxes.length).toBeGreaterThanOrEqual(2);
   await page.locator(`[data-box-id="${boxes[0]!.id}"]`).getByRole("button", { name: /^WON/ }).click();
   await expect(page.locator(`[data-box-id="${boxes[0]!.id}"]`)).toContainText(/Won/i, { timeout: 10_000 });
-  await page.getByRole("button", { name: "DEALER WON" }).click();
+  await expect(page.locator("[data-table-board=BLACKJACK_DEALER]").getByRole("button", { name: "DEALER WON" })).toHaveCount(0);
+  await openTableMenu(page);
+  await page.locator(".sheet.open").getByRole("button", { name: "DEALER WON" }).click();
   await expect(page.getByText("Dealer wins against all unresolved boxes?")).toBeVisible();
-  await page.locator("[data-dealer-box]").getByRole("button", { name: "Confirm" }).click();
+  await page.locator(".sheet.open").getByRole("button", { name: "Confirm" }).click();
   await expect(page.locator(`[data-box-id="${boxes[1]!.id}"]`)).toContainText(/Lost/i, { timeout: 10_000 });
   await expect(page.locator(`[data-box-id="${boxes[0]!.id}"]`)).toContainText(/Won/i);
   await expect(page.getByRole("button", { name: "INS WON" })).toBeVisible();

@@ -26,7 +26,7 @@ export function ClassicBankTable({
   notice?: string | null;
 }) {
   const [sheet, setSheet] = useState<
-    "player" | "jetons" | "menu" | "close" | "funding" | "game" | "poker" | "rename" | "dealer" | null
+    "player" | "jetons" | "menu" | "close" | "funding" | "game" | "poker" | "rename" | "dealer" | "dealerWon" | null
   >(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -119,8 +119,6 @@ export function ClassicBankTable({
             <DealerHandBox
               name={view.dealerName ?? "Dealer"}
               status={dealerStatus}
-              showDealerWon={Boolean(view.actions.settleDealerWon)}
-              onDealerWon={() => onCommand("settleDealerWon")}
             />
             {view.players.length === 0
               ? view.boxes.map((box) => (
@@ -297,6 +295,11 @@ export function ClassicBankTable({
                   IN 7 SECONDS
                 </button>
               ) : null}
+              {view.actions.settleDealerWon ? (
+                <button type="button" onClick={() => setSheet("dealerWon")}>
+                  DEALER WON
+                </button>
+              ) : null}
               {view.phase === "BETTING" ? (
                 <button type="button" onClick={() => { setSheet(null); setInviteOpen(true); }}>
                   ADD PLAYER
@@ -380,6 +383,25 @@ export function ClassicBankTable({
               ))}
               <button className="gold-button" type="button" disabled={!view.actions.closeTable} onClick={() => { onCommand("closeTable"); setSheet(null); }}>
                 Confirm close
+              </button>
+              <button className="text-link" type="button" onClick={() => setSheet("menu")}>
+                Cancel
+              </button>
+            </>
+          ) : null}
+          {sheet === "dealerWon" ? (
+            <>
+              <h3>Dealer won</h3>
+              <p>Dealer wins against all unresolved boxes?</p>
+              <button
+                className="gold-button"
+                type="button"
+                onClick={() => {
+                  onCommand("settleDealerWon");
+                  setSheet(null);
+                }}
+              >
+                Confirm
               </button>
               <button className="text-link" type="button" onClick={() => setSheet("menu")}>
                 Cancel

@@ -197,7 +197,7 @@ Same two-column oval dealer boxes as the Classic screen pack (`dealer-grid`). Ea
 
 ### Payout
 
-Same Player/box structure. Settle `LOST` / `STAND-OFF` / `WON` / `BLACKJACK`. Insurance separately: `INS WON` / `INS LOST`. Primary remains disabled until every required box/insurance result is resolved, then `START BETTING` (`startNextRound`). Do not show `START NEXT ROUND` or `DEAL CARDS` until the next Betting phase. No Player play controls.
+Same Player/box structure and the same compact Dealer identity as Betting/Playing (`DEALER` + name + status). Do not render a felt `DEALER WON` banner. Settle `LOST` / `STAND-OFF` / `WON` / `BLACKJACK` inside each Player oval. Insurance separately: `INS WON` / `INS LOST`. Primary remains disabled until every required box/insurance result is resolved, then `START BETTING` (`startNextRound`). Do not show `START NEXT ROUND` or `DEAL CARDS` until the next Betting phase. No Player play controls.
 
 ## Owner utilities
 
@@ -211,6 +211,7 @@ These stay available and must not compete with play. They live in the compact me
 - limits / Open vs Limited Bank
 - optional Card Assist
 - countdown extras (`DEAL IN 7 SECONDS`, `IN 7 SECONDS`)
+- `DEALER WON` during Payout (owner bulk LOST for unresolved active boxes; never Insurance)
 
 The main phase-action row only progresses the round (plus Betting `ADD PLAYER`):
 

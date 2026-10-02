@@ -435,7 +435,7 @@
 .classic-skin .dealer-grid .dealer-hand-row {
   grid-column: 1 / -1;
   height: auto;
-  min-height: 72px;
+  min-height: 0;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -444,7 +444,7 @@
   gap: 2px;
 }
 
-.classic-skin .dealer-grid .box.dealer-box,
+.classic-skin .dealer-grid .box.dealer-box:not(.dealer-hand-row),
 .classic-skin .dealer-grid .payout-row.dealer-box {
   height: 175px;
   min-height: 175px;
@@ -488,9 +488,24 @@
 
 .classic-skin .dealer-grid .box-name {
   position: static;
+  top: auto;
   color: var(--gold);
   font-size: 11px;
   letter-spacing: 0.08em;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+}
+
+.classic-skin .dealer-grid .dealer-hand-row .box-name,
+.classic-skin .dealer-grid .dealer-hand-row .hint {
+  position: static;
+  top: auto;
+  overflow: visible;
+  max-width: 100%;
+  text-align: center;
+  padding-inline: 4px;
 }
 
 .classic-skin .dealer-grid .amount {
@@ -1045,11 +1060,11 @@
     height: 42px;
   }
 
-  .classic-skin .dealer-grid .box {
+  .classic-skin .dealer-grid .box:not(.dealer-hand-row) {
     height: 155px;
   }
 
-  .classic-skin .dealer-grid .box.dealer-box,
+  .classic-skin .dealer-grid .box.dealer-box:not(.dealer-hand-row),
   .classic-skin .dealer-grid .payout-row.dealer-box {
     height: 155px;
     min-height: 155px;
@@ -2228,9 +2243,17 @@
   height: auto;
   min-height: 0;
   max-height: none;
-  padding: 12px 10px 10px;
+  margin: 0 0 6px;
+  padding: 10px 12px;
+  border: 1.5px solid rgba(223, 189, 105, 0.72);
   border-radius: 14px;
+  background: rgba(2, 23, 18, 0.13);
   overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
 
 .classic-skin .dealer-grid .box.dealer-box.payout-row.is-unresolved {

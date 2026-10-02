@@ -193,6 +193,12 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "WON" }).first()).toBeVisible();
+  await expect(page.locator("[data-dealer-box]")).toContainText("DEALER");
+  await expect(page.locator("[data-table-board=BLACKJACK_DEALER]").getByRole("button", { name: "DEALER WON" })).toHaveCount(0);
+  await overflowAt(page, 360, 800);
+  await overflowAt(page, 390, 844);
+  await overflowAt(page, 430, 932);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: join(shots, "dealer-payout-unresolved-390x844.png") });
 
   await page.locator(`[data-box-id="${box1Id}"]`).getByRole("button", { name: "WON" }).click();
@@ -200,6 +206,12 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await page.getByRole("button", { name: "INS LOST" }).click();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 10_000 });
   await assertNoForbiddenCopy(page);
+  await expect(page.locator("[data-dealer-box]")).toContainText("DEALER");
+  await expect(page.locator("[data-table-board=BLACKJACK_DEALER]").getByRole("button", { name: "DEALER WON" })).toHaveCount(0);
+  await overflowAt(page, 360, 800);
+  await overflowAt(page, 390, 844);
+  await overflowAt(page, 430, 932);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: join(shots, "dealer-payout-resolved-390x844.png") });
 
   await playerPage.reload();
