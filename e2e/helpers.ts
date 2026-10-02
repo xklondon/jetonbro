@@ -55,12 +55,15 @@ export async function createPokerTable(
 }
 
 export async function openInviteMask(page: Page) {
-  const add = page.getByRole("button", { name: "ADD NEW PLAYER" });
-  await expect(add).toBeVisible({ timeout: 20_000 });
-  if (!(await page.locator(".sheet.open .invite-mask").count())) {
-    await add.click();
+  const add = page.getByRole("button", { name: /ADD (NEW )?PLAYERS?/i });
+  if (await add.count()) {
+    if (!(await page.locator(".sheet.open .invite-mask").count())) {
+      await add.click();
+    }
+    await expect(page.locator(".sheet.open .invite-mask")).toBeVisible();
+    return;
   }
-  await expect(page.locator(".sheet.open .invite-mask")).toBeVisible();
+  await expect(page.getByRole("tab", { name: "GUEST QR" })).toBeVisible({ timeout: 20_000 });
 }
 
 export async function setupJoinUrl(page: Page, kind: "guest" | "verified" = "verified") {
@@ -90,7 +93,7 @@ export async function createBlackjackTable(
   await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START POKER" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /ADD PLAYERS/i })).toBeVisible();
   await expect(page.getByAltText("Guest QR — no email")).toHaveCount(0);
   await expect(page.locator(".setup-mask")).toHaveCount(0);
   await expect(page.locator(".waiting-room")).toHaveCount(0);
@@ -141,10 +144,10 @@ export async function addLocalPlayerFromMenu(page: Page, name: string) {
 
 export async function invitePlayerFromLobby(page: Page, email: string) {
   await openInviteMask(page);
-  await page.getByRole("tab", { name: "EMAIL INVITE" }).click();
+  await page.getByRole("tab", { name: /EMAIL/i }).click();
   await expect(page.getByLabel("Player email")).toBeVisible();
   await page.getByLabel("Player email").fill(email);
-  await page.getByRole("button", { name: "SEND INVITE" }).click();
+  await page.getByRole("button", { name: /^SEND/i }).click();
   await expect(page.getByText("Pending")).toBeVisible();
   await page.locator(".invite-mask").getByRole("button", { name: "Close" }).click();
   await expect(page.locator(".sheet.open")).toHaveCount(0);

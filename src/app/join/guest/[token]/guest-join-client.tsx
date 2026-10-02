@@ -1,7 +1,6 @@
 "use client";
 
 import { getSkin } from "@/ui/skins/registry";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function GuestJoinClient({
@@ -16,7 +15,6 @@ export function GuestJoinClient({
   state: "invalid" | "ready";
 }) {
   const skin = getSkin();
-  const router = useRouter();
   const [notice, setNotice] = useState<string | null>(
     state === "invalid" ? "This invitation is not valid or has expired." : null,
   );
@@ -32,6 +30,8 @@ export function GuestJoinClient({
       onSubmit={async (fields) => {
         const response = await fetch(`/api/join/guest/${token}`, {
           method: "POST",
+          credentials: "include",
+          cache: "no-store",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ playName: fields.playName }),
         });
@@ -40,7 +40,7 @@ export function GuestJoinClient({
           setNotice(data.error ?? "This invitation is not valid or has expired.");
           return;
         }
-        router.replace(`/tables/${data.tableId}`);
+        window.location.replace(`/tables/${data.tableId}`);
       }}
     />
   );

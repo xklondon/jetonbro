@@ -70,7 +70,7 @@ export async function POST(
   context: { params: Promise<{ tableId: string }> },
 ) {
   const { tableId } = await context.params;
-  const actor = await getActor({ tableId });
+  const actor = await getActor({ tableId, cookieHeader: request.headers.get("cookie") });
   if (!actor) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }

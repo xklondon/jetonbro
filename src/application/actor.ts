@@ -1,13 +1,27 @@
 import { auth } from "@/application/auth";
 import { prisma } from "@/application/db";
-import { readGuestCookie } from "@/application/guest-session";
+import { guestCookieFromHeader, readGuestCookie } from "@/application/guest-session";
 import { ForbiddenError } from "@/domain/errors";
 import { resolveActorFromIdentities, type Actor } from "@/application/actor-resolve";
 
 export type { Actor };
 export { resolveActorFromIdentities };
 
-export async function getActor(scope?: { tableId?: string | null }): Promise<Actor | null> {
+async function loadGuestActor(cookieHeader?: string | null): Promise<Actor | null> {
+  const cookie = guestCookieFromHeader(cookieHeader) ?? (await readGuestCookie());
+  if (!cookie) return null;
+  const user = await prisma.user.findUnique({ where: { id: cookie.userId } });
+  if (!user?.isGuest || user.guestTableId !== cookie.tableId) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    isGuest: true,
+    guestTableId: user.guestTableId,
+  };
+}
+
+export async function getActor(scope?: { tableId?: string | null; cookieHeader?: string | null }): Promise<Actor | null> {
   const session = await auth();
   let verified: Actor | null = null;
   if (session?.user?.id) {
@@ -22,20 +36,7 @@ export async function getActor(scope?: { tableId?: string | null }): Promise<Act
       };
     }
   }
-  let guest: Actor | null = null;
-  const cookie = await readGuestCookie();
-  if (cookie) {
-    const user = await prisma.user.findUnique({ where: { id: cookie.userId } });
-    if (user?.isGuest && user.guestTableId === cookie.tableId) {
-      guest = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isGuest: true,
-        guestTableId: user.guestTableId,
-      };
-    }
-  }
+  const guest = await loadGuestActor(scope?.cookieHeader);
   return resolveActorFromIdentities({ tableId: scope?.tableId, verified, guest });
 }
 

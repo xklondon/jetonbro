@@ -306,8 +306,41 @@
 
 .classic-skin .invite-mask .qr-panel img,
 .classic-skin .invite-card .qr-panel img {
-  width: 168px;
-  height: 168px;
+  width: 120px;
+  height: 120px;
+}
+
+.classic-skin .invite-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.classic-skin .invite-inline-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.classic-skin .invite-inline-row p {
+  margin: 0;
+  font-size: 11px;
+}
+
+.classic-skin .invite-inline .qr-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.classic-skin .invite-inline .qr-panel img {
+  width: 112px;
+  height: 112px;
+}
+
+.classic-skin .invite-inline .qr-panel .gold-button {
+  flex: 1;
 }
 
 .classic-skin main.felt.create-setup {

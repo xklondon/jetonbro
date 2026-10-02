@@ -3,7 +3,7 @@ import { joinAsGuest } from "@/application/services/invitations";
 import { prisma } from "@/application/db";
 import { DomainError } from "@/domain/errors";
 import { assertInvitationUsable } from "@/domain/invitations/types";
-import { guestCookieOptions, GUEST_COOKIE, readGuestCookie, signGuestToken } from "@/application/guest-session";
+import { guestCookieFromHeader, guestCookieOptions, GUEST_COOKIE, readGuestCookie, signGuestToken } from "@/application/guest-session";
 
 export async function GET(
   _request: Request,
@@ -42,7 +42,7 @@ export async function POST(
     playName = "";
   }
   try {
-    const existing = await readGuestCookie();
+    const existing = guestCookieFromHeader(request.headers.get("cookie")) ?? (await readGuestCookie());
     const result = await joinAsGuest({
       token,
       playName,

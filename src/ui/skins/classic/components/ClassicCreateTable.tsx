@@ -6,7 +6,7 @@ import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 import type { CommandHandler } from "@/ui/skins/types";
 import { PhoneShell } from "./PhoneShell";
 import { ClassicGameCards } from "./ClassicGameCards";
-import { ClassicInviteMask } from "./ClassicInvitePanel";
+import { ClassicInviteInline } from "./ClassicInvitePanel";
 
 function limitedReserve(value?: string | null) {
   const parsed = Number.parseInt(String(value ?? "").trim(), 10);
@@ -66,8 +66,6 @@ export function ClassicCreateTable({
   const [pending, setPending] = useState(false);
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-
   useEffect(() => {
     if (!view) return;
     if (!nameDirty) setName(view.tableName);
@@ -276,30 +274,17 @@ export function ClassicCreateTable({
           ) : (
             <p className="muted compact-empty">No players yet.</p>
           )}
-          <button
-            className="gold-button add-player-button"
-            type="button"
-            data-add-player="true"
-            data-guest-join-url={guestJoinUrl ?? undefined}
-            data-verified-join-url={verifiedJoinUrl ?? undefined}
-            onClick={() => setInviteOpen(true)}
-          >
-            ADD NEW PLAYER
-          </button>
+          <ClassicInviteInline
+            guestJoinUrl={guestJoinUrl}
+            verifiedJoinUrl={verifiedJoinUrl}
+            emailConfigured={view?.emailConfigured !== false}
+            startingJetons={startingJetonsPerPlayer}
+            members={view?.members}
+            invitations={view?.invitations}
+            onCommand={onCommand ?? (async () => undefined)}
+          />
         </section>
       </main>
-      <ClassicInviteMask
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        guestJoinUrl={guestJoinUrl}
-        verifiedJoinUrl={verifiedJoinUrl}
-        emailConfigured={view?.emailConfigured !== false}
-        startingJetons={startingJetonsPerPlayer}
-        members={view?.members}
-        invitations={view?.invitations}
-        onCommand={onCommand ?? (async () => undefined)}
-        notice={notice}
-      />
       <footer className="dock create-dock">
         <button
           className="gold-button"

@@ -10,6 +10,7 @@ import { selectTableBoard } from "@/ui/core/table-board";
 async function sendCommand(tableId: string, command: string, payload: Record<string, string> = {}) {
     const response = await fetch(`/api/tables/${tableId}/commands`, {
       cache: "no-store",
+      credentials: "include",
       method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -37,6 +38,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState(initial);
   const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(initial.player?.boxes[0]?.id ?? null);
   const commandSeq = useRef(0);
 
@@ -46,7 +48,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   }, []);
 
   const refreshSnapshot = useCallback(async () => {
-    const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`, { cache: "no-store" });
+    const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`, { cache: "no-store", credentials: "include" });
     if (!response.ok) {
       const failed = (await response.json()) as { error?: string };
       throw new Error(failed.error ?? "Could not refresh the table.");
@@ -63,7 +65,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     let cancelled = false;
     async function refresh() {
       try {
-        const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`, { cache: "no-store" });
+        const response = await fetch(`/api/tables/${snapshot.tableId}/snapshot`, { cache: "no-store", credentials: "include" });
         if (!response.ok || cancelled) return;
         const next = (await response.json()) as ClientSnapshot;
         if (!cancelled) applySnapshot(next);
@@ -81,7 +83,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     };
     const poll = window.setInterval(() => {
       void refresh();
-    }, 2500);
+    }, 500);
     return () => {
       cancelled = true;
       source.close();
@@ -97,7 +99,11 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
 
   const onCommand = async (command: string, payload: Record<string, string> = {}) => {
     const seq = ++commandSeq.current;
-    setNotice(null);
+    const silent = command === "updateSettings" || command === "assignBank" || command === "setBankFunding";
+    if (!silent) {
+      setNotice(null);
+      setBusy(true);
+    }
     try {
       const result = await sendCommand(snapshot.tableId, command, payload);
       if (seq !== commandSeq.current) return false;
@@ -120,10 +126,16 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       setNotice(code === "TURN_CONFLICT" ? "TURN_CONFLICT" : error instanceof Error ? error.message : "Something went wrong.");
       try {
         await refreshSnapshot();
-      } catch {
-        // Keep the domain error visible even if the follow-up refresh fails.
+      } catch (refreshError) {
+        setNotice(
+          `${error instanceof Error ? error.message : "This action could not be completed."} ${
+            refreshError instanceof Error ? refreshError.message : ""
+          }`.trim(),
+        );
       }
       return false;
+    } finally {
+      if (seq === commandSeq.current) setBusy(false);
     }
   };
 
@@ -133,6 +145,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   );
 
   const board = selectTableBoard(snapshot);
+  const status = notice ?? (busy ? "Working…" : null);
 
   if (board === "CREATE_TABLE" && snapshot.setup) {
     return (
@@ -140,7 +153,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
         defaultTableName={snapshot.setup.tableName}
         defaultStartingJetons={snapshot.setup.startingJetonsPerPlayer.label}
         defaultHostName={snapshot.setup.ownerName}
-        notice={notice}
+        notice={status}
         view={snapshot.setup}
         onCommand={onCommand}
         onBack={() => void onCommand("abandonDraft")}
@@ -156,7 +169,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
         poker={snapshot.game === "POKER" ? snapshot.poker : null}
         members={snapshot.members}
         onCommand={onCommand}
-        notice={notice}
+        notice={status}
         isOwner={snapshot.isOwner}
         isBank={snapshot.isBank}
         viewerId={snapshot.viewerId}
@@ -183,13 +196,13 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     );
   }
   if (board === "POKER_DEALER" && snapshot.poker) {
-    return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={notice} />;
+    return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={status} />;
   }
   if (board === "POKER_PLAYER" && snapshot.poker) {
-    return <skin.PokerPlayer view={snapshot.poker} onCommand={onCommand} notice={notice} />;
+    return <skin.PokerPlayer view={snapshot.poker} onCommand={onCommand} notice={status} />;
   }
   if (board === "BLACKJACK_DEALER" && snapshot.bank) {
-    return <skin.BankTable view={snapshot.bank} members={playerMembers} onCommand={onCommand} notice={notice} />;
+    return <skin.BankTable view={snapshot.bank} members={playerMembers} onCommand={onCommand} notice={status} />;
   }
   if (board === "BLACKJACK_PLAYER" && snapshot.player) {
     return (
@@ -198,7 +211,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
         selectedBoxId={selectedBoxId}
         onSelectBox={setSelectedBoxId}
         onCommand={onCommand}
-        notice={notice}
+        notice={status}
         members={playerMembers}
       />
     );

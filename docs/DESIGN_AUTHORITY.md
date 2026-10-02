@@ -47,7 +47,7 @@ Compact JetonBro header. `CREATE TABLE`. Compact saved-table cards: name, select
 
 ### Create Table
 
-One compact 390×844 screen that does not scroll the phone frame: table name and starting jetons, Owner identity, Blackjack/Poker segmented selector (Zilch as a coming-later note), Open/Limited Bank with Limited reserve only when Limited is selected, Poker blinds only when Poker is selected, Dealer, compact Player rows, one `ADD NEW PLAYER` control, primary `START TABLE`. QR codes and email invitation live in the invitation mask, not on the felt.
+One compact 390×844 screen that does not scroll the phone frame: table name and starting jetons, Owner identity, Blackjack/Poker segmented selector (Zilch as a coming-later note), Open/Limited Bank with Limited reserve only when Limited is selected, Poker blinds only when Poker is selected, Dealer, compact Player rows, inline Guest / Verified / Email invitation expanders, primary `START TABLE`. After `START TABLE`, Phase 0 uses `ADD PLAYERS` to open the invitation dialog.
 
 ### Phase 0
 

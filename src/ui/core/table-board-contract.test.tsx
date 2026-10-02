@@ -209,7 +209,7 @@ test("Owner/Dealer Phase 0 is the Dealer board, never the Player tray", () => {
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
   expect(html).toContain("OPEN BETTING");
-  expect(html).toContain("ADD NEW PLAYER");
+  expect(html).toContain("ADD PLAYERS");
   expect(html).not.toContain("YOUR JETONS");
   expect(html).not.toContain("PLACE BET");
 });
@@ -241,7 +241,7 @@ test("Guest Player Phase 0 is the Player waiting board", () => {
   expect(html).toContain('data-table-board="PHASE_ZERO_PLAYER"');
   expect(html).toContain("YOUR JETONS");
   expect(html).not.toContain("OPEN BETTING");
-  expect(html).not.toContain("ADD NEW PLAYER");
+  expect(html).not.toContain("ADD PLAYERS");
   expect(html).not.toContain("CLOSE BETTING");
 });
 
@@ -358,7 +358,7 @@ test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
   expect(html).toContain("DEALER · Blair");
-  expect(html).toContain("ADD NEW PLAYER");
+  expect(html).toContain("ADD PLAYERS");
   expect(html).not.toContain("OPEN BETTING");
   expect(html).not.toContain("YOUR JETONS");
 });
@@ -389,9 +389,9 @@ test("invitation mask expands only one method", () => {
   );
   expect(html).toContain("GUEST QR");
   expect(html).toContain("VERIFIED QR");
-  expect(html).toContain("EMAIL INVITE");
-  expect(html).toContain("Join this table without email.");
-  expect(html).not.toContain("Scan, enter email and confirm the magic link.");
+  expect(html).toContain("EMAIL");
+  expect(html).toContain("No email · starts with 100");
+  expect(html).not.toContain("Email confirmation");
   expect(html).not.toContain("Player email");
 });
 

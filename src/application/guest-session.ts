@@ -42,11 +42,32 @@ export function guestCookieOptions(production = process.env.NODE_ENV === "produc
   };
 }
 
-export async function readGuestCookie(): Promise<{ userId: string; tableId: string } | null> {
-  const store = await cookies();
-  const value = store.get(GUEST_COOKIE)?.value;
+export function cookieValueFromHeader(header: string | null | undefined, name: string): string | null {
+  if (!header) return null;
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    if (trimmed.slice(0, eq) === name) return trimmed.slice(eq + 1);
+  }
+  return null;
+}
+
+export function guestCookieFromHeader(header: string | null | undefined): { userId: string; tableId: string } | null {
+  const value = cookieValueFromHeader(header, GUEST_COOKIE);
   if (!value) return null;
   return verifyGuestToken(value);
+}
+
+export async function readGuestCookie(): Promise<{ userId: string; tableId: string } | null> {
+  try {
+    const store = await cookies();
+    const value = store.get(GUEST_COOKIE)?.value;
+    if (!value) return null;
+    return verifyGuestToken(value);
+  } catch {
+    return null;
+  }
 }
 
 export async function writeGuestCookie(userId: string, tableId: string) {

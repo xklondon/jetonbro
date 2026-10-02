@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Live identity repair — request cookies, inline Create Table invites
+
+- Guest join writes `jetonbro.guest` and reloads `/tables/{id}` as a full document. Snapshot, stream, command, and table page resolve the actor from the request Cookie header; a matching guest cookie wins over leftover Auth.js.
+- Create Table invitations are compact and inline. Phase 0 uses `ADD PLAYERS` to open the invitation dialog.
+- Table poll is 500ms. Failed commands stay visible as inline errors.
+
 ### POST-RC3 repair 1 — compact shell, invitation mask, live role routing
 
 - Create Table is a dense 390×844 app screen. `ADD NEW PLAYER` opens one Classic invitation mask with exclusive Guest QR, Verified QR, and Email Invite tabs.

@@ -155,7 +155,7 @@ export function ClassicPhaseZero({
               data-verified-join-url={joinUrl ?? undefined}
               onClick={() => setInviteOpen(true)}
             >
-              ADD NEW PLAYER
+              ADD PLAYERS
             </button>
           ) : null}
         </div>
