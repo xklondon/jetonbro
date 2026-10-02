@@ -138,7 +138,8 @@ test("Bank betting shows waiting copy until the first locked bet", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("WAITING FOR THE FIRST BET");
+  expect(html).not.toContain("WAITING FOR THE FIRST BET");
+  expect(html).not.toContain("BETTING PHASE");
   expect(html).toContain('data-table-name="Salon"');
   expect(html).not.toContain("xklondon");
   expect(html).not.toContain("OPEN BANK");
@@ -283,11 +284,11 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).toContain("START BETTING");
   expect(html).toContain('data-dealer-box="true"');
   expect(html).toContain("DEALER WON");
+  expect(html).toContain("dealer-grid");
   expect(html).toContain("dealer-list");
-  expect(html).not.toContain("dealer-grid");
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("table-rail");
-  expect(html).toContain("Box 2");
+  expect(html).toContain("BOX 2");
   expect(html).not.toContain("payout-reveal");
   expect(html).toContain(">WON<");
   expect(html).toContain(">LOST<");

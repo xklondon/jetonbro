@@ -6,7 +6,6 @@ import { TableShell } from "./TableShell";
 import { PhaseBar } from "./PhaseBar";
 import { PhaseActionDock } from "./PhaseActionDock";
 import { TableIdentity } from "./TableIdentity";
-import { PlayerRow } from "./PlayerRow";
 import { DealCountdown } from "./DealCountdown";
 import { DealerBlackjackBoxRow } from "./DealerBlackjackBoxRow";
 import { DealerHandBox } from "./DealerHandBox";
@@ -66,9 +65,6 @@ export function ClassicBankTable({
         <PhaseActionDock>
           <DealCountdown deadline={view.bettingCloseDeadlineAt} />
           <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
-          {view.phase === "BETTING" && (view.waitingForFirstBet || !view.hasValidBet) ? (
-            <p className="waiting-first-bet">WAITING FOR THE FIRST BET</p>
-          ) : null}
           <div className="deal-actions">
             {dealerControls.insurance ? (
               <button
@@ -119,7 +115,7 @@ export function ClassicBankTable({
       <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER" data-guest-join-url={view.guestJoinUrl ?? undefined} data-verified-join-url={view.verifiedJoinUrl ?? undefined}>
         <div className="table-surface">
           <TableIdentity name={view.tableName} />
-          <div className="dealer-list">
+          <div className="dealer-list dealer-grid" data-dealer-grid="true">
             <DealerHandBox
               name={view.dealerName ?? "Dealer"}
               status={dealerStatus}
@@ -136,27 +132,33 @@ export function ClassicBankTable({
                     onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
                   />
                 ))
-              : view.players.map((player, index) => (
-                  <PlayerRow
-                    key={player.userId}
-                    userId={player.userId}
-                    index={index + 1}
-                    name={player.name}
-                    status={player.status}
-                    available={player.available.label}
-                    locked={player.locked.label}
-                  >
-                    {player.boxes.map((box) => (
-                      <DealerBlackjackBoxRow
-                        key={box.id}
-                        box={box}
-                        phase={view.phase}
-                        payoutEnabled={view.actions.settleBoxes}
-                        onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
-                      />
-                    ))}
-                  </PlayerRow>
-                ))}
+              : view.players.flatMap((player) =>
+                  player.boxes.length > 0
+                    ? player.boxes.map((box) => (
+                        <DealerBlackjackBoxRow
+                          key={box.id}
+                          box={box}
+                          phase={view.phase}
+                          payoutEnabled={view.actions.settleBoxes}
+                          available={player.available.label}
+                          locked={player.locked.label}
+                          onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
+                        />
+                      ))
+                    : [
+                        <div
+                          className="box dealer-box"
+                          key={player.userId}
+                          data-player-row="true"
+                          data-player-group={player.userId}
+                        >
+                          <span className="box-name">{player.name}</span>
+                          <span className="amount-label">AVAILABLE</span>
+                          <span className="amount">{player.available.label}</span>
+                          <span className="hint">{player.status}</span>
+                        </div>,
+                      ],
+                )}
           </div>
         </div>
       </main>

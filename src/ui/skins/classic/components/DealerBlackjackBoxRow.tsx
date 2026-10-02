@@ -42,11 +42,15 @@ export function DealerBlackjackBoxRow({
   box,
   phase,
   payoutEnabled = false,
+  available,
+  locked,
   onSettle,
 }: {
   box: BoxView;
   phase: string;
   payoutEnabled?: boolean;
+  available?: string;
+  locked?: string;
   onSettle?: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
 }) {
   const [dx, setDx] = useState(0);
@@ -61,6 +65,7 @@ export function DealerBlackjackBoxRow({
     (outcome) => box.payoutActions.find((action) => action.outcome === outcome) ?? { outcome, label: RAIL_TITLE[outcome], title: RAIL_TITLE[outcome] },
   );
   const settled = resultCopy(box);
+  const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
 
   function settle(outcome: BoxView["payoutActions"][number]["outcome"]) {
     if (!unresolved || !onSettle) return;
@@ -115,10 +120,12 @@ export function DealerBlackjackBoxRow({
 
   return (
     <div
-      className={`payout-row blackjack-box-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
+      className={`box dealer-box payout-row blackjack-box-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
       data-box-id={box.id}
       data-blackjack-box-row="true"
       data-box-phase={phase}
+      data-player-row="true"
+      data-player-group={box.playerId}
       data-payout-row={unresolved || Boolean(box.outcome) ? "true" : undefined}
       data-payout-gesture={unresolved ? "true" : undefined}
       style={{ touchAction: unresolved ? (dragging ? "none" : "pan-y") : undefined }}
@@ -150,19 +157,12 @@ export function DealerBlackjackBoxRow({
             transform: unresolved && dx ? `translateX(${dx}px)` : undefined,
           }}
         >
-          <div>
-            <strong>{box.label}</strong>
-            <div className="box-stakes">
-              <span>
-                <small>MAIN</small>
-                <strong>{box.bet.label}</strong>
-              </span>
-              <span>
-                <small>INSURANCE</small>
-                <strong>{box.insurance?.label ?? "—"}</strong>
-              </span>
-            </div>
-          </div>
+          <span className="box-name">{title}</span>
+          <span className="amount-label">MAIN</span>
+          <span className="amount">{box.bet.label}</span>
+          {box.insurance || phase !== "BETTING" ? (
+            <span className="hint">INSURANCE {box.insurance?.label ?? "—"}</span>
+          ) : null}
           <span className="chip-pile compact">
             {chips.map((chip, index) => (
               <span key={`${chip.label}-${index}`} className={`chip ${chip.className}`}>
@@ -170,15 +170,22 @@ export function DealerBlackjackBoxRow({
               </span>
             ))}
           </span>
-          <div className="payout-state">
+          {available || locked ? (
+            <span className="dealer-box-meta">
+              {available ? `AVAILABLE ${available}` : ""}
+              {available && locked ? " · " : ""}
+              {locked ? `LOCKED ${locked}` : ""}
+            </span>
+          ) : null}
+          <span className="result payout-state">
             {settled ?? (unresolved ? "Unresolved" : phase === "PLAYING" ? "In play" : phase === "BETTING" ? "Betting" : "")}
-            {box.isDoubled ? <div className="muted">Doubled</div> : null}
-            {box.insuranceResult ? <div className="muted">{box.insuranceResult}</div> : null}
-          </div>
+            {box.isDoubled ? " · Doubled" : ""}
+            {box.insuranceResult ? ` · ${box.insuranceResult}` : ""}
+          </span>
         </div>
       </div>
       {unresolved ? (
-        <div className="payout-access" role="group" aria-label={`Settle ${box.label}`}>
+        <div className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
           {railActions.map((action) => (
             <button
               key={action.outcome}

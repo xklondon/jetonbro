@@ -15,15 +15,10 @@ export function DealerHandBox({
 }) {
   const [confirm, setConfirm] = useState(false);
   return (
-    <div className="payout-row blackjack-box-row dealer-hand-row is-idle" data-dealer-box="true" data-blackjack-box-row="true">
-      <div className="payout-row-inner">
-        <div>
-          <span className="dealer-tag">DEALER</span>
-          <strong>{name}</strong>
-          <div className="muted">{status}</div>
-        </div>
-        <span className="chip-pile compact" aria-hidden="true" />
-      </div>
+    <div className="box dealer-box dealer-hand-row is-idle" data-dealer-box="true" data-blackjack-box-row="true">
+      <span className="box-name">DEALER</span>
+      <span className="hint">{name}</span>
+      <span className="hint">{status}</span>
       {showDealerWon ? (
         confirm ? (
           <div className="dealer-won-confirm">
@@ -31,7 +26,7 @@ export function DealerHandBox({
             <div className="card-assist-actions">
               <button
                 type="button"
-                className="primary"
+                className="gold-button"
                 onClick={() => {
                   onDealerWon?.();
                   setConfirm(false);
@@ -45,7 +40,7 @@ export function DealerHandBox({
             </div>
           </div>
         ) : (
-          <button type="button" className="add-cards is-compact" onClick={() => setConfirm(true)}>
+          <button type="button" className="panel-button" onClick={() => setConfirm(true)}>
             DEALER WON
           </button>
         )

@@ -189,11 +189,11 @@ Primary `START BETTING`, enabled only when a real seated Player exists. Secondar
 
 ### Betting
 
-Phase once (`BETTING`). Primary `DEAL CARDS` (`dealCards`; do not show `CLOSE BETTING`). Secondary `ADD PLAYER` opens the existing invitation mask (Guest QR, Verified QR, Email). A Player may join and receive starting jetons during Betting, may create/place a box only while Betting remains open, and cannot enter the current round after `DEAL CARDS`. Dealer sees every Player, available, locked amount and box stakes. No Player jeton tray unless the Dealer is placing a personal bet.
+Phase once (`BETTING`). Primary `DEAL CARDS` (`dealCards`; do not show `CLOSE BETTING`). Secondary `ADD PLAYER` opens the existing invitation mask (Guest QR, Verified QR, Email). A Player may join and receive starting jetons during Betting, may create/place a box only while Betting remains open, and cannot enter the current round after `DEAL CARDS`. Dealer sees every Player on the screen-pack two-column oval grid: available, locked amount and box stakes. No Player jeton tray unless the Dealer is placing a personal bet. No `WAITING FOR THE FIRST BET` subtitle.
 
 ### Playing
 
-Same Player rows and boxes. Primary `ENTER PAYOUT`. If table settings permit insurance and the window is closed, show `OPEN INSURANCE` only. If the window is open, show `CLOSE INSURANCE` only. Never both. `ADD PLAYER` is not required during Playing.
+Same two-column oval dealer boxes as the Classic screen pack (`dealer-grid`). Each box is `{name} · BOX {n}` with MAIN, INSURANCE, chips, AVAILABLE and LOCKED. Do not use spreadsheet player headings. Primary `ENTER PAYOUT`. If table settings permit insurance and the window is closed, show `OPEN INSURANCE` only. If the window is open, show `CLOSE INSURANCE` only. Never both. `ADD PLAYER` is not required during Playing.
 
 ### Payout
 

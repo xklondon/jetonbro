@@ -274,7 +274,7 @@
   grid-auto-rows: 260px;
   gap: 8px;
   align-items: stretch;
-  align-content: center;
+  align-content: start;
   flex: 1;
   min-height: 0;
 }
@@ -412,23 +412,100 @@
   margin-top: 8px;
 }
 
+.classic-skin .dealer-list.dealer-grid,
 .classic-skin .dealer-grid {
   width: 100%;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   align-self: stretch;
-  overflow: auto;
-  align-content: center;
+  align-content: start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding: 2px 2px 8px;
 }
 
-.classic-skin .dealer-grid .box {
+.classic-skin .dealer-list.dealer-grid::-webkit-scrollbar,
+.classic-skin .dealer-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.classic-skin .dealer-grid .dealer-hand-row {
+  grid-column: 1 / -1;
+  height: auto;
+  min-height: 72px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.classic-skin .dealer-grid .box.dealer-box,
+.classic-skin .dealer-grid .payout-row.dealer-box {
   height: 175px;
+  min-height: 175px;
+  margin: 0;
+  border: 1.5px solid rgba(223, 189, 105, 0.72);
   border-radius: 30px 30px 14px 14px;
+  background: rgba(2, 23, 18, 0.13);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #fff;
+  padding: 8px 6px 6px;
+  overflow: hidden;
+}
+
+.classic-skin .dealer-grid .payout-row.is-unresolved {
+  height: auto;
+  min-height: 175px;
+}
+
+.classic-skin .dealer-grid .payout-swipe {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.classic-skin .dealer-grid .payout-row-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  min-height: 0;
+  height: 100%;
+  padding: 4px 4px 0;
+  grid-template-columns: none;
+}
+
+.classic-skin .dealer-grid .box-name {
+  position: static;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 
 .classic-skin .dealer-grid .amount {
-  font-size: 24px;
+  font: 24px var(--font-display);
+  color: var(--ivory);
+}
+
+.classic-skin .dealer-grid .amount-label,
+.classic-skin .dealer-grid .hint,
+.classic-skin .dealer-grid .dealer-box-meta,
+.classic-skin .dealer-grid .result {
+  font-size: 11px;
+  color: var(--ivory);
+  opacity: 0.78;
+  text-align: center;
 }
 
 .classic-skin .dealer-grid .chip-pile {
@@ -438,6 +515,12 @@
 .classic-skin .dealer-grid .chip {
   width: 38px;
   height: 38px;
+}
+
+.classic-skin .dealer-grid .payout-access {
+  width: calc(100% - 8px);
+  margin: 4px 4px 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .classic-skin .outcome {
@@ -964,6 +1047,12 @@
 
   .classic-skin .dealer-grid .box {
     height: 155px;
+  }
+
+  .classic-skin .dealer-grid .box.dealer-box,
+  .classic-skin .dealer-grid .payout-row.dealer-box {
+    height: 155px;
+    min-height: 155px;
   }
 }
 
@@ -1856,7 +1945,7 @@
   grid-auto-rows: 260px;
   margin-top: 4px;
   flex: 1;
-  align-content: center;
+  align-content: start;
 }
 
 .classic-skin .player-box-stage .stage-cell,
@@ -2133,5 +2222,42 @@
 .classic-skin .home-table-card.is-closed {
   opacity: 0.92;
 }
+
+.classic-skin .dealer-grid .box.dealer-box.dealer-hand-row {
+  grid-column: 1 / -1;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  padding: 12px 10px 10px;
+  border-radius: 14px;
+  overflow: visible;
+}
+
+.classic-skin .dealer-grid .box.dealer-box.payout-row.is-unresolved {
+  height: auto;
+  min-height: 220px;
+  padding-top: 16px;
+}
+
+.classic-skin .dealer-grid .payout-access {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  width: calc(100% - 8px);
+}
+
+.classic-skin .dealer-grid .payout-access button {
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 2px;
+  font-size: 8px;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.classic-skin .dealer-grid .payout-row-inner {
+  padding-top: 12px;
+}
+
 
 

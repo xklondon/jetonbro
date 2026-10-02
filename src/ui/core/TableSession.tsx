@@ -38,7 +38,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState(initial);
   const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [, setBusy] = useState(false);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(initial.player?.boxes[0]?.id ?? null);
   const commandSeq = useRef(0);
 
@@ -145,7 +145,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
   );
 
   const board = selectTableBoard(snapshot);
-  const status = notice ?? (busy ? "Working…" : null);
+  const status = notice;
 
   if (board === "CREATE_TABLE" && snapshot.setup) {
     return (
