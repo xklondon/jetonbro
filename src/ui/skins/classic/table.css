@@ -62,6 +62,7 @@
 
 .classic-skin .poker-pot-ring {
   display: none;
+  pointer-events: none;
 }
 
 .classic-skin .poker-pot-ring small {
@@ -131,7 +132,17 @@
   height: 0;
   max-height: none;
   width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.classic-skin .table-surface .dealer-list[data-ledger-overflow="true"] {
   overflow-y: auto;
+}
+
+.classic-skin .table-surface .dealer-list::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

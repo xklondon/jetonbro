@@ -353,6 +353,8 @@ test("player Insurance uses short copy and keeps the fixed box stage", () => {
   expect(html).toContain("INSURANCE");
   expect(html).toContain("2×");
   expect(html).toContain('data-player-action="insurance"');
+  expect(html).toContain("data-insurance-panel");
+  expect(html).toContain("MAX");
   expect(html).toContain("data-box-stage");
   expect(html).toContain('data-box-slot="1"');
   expect(html).toContain('data-box-slot="2"');

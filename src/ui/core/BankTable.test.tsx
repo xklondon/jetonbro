@@ -475,3 +475,28 @@ test("Dealer uses the same compact box row in every live phase", () => {
   }
 });
 
+test("Dealer ledger density marks 1, 4, and 6 Players", () => {
+  function crowd(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
+      userId: `p${index + 1}`,
+      name: `Player ${index + 1}`,
+      available: { millis: "100000", label: "100" },
+      locked: { millis: "0", label: "0" },
+      status: "Betting",
+      boxes: [] as BankTableView["players"][number]["boxes"],
+    }));
+  }
+  for (const count of [1, 4, 6]) {
+    const html = renderToStaticMarkup(
+      createElement(ClassicBankTable, {
+        view: bankView({ players: crowd(count), boxes: [] }),
+        members,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain(`data-ledger-count="${count}"`);
+    expect(html).toContain(`data-ledger-overflow="${count >= 5}"`);
+    expect(html.match(/data-player-row="true"/g)?.length).toBe(count);
+  }
+});
+

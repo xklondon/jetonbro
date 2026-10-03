@@ -8,6 +8,7 @@
 - Dealer: Phase 0 `START BETTING` + `ADD PLAYER`; Betting `DEAL CARDS` + `ADD PLAYER`; Playing exclusive insurance + `ENTER PAYOUT`; Payout `START BETTING` after resolution.
 - Player: Betting `PLACE BET` / `RETRACT` / `ADD BOX`; Playing `2×` / `SPLIT` / conditional `INSURANCE`; Payout idle tray. Box 1 starts centred; Box 2 fills left without jumping.
 - Dealer live boxes use the approved compact ledger (one short row per Player/box). Giant oval cards, the dashed felt frame, and the PLAYERS / BOXES / ON TABLE footer are gone. Gameplay header shows the table name once. Dealer primary actions sit in the bottom dock. Player Playing keeps a consistent `2×` / `SPLIT` / `INSURANCE` row. Owner `DEALER WON` remains a table-menu action.
+- Classic composition: Player felt is a full-height grid that centres the 3-slot stage; a reserved contextual row holds ADD BOX or the compact Insurance panel so boxes do not jump; Dealer ledger fills leftover felt for 1–4 rows and scrolls only at 5+; desktop frames the whole app inside one rounded 480px phone. Approved PNG boards are visual authorities, not data contracts.
 
 ### Live identity repair — request cookies, inline Create Table invites
 

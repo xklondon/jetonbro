@@ -14,7 +14,22 @@ Primary visual authority is the approved PNG set under `design/reference/classic
 
 Aliases: `blackjack-player-phases.png`, `table-owner-setup.png`, `blackjack-dealer-owner-phases.png`. Historical copies under `docs/design-reference/` remain for Poker boards only.
 
-The PNGs control composition, sizing, spacing, typography, hierarchy, control shape, player positioning, table density, chip appearance, and header/footer structure. `blackjack-phase-controls.ts` still controls which buttons exist, enabled state, command semantics, and accepted labels (`START BETTING`, `DEAL CARDS`, `ENTER PAYOUT`, `ADD PLAYER`, `INS WON` / `INS LOST`). Do not restore obsolete board wording (`OPEN BETTING`, `CLOSE BETTING`, `START NEXT ROUND`, `START ADDITIONAL BOX`).
+The approved PNG boards are visual authorities, not literal data contracts.
+
+The specification and live state control which screens exist, which Players and balances each role may see, how many boxes a Player owns, legal actions, the one-screen setup journey, commands, and labels. The boards control hierarchy, typography, density, spacing, component shape, visual balance, positioning, colour, and interaction placement.
+
+Do not mark a screen a visual failure merely because:
+
+- the fixture has 4 Players while the board illustrates 6;
+- a Player snapshot intentionally does not expose other Players;
+- a Player legitimately owns multiple boxes;
+- the current one-screen setup replaces obsolete mock screens;
+- obsolete bottom navigation was not copied;
+- the specification requires an Amount field.
+
+A screen passes only when it is both **SPEC CORRECT** (role, phase, commands, privacy, box count) and **VISUAL MATCH** (typography, density, hierarchy, balance, positioning, component styling). A spec-mandated content difference from a static mock is not a visual failure by itself.
+
+`blackjack-phase-controls.ts` still controls which buttons exist, enabled state, command semantics, and accepted labels (`START BETTING`, `DEAL CARDS`, `ENTER PAYOUT`, `ADD PLAYER`, `INS WON` / `INS LOST`). Do not restore obsolete board wording (`OPEN BETTING`, `CLOSE BETTING`, `START NEXT ROUND`, `START ADDITIONAL BOX`).
 
 Do not render Dealer Players/boxes as giant cards or large ovals. The Dealer ledger is a dense compact-row overview.
 
@@ -31,6 +46,7 @@ Do not render Dealer Players/boxes as giant cards or large ovals. The Dealer led
 | Dealer Betting `ADD PLAYER` | small secondary control, invitation mask unchanged |
 | Player orbit + Dealer ring | `.player-context` |
 | Player boxes | `BlackjackBox` / `FeltBox` in `player-box-stage` |
+| Player contextual panel (ADD BOX / Insurance) | reserved `.player-context-panel` |
 | Player action row above tray | `.game-controls` |
 | Player tray | `PlayerWallet` / `JetonTray` |
 | Home cards / Create Table / Phase 0 list | `ClassicHome`, `ClassicCreateTable`, `ClassicPhaseZero` |
@@ -113,7 +129,7 @@ Phase lives in the compact phase rail. Player available balance appears at the h
 
 ## Shared colour and type
 
-Classic tokens already match the boards. Canonical values live in `src/ui/skins/classic/tokens.css` and are consumed by `layouts.css` / `home.css`, not per-phase sheets:
+Classic tokens already match the boards. Canonical values live in `src/ui/skins/classic/tokens.css`. CSS ownership: `tokens.css` tokens only; `board.css` approved shared shell and anatomy; `layouts.css` responsive grids; `home.css` Home and Create Table only. Do not add another large override sheet.
 
 | Token | Role |
 |---|---|
@@ -164,7 +180,8 @@ Waiting state. Player identity and AVAILABLE jetons. No Dealer commands.
 - The Player’s own boxes occupy the fixed stage.
 - Selected box: restrained gold border.
 - Each box shows stake and chip pile.
-- Action row immediately above the tray: `PLACE BET`; `RETRACT` only when a retractable stake exists; `ADD BOX` only when another box can legally be created.
+- Contextual panel immediately below the box stage: `ADD BOX` only when another box can legally be created. That row stays reserved so boxes do not jump when it empties.
+- Action row immediately above the tray: Amount, `PLACE BET`, and `RETRACT` only when a retractable stake exists.
 - Do not show `2×`, `SPLIT` or `INSURANCE`.
 - Jeton tray fixed at the bottom; available balance beside/above the tray.
 
@@ -180,6 +197,7 @@ Waiting state. Player identity and AVAILABLE jetons. No Dealer commands.
 
 - Show `INSURANCE` only where legal for the selected owned box.
 - Keep `2×` and `SPLIT` only if the engine still reports them legal.
+- A compact Insurance panel (amount, maximum, existing `buyInsurance` control) sits between the box stage and the action row.
 - Never allow a Player to act on another Player’s box.
 
 ### Payout / Result

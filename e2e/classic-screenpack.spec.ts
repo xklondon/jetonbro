@@ -61,6 +61,9 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible({ timeout: 20_000 });
   await page.screenshot({ path: join(shots, "create-table-390x844.png") });
+  await page.getByRole("tab", { name: /GUEST QR/i }).click();
+  await expect(page.getByText(/Join this table without email/i)).toBeVisible();
+  await page.screenshot({ path: join(shots, "create-table-guest-qr-390x844.png") });
   await page.goto("/");
   await createBlackjackTable(page, "Classic pack", { starting: "100" });
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
@@ -86,6 +89,7 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toHaveCount(0);
   await assertNoForbiddenCopy(page);
+  await page.screenshot({ path: join(shots, "dealer-betting-one-player-390x844.png") });
 
   await page.getByRole("button", { name: "ADD PLAYER" }).click();
   await expect(page.locator(".sheet.open .invite-mask")).toBeVisible();
@@ -119,7 +123,8 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await page.setViewportSize({ width: 360, height: 800 });
   await overflowAt(page, 360, 800);
   await page.screenshot({ path: join(shots, "dealer-betting-360x800.png") });
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await overflowAt(page, 1440, 900);
   await page.screenshot({ path: join(shots, "desktop-centered-dealer-betting.png") });
   await page.setViewportSize({ width: 390, height: 844 });
   await guestPage.reload();
@@ -213,6 +218,7 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE OPEN");
   await playerPage.locator(`[data-box-id="${box1Id}"]`).click();
   await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
+  await expect(playerPage.locator("[data-insurance-panel]")).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "ADD BOX" })).toHaveCount(0);
   await playerPage.screenshot({ path: join(shots, "player-insurance-390x844.png") });
   await playerPage.getByRole("button", { name: "INSURANCE", exact: true }).click();

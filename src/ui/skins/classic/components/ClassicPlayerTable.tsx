@@ -154,13 +154,39 @@ export function ClassicPlayerTable({
               />
             ))}
           </div>
-          {controls.addBox ? (
-            <div className="add-box-row">
-              <button type="button" onClick={() => onCommand("addBox")}>
-                ADD BOX
-              </button>
-            </div>
-          ) : null}
+          <div className="player-context-panel" data-context-panel="true">
+            {controls.addBox ? (
+              <div className="add-box-row">
+                <button type="button" onClick={() => onCommand("addBox")}>
+                  ADD BOX
+                </button>
+              </div>
+            ) : null}
+            {view.insuranceWindowOpen && selected ? (
+              <div className="insurance-panel" data-insurance-panel="true">
+                <div>
+                  <small>INSURANCE</small>
+                  <strong>{selected.insurance?.label ?? "0"}</strong>
+                </div>
+                <div>
+                  <small>MAX</small>
+                  <strong>{selected.insuranceMax.label}</strong>
+                </div>
+                <button
+                  type="button"
+                  disabled={!controls.insurance}
+                  onClick={() =>
+                    onCommand("buyInsurance", {
+                      boxId: selected.id,
+                      amount: selected.insuranceMax.label,
+                    })
+                  }
+                >
+                  {selected.insurance ? "PLACED" : "PLACE"}
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </main>
       <footer className="dock player-dock">
@@ -169,7 +195,7 @@ export function ClassicPlayerTable({
           {view.bankLimitReached ? <div className="error">Bank limit reached</div> : null}
           {controls.placeBet ? (
             <div className="betting-controls">
-              <div className="exact">
+              <div className="bet-row">
                 <input
                   type="text"
                   className="felt-input"
@@ -179,8 +205,6 @@ export function ClassicPlayerTable({
                   onChange={(event) => setExact(event.target.value)}
                   aria-label="Exact bet amount"
                 />
-              </div>
-              <div className="exact bet-pair">
                 <button
                   className="panel-button"
                   type="button"

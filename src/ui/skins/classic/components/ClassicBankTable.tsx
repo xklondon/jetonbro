@@ -52,6 +52,10 @@ export function ClassicBankTable({
   );
   const badges = [...(view.isOwner ? ["OWNER"] : []), dealerPlays ? "DEALER · PLAYING" : "DEALER"];
   const dealerControls = blackjackDealerControls(view);
+  const ledgerCount =
+    view.players.length === 0
+      ? view.boxes.length
+      : view.players.reduce((count, player) => count + Math.max(player.boxes.length, 1), 0);
 
   function runPrimary() {
     const command = dealerControls.primary?.command;
@@ -111,7 +115,12 @@ export function ClassicBankTable({
             <span>MAIN</span>
             <span>{view.phase === "PAYOUT" ? "Result" : view.phase === "PLAYING" ? "Commitments" : "Action"}</span>
           </div>
-          <div className="dealer-list dealer-grid" data-dealer-grid="true">
+          <div
+            className="dealer-list dealer-grid"
+            data-dealer-grid="true"
+            data-ledger-count={ledgerCount}
+            data-ledger-overflow={ledgerCount >= 5 ? "true" : "false"}
+          >
             {view.players.length === 0
               ? view.boxes.map((box) => (
                   <DealerBlackjackBoxRow
