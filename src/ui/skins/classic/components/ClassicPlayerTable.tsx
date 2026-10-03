@@ -91,7 +91,7 @@ export function ClassicPlayerTable({
   return (
     <TableShell feltIdentity balance={view.available.label} badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
       <OutcomeCelebrationOverlay celebration={celebration} />
-      <PhaseBar label={controls.phaseLabel} kicker={controls.instruction} />
+      <PhaseBar label={controls.phaseLabel} kicker={controls.instruction === "Round complete" ? undefined : controls.instruction} />
       <main
         className={`felt player-play-felt${view.phase === "BETTING" ? " betting-open" : ""}`}
         data-table-board="BLACKJACK_PLAYER"

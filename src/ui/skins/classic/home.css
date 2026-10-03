@@ -381,8 +381,7 @@
 }
 
 .classic-skin .phase-zero-meta {
-  text-align: center;
-  margin-bottom: 8px;
+  display: none;
 }
 
 .classic-skin .waiting-kicker {
@@ -396,26 +395,29 @@
 .classic-skin .phase-zero-rows {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
   width: 100%;
 }
 
 .classic-skin .phase-zero-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 8px 10px;
-  min-height: 44px;
+  gap: 10px;
+  padding: 6px 4px;
+  min-height: 36px;
+  border: 0;
+  background: none;
 }
 
 .classic-skin .phase-zero-empty {
   text-align: center;
-  margin: 0;
-  padding: 10px 12px;
+  margin: 8px 0 0;
+  padding: 0;
   width: 100%;
-  border: 1px solid rgba(223, 189, 105, 0.28);
-  border-radius: 10px;
-  background: rgba(2, 23, 18, 0.28);
+  border: 0;
+  background: none;
 }
 
 .classic-skin .create-setup label,

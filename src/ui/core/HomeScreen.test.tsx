@@ -217,8 +217,11 @@ test("Phase 0 shows compact waiting rows and START BETTING", () => {
   );
   expect(html).toContain("data-phase-heading");
   expect(html).toContain("WAITING FOR PLAYERS");
-  expect(html).toContain("DEALER · Alex");
-  expect(html).toContain("Owner · Alex");
+  expect(html).toContain('data-dealer-dock="true"');
+  expect(html).toContain('data-dock-columns="2"');
+  expect(html).not.toContain("phase-zero-meta");
+  expect(html).not.toContain("Owner · Alex");
+  expect(html).not.toContain("DEALER · Alex");
   expect(html).not.toContain("setup-mask");
   expect(html).not.toContain("waiting-room");
   expect(html).toContain("ADD PLAYER");

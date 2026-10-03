@@ -71,8 +71,8 @@
 .classic-skin .phase-head strong,
 .classic-skin .phase-head [data-phase-heading] {
   font-family: var(--font-display);
-  font-size: 16px;
-  letter-spacing: 0.12em;
+  font-size: 20px;
+  letter-spacing: 0.16em;
   color: var(--cream);
 }
 
@@ -173,7 +173,7 @@
 
 .classic-skin .phase-zero-felt .table-surface {
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .classic-skin main.felt:not(.poker-felt)::after {
@@ -194,35 +194,22 @@
 }
 
 .classic-skin .cloth-name {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  display: block;
   width: 100%;
-  margin: 0 0 6px;
-  text-align: center;
-}
-
-.classic-skin .cloth-name-text {
   max-width: 100%;
+  margin: 14px 0 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 5.4vw, 24px);
+  line-height: 1.15;
+  letter-spacing: 0.14em;
+  color: rgba(223, 189, 105, 0.68);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: clamp(16px, 6.4vw, 28px);
-  line-height: 1.1;
-  color: var(--cream);
-  letter-spacing: 0.04em;
-}
-
-.classic-skin .cloth-name-rule {
-  display: block;
-  width: min(220px, 72%);
-  height: 8px;
-  margin: 0;
-  background:
-    linear-gradient(90deg, transparent, var(--gold-line) 18%, var(--gold-line) 42%, transparent 42%, transparent 58%, var(--gold-line) 58%, var(--gold-line) 82%, transparent),
-    radial-gradient(circle at 50% 50%, var(--gold) 0 2px, transparent 2.4px);
 }
 
 .classic-skin .player-context {
@@ -358,26 +345,26 @@
 }
 
 .classic-skin .player-box-stage .box {
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 8px 8px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   gap: 2px;
-  background: rgba(2, 18, 16, 0.42);
-  border: 1px solid rgba(223, 189, 105, 0.42);
-  box-shadow: none;
+  background: rgba(2, 14, 12, 0.28);
+  border: 1px solid rgba(223, 189, 105, 0.18);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.18);
 }
 
 .classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected),
 .classic-skin .player-box-stage .box:not(.selected) {
-  border-color: rgba(223, 189, 105, 0.28);
+  border-color: rgba(223, 189, 105, 0.14);
 }
 
 .classic-skin .player-box-stage .box.selected {
   border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold), 0 0 14px rgba(223, 189, 105, 0.28);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgba(223, 189, 105, 0.32);
 }
 
 .classic-skin .box-head {
@@ -389,9 +376,9 @@
 
 .classic-skin .player-box-stage .box-name {
   position: static;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  color: var(--gold);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: rgba(223, 189, 105, 0.72);
 }
 
 .classic-skin .box-kicker {
@@ -562,125 +549,154 @@
   margin: 0 0 6px;
 }
 
-.classic-skin .dealer-list.dealer-grid {
+.classic-skin .dealer-list.dealer-positions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: clamp(6px, 2vh, 14px);
+  align-content: center;
+  gap: 10px 12px;
   overflow-x: hidden;
   overflow-y: hidden;
   scrollbar-width: none;
-  padding: 0;
-  grid-template-columns: none;
+  padding: 4px 0 8px;
 }
 
-.classic-skin .dealer-list.dealer-grid[data-ledger-overflow="true"] {
-  justify-content: center;
-  justify-content: safe center;
+.classic-skin .dealer-list.dealer-positions[data-ledger-overflow="true"] {
+  align-content: flex-start;
   overflow-y: auto;
-  gap: 4px;
+  gap: 8px 10px;
 }
 
-.classic-skin .ledger-row {
-  max-height: none;
-}
-
-.classic-skin .dealer-list.dealer-grid::-webkit-scrollbar {
+.classic-skin .dealer-list.dealer-positions::-webkit-scrollbar {
   display: none;
 }
 
 .classic-skin .ledger-head,
 .classic-skin .dealer-rules,
-.classic-skin .dealer-summary {
+.classic-skin .dealer-summary,
+.classic-skin .ledger-avatar,
+.classic-skin .cloth-name-rule,
+.classic-skin .phase-zero-meta {
   display: none;
 }
 
-.classic-skin .ledger-row,
-.classic-skin .dealer-grid .ledger-row {
+.classic-skin .dealer-position {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  min-height: var(--ledger-row-height);
-  height: auto;
+  align-items: center;
+  gap: 4px;
+  width: min(168px, calc(50% - 6px));
   margin: 0;
-  padding: 10px 10px;
-  border: 1px solid rgba(223, 189, 105, 0.32);
-  border-radius: 16px;
-  background: rgba(2, 18, 16, 0.42);
+  padding: 8px 8px 6px;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(2, 14, 12, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.12);
   overflow: visible;
 }
 
-.classic-skin .ledger-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1fr);
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .dealer-position {
+  width: min(200px, 72%);
+}
+
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="2"] .dealer-position {
+  width: min(168px, calc(50% - 6px));
+}
+
+.classic-skin .dealer-list.dealer-positions:has(.is-unresolved) {
+  flex-direction: column;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 8px;
 }
 
-.classic-skin .ledger-num {
-  font-size: 10px;
-  color: var(--muted);
-  text-align: center;
+.classic-skin .dealer-position.is-unresolved {
+  width: min(240px, 92%);
+  padding: 10px 8px 8px;
 }
 
-.classic-skin .ledger-player {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .dealer-position.is-unresolved,
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="2"] .dealer-position.is-unresolved {
+  width: min(240px, 92%);
 }
 
-.classic-skin .ledger-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1px rgba(223, 189, 105, 0.35);
-}
-
-.classic-skin .ledger-id {
+.classic-skin .position-who {
   display: flex;
   flex-direction: column;
+  align-items: center;
   min-width: 0;
+  max-width: 100%;
 }
 
-.classic-skin .ledger-id small {
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
-.classic-skin .ledger-player strong {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--cream);
+.classic-skin .position-who strong {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.classic-skin .ledger-bet {
-  font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--cream);
-  text-align: center;
 }
 
-.classic-skin .ledger-meta {
+.classic-skin .position-who small {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: rgba(223, 189, 105, 0.62);
+}
+
+.classic-skin .position-stake {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.classic-skin .dealer-position .chip-pile {
+  height: 28px;
+}
+
+.classic-skin .dealer-position .chip {
+  width: 24px;
+  height: 24px;
+  font-size: 8px;
+  margin-left: -7px;
+}
+
+.classic-skin .position-stake .amount,
+.classic-skin .dealer-position .amount {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ivory);
+}
+
+.classic-skin .position-ins {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+
+.classic-skin .position-state {
   font-size: 10px;
+  letter-spacing: 0.06em;
   color: var(--muted);
-  text-align: right;
 }
 
-.classic-skin .ledger-row .payout-access {
+.classic-skin .dealer-position.is-won {
+  box-shadow: inset 0 0 0 1px rgba(31, 122, 74, 0.55);
+}
+
+.classic-skin .dealer-position.is-lost {
+  box-shadow: inset 0 0 0 1px rgba(184, 55, 63, 0.45);
+}
+
+.classic-skin .dealer-position .payout-access {
   display: grid;
   grid-template-columns: repeat(2, minmax(88px, 1fr));
   gap: 8px;
   width: 100%;
 }
 
-.classic-skin .ledger-row .payout-access button {
+.classic-skin .dealer-position .payout-access button {
   min-height: 48px;
   min-width: 88px;
   padding: 8px 6px;
@@ -774,7 +790,7 @@
     max-height: 108px;
   }
 
-  .classic-skin .ledger-row {
-    min-height: 48px;
+  .classic-skin .dealer-position {
+    width: min(156px, calc(50% - 6px));
   }
 }

@@ -11,6 +11,7 @@ import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
 import { SeatOrderList } from "./SeatOrderList";
 import { ClothName } from "./ClothName";
+import { DealerActionDock } from "./DealerActionDock";
 
 export function ClassicPhaseZero({
   setup,
@@ -44,8 +45,6 @@ export function ClassicPhaseZero({
   const [dealerId, setDealerId] = useState(
     setup?.members.find((member) => member.isBankDealer)?.userId ?? members.find((member) => member.isBankDealer)?.userId ?? "",
   );
-  const gameLabel = game === "POKER" ? "Texas Hold’em" : "Blackjack";
-  const ownerName = setup?.ownerName ?? waiting?.ownerName ?? "";
   const dealerName = setup?.bankName ?? waiting?.bankName ?? "";
   const rows = (setup?.members ?? waiting?.members ?? members).filter((member) => !member.isBankDealer);
   const invited = (setup?.invitations ?? []).filter((invite) => invite.pending);
@@ -68,7 +67,7 @@ export function ClassicPhaseZero({
 
   return (
     <TableShell feltIdentity badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
-      <PhaseBar label="WAITING FOR PLAYERS" kicker="Invite players to start">
+      <PhaseBar label="WAITING FOR PLAYERS">
         {waitingForPlayers && startBlocked ? (
           <p className="muted phase-hint">{startBlocked}</p>
         ) : null}
@@ -82,16 +81,10 @@ export function ClassicPhaseZero({
       >
         <div className="table-surface">
           <ClothName name={tableName} />
-          <div className="muted phase-zero-meta">
-            {gameLabel} · Owner · {ownerName} · DEALER · {dealerName}
-          </div>
           {notice ? <div className="error">{notice}</div> : null}
           <div className="phase-zero-rows">
             <div className="phase-zero-row member-row" data-role="dealer">
-              <div>
-                <strong className="truncate">{dealerName || "Dealer"}</strong>
-                <div className="muted">Dealer{ownerName === dealerName ? " · Owner" : ""}</div>
-              </div>
+              <strong className="truncate">{dealerName || "Dealer"}</strong>
             </div>
             {rows.length === 0 && invited.length === 0 ? (
               <p className="muted phase-zero-empty" data-empty-waiting="true">
@@ -101,24 +94,14 @@ export function ClassicPhaseZero({
               <>
                 {rows.map((row) => (
                   <div className="phase-zero-row member-row" key={row.userId} data-player-row="true">
-                    <div>
-                      <strong className="truncate">{row.name}</strong>
-                      <div className="muted">
-                        {row.isOwner ? "Owner" : ""}
-                        {row.isOwner && row.isBankDealer ? " · " : ""}
-                        {row.isBankDealer ? "Dealer" : ""}
-                        {!row.isOwner && !row.isBankDealer ? "Player" : ""}
-                      </div>
-                    </div>
+                    <strong className="truncate">{row.name}</strong>
                     <span>{row.available?.label ?? "0"}</span>
                   </div>
                 ))}
                 {invited.map((invite) => (
                   <div className="phase-zero-row member-row" key={invite.id} data-seat-status="Invited">
-                    <div>
-                      <strong className="truncate">{invite.email ?? "Player"}</strong>
-                      <div className="muted">Invited</div>
-                    </div>
+                    <strong className="truncate">{invite.email ?? "Player"}</strong>
+                    <span className="muted">Invited</span>
                   </div>
                 ))}
               </>
@@ -289,40 +272,26 @@ export function ClassicPhaseZero({
           </>
         ) : null}
       </SheetOverlay>
-      <footer className="dock dealer-dock dealer-primary-dock" data-phase-action="true">
-        {canManage && dealerSetup.showAddPlayer ? (
-          <div className="dealer-secondary">
-            <button type="button" data-add-player="true" onClick={() => setInviteOpen(true)}>
-              ADD PLAYER
-            </button>
-          </div>
-        ) : null}
-        {game === "POKER"
-          ? isOwner
-            ? (
-              <button
-                className="gold-button dealer-primary"
-                type="button"
-                disabled={!startHand?.enabled}
-                onClick={() => onCommand("startTexasHoldem")}
-              >
-                START HAND
-              </button>
-            )
+      <DealerActionDock
+        primary={
+          game === "POKER"
+            ? isOwner
+              ? { label: "START HAND", disabled: !startHand?.enabled, onClick: () => onCommand("startTexasHoldem") }
+              : null
+            : isBank && dealerSetup.primary
+              ? {
+                  label: dealerSetup.primary.label,
+                  disabled: !dealerSetup.primary.enabled,
+                  onClick: () => onCommand(dealerSetup.primary!.command),
+                }
+              : null
+        }
+        secondary={
+          canManage && dealerSetup.showAddPlayer
+            ? { label: "ADD PLAYER", addPlayer: true, onClick: () => setInviteOpen(true) }
             : null
-          : isBank && dealerSetup.primary
-            ? (
-              <button
-                className="gold-button dealer-primary"
-                type="button"
-                disabled={!dealerSetup.primary.enabled}
-                onClick={() => onCommand(dealerSetup.primary!.command)}
-              >
-                {dealerSetup.primary.label}
-              </button>
-            )
-            : null}
-      </footer>
+        }
+      />
     </TableShell>
   );
 }

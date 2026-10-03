@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import { endPayoutDrag, movePayoutDrag, startPayoutDrag, type PayoutDragSession } from "@/ui/core/payout-gesture";
+import { chipsFromMillis } from "./chips";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
   LOST: "LOST",
@@ -41,8 +42,6 @@ export function DealerBlackjackBoxRow({
   box,
   phase,
   payoutEnabled = false,
-  available,
-  locked,
   onSettle,
 }: {
   box: BoxView;
@@ -64,9 +63,10 @@ export function DealerBlackjackBoxRow({
   );
   const settled = resultCopy(box);
   const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
-  let hue = 0;
-  for (const char of box.playerId || title) hue = (hue + char.charCodeAt(0) * 17) % 360;
-  const commitment = box.isDoubled ? `Double ${box.bet.label}` : box.isSplit ? `Split ${box.bet.label}` : null;
+  const commitment = box.isDoubled ? "Double" : box.isSplit ? "Split" : null;
+  const chips = chipsFromMillis(box.bet.millis);
+  const state = commitment ?? settled;
+  void dx;
 
   function settle(outcome: BoxView["payoutActions"][number]["outcome"]) {
     if (!unresolved || !onSettle) return;
@@ -121,9 +121,10 @@ export function DealerBlackjackBoxRow({
 
   return (
     <div
-      className={`ledger-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
+      className={`dealer-position${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
       data-box-id={box.id}
       data-blackjack-box-row="true"
+      data-dealer-position="true"
       data-box-phase={phase}
       data-player-row="true"
       data-player-group={box.playerId}
@@ -141,26 +142,24 @@ export function DealerBlackjackBoxRow({
         }
       }}
     >
-      <div className="ledger-main">
-        <span className="ledger-player">
-          <span className="ledger-avatar" style={{ background: `hsl(${hue} 42% 42%)` }} />
-          <span className="ledger-id">
-            <strong>{box.playerName || "Player"}</strong>
-            <small>BOX {box.boxNumber}</small>
+      <span className="position-who">
+        <strong>{box.playerName || "Player"}</strong>
+        <small>BOX {box.boxNumber}</small>
+      </span>
+      <span className="position-stake">
+        {Number(box.bet.millis) > 0 ? (
+          <span className="chip-pile">
+            {chips.map((chip, index) => (
+              <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
+                <span className={`chip ${chip.className}`}>{chip.label}</span>
+              </span>
+            ))}
           </span>
-        </span>
-        <span className="ledger-bet">{box.bet.label}</span>
-        <span className="ledger-meta">
-          {unresolved
-            ? box.insurance
-              ? `INS ${box.insurance.label}`
-              : available
-                ? available
-                : ""
-            : (commitment ?? settled ?? (phase === "PLAYING" ? "In play" : box.insurance ? `INS ${box.insurance.label}` : ""))}
-          {!unresolved && box.insurance && phase !== "BETTING" && !commitment && !settled ? ` · INS ${box.insurance.label}` : ""}
-        </span>
-      </div>
+        ) : null}
+        <strong className="amount">{box.bet.label}</strong>
+        {box.insurance ? <small className="position-ins">INS {box.insurance.label}</small> : null}
+      </span>
+      {state ? <span className="position-state">{state}</span> : null}
       {unresolved ? (
         <span className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
           {railActions.map((action) => (

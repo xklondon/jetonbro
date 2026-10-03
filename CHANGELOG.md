@@ -10,6 +10,7 @@
 - Dealer live boxes use the approved compact ledger (one short row per Player/box). Giant oval cards, the dashed felt frame, and the PLAYERS / BOXES / ON TABLE footer are gone. Gameplay header shows the table name once. Dealer primary actions sit in the bottom dock. Player Playing keeps a consistent `2×` / `SPLIT` / `INSURANCE` row. Owner `DEALER WON` remains a table-menu action.
 - Classic composition: Player felt is a full-height grid that centres the 3-slot stage; a reserved contextual row holds ADD BOX or the compact Insurance panel so boxes do not jump; Dealer ledger fills leftover felt for 1–4 rows and scrolls only at 5+; desktop frames the whole app inside one rounded 480px phone. Approved PNG boards are visual authorities, not data contracts.
 - Classic visual polish: live table name sits on the felt; Dealer chrome/rules/column headings are gone; Dealer actions use a 65/35 bottom dock; payout keys are a large 2×2; Player boxes are rectangular betting cards.
+- Casino-felt correction: Phase 0 reuses the shared 65/35 Dealer dock; the table name is a printed cloth mark without ornaments or metadata; Dealer boxes are compact betting positions rather than admin ledger rows.
 
 ### Live identity repair — request cookies, inline Create Table invites
 

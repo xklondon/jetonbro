@@ -358,7 +358,8 @@ test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
     }),
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
-  expect(html).toContain("DEALER · Blair");
+  expect(html).toContain("Blair");
+  expect(html).not.toContain("DEALER · Blair");
   expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("YOUR JETONS");

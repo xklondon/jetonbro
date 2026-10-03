@@ -106,7 +106,7 @@ function bankView(overrides: Partial<BankTableView>): BankTableView {
   };
 }
 
-test("Bank betting anchors DEAL CARDS under the compact ledger", () => {
+test("Bank betting anchors DEAL CARDS under the felt positions", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicBankTable, { view: bankView({}), members, onCommand: () => undefined }),
   );
@@ -283,8 +283,10 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   expect(html).toContain("START BETTING");
   expect(html).not.toContain('data-dealer-box="true"');
   expect(html).not.toContain("DEALER WON");
-  expect(html).toContain("dealer-grid");
+  expect(html).toContain("dealer-positions");
   expect(html).toContain("dealer-list");
+  expect(html).not.toContain("dealer-grid");
+  expect(html).not.toContain("ledger-avatar");
   expect(html).not.toContain("bj-rail");
   expect(html).not.toContain("table-rail");
   expect(html).toContain("BOX 2");

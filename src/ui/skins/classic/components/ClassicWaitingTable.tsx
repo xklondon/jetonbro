@@ -9,15 +9,10 @@ import { ClothName } from "./ClothName";
 export function ClassicWaitingTable({ view }: { view: WaitingTableView }) {
   return (
     <TableShell feltIdentity balance={view.available.label}>
-      <PhaseBar label={view.copy || "WAITING FOR PLAYERS"} kicker="The Bank opens betting when ready" />
+      <PhaseBar label={view.copy || "WAITING FOR PLAYERS"} />
       <main className="felt setup-felt phase-zero-felt player-phase-zero" data-table-board="PHASE_ZERO_PLAYER">
         <div className="table-surface">
           <ClothName name={view.tableName} />
-          <div className="muted phase-zero-meta">
-            {view.game}
-            {view.ownerName ? ` · Owner · ${view.ownerName}` : ""}
-            {view.bankName ? ` · DEALER · ${view.bankName}` : ""}
-          </div>
         </div>
       </main>
       <footer className="dock player-dock">
