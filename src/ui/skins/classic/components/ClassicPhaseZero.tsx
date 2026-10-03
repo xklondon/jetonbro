@@ -10,6 +10,7 @@ import { PhaseBar } from "./PhaseBar";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
 import { SeatOrderList } from "./SeatOrderList";
+import { ClothName } from "./ClothName";
 
 export function ClassicPhaseZero({
   setup,
@@ -66,7 +67,7 @@ export function ClassicPhaseZero({
   void viewerId;
 
   return (
-    <TableShell title={tableName} badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
+    <TableShell feltIdentity badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
       <PhaseBar label="WAITING FOR PLAYERS" kicker="Invite players to start">
         {waitingForPlayers && startBlocked ? (
           <p className="muted phase-hint">{startBlocked}</p>
@@ -80,6 +81,7 @@ export function ClassicPhaseZero({
         data-verified-join-url={joinUrl ?? undefined}
       >
         <div className="table-surface">
+          <ClothName name={tableName} />
           <div className="muted phase-zero-meta">
             {gameLabel} · Owner · {ownerName} · DEALER · {dealerName}
           </div>

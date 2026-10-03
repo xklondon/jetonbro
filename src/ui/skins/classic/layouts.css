@@ -260,7 +260,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) var(--context-panel-height);
+  grid-template-rows: auto auto minmax(0, 1fr) var(--context-panel-height);
   align-content: stretch;
   overflow: hidden;
 }
@@ -289,6 +289,10 @@
   align-content: center;
   justify-items: stretch;
   min-height: 0;
+}
+
+.classic-skin .player-play-felt[data-box-count="1"] .player-box-stage {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 172px) minmax(0, 1fr);
 }
 
 .classic-skin .player-box-stage .stage-cell,
@@ -324,10 +328,10 @@
 .classic-skin .box {
   height: auto;
   min-height: 108px;
-  border: 2px solid var(--gold);
-  border-radius: 46% 46% 18px 18px / 22% 22% 18px 18px;
-  background: rgba(2, 23, 18, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.2);
+  border: 1px solid var(--gold-line);
+  border-radius: 14px;
+  background: rgba(2, 18, 16, 0.42);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -401,8 +405,7 @@
 }
 
 .classic-skin .box-name {
-  position: absolute;
-  top: 14px;
+  position: static;
   color: var(--gold);
   font-size: 11px;
   letter-spacing: 0.08em;

@@ -37,13 +37,13 @@ Do not render Dealer Players/boxes as giant cards or large ovals. The Dealer led
 
 | Board region | Component / slot |
 |---|---|
-| Phone chrome, 56–64px header, centred table name, Owner badge, Player balance | `PhoneShell` / `TableShell` |
+| Phone chrome, 56–64px header, menu + badges/balance only | `PhoneShell` / `TableShell` with `feltIdentity` |
+| Felt table name once, below the phase heading | `ClothName` |
 | Compact phase title + one instruction (~70–90px) | `PhaseBar` |
-| Dealer insurance toggle in the phase rail | `PhaseActionDock` + `blackjackDealerControls().insurance` |
-| Dealer compact identity/bank/status strip | `DealerHandBox` |
+| Dealer insurance toggle | footer `.dealer-secondary-action` + `blackjackDealerControls().insurance` |
 | Dealer Player ledger (one short row per Player/box) | `DealerBlackjackBoxRow` inside `dealer-list` |
 | Dealer primary (`DEAL CARDS` / `ENTER PAYOUT` / `START BETTING`) | footer `.dealer-primary` |
-| Dealer Betting `ADD PLAYER` | small secondary control, invitation mask unchanged |
+| Dealer Betting `ADD PLAYER` | footer secondary, invitation mask unchanged |
 | Player orbit + Dealer ring | `.player-context` |
 | Player boxes | `BlackjackBox` / `FeltBox` in `player-box-stage` |
 | Player contextual panel (ADD BOX / Insurance) | reserved `.player-context-panel` |
@@ -111,7 +111,7 @@ Boards control screen anatomy, element position, hierarchy, density, the green/g
 
 Do not reproduce generated-image mistakes (fake USD, invented names, duplicate table titles, made-up payout math).
 
-The live table name appears exactly once, in the compact gameplay header (`data-table-name`). Do not also print it as a giant felt heading or a JETONBRO brand row during active play.
+The live table name appears exactly once on the felt (`ClothName` / `data-table-name`), immediately below the compact phase heading. The header has no centred table name and no JETONBRO brand during active play.
 
 ## Seven-zone mobile grid (390×844)
 

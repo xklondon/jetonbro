@@ -141,40 +141,46 @@ export function DealerBlackjackBoxRow({
         }
       }}
     >
-      <span className="ledger-num">{box.boxNumber}</span>
-      <span className="ledger-player">
-        <span className="ledger-avatar" style={{ background: `hsl(${hue} 42% 42%)` }} />
-        <strong>{title}</strong>
-      </span>
-      <span className="ledger-bet">{box.bet.label}</span>
-      <span className="ledger-meta">
-        {unresolved ? (
-          <span className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
-            {railActions.map((action) => (
-              <button
-                key={action.outcome}
-                type="button"
-                className={action.outcome.toLowerCase()}
-                data-payout-action="true"
-                onPointerDown={stopActionPointer}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (Date.now() < ignoreClickUntil.current) return;
-                  settle(action.outcome);
-                }}
-              >
-                <span className="rail-title">{action.title ?? RAIL_TITLE[action.outcome]}</span>
-              </button>
-            ))}
+      <div className="ledger-main">
+        <span className="ledger-player">
+          <span className="ledger-avatar" style={{ background: `hsl(${hue} 42% 42%)` }} />
+          <span className="ledger-id">
+            <strong>{box.playerName || "Player"}</strong>
+            <small>BOX {box.boxNumber}</small>
           </span>
-        ) : (
-          <>
-            {commitment ?? settled ?? (phase === "PLAYING" ? "In play" : box.insurance ? `Ins ${box.insurance.label}` : "")}
-            {box.insurance && phase !== "BETTING" && !commitment ? ` · Ins ${box.insurance.label}` : ""}
-            {available ? ` · ${available}` : ""}
-          </>
-        )}
-      </span>
+        </span>
+        <span className="ledger-bet">{box.bet.label}</span>
+        <span className="ledger-meta">
+          {unresolved
+            ? box.insurance
+              ? `INS ${box.insurance.label}`
+              : available
+                ? available
+                : ""
+            : (commitment ?? settled ?? (phase === "PLAYING" ? "In play" : box.insurance ? `INS ${box.insurance.label}` : ""))}
+          {!unresolved && box.insurance && phase !== "BETTING" && !commitment && !settled ? ` · INS ${box.insurance.label}` : ""}
+        </span>
+      </div>
+      {unresolved ? (
+        <span className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
+          {railActions.map((action) => (
+            <button
+              key={action.outcome}
+              type="button"
+              className={action.outcome.toLowerCase()}
+              data-payout-action="true"
+              onPointerDown={stopActionPointer}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (Date.now() < ignoreClickUntil.current) return;
+                settle(action.outcome);
+              }}
+            >
+              <span className="rail-title">{action.title ?? RAIL_TITLE[action.outcome]}</span>
+            </button>
+          ))}
+        </span>
+      ) : null}
     </div>
   );
 }

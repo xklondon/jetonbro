@@ -7,7 +7,7 @@ import { PhaseBar } from "./PhaseBar";
 import { PhaseActionDock } from "./PhaseActionDock";
 import { DealCountdown } from "./DealCountdown";
 import { DealerBlackjackBoxRow } from "./DealerBlackjackBoxRow";
-import { DealerHandBox } from "./DealerHandBox";
+import { ClothName } from "./ClothName";
 import { BankrollPanel } from "./BankrollPanel";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
@@ -38,14 +38,6 @@ export function ClassicBankTable({
   const memberIdDefault = members[0]?.userId ?? "";
   const [memberId, setMemberId] = useState(memberIdDefault);
   const [dealerId, setDealerId] = useState(members.find((member) => member.isBankDealer)?.userId ?? memberIdDefault);
-  const dealerStatus =
-    view.phase === "PLAYING"
-      ? "Playing"
-      : view.phase === "PAYOUT"
-        ? "Payout"
-        : view.phase === "BETTING"
-          ? "Betting"
-          : "Round complete";
   const dealerMember = members.find((member) => member.isBankDealer);
   const dealerPlays = Boolean(
     dealerMember && view.players.some((player) => player.userId === dealerMember.userId && player.boxes.length > 0),
@@ -63,58 +55,18 @@ export function ClassicBankTable({
   }
 
   return (
-    <TableShell title={view.tableName} badges={badges} onMenu={() => setSheet("menu")}>
+    <TableShell feltIdentity badges={badges} onMenu={() => setSheet("menu")}>
       <PhaseBar label={dealerControls.phaseLabel} kicker={dealerControls.instruction}>
-        <PhaseActionDock>
-          <DealCountdown deadline={view.bettingCloseDeadlineAt} />
-          <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
-          <div className="deal-actions">
-            {dealerControls.insurance ? (
-              <button
-                type="button"
-                className={dealerControls.insurance.id === "closeInsurance" ? "gold-button" : "panel-button"}
-                disabled={!dealerControls.insurance.enabled}
-                onClick={() => onCommand(dealerControls.insurance!.command)}
-              >
-                {dealerControls.insurance.label}
-              </button>
-            ) : null}
-            {dealerControls.showInsuranceSettle ? (
-              <>
-                <button
-                  type="button"
-                  className="insurance-win"
-                  onClick={() => onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}
-                >
-                  INS WON
-                </button>
-                <button
-                  type="button"
-                  className="insurance-lose"
-                  onClick={() => onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}
-                >
-                  INS LOST
-                </button>
-              </>
-            ) : null}
-          </div>
-        </PhaseActionDock>
+        {view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
+          <PhaseActionDock>
+            <DealCountdown deadline={view.bettingCloseDeadlineAt} />
+            <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
+          </PhaseActionDock>
+        ) : null}
       </PhaseBar>
       <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER" data-guest-join-url={view.guestJoinUrl ?? undefined} data-verified-join-url={view.verifiedJoinUrl ?? undefined}>
         <div className="table-surface">
-          <DealerHandBox
-            name={view.dealerName ?? "Dealer"}
-            status={dealerStatus}
-            available={view.bankroll?.mode === "LIMITED" ? view.bankroll.available.label : undefined}
-            limited={view.bankroll?.mode === "LIMITED"}
-          />
-          <p className="dealer-rules">INSURANCE PAYS 2 TO 1</p>
-          <div className="ledger-head" aria-hidden="true">
-            <span>#</span>
-            <span>Player</span>
-            <span>MAIN</span>
-            <span>{view.phase === "PAYOUT" ? "Result" : view.phase === "PLAYING" ? "Commitments" : "Action"}</span>
-          </div>
+          <ClothName name={view.tableName} />
           <div
             className="dealer-list dealer-grid"
             data-dealer-grid="true"
@@ -146,38 +98,72 @@ export function ClassicBankTable({
                       ))
                     : [
                         <div className="ledger-row" key={player.userId} data-player-row="true" data-player-group={player.userId}>
-                          <span className="ledger-num">–</span>
-                          <span className="ledger-player">
-                            <span className="ledger-avatar" />
-                            <strong>{player.name}</strong>
-                          </span>
-                          <span className="ledger-bet">{player.available.label}</span>
-                          <span className="ledger-meta">{player.status}</span>
+                          <div className="ledger-main">
+                            <span className="ledger-player">
+                              <span className="ledger-avatar" />
+                              <span className="ledger-id">
+                                <strong>{player.name}</strong>
+                              </span>
+                            </span>
+                            <span className="ledger-bet">{player.available.label}</span>
+                            <span className="ledger-meta">{player.status}</span>
+                          </div>
                         </div>,
                       ],
                 )}
           </div>
         </div>
       </main>
-      <footer className="dock dealer-dock dealer-primary-dock">
+      <footer className="dock dealer-dock dealer-primary-dock" data-phase-action="true">
         {notice ? <div className="error">{notice}</div> : null}
-        {dealerControls.showAddPlayer ? (
-          <div className="dealer-secondary">
-            <button type="button" data-add-player="true" onClick={() => setInviteOpen(true)}>
-              ADD PLAYER
+        {dealerControls.showInsuranceSettle ? (
+          <div className="dealer-insurance-settle">
+            <button
+              type="button"
+              className="insurance-win"
+              onClick={() => onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}
+            >
+              INS WON
+            </button>
+            <button
+              type="button"
+              className="insurance-lose"
+              onClick={() => onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}
+            >
+              INS LOST
             </button>
           </div>
         ) : null}
-        {dealerControls.primary ? (
-          <button
-            type="button"
-            className="gold-button dealer-primary"
-            disabled={!dealerControls.primary.enabled}
-            onClick={runPrimary}
-          >
-            {dealerControls.primary.label}
-          </button>
-        ) : null}
+        <div
+          className="dealer-action-row"
+          data-dock-columns={dealerControls.primary && (dealerControls.showAddPlayer || dealerControls.insurance) ? "2" : "1"}
+        >
+          {dealerControls.primary ? (
+            <button
+              type="button"
+              className="gold-button dealer-primary"
+              disabled={!dealerControls.primary.enabled}
+              onClick={runPrimary}
+            >
+              {dealerControls.primary.label}
+            </button>
+          ) : null}
+          {dealerControls.showAddPlayer ? (
+            <button type="button" className="panel-button dealer-secondary-action" data-add-player="true" onClick={() => setInviteOpen(true)}>
+              ADD PLAYER
+            </button>
+          ) : null}
+          {dealerControls.insurance ? (
+            <button
+              type="button"
+              className="panel-button dealer-secondary-action"
+              disabled={!dealerControls.insurance.enabled}
+              onClick={() => onCommand(dealerControls.insurance!.command)}
+            >
+              {dealerControls.insurance.label}
+            </button>
+          ) : null}
+        </div>
       </footer>
       <ClassicInviteMask
         open={inviteOpen}

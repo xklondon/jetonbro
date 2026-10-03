@@ -14,6 +14,7 @@ import {
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
 import { blackjackPlayerControls, playerBoxSlots } from "@/ui/core/blackjack-phase-controls";
+import { ClothName } from "./ClothName";
 
 function seatTone(id: string) {
   let hash = 0;
@@ -88,7 +89,7 @@ export function ClassicPlayerTable({
   }
 
   return (
-    <TableShell title={view.tableName} balance={view.available.label} badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
+    <TableShell feltIdentity balance={view.available.label} badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
       <OutcomeCelebrationOverlay celebration={celebration} />
       <PhaseBar label={controls.phaseLabel} kicker={controls.instruction} />
       <main
@@ -98,6 +99,7 @@ export function ClassicPlayerTable({
         data-box-count={view.boxes.length}
       >
         <div className="table-surface">
+          <ClothName name={view.tableName} />
           <div className="player-context">
             {others.length > 0 ? (
               <div className="player-orbit" aria-label="Other players">
@@ -124,6 +126,7 @@ export function ClassicPlayerTable({
                     dropHighlight={hoverBoxId === box.id}
                     onSelect={() => onSelectBox(box.id)}
                     retractable={view.actions.retract}
+                    status={view.phase === "BETTING" ? "Betting" : view.phase === "PLAYING" ? "In play" : undefined}
                     onRetractChip={(amount) =>
                       onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
                     }
@@ -148,6 +151,7 @@ export function ClassicPlayerTable({
                 dropHighlight={hoverBoxId === box.id}
                 onSelect={() => onSelectBox(box.id)}
                 retractable={view.actions.retract}
+                status={view.phase === "BETTING" ? "Betting" : view.phase === "PLAYING" ? "In play" : undefined}
                 onRetractChip={(amount) =>
                   onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
                 }

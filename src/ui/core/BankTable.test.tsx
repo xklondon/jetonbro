@@ -119,8 +119,10 @@ test("Bank betting anchors DEAL CARDS under the compact ledger", () => {
   expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS"));
   expect(html).not.toContain("ON TABLE");
   expect(html).toContain('data-blackjack-box-row="true"');
-  expect(html).toContain('data-dealer-box="true"');
-  expect(html).toContain(">DEALER<");
+  expect(html).not.toContain('data-dealer-box="true"');
+  expect(html).not.toContain("INSURANCE PAYS 2 TO 1");
+  expect(html).toContain('data-table-name="Salon"');
+  expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("betting-spot");
   expect(html).not.toContain("class=\"box is-compact");
 });
@@ -164,8 +166,6 @@ test("funding toggle stays visible but locked after a stake exists", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("LIMITED BANK");
-  expect(html).toContain("462.5");
   expect(html).not.toContain("OPEN BANK");
   expect(html).not.toContain("funding-switch");
   expect(html).not.toContain("Funding is locked for this round");
@@ -220,11 +220,10 @@ test("Bank playing shows an open Insurance window as a side pot", () => {
   expect(html).not.toContain("Settle every box");
   expect(html).toContain("CLOSE INSURANCE");
   expect(html).not.toContain("OPEN INSURANCE");
-  expect(html).toContain("MAIN");
   expect(html).not.toContain("INSURANCE · OPEN");
   expect(html).not.toContain("insurance pot");
-  expect(html).toContain('data-dealer-box="true"');
-  expect(html).toContain(">DEALER<");
+  expect(html).not.toContain('data-dealer-box="true"');
+  expect(html).not.toContain("INSURANCE PAYS 2 TO 1");
   expect(html).not.toContain("+ CARDS");
   expect(html).not.toContain("+ ADD CARDS");
   expect(html).not.toContain("bj-rail");
@@ -282,8 +281,7 @@ test("Bank payout keeps next hand locked while boxes and Insurance are unresolve
   );
   expect(html).toContain("PAYOUT");
   expect(html).toContain("START BETTING");
-  expect(html).toContain('data-dealer-box="true"');
-  expect(html).toContain(">DEALER<");
+  expect(html).not.toContain('data-dealer-box="true"');
   expect(html).not.toContain("DEALER WON");
   expect(html).toContain("dealer-grid");
   expect(html).toContain("dealer-list");
@@ -378,8 +376,8 @@ test("ROUND_COMPLETE keeps the dealer box and one compact next-round row", () =>
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain('data-dealer-box="true"');
-  expect(html).toContain(">DEALER<");
+  expect(html).not.toContain('data-dealer-box="true"');
+  expect(html).toContain('data-table-name="Salon"');
   expect(html).toContain("START BETTING");
   expect(html).not.toContain("NEXT ROUND IN 7 SECONDS");
   expect(html).not.toContain("bj-rail");
@@ -421,7 +419,7 @@ test("optional card assist stays off the main Playing surface by default", () =>
     }),
   );
   expect(html).toContain("ENTER PAYOUT");
-  expect(html).toContain('data-dealer-box="true"');
+  expect(html).not.toContain('data-dealer-box="true"');
   expect(html).toContain('data-blackjack-box-row="true"');
   expect(html).not.toContain("+ CARDS");
   expect(html).not.toContain("HAND COMPLETE");
@@ -463,10 +461,10 @@ test("Dealer uses the same compact box row in every live phase", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html.match(/data-blackjack-box-row="true"/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(html.match(/data-blackjack-box-row="true"/g)?.length).toBeGreaterThanOrEqual(2);
     expect(html).toContain(`data-box-phase="${phase}"`);
-    expect(html).toContain('data-dealer-box="true"');
-    expect(html).toContain(">DEALER<");
+    expect(html).not.toContain('data-dealer-box="true"');
+    expect(html).not.toContain("INSURANCE PAYS 2 TO 1");
     expect(html).not.toContain("betting-spot");
     expect(html).not.toContain("class=\"box is-compact");
     expect(html.match(/data-table-name="/g)?.length).toBe(1);
@@ -498,5 +496,26 @@ test("Dealer ledger density marks 1, 4, and 6 Players", () => {
     expect(html).toContain(`data-ledger-overflow="${count >= 5}"`);
     expect(html.match(/data-player-row="true"/g)?.length).toBe(count);
   }
+});
+
+test("Dealer payout result controls are a large 2x2 grid", () => {
+  const html = renderToStaticMarkup(
+    createElement(ClassicBankTable, {
+      view: bankView({
+        phase: "PAYOUT",
+        phaseLabel: "PAYOUT",
+        primaryAction: { id: "nextHand", label: "START BETTING", enabled: false },
+        actions: { ...bankView({}).actions, dealCards: false, settleBoxes: true, settleInsurance: true, addPlayer: false },
+      }),
+      members,
+      onCommand: () => undefined,
+    }),
+  );
+  expect(html).toContain("payout-access");
+  expect(html).toContain("data-payout-action");
+  expect(html).toContain("rail-title\">LOST");
+  expect(html).toContain("START BETTING");
+  expect(html).not.toContain("OPEN INSURANCE");
+  expect(html).not.toContain("ADD PLAYER");
 });
 

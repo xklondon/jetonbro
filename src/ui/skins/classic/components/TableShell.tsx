@@ -11,6 +11,7 @@ export function TableShell({
   onMenu,
   title,
   balance,
+  feltIdentity = false,
 }: {
   children: ReactNode;
   rightLabel?: string;
@@ -19,6 +20,7 @@ export function TableShell({
   onMenu?: () => void;
   title?: string;
   balance?: string;
+  feltIdentity?: boolean;
 }) {
   return (
     <PhoneShell
@@ -28,6 +30,7 @@ export function TableShell({
       onMenu={onMenu}
       title={title}
       balance={balance}
+      feltIdentity={feltIdentity}
     >
       {children}
     </PhoneShell>

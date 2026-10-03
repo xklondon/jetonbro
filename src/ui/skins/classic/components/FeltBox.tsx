@@ -34,6 +34,7 @@ export function FeltBox({
   onRetractChip,
   dropHighlight = false,
   cardEntry,
+  status,
 }: {
   box: BoxView;
   selected?: boolean;
@@ -46,62 +47,73 @@ export function FeltBox({
   onRetractChip?: (amount: string) => void;
   dropHighlight?: boolean;
   cardEntry?: ReactNode;
+  status?: string;
 }) {
   const chips = chipsFromMillis(box.bet.millis);
   const result = resultCopy(box);
   const payout = Boolean(result || box.insuranceResult);
+  const yours = /^YOUR BOX/i.test(box.label);
   const className = `box${compact ? " is-compact" : ""}${selected ? " selected" : ""}${dropHighlight ? " drop-target" : ""}${result ? ` is-${result.kind}` : ""}${payout ? " is-payout" : ""}`;
-  const content = payout ? (
+  const statusText = result
+    ? result.kind === "won"
+      ? "Won"
+      : result.kind === "lost"
+        ? "Lost"
+        : result.kind === "push"
+          ? "Stand-off"
+          : "Blackjack"
+    : box.isDoubled
+      ? "Doubled"
+      : status;
+  const content = (
     <>
-      <span className="box-identity">{box.label}</span>
-      {box.playerName ? <span className="box-owner">{box.playerName}</span> : null}
-      <div className="box-payout-line" data-payout-main="true">
-        <small>MAIN</small>
-        <strong>{box.bet.label}</strong>
-        {result ? (
-          <span className={`payout-state is-${result.kind}`} data-payout-state={box.outcome ?? ""}>
-            {result.text}
-          </span>
-        ) : null}
-      </div>
-      {box.insurance || box.insuranceResult ? (
-        <div className="box-payout-line" data-payout-insurance="true" data-insurance-result={box.insuranceResult ?? ""}>
-          <small>INSURANCE</small>
-          <strong>{box.insurance?.label ?? "—"}</strong>
-          {box.insuranceResult ? <span className="payout-state">{insuranceState(box.insuranceResult)}</span> : null}
-        </div>
-      ) : null}
-      {cardEntry}
-    </>
-  ) : (
-    <>
-      <span className="box-name">{box.label}</span>
-      <span className="amount-label">MAIN</span>
-      <span className="amount">{box.bet.label}</span>
-      {!showOutcomes ? (
-        <span className="chip-pile">
-          {chips.map((chip, index) => (
-            <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
-              <span className={`chip ${chip.className}`}>{chip.label}</span>
-              {retractable ? (
-                <button
-                  type="button"
-                  className="chip-retract"
-                  aria-label={`Retract ${chip.label} jetons from Box ${box.boxNumber}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRetractChip?.(chip.amount);
-                  }}
-                >
-                  ×
-                </button>
-              ) : null}
+      <span className="box-head">
+        <strong className="box-name">BOX {box.boxNumber}</strong>
+        {yours ? <small className="box-kicker">YOUR BOX</small> : null}
+      </span>
+      {payout ? (
+        <div className="box-payout-line" data-payout-main="true">
+          <strong className="amount">{box.returned?.label ?? box.bet.label}</strong>
+          {result ? (
+            <span className={`payout-state is-${result.kind}`} data-payout-state={box.outcome ?? ""}>
+              {result.text}
             </span>
-          ))}
+          ) : null}
+        </div>
+      ) : (
+        <div className="box-stake">
+          {!showOutcomes ? (
+            <span className="chip-pile">
+              {chips.map((chip, index) => (
+                <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
+                  <span className={`chip ${chip.className}`}>{chip.label}</span>
+                  {retractable ? (
+                    <button
+                      type="button"
+                      className="chip-retract"
+                      aria-label={`Retract ${chip.label} jetons from Box ${box.boxNumber}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRetractChip?.(chip.amount);
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </span>
+              ))}
+            </span>
+          ) : null}
+          <span className="amount">{box.bet.label}</span>
+        </div>
+      )}
+      {box.insurance || box.insuranceResult ? (
+        <span className="box-ins" data-payout-insurance={box.insuranceResult ? "true" : undefined} data-insurance-result={box.insuranceResult ?? ""}>
+          INS {box.insurance?.label ?? "—"}
+          {box.insuranceResult ? ` · ${insuranceState(box.insuranceResult)}` : ""}
         </span>
       ) : null}
-      {box.insurance ? <span className="hint">INSURANCE {box.insurance.label}</span> : null}
-      {box.isDoubled ? <span className="hint">Doubled</span> : null}
+      {statusText ? <span className="box-status">{statusText}</span> : null}
       {cardEntry}
       {showOutcomes && !box.outcome ? (
         <span className="outcome">

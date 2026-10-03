@@ -9,6 +9,7 @@ export function PhoneShell({
   onMenu,
   title,
   balance,
+  feltIdentity = false,
 }: {
   children: React.ReactNode;
   rightLabel?: string;
@@ -18,6 +19,7 @@ export function PhoneShell({
   onMenu?: () => void;
   title?: string;
   balance?: string;
+  feltIdentity?: boolean;
 }) {
   return (
     <div className="classic-page classic-skin">
@@ -34,10 +36,10 @@ export function PhoneShell({
             ☰
           </button>
           <div
-            className={`brand${title ? " is-table-title" : ""}${brandClassName ? ` ${brandClassName}` : ""}`}
-            data-table-name={title || undefined}
+            className={`brand${feltIdentity ? " is-felt-identity" : title ? " is-table-title" : ""}${brandClassName ? ` ${brandClassName}` : ""}`}
+            data-table-name={feltIdentity ? undefined : title || undefined}
           >
-            {title || "JETONBRO"}
+            {feltIdentity ? null : title || "JETONBRO"}
           </div>
           {balance ? (
             <div className="header-balance">

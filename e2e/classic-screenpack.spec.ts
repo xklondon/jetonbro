@@ -220,9 +220,10 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
   await expect(playerPage.locator("[data-insurance-panel]")).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "ADD BOX" })).toHaveCount(0);
-  await playerPage.screenshot({ path: join(shots, "player-insurance-390x844.png") });
   await playerPage.getByRole("button", { name: "INSURANCE", exact: true }).click();
   await expect.poll(async () => (await snapshot(playerPage)).player?.boxes.find((box) => box.id === box1Id)?.insurance?.label ?? "").not.toBe("");
+  await expect(playerPage.locator(`[data-box-id="${box1Id}"] .box-ins`)).toBeVisible();
+  await playerPage.screenshot({ path: join(shots, "player-insurance-390x844.png") });
 
   await page.getByRole("button", { name: "CLOSE INSURANCE" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
@@ -230,7 +231,11 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "WON" }).first()).toBeVisible();
-  await expect(page.locator("[data-dealer-box]")).toContainText("DEALER");
+  const wonBox = await page.getByRole("button", { name: "WON" }).first().boundingBox();
+  expect(wonBox).toBeTruthy();
+  expect(wonBox!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.locator("[data-table-name]")).toHaveCount(1);
+  await expect(page.locator("[data-dealer-box]")).toHaveCount(0);
   await expect(page.locator("[data-table-board=BLACKJACK_DEALER]").getByRole("button", { name: "DEALER WON" })).toHaveCount(0);
   await overflowAt(page, 360, 800);
   await overflowAt(page, 390, 844);
@@ -243,7 +248,8 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await page.getByRole("button", { name: "INS LOST" }).click();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 10_000 });
   await assertNoForbiddenCopy(page);
-  await expect(page.locator("[data-dealer-box]")).toContainText("DEALER");
+  await expect(page.locator("[data-table-name]")).toHaveCount(1);
+  await expect(page.locator("[data-dealer-box]")).toHaveCount(0);
   await expect(page.locator("[data-table-board=BLACKJACK_DEALER]").getByRole("button", { name: "DEALER WON" })).toHaveCount(0);
   await overflowAt(page, 360, 800);
   await overflowAt(page, 390, 844);

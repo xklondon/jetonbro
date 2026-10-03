@@ -91,7 +91,7 @@ test("player sees all own boxes together and keeps jetons visible while playing"
   expect(html).toMatch(/data-player-action="insurance"[^>]*disabled/);
   expect(html).not.toContain("PLACE INSURANCE");
   expect(html).toContain("data-box-stage");
-  expect(html).toContain("MAIN");
+  expect(html).toContain("BOX 1");
   expect(html).not.toContain("+ CARDS");
   expect(html).not.toContain("+ ADD CARDS");
   expect(html).not.toContain("bj-rail");
@@ -293,13 +293,13 @@ test("player payout stacks identity, MAIN, and Insurance on separate lines", () 
   expect(html).toContain("is-payout");
   expect(html).toContain('data-payout-main="true"');
   expect(html).toContain('data-payout-insurance="true"');
-  expect(html).toContain("MAIN");
+  expect(html).toContain("BOX 1");
   expect(html).toContain("Won +50");
   expect(html).toContain("INSURANCE LOST");
   expect(html).toContain("Lost");
   expect(html.indexOf("data-payout-main")).toBeLessThan(html.indexOf("data-payout-insurance"));
-  expect(html).toContain("box-identity");
-  expect(html).toContain("box-owner");
+  expect(html).toContain("box-head");
+  expect(html).toContain("YOUR BOX");
   expect(html).toContain(longName);
   const box2 = html.slice(html.indexOf('data-box-id="2"'), html.indexOf('data-box-id="1"'));
   expect(box2).not.toContain("data-payout-insurance");
