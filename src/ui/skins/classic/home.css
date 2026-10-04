@@ -400,6 +400,16 @@
   width: 100%;
 }
 
+.classic-skin .phase-zero-rows.dealer-positions {
+  flex: 1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 10px 12px;
+  margin-top: 8px;
+}
+
 .classic-skin .phase-zero-row {
   display: flex;
   justify-content: center;

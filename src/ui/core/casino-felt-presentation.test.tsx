@@ -228,7 +228,7 @@ test("felt name is printed once without title ornaments or metadata", () => {
         tableName: "Salon",
         game: "Blackjack",
         available: { millis: "100000", label: "100" },
-        copy: "WAITING FOR PLAYERS",
+        copy: "Waiting for the table to open betting.",
         ownerName: "Alex",
         bankName: "Alex",
       },

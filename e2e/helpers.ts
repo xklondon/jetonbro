@@ -47,7 +47,7 @@ export async function createPokerTable(
   if (options?.smallBlind) await page.getByLabel("Small blind").fill(options.smallBlind);
   if (options?.bigBlind) await page.getByLabel("Big blind").fill(options.bigBlind);
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup", { timeout: 20_000 });
   await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);
@@ -88,7 +88,7 @@ export async function createBlackjackTable(
   await page.getByLabel("Starting jetons per player").blur();
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup", { timeout: 20_000 });
   await expect(page.locator("[data-table-name]")).toHaveText(name, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
   await expect(page.getByRole("button", { name: "START BLACKJACK" })).toHaveCount(0);

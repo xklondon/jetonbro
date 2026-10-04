@@ -111,12 +111,12 @@ test("approved setup, blackjack, poker screens and owner delete", async ({ page,
   const setup = await snapshot(page);
   const joinPath = new URL(setup.setup!.joinUrl!).pathname;
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/WAITING FOR PLAYERS|Waiting for the Bank/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(samPage.getByText(/Waiting for the table to open betting|WAITING FOR PLAYERS|Waiting for the Bank/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await shot(page, "03-phase0-blackjack-joined-390x844.png");
 
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
   await samPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click();
@@ -160,7 +160,7 @@ test("approved setup, blackjack, poker screens and owner delete", async ({ page,
   await shot(page, "13-bj-dealer-payout-390x844.png");
 
   await page.getByRole("button", { name: "START NEXT ROUND" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await samPage.reload();
   await samPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await samPage.getByPlaceholder("Amount").fill("10");
@@ -178,7 +178,7 @@ test("approved setup, blackjack, poker screens and owner delete", async ({ page,
   await shot(samPage, "09-bj-player-payout-no-insurance-390x844.png");
 
   await page.getByRole("button", { name: "START NEXT ROUND" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await samPage.reload();
   await samPage.getByRole("button", { name: /YOUR BOX 1/ }).click();
   await samPage.getByPlaceholder("Amount").fill("20");

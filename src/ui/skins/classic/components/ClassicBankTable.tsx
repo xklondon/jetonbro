@@ -11,7 +11,7 @@ import { ClothName } from "./ClothName";
 import { BankrollPanel } from "./BankrollPanel";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
-import { blackjackDealerControls } from "@/ui/core/blackjack-phase-controls";
+import { blackjackDealerControls, blackjackOwnerMenu, eligibleDealerCandidates } from "@/ui/core/blackjack-phase-controls";
 import { DealerActionDock } from "./DealerActionDock";
 
 export function ClassicBankTable({
@@ -45,6 +45,13 @@ export function ClassicBankTable({
   );
   const badges = [...(view.isOwner ? ["OWNER"] : []), dealerPlays ? "DEALER · PLAYING" : "DEALER"];
   const dealerControls = blackjackDealerControls(view);
+  const ownerMenu = blackjackOwnerMenu({
+    isOwner: view.isOwner,
+    phase: view.phase,
+    changeDealer: view.actions.changeBank,
+    changeGame: view.actions.switchGame,
+  });
+  const dealerCandidates = eligibleDealerCandidates(members);
   const ledgerCount =
     view.players.length === 0
       ? view.boxes.length
@@ -68,6 +75,17 @@ export function ClassicBankTable({
       <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER" data-guest-join-url={view.guestJoinUrl ?? undefined} data-verified-join-url={view.verifiedJoinUrl ?? undefined}>
         <div className="table-surface">
           <ClothName name={view.tableName} />
+          <div
+            hidden
+            data-owner-menu="true"
+            data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
+            data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
+          />
+          <div className="player-context">
+            <div className="player-dealer-ring" data-dealer-row="true">
+              DEALER
+            </div>
+          </div>
           <div
             className="dealer-list dealer-positions"
             data-dealer-positions="true"
@@ -286,14 +304,14 @@ export function ClassicBankTable({
                   RENAME TABLE
                 </button>
               ) : null}
-              {view.isOwner && view.actions.changeBank ? (
-                <button type="button" onClick={() => setSheet("dealer")}>
-                  ASSIGN DEALER
+              {ownerMenu.changeDealer ? (
+                <button type="button" data-owner-change-dealer="true" onClick={() => setSheet("dealer")}>
+                  Change Dealer
                 </button>
               ) : null}
-              {view.isOwner && view.actions.switchGame ? (
-                <button type="button" onClick={() => setSheet("game")}>
-                  SWITCH GAME
+              {ownerMenu.changeGame ? (
+                <button type="button" data-owner-change-game="true" onClick={() => setSheet("game")}>
+                  Change Game
                 </button>
               ) : null}
               {view.phase === "BETTING" && view.bankroll ? (
@@ -403,7 +421,7 @@ export function ClassicBankTable({
               <label>
                 Dealer
                 <select aria-label="Dealer" value={dealerId} onChange={(event) => setDealerId(event.target.value)}>
-                  {members.map((member) => (
+                  {dealerCandidates.map((member) => (
                     <option key={member.userId} value={member.userId}>
                       {member.name}
                     </option>

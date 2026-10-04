@@ -170,6 +170,8 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
       onCommand: () => undefined,
     }),
   );
+  expect(html).toContain("Betting is open.");
+  expect(html).not.toContain("WAITING FOR PLAYERS");
   expect(html).toContain("Amount");
   expect(html).toContain("PLACE BET");
   expect(html).toContain("ADD BOX");

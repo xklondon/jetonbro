@@ -101,7 +101,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
 
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator("[data-table-name]")).toHaveText("FINAL TABLE");
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-release-setup-390x844.png") });
   await noHorizontalOverflow(page);
 
@@ -137,14 +137,14 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await blairPage.setViewportSize({ width: 390, height: 844 });
   await openAs(blairContext, blairPage, blairEmail, "Blair");
   await blairPage.goto(joinPath);
-  await expect(blairPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(blairPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const caseyContext = await browser.newContext();
   const caseyPage = await caseyContext.newPage();
   await caseyPage.setViewportSize({ width: 390, height: 844 });
   await openAs(caseyContext, caseyPage, caseyEmail, "Casey");
   await caseyPage.goto(joinPath);
-  await expect(caseyPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(caseyPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
   await expect(caseyPage.getByText("100").first()).toBeVisible();
 
   await expect(page.getByText("Blair").first()).toBeVisible({ timeout: 20_000 });
@@ -179,8 +179,8 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await expectRejected(caseyPage, tableId, "dealCards");
   await expectRejected(caseyPage, tableId, "giveJetons", { userId: caseyAssigned.viewerId, amount: "10" });
 
-  await blairPage.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await blairPage.getByRole("button", { name: "START BETTING" }).click();
+  await expect(blairPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await page.reload();
   await caseyPage.reload();
   await expect(blairPage.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
@@ -221,7 +221,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await blairPage.locator(`[data-box-id="${caseyBox!.id}"]`).getByRole("button", { name: "LOST" }).click();
   await expect(blairPage.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
   await blairPage.getByRole("button", { name: "START NEXT ROUND" }).click();
-  await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(blairPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await page.reload();
   await caseyPage.reload();
   expect((await tableSnapshot(page)).phase).toBe("BETTING");

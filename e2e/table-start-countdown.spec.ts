@@ -9,9 +9,9 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
 
   await openAs(context, page, ownerEmail, "Alex");
   await createBlackjackTable(page, "Salon table", { starting: "100" });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
   await expect(page.locator(".waiting-room")).toHaveCount(0);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
   await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
 
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
@@ -24,20 +24,20 @@ test("shared QR, bet, countdown and PLAYING", async ({ page, context, browser })
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const joContext = await browser.newContext();
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(joPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   await expect(page.getByText("Sam").first()).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled();
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled();
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeDisabled();
   await openTableMenu(page);
   await expect(page.locator(".sheet.open").getByRole("button", { name: "DEAL IN 7 SECONDS" })).toBeDisabled();

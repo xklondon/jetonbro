@@ -188,7 +188,7 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
             game: snapshot.gameLabel ?? (snapshot.game === "POKER" ? "Texas Hold’em" : "Blackjack"),
             gameId: snapshot.game,
             available: snapshot.player?.available ?? { millis: "0", label: "0" },
-            copy: "WAITING FOR PLAYERS",
+            copy: "Waiting for the table to open betting.",
             members: snapshot.members,
           }
         }

@@ -63,7 +63,7 @@ async function threeSeated(page: Page, context: BrowserContext, browser: Browser
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
 
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   const ownerId = setupSnap.setup?.members?.find((member) => member.isOwner)?.userId ?? setupSnap.viewerId;
   await command(page, tableId, "giveJetons", { userId: ownerId, amount: "100" });
   return { tableId, samContext, samPage, joContext, joPage, ownerId };
@@ -89,7 +89,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   test.setTimeout(180_000);
   await mkdir(out, { recursive: true });
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await page.getByRole("button", { name: "START BETTING" }).click();
   await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
   await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await expect(page.locator("body")).not.toContainText("xklondon");
@@ -307,8 +307,8 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
     context,
     browser,
   );
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
+  await expect(page.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
   await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "SEAT ORDER" }).click();
   if (joId && samId) {

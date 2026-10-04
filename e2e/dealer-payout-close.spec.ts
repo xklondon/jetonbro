@@ -40,16 +40,16 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const joContext = await browser.newContext();
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(joPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "START BETTING" }).click();
   await expect(page.locator(".dealer-list")).toBeVisible();
   await expect(page.locator(".dealer-grid")).toHaveCount(0);
 

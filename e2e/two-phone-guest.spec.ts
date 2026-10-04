@@ -93,21 +93,21 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await guestPage.getByLabel("Play name").fill("Casey");
   await guestPage.getByRole("button", { name: "Join table" }).click();
   await expect(guestPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
-  await expect(guestPage.getByText(/WAITING FOR PLAYERS|Waiting for the Bank/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(guestPage.getByText(/Waiting for the table to open betting|WAITING FOR PLAYERS|Waiting for the Bank/i).first()).toBeVisible({ timeout: 20_000 });
   await expectJoinedName(page, "Casey");
 
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await expect(page.getByText("Waiting for Players to join.")).toHaveCount(0);
   await page.locator("main.felt").evaluate((node) => node.scrollTo(0, 0));
   await shot(page, "06-phase0-owner-joined-390x844.png");
   await guestPage.reload();
   await shot(guestPage, "07-phase0-guest-player-390x844.png");
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await guestPage.reload();
   await expect(guestPage.getByText("YOUR JETONS")).toBeVisible();
-  await expect(guestPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await guestPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(guestPage.locator("[data-player-wallet]")).toContainText("75", { timeout: 20_000 });
   await expect(guestPage.locator(".player-box, .box, [data-box-stage]").first()).toContainText("25");
@@ -120,7 +120,7 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await guestPage.reload();
   await expect(guestPage.locator("[data-player-wallet]")).toContainText("75");
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
-  await expect(guestPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await expect(guestPage.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
   await page.getByRole("button", { name: "CLOSE BETTING" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
@@ -166,10 +166,10 @@ test("verified QR uses magic link and joins the intended table once", async ({ p
   await playerPage.goto(localAppUrl(magic!));
   await expect(playerPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
   await expectJoinedName(page, playerEmail.split("@")[0]!);
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await playerPage.reload();
   await expect(playerPage).toHaveURL(/\/tables\//);
-  await expect(playerPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await playerContext.close();
 });
 
@@ -243,13 +243,13 @@ test("three roles keep Owner, Dealer, and Player controls separate", async ({ pa
   await expectJoinedName(page, "Blair");
   await page.getByLabel("Dealer").selectOption({ label: "Blair" });
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS", { timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup", { timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await dealerPage.reload();
-  await expect(dealerPage.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await expect(guestPage.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
-  await dealerPage.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(dealerPage.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(dealerPage.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
+  await dealerPage.getByRole("button", { name: "START BETTING" }).click();
+  await expect(dealerPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await page.reload();
   await guestPage.reload();
   await expect(page.getByText("YOUR JETONS")).toBeVisible();

@@ -18,7 +18,7 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await page.getByLabel("Table name").fill("Salon table");
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
   await invitePlayerFromLobby(page, playerEmail);
 
   const mailbox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
@@ -31,14 +31,14 @@ test("two browsers: setup, join, and a real 25 jeton bet", async ({ page, contex
   await playerPage.setViewportSize({ width: 390, height: 844 });
   await openAs(playerContext, playerPage, playerEmail, "Sam");
   await playerPage.goto(invitePath);
-  await expect(playerPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(playerPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
   await expect(playerPage.getByText("100").first()).toBeVisible();
 
   await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 15_000 });
   await page.screenshot({ path: join(out, "app-bank-lobby-invited-joined-390x844.png") });
 
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
 
   await playerPage.reload();
   await expect(playerPage.getByText("YOUR JETONS")).toBeVisible();

@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import {
   blackjackDealerControls,
   blackjackDealerSetupControls,
+  blackjackPhaseInstruction,
   blackjackPhaseLabel,
   blackjackPlayerControls,
   playerBoxSlotIndex,
@@ -105,10 +106,21 @@ function bank(phase: BankTableView["phase"], extra: Partial<BankTableView> = {})
   };
 }
 
+test("role and phase copy stays compact and never uses Waiting for players during Betting", () => {
+  expect(blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" })).toBe("Table setup");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "TABLE_SETUP" })).toBe("Waiting for the table to open betting.");
+  expect(blackjackPhaseLabel({ role: "DEALER", phase: "BETTING" })).toBe("Betting open");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING" })).toBe("Betting is open.");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING", hasStake: true })).toBe("Betting is open.");
+  expect(blackjackPhaseInstruction({ role: "PLAYER", phase: "TABLE_SETUP" })).not.toMatch(/waiting for players/i);
+  expect(blackjackPhaseInstruction({ role: "PLAYER", phase: "BETTING" })).not.toMatch(/waiting for players/i);
+  expect(blackjackPhaseInstruction({ role: "DEALER", phase: "TABLE_SETUP" })).not.toMatch(/waiting for players/i);
+});
+
 test("Dealer Phase 0 / Betting / Playing / Payout labels follow the canonical matrix", () => {
-  expect(blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" })).toBe("WAITING FOR PLAYERS");
+  expect(blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" })).toBe("Table setup");
   const betting = blackjackDealerControls(bank("BETTING"));
-  expect(betting.phaseLabel).toBe("BETTING");
+  expect(betting.phaseLabel).toBe("Betting open");
   expect(betting.primary?.label).toBe("DEAL CARDS");
   expect(betting.showAddPlayer).toBe(true);
   const playing = blackjackDealerControls(bank("PLAYING"));

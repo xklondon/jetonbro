@@ -70,10 +70,11 @@
 
 .classic-skin .phase-head strong,
 .classic-skin .phase-head [data-phase-heading] {
-  font-family: var(--font-display);
-  font-size: 20px;
-  letter-spacing: 0.16em;
-  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 
 .classic-skin .phase-kicker,
@@ -81,9 +82,9 @@
   display: block;
   margin-top: 2px;
   font-style: normal;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: var(--muted);
 }
 
@@ -197,19 +198,20 @@
   display: block;
   width: 100%;
   max-width: 100%;
-  margin: 14px 0 8px;
+  margin: 8px 0 10px;
   padding: 0;
   border: 0;
   background: none;
   text-align: center;
   font-family: var(--font-display);
-  font-size: clamp(20px, 5.4vw, 24px);
+  font-size: clamp(15px, 4vw, 20px);
   line-height: 1.15;
-  letter-spacing: 0.14em;
-  color: rgba(223, 189, 105, 0.68);
+  letter-spacing: 0.04em;
+  color: rgba(244, 234, 213, 0.42);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .classic-skin .player-context {
@@ -344,17 +346,26 @@
   max-height: var(--player-box-height);
 }
 
+.classic-skin .player-phase-zero .player-box-stage .box-slot.is-focal {
+  visibility: visible;
+  width: 100%;
+  border: 1.5px solid rgba(223, 189, 105, 0.36);
+  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
+  background: rgba(2, 23, 18, 0.16);
+  box-shadow: inset 0 0 18px rgba(223, 189, 105, 0.05);
+}
+
 .classic-skin .player-box-stage .box {
-  border-radius: 16px;
-  padding: 8px 8px 6px;
+  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
+  padding: 10px 8px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   gap: 2px;
-  background: rgba(2, 14, 12, 0.28);
-  border: 1px solid rgba(223, 189, 105, 0.18);
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.18);
+  background: rgba(2, 23, 18, 0.16);
+  border: 1.5px solid rgba(223, 189, 105, 0.42);
+  box-shadow: inset 0 0 18px rgba(223, 189, 105, 0.05);
 }
 
 .classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected),
@@ -551,6 +562,7 @@
 
 .classic-skin .dealer-list.dealer-positions {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
@@ -587,11 +599,11 @@
   gap: 4px;
   width: min(168px, calc(50% - 6px));
   margin: 0;
-  padding: 8px 8px 6px;
+  padding: 10px 8px 8px;
   border: 0;
-  border-radius: 18px;
-  background: rgba(2, 14, 12, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(223, 189, 105, 0.12);
+  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
+  background: rgba(2, 14, 12, 0.16);
+  box-shadow: inset 0 0 0 1.5px rgba(223, 189, 105, 0.28), inset 0 0 18px rgba(223, 189, 105, 0.04);
   overflow: visible;
 }
 

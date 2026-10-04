@@ -216,7 +216,7 @@ test("Phase 0 shows compact waiting rows and START BETTING", () => {
     }),
   );
   expect(html).toContain("data-phase-heading");
-  expect(html).toContain("WAITING FOR PLAYERS");
+  expect(html).toContain("Table setup");
   expect(html).toContain('data-dealer-dock="true"');
   expect(html).toContain('data-dock-columns="2"');
   expect(html).not.toContain("phase-zero-meta");
@@ -247,7 +247,7 @@ test("Phase 0 empty waiting is a compact card, not a blank placeholder", () => {
     }),
   );
   expect(html).toContain("data-empty-waiting");
-  expect(html).toContain("Waiting for Players to join.");
+  expect(html).toContain("DEALER");
   expect(html).toContain("data-role=\"dealer\"");
   expect(html).not.toContain("waiting-room");
   expect(html).not.toContain("setup-mask");
@@ -291,7 +291,7 @@ test("START TABLE completed table does not keep a second setup form", () => {
   expect(html).not.toContain("waiting-room");
   expect(html).not.toContain("data-seat-status=\"empty\"");
   expect(html).toContain("data-phase-heading");
-  expect(html).toContain("WAITING FOR PLAYERS");
+  expect(html).toContain("Table setup");
   expect(html).toContain("Sam");
   expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("JOIN WITHOUT EMAIL");

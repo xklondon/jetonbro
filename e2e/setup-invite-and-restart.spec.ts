@@ -41,14 +41,14 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   await page.getByLabel("Table name").fill("QR table");
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeVisible();
   await openInviteMask(page);
   await page.getByRole("tab", { name: "VERIFIED QR" }).click();
   await expect(page.getByAltText("Verified QR — email confirmation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Copy Verified Link" })).toBeVisible();
   const qrBox = await page.getByAltText("Verified QR — email confirmation").boundingBox();
   const copyBox = await page.getByRole("button", { name: "Copy Verified Link" }).boundingBox();
-  const startBox = await page.getByRole("button", { name: "OPEN BETTING" }).boundingBox();
+  const startBox = await page.getByRole("button", { name: "START BETTING" }).boundingBox();
   expect(qrBox).toBeTruthy();
   expect(copyBox).toBeTruthy();
   expect(startBox).toBeTruthy();
@@ -93,14 +93,14 @@ test("setup QR is fully visible, decodes to the shared join URL, and two players
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, uniqueEmail("qr-sam"), "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
   const joContext = await browser.newContext();
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, uniqueEmail("qr-jo"), "Jo");
   await joPage.goto(joinPath);
-  await expect(joPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await expect(joPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
 
   await samContext.close();
   await joContext.close();
@@ -121,10 +121,10 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, uniqueEmail("restart-sam"), "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "START BETTING" }).click();
   await samPage.reload();
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click({ force: true });
   await expect(samPage.getByText("75", { exact: true }).first()).toBeVisible();

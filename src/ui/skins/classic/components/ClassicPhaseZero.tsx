@@ -45,7 +45,6 @@ export function ClassicPhaseZero({
   const [dealerId, setDealerId] = useState(
     setup?.members.find((member) => member.isBankDealer)?.userId ?? members.find((member) => member.isBankDealer)?.userId ?? "",
   );
-  const dealerName = setup?.bankName ?? waiting?.bankName ?? "";
   const rows = (setup?.members ?? waiting?.members ?? members).filter((member) => !member.isBankDealer);
   const invited = (setup?.invitations ?? []).filter((invite) => invite.pending);
   const startHand = poker ? pokerControls(poker).find((control) => control.id === "startHand") : null;
@@ -67,7 +66,7 @@ export function ClassicPhaseZero({
 
   return (
     <TableShell feltIdentity badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
-      <PhaseBar label="WAITING FOR PLAYERS">
+      <PhaseBar label="Table setup">
         {waitingForPlayers && startBlocked ? (
           <p className="muted phase-hint">{startBlocked}</p>
         ) : null}
@@ -82,30 +81,30 @@ export function ClassicPhaseZero({
         <div className="table-surface">
           <ClothName name={tableName} />
           {notice ? <div className="error">{notice}</div> : null}
-          <div className="phase-zero-rows">
-            <div className="phase-zero-row member-row" data-role="dealer">
-              <strong className="truncate">{dealerName || "Dealer"}</strong>
+          <div className="player-context">
+            <div className="player-dealer-ring" data-role="dealer" data-dealer-row="true">
+              DEALER
             </div>
-            {rows.length === 0 && invited.length === 0 ? (
-              <p className="muted phase-zero-empty" data-empty-waiting="true">
-                Waiting for Players to join.
-              </p>
-            ) : (
-              <>
-                {rows.map((row) => (
-                  <div className="phase-zero-row member-row" key={row.userId} data-player-row="true">
-                    <strong className="truncate">{row.name}</strong>
-                    <span>{row.available?.label ?? "0"}</span>
-                  </div>
-                ))}
-                {invited.map((invite) => (
-                  <div className="phase-zero-row member-row" key={invite.id} data-seat-status="Invited">
-                    <strong className="truncate">{invite.email ?? "Player"}</strong>
-                    <span className="muted">Invited</span>
-                  </div>
-                ))}
-              </>
-            )}
+          </div>
+          <div className="phase-zero-rows dealer-positions" data-empty-waiting={rows.length === 0 && invited.length === 0 ? "true" : undefined}>
+            {rows.map((row) => (
+              <div className="dealer-position is-idle" key={row.userId} data-player-row="true">
+                <span className="position-who">
+                  <strong>{row.name}</strong>
+                </span>
+                <span className="position-stake">
+                  <strong className="amount">{row.available?.label ?? "0"}</strong>
+                </span>
+              </div>
+            ))}
+            {invited.map((invite) => (
+              <div className="dealer-position is-idle" key={invite.id} data-seat-status="Invited">
+                <span className="position-who">
+                  <strong>{invite.email ?? "Player"}</strong>
+                  <small>Invited</small>
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -161,7 +160,7 @@ export function ClassicPhaseZero({
               RENAME TABLE
             </button>
             <button className="panel-button" type="button" onClick={() => setMenuOpen("dealer")}>
-              ASSIGN DEALER
+              Change Dealer
             </button>
             <button
               className="panel-button"

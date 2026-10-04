@@ -288,7 +288,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           game: table.game === "POKER" ? "Texas Hold’em" : "Blackjack",
           gameId: table.game === "POKER" ? "POKER" : "BLACKJACK",
           available: money(viewer.availableMillis),
-          copy: table.setupCompletedAt ? "WAITING FOR PLAYERS" : "Waiting for the Bank to start",
+          copy: "Waiting for the table to open betting.",
           bankName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
           ownerName: displayName(table.owner),
           startingJetons: money(table.startingJetonsPerPlayerMillis),

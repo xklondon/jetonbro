@@ -47,11 +47,14 @@ export function blackjackPhaseLabel(input: {
   role: "DEALER" | "PLAYER";
   phase: string;
   insuranceOpen?: boolean;
+  hasStake?: boolean;
 }): string {
   if (input.role === "PLAYER" && input.insuranceOpen && input.phase === "PLAYING") return "INSURANCE OPEN";
   if (input.role === "DEALER" && input.insuranceOpen && input.phase === "PLAYING") return "INSURANCE";
-  if (input.phase === "TABLE_SETUP") return "WAITING FOR PLAYERS";
-  if (input.phase === "BETTING") return "BETTING";
+  if (input.phase === "TABLE_SETUP") {
+    return input.role === "PLAYER" ? "Waiting for the table to open betting." : "Table setup";
+  }
+  if (input.phase === "BETTING") return input.role === "PLAYER" ? "Betting is open." : "Betting open";
   if (input.phase === "PLAYING") return "PLAYING";
   if (input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") return "PAYOUT";
   return input.phase.replaceAll("_", " ");
@@ -61,15 +64,13 @@ export function blackjackPhaseInstruction(input: {
   role: "DEALER" | "PLAYER";
   phase: string;
   insuranceOpen?: boolean;
+  hasStake?: boolean;
 }): string {
   if (input.role === "PLAYER" && input.insuranceOpen && input.phase === "PLAYING") return "Take insurance (optional)";
   if (input.role === "DEALER" && input.insuranceOpen && input.phase === "PLAYING") return "Offer and manage insurance";
-  if (input.phase === "TABLE_SETUP") return "Waiting for players";
-  if (input.phase === "BETTING") return input.role === "PLAYER" ? "Place your bets" : "Place your wagers";
-  if (input.phase === "PLAYING") return input.role === "PLAYER" ? "Make your move" : "Manage player actions";
-  if (input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") {
-    return input.role === "PLAYER" ? "Round complete" : "Set results for each hand";
-  }
+  if (input.phase === "TABLE_SETUP" || input.phase === "BETTING") return "";
+  if (input.phase === "PLAYING") return input.role === "PLAYER" ? "Make your move" : "";
+  if (input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") return "";
   return "";
 }
 
@@ -200,11 +201,13 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
       role: "PLAYER",
       phase: view.phase,
       insuranceOpen: view.insuranceWindowOpen,
+      hasStake: stakePresent(selected) || view.boxes.some((box) => stakePresent(box)),
     }),
     instruction: blackjackPhaseInstruction({
       role: "PLAYER",
       phase: view.phase,
       insuranceOpen: view.insuranceWindowOpen,
+      hasStake: stakePresent(selected) || view.boxes.some((box) => stakePresent(box)),
     }),
     placeBet: betting && view.actions.bet,
     retract: betting && view.actions.retract && stakePresent(selected),
@@ -228,6 +231,24 @@ export function playerBoxSlotIndex(boxNumber: number): number {
   if (boxNumber === 2) return 0;
   if (boxNumber === 3) return 2;
   return -1;
+}
+
+export function blackjackOwnerMenu(input: {
+  isOwner?: boolean;
+  phase: string;
+  changeDealer?: boolean;
+  changeGame?: boolean;
+}): { changeDealer: boolean; changeGame: boolean } {
+  if (!input.isOwner) return { changeDealer: false, changeGame: false };
+  const unsafe = input.phase === "PLAYING" || input.phase === "PAYOUT";
+  return {
+    changeDealer: Boolean(input.changeDealer) && input.phase === "BETTING",
+    changeGame: Boolean(input.changeGame) && !unsafe,
+  };
+}
+
+export function eligibleDealerCandidates<T extends { userId: string }>(members: T[]): T[] {
+  return members.filter((member) => Boolean(member.userId));
 }
 
 export function playerBoxSlots<T extends { boxNumber: number }>(boxes: T[]): { slots: Array<T | null>; extras: T[] } {

@@ -13,7 +13,7 @@ import {
   selectOutcomeCelebration,
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
-import { blackjackPlayerControls, playerBoxSlots } from "@/ui/core/blackjack-phase-controls";
+import { blackjackOwnerMenu, blackjackPlayerControls, eligibleDealerCandidates, playerBoxSlots } from "@/ui/core/blackjack-phase-controls";
 import { ClothName } from "./ClothName";
 
 function seatTone(id: string) {
@@ -51,6 +51,13 @@ export function ClassicPlayerTable({
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const { slots, extras } = playerBoxSlots(view.boxes);
   const controls = blackjackPlayerControls(view, selected);
+  const ownerMenu = blackjackOwnerMenu({
+    isOwner: view.isOwner,
+    phase: view.phase,
+    changeDealer: view.phase === "BETTING",
+    changeGame: Boolean(view.canSwitchGame),
+  });
+  const dealerCandidates = eligibleDealerCandidates(members);
   const reducedMotion =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const [celebration, setCelebration] = useState<OutcomeCelebration | null>(null);
@@ -100,6 +107,14 @@ export function ClassicPlayerTable({
       >
         <div className="table-surface">
           <ClothName name={view.tableName} />
+          {view.isOwner ? (
+            <div
+              hidden
+              data-owner-menu="true"
+              data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
+              data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
+            />
+          ) : null}
           <div className="player-context">
             {others.length > 0 ? (
               <div className="player-orbit" aria-label="Other players">
@@ -300,12 +315,14 @@ export function ClassicPlayerTable({
               <button type="button" onClick={() => setSheet("rename")}>
                 RENAME TABLE
               </button>
-              <button type="button" onClick={() => setSheet("dealer")}>
-                ASSIGN DEALER
-              </button>
-              {view.canSwitchGame ? (
-                <button type="button" onClick={() => setSheet("game")}>
-                  SWITCH GAME
+              {ownerMenu.changeDealer ? (
+                <button type="button" data-owner-change-dealer="true" onClick={() => setSheet("dealer")}>
+                  Change Dealer
+                </button>
+              ) : null}
+              {ownerMenu.changeGame ? (
+                <button type="button" data-owner-change-game="true" onClick={() => setSheet("game")}>
+                  Change Game
                 </button>
               ) : null}
               <button className="gold-button" type="button" onClick={() => { onCommand("saveTable"); setSheet(null); }}>
@@ -388,7 +405,7 @@ export function ClassicPlayerTable({
               <label>
                 Dealer
                 <select aria-label="Dealer" value={dealerId} onChange={(event) => setDealerId(event.target.value)}>
-                  {members.map((member) => (
+                  {dealerCandidates.map((member) => (
                     <option key={member.userId} value={member.userId}>
                       {member.name}
                     </option>

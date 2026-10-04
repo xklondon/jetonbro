@@ -27,17 +27,17 @@ test("player taps a box to select it and targets its controls", async ({ page, c
   await samPage.setViewportSize({ width: 390, height: 844 });
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator("[data-table-name]")).toHaveText("Tap table");
 
   await samPage.reload();
-  await expect(samPage.getByRole("button", { name: "START ADDITIONAL BOX" })).toBeVisible();
-  await samPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click();
+  await expect(samPage.getByRole("button", { name: "ADD BOX" })).toBeVisible();
+  await samPage.getByRole("button", { name: "ADD BOX" }).click();
   await expect.poll(async () => (await tableSnapshot(samPage)).player?.boxes.length).toBe(2);
   await expect(samPage.locator("[data-box-id]")).toHaveCount(2);
   await expect(samPage.locator("[data-selected-box]")).toHaveAttribute("data-selected-box", /./);

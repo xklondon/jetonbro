@@ -72,17 +72,15 @@
   padding: 2px 12px 6px;
 }
 
-.classic-skin .phase-head strong {
-  font-family: var(--font-display);
-  color: var(--ivory);
-  font-size: var(--title-size);
-  display: block;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
+.classic-skin .phase-head strong,
 .classic-skin .phase-head [data-phase-heading] {
-  font-size: 18px;
+  font-family: var(--font-ui);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 
 .classic-skin .phase-head span {

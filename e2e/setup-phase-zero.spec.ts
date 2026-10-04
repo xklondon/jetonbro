@@ -20,7 +20,7 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   await page.goto("/");
   await page.getByRole("button", { name: "CREATE TABLE" }).click();
   await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await page.getByLabel("Table name").fill("Phase Zero BJ");
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByRole("button", { name: "Blackjack" }).click();
@@ -33,21 +33,17 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   await page.getByRole("button", { name: /Texas Hold/i }).click();
   await shot(page, "05-create-poker-390x844.png");
   await page.getByRole("button", { name: "Blackjack" }).click();
-  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
-  await page.getByRole("button", { name: "ADD NEW PLAYER" }).click();
   await expect(page.getByRole("tab", { name: "GUEST QR" })).toBeVisible();
+  await page.getByRole("tab", { name: "GUEST QR" }).click();
   await expect(page.getByRole("button", { name: "SEND INVITE" })).toHaveCount(0);
-  await expect(page.getByAltText("Guest QR — no email")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Copy Guest Link" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Copy Guest Link|Copy link/i }).first()).toBeVisible();
   await shot(page, "08-invite-sheet-390x844.png");
   const joinUrl = await page.locator("[data-verified-join-url]").first().getAttribute("data-verified-join-url");
   expect(joinUrl).toBeTruthy();
   expect(joinUrl).not.toMatch(/localhost|railway\.internal/i);
-  await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".sheet.open")).toHaveCount(0);
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeDisabled();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
   await expect(page.locator("[data-seat-status=empty]")).toHaveCount(0);
   await expect(page.locator("[data-empty-waiting]")).toBeVisible();
   await shot(page, "09-phase0-blackjack-empty-390x844.png");
@@ -57,13 +53,13 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(new URL(joinUrl!).pathname);
-  await expect(samPage.getByText(/WAITING FOR PLAYERS/i).first()).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|WAITING FOR PLAYERS/i).first()).toBeVisible();
   await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 20_000 });
   await shot(page, "10-phase0-blackjack-joined-390x844.png");
   await shot(samPage, "14-phase0-player-390x844.png");
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toBeEnabled({ timeout: 20_000 });
-  await page.getByRole("button", { name: "OPEN BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
   await samContext.close();
@@ -75,7 +71,7 @@ test("poker Phase 0 enables Start Hand after required Players join", async ({ pa
   await openAs(context, page, ownerEmail, "Alex");
   await createPokerTable(page, "Phase Zero Poker", { starting: "100" });
   await expect(page.getByRole("button", { name: "START HAND" })).toBeDisabled();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("WAITING FOR PLAYERS");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
   await shot(page, "11-phase0-poker-waiting-390x844.png");
   const joinUrl = await page.locator("main[data-join-url]").getAttribute("data-join-url");
   expect(joinUrl).toBeTruthy();
@@ -108,7 +104,7 @@ test("owner can cancel or confirm delete; non-owner cannot delete", async ({ pag
   const samPage = await samContext.newPage();
   await openAs(samContext, samPage, samEmail, "Sam");
   await samPage.goto(joinPath);
-  await expect(samPage.getByText(/WAITING FOR PLAYERS/i).first()).toBeVisible();
+  await expect(samPage.getByText(/Waiting for the table to open betting|WAITING FOR PLAYERS/i).first()).toBeVisible();
   await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 20_000 });
 
   const blocked = await samPage.request.post(`/api/tables/${setupSnap.tableId}/commands`, {

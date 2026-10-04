@@ -85,7 +85,7 @@ One compact 390×844 screen that does not scroll the phone frame: table name and
 
 ### Phase 0
 
-The created table waiting for Players — not the setup form. Compact Player names on felt, not metadata under the table name. No giant empty placeholder. `WAITING FOR PLAYERS` until the engine’s start command is legal. Blackjack `START BETTING` (`startBetting`) is Dealer-only and enabled only when a real seated Player exists. Poker `START HAND` follows existing `pokerControls()` / command legality. Phase 0 reuses the shared 65/35 `DealerActionDock` (`START BETTING | ADD PLAYER` or `START HAND | ADD PLAYER`). `ADD PLAYER` opens the same invitation mask used on Create Table. A seated Player sees the Player waiting board with their wallet, not Dealer controls. An Owner who assigned the Bank to someone else still sees the Owner Phase 0 board.
+The created table waiting for Players — not the setup form. Compact Player names on felt, not metadata under the table name. No giant empty placeholder. Compact `Table setup` for Dealer/Owner and `Waiting for the table to open betting.` for a seated Player. Never show `Waiting for players` merely because one Player is present. Blackjack `START BETTING` (`startBetting`) is Dealer-only and enabled only when a real seated Player exists. Poker `START HAND` follows existing `pokerControls()` / command legality. Phase 0 reuses the shared 65/35 `DealerActionDock` (`START BETTING | ADD PLAYER` or `START HAND | ADD PLAYER`). `ADD PLAYER` opens the same invitation mask used on Create Table. A seated Player sees the Player waiting board with their wallet, not Dealer controls. An Owner who assigned the Bank to someone else still sees the Owner Phase 0 board.
 
 ## Behaviour versus presentation
 
@@ -112,7 +112,7 @@ Boards control screen anatomy, element position, hierarchy, density, the green/g
 
 Do not reproduce generated-image mistakes (fake USD, invented names, duplicate table titles, made-up payout math).
 
-The live table name appears exactly once on the felt (`ClothName` / `data-table-name`), 12–18px below the compact phase heading. It is a printed cloth mark: Georgia 20–24px (max 26px), ivory/gold at restrained opacity, one line with ellipsis. No ornamental rules, dots, metadata, subtitle, panel, or header title. The header has menu plus role/balance only.
+The live table name appears exactly once on the felt (`ClothName` / `data-table-name`), 12–18px below the compact phase heading. It is a printed cloth mark: Georgia 15–20px, cream/antique-gold at restrained opacity, one line with ellipsis. No ornamental rules, dots, metadata, subtitle, panel, or header title. The header has menu plus role/balance only. Phase copy is compact Inter in the phase rail: Dealer `Table setup` / `Betting open`; Player `Waiting for the table to open betting.` / `Betting is open.` Never use a giant `WAITING FOR PLAYERS` heading.
 
 ## Seven-zone mobile grid (390×844)
 

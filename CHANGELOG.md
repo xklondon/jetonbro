@@ -11,6 +11,7 @@
 - Classic composition: Player felt is a full-height grid that centres the 3-slot stage; a reserved contextual row holds ADD BOX or the compact Insurance panel so boxes do not jump; Dealer ledger fills leftover felt for 1–4 rows and scrolls only at 5+; desktop frames the whole app inside one rounded 480px phone. Approved PNG boards are visual authorities, not data contracts.
 - Classic visual polish: live table name sits on the felt; Dealer chrome/rules/column headings are gone; Dealer actions use a 65/35 bottom dock; payout keys are a large 2×2; Player boxes are rectangular betting cards.
 - Casino-felt correction: Phase 0 reuses the shared 65/35 Dealer dock; the table name is a printed cloth mark without ornaments or metadata; Dealer boxes are compact betting positions rather than admin ledger rows.
+- Blackjack presentation: compact role/phase copy (`Table setup`, `Betting open`, `Waiting for the table to open betting.`, `Betting is open.`); Owner Change Dealer / Change Game stay in the existing table menu during eligible Betting; no duplicate commands or routes.
 
 ### Live identity repair — request cookies, inline Create Table invites
 

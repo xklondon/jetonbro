@@ -232,7 +232,7 @@ test("Guest Player Phase 0 is the Player waiting board", () => {
         tableName: "Salon",
         game: "Blackjack",
         available: money("100"),
-        copy: "WAITING FOR PLAYERS",
+        copy: "Waiting for the table to open betting.",
         ownerName: "Alex",
         bankName: "Alex",
       },
@@ -240,6 +240,8 @@ test("Guest Player Phase 0 is the Player waiting board", () => {
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_PLAYER"');
   expect(html).toContain("YOUR JETONS");
+  expect(html).toContain("Waiting for the table to open betting.");
+  expect(html).not.toContain("WAITING FOR PLAYERS");
   expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("ADD PLAYER");
   expect(html).not.toContain("DEAL CARDS");
@@ -358,7 +360,8 @@ test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
     }),
   );
   expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
-  expect(html).toContain("Blair");
+  expect(html).toContain("DEALER");
+  expect(html).toContain("Casey");
   expect(html).not.toContain("DEALER · Blair");
   expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("START BETTING");

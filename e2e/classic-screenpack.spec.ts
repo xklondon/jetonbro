@@ -35,7 +35,7 @@ async function assertNoForbiddenCopy(page: Page) {
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START ADDITIONAL BOX" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "OPEN BETTING" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
 }
 
 async function overflowAt(page: Page, width: number, height: number) {
@@ -84,7 +84,7 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
 
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeVisible();
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toHaveCount(0);
@@ -128,12 +128,12 @@ test("Classic Blackjack phase matrix, centred boxes, overflow, and Dealer Add Pl
   await page.screenshot({ path: join(shots, "desktop-centered-dealer-betting.png") });
   await page.setViewportSize({ width: 390, height: 844 });
   await guestPage.reload();
-  await expect(guestPage.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(guestPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await expect(guestPage.getByRole("button", { name: "PLACE BET" })).toBeVisible();
   await expect(guestPage.getByRole("button", { name: "ADD BOX" })).toBeVisible();
 
   await playerPage.reload();
-  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(playerPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
   await expect(playerPage.getByRole("button", { name: "PLACE BET" })).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "ADD BOX" })).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "2×" })).toHaveCount(0);
