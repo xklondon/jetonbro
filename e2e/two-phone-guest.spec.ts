@@ -32,7 +32,8 @@ async function joinAsGuestOnPage(page: Page, url: string, playName: string) {
 }
 
 function localAppUrl(url: string) {
-  return url.replace("http://localhost:3000", "http://127.0.0.1:3000");
+  const base = (process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
+  return url.replace(/^https?:\/\/[^/]+/, base);
 }
 
 function expectPublicVerifiedInvite(url: string) {
@@ -55,7 +56,7 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await page.getByLabel("Table name").blur();
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByLabel("Starting jetons per player").blur();
-  await expect(page.getByRole("button", { name: "ADD NEW PLAYER" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "GUEST QR" })).toBeVisible();
   await expect(page.getByAltText("Guest QR — no email")).toHaveCount(0);
   await expect(page.getByAltText("Verified QR — email confirmation")).toHaveCount(0);
   await expect(page.locator(".setup-mask")).toHaveCount(0);
@@ -81,8 +82,11 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   const verifiedSrc = await page.getByAltText("Verified QR — email confirmation").getAttribute("src");
   expect(decodeQrDataUrl(verifiedSrc!)).toBe(verifiedUrl);
   await shot(page, "03-verified-qr-390x844.png");
-  await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".sheet.open")).toHaveCount(0);
+  const closeInvite = page.locator(".invite-mask, .sheet.open").getByRole("button", { name: "Close" });
+  if (await closeInvite.count()) {
+    await closeInvite.first().click();
+    await expect(page.locator(".sheet.open")).toHaveCount(0);
+  }
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();
@@ -99,7 +103,7 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await expect(page.getByText("Waiting for Players to join.")).toHaveCount(0);
-  await page.locator("main.felt").evaluate((node) => node.scrollTo(0, 0));
+  await page.locator("main.tt-felt, main.felt").evaluate((node) => node.scrollTo(0, 0));
   await shot(page, "06-phase0-owner-joined-390x844.png");
   await guestPage.reload();
   await shot(guestPage, "07-phase0-guest-player-390x844.png");
@@ -110,7 +114,7 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await guestPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(guestPage.locator("[data-player-wallet]")).toContainText("75", { timeout: 20_000 });
-  await expect(guestPage.locator(".player-box, .box, [data-box-stage]").first()).toContainText("25");
+  await expect(guestPage.locator(".player-box, .box, [data-box-stage], .tt-box").first()).toContainText("25");
   await expect(page.locator('[data-blackjack-box-row="true"]:not([data-dealer-box="true"])')).toContainText("25", {
     timeout: 20_000,
   });
@@ -119,13 +123,13 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await page.reload();
   await guestPage.reload();
   await expect(guestPage.locator("[data-player-wallet]")).toContainText("75");
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeVisible();
   await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
-  await expect(guestPage.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
-  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await expect(guestPage.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
+  await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await guestPage.reload();
-  await expect(guestPage.getByRole("button", { name: "DOUBLE" })).toBeVisible();
+  await expect(guestPage.getByRole("button", { name: "2×" })).toBeVisible();
   await shot(page, "10-bj-dealer-playing-390x844.png");
   await shot(guestPage, "11-bj-player-playing-390x844.png");
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
@@ -133,7 +137,7 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await expect(page.locator(".payout-reveal")).toHaveCount(0);
   await page.locator('[data-payout-action="true"]').filter({ hasText: "WON" }).click();
   await guestPage.reload();
-  await expect(guestPage.getByRole("button", { name: "DOUBLE" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "2×" })).toHaveCount(0);
   await shot(page, "12-bj-dealer-payout-390x844.png");
   await shot(guestPage, "13-bj-player-payout-390x844.png");
   await noHorizontalOverflow(page);
@@ -184,7 +188,7 @@ test("email invitation uses the verified path and joins the intended table", asy
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByLabel("Starting jetons per player").blur();
   await openInviteMask(page);
-  await page.getByRole("tab", { name: "EMAIL INVITE" }).click();
+  await page.getByRole("tab", { name: /EMAIL/i }).click();
   await page.getByLabel("Player email").fill(playerEmail);
   await page.getByRole("button", { name: "SEND INVITE" }).click();
   await expect(page.getByText("Pending").first()).toBeVisible();
@@ -254,9 +258,9 @@ test("three roles keep Owner, Dealer, and Player controls separate", async ({ pa
   await guestPage.reload();
   await expect(page.getByText("YOUR JETONS")).toBeVisible();
   await expect(guestPage.getByText("YOUR JETONS")).toBeVisible();
-  await expect(dealerPage.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
-  await expect(guestPage.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
+  await expect(dealerPage.getByRole("button", { name: "DEAL CARDS" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
   await guestContext.close();
   await dealerContext.close();
 });

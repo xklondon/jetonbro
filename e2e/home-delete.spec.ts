@@ -17,7 +17,7 @@ test("owner can permanently delete an empty draft from home", async ({ page, con
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CLOSE TABLE" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "CLOSE & REMOVE TABLE" })).toHaveCount(0);
-  await page.getByRole("button", { name: "DELETE" }).click();
+  await page.getByRole("button", { name: "DELETE", exact: true }).click();
   await expect(page.getByText("Permanent draft deletion.")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.locator("[data-table-id]")).toHaveCount(0);
@@ -80,7 +80,7 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   await expect(page.getByText("Open salon")).toBeVisible();
   await expect(page.getByRole("button", { name: "RESUME" })).toHaveCount(0);
   await page.getByRole("button", { name: "Table menu" }).click();
-  await page.getByRole("button", { name: "DELETE" }).click();
+  await page.getByRole("button", { name: "DELETE", exact: true }).click();
   await expect(page.getByText("Open salon", { exact: true })).toBeVisible();
   await expect(page.getByText("Closed table removal. Ledger and rounds are kept.")).toBeVisible();
   await mkdir(join(process.cwd(), "docs", "screenshots", "approval"), { recursive: true });
@@ -89,7 +89,7 @@ test("owner sees balances, non-owner does not, and started tables archive", asyn
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByText("Open salon")).toBeVisible();
   await page.getByRole("button", { name: "Table menu" }).click();
-  await page.getByRole("button", { name: "DELETE" }).click();
+  await page.getByRole("button", { name: "DELETE", exact: true }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText("Open salon")).toHaveCount(0);
 
@@ -149,5 +149,5 @@ test("owner swipe-left reveals the same destructive actions as the menu", async 
   await page.mouse.up();
   await expect(card.locator("[data-home-delete]")).toBeVisible();
   await page.getByRole("button", { name: "Table menu" }).click();
-  await expect(page.getByRole("button", { name: "DELETE" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "DELETE", exact: true }).first()).toBeVisible();
 });

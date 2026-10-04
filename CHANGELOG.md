@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Tabletop skin (default)
+
+- New isolated skin at `src/ui/skins/tabletop/` with its own `tabletop.css` (`.tabletop-skin` / `data-skin="tabletop"`). Does not import Classic CSS.
+- Registry default is `tabletop`; Classic remains registered for rollback only.
+- Immersive felt board for Blackjack and Poker: cloth identity, spatial spots, bottom rail actions/tray. Home/Create Table/Delete All use the same palette.
+- Visual captures under `docs/screenshots/tabletop/`.
+
 ### Blackjack PNG composition and owner delete-all
 
 - Approved Player and Dealer PNGs are literal composition. Canonical markup lives in `ClassicPlayerTable` / `ClassicBankTable` with `blackjack-classic.css`. Plaques, 3-slot grids, and giant Dealer cards are gone.

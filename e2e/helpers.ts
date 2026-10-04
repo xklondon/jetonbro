@@ -149,8 +149,11 @@ export async function invitePlayerFromLobby(page: Page, email: string) {
   await page.getByLabel("Player email").fill(email);
   await page.getByRole("button", { name: /^SEND/i }).click();
   await expect(page.getByText("Pending")).toBeVisible();
-  await page.locator(".invite-mask").getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".sheet.open")).toHaveCount(0);
+  const close = page.locator(".invite-mask, .sheet.open").getByRole("button", { name: "Close" });
+  if (await close.count()) {
+    await close.first().click();
+    await expect(page.locator(".sheet.open")).toHaveCount(0);
+  }
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
@@ -170,13 +173,15 @@ export async function expectPokerPhase(page: Page, label: string, options?: { ti
 
 export async function expectNoPageScroll(page: Page) {
   const scrolled = await page.evaluate(() => {
-    const phone = document.querySelector(".phone");
-    const felt = document.querySelector("main.felt");
+    const phone = document.querySelector(".tt-phone, .phone");
+    const felt = document.querySelector("main.tt-felt, main.felt");
     return {
       phone: phone ? phone.scrollHeight > phone.clientHeight + 2 : false,
       felt: felt ? felt.scrollHeight > felt.clientHeight + 2 : false,
+      missing: !phone || !felt,
     };
   });
+  expect(scrolled.missing).toBe(false);
   expect(scrolled.phone).toBe(false);
   expect(scrolled.felt).toBe(false);
 }

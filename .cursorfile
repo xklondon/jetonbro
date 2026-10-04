@@ -118,7 +118,7 @@ Lower layout on every playable screen: Owner street controls sit in the phase-ac
 
 ## Design architecture
 
-- `classic` is the first and default skin.
+- `tabletop` is the default skin (`ACTIVE_SKIN_ID = "tabletop"` in `src/ui/skins/registry.ts`). `classic` remains registered as the rollback skin; switching back is a one-line registry change.
 - Game/domain logic must not import skin components or CSS.
 - Skins must not contain permissions, accounting, phase rules, or payout calculations.
 - Build shared semantic slots first, then render those slots through the active skin.
@@ -129,9 +129,18 @@ Recommended skin boundary:
 
 ```text
 src/ui/core/                 semantic screen composition
-src/ui/skins/classic/        Classic components, tokens and styles
+src/ui/skins/classic/        Classic components, tokens and styles (rollback skin)
+src/ui/skins/tabletop/       Tabletop components and tabletop.css (default skin)
 src/ui/skins/registry.ts     typed skin selection
 ```
+
+Tabletop skin (`src/ui/skins/tabletop/`) is a complete `JetonBroSkin` and is isolated from Classic:
+
+- It imports only `./tabletop.css` (from `index.ts`). It must never import Classic components, helpers or CSS, and Classic CSS must not style Tabletop. Every Tabletop rule is scoped under `.tabletop-skin` / `[data-skin="tabletop"]` and uses `tt-` class names. `isolation.test.ts` enforces this and that the registry activates `tabletop`.
+- It reuses only `src/ui/core/*` semantics (`blackjackDealerControls`, `blackjackPlayerControls`, `blackjackOwnerMenu`, `playerBoxSlots`, `joinQrDataUrl`, `addChipToAmount`), `@/application/queries/poker-controls` (`pokerControls` stays the Poker UI acceptance contract) and `@/domain/jetons/chips` (local `chipsFromMillis`). It sends commands only through the existing `onCommand`. It contains no permissions, accounting, phase rules or payout calculations.
+- Composition: one physical table. Compact header, one continuous cloth-textured felt with a curved gold far rail filling the viewport between the header and the bottom rail (`100vw` max `480px`, `100dvh`, no page scroll), and a bottom rail holding phase actions and the permanent wallet/tray. No dashboard summary cards and no ledger tables. Blackjack boxes are kidney betting spots placed spatially (1 box centred near the Player, 2 side by side, 3 in an arc). Dealer player boxes are spots on the felt with LOST / STAND OFF / BLACKJACK / WON on each unresolved position. Poker seats sit around the felt with the pot at the centre, D/SB/BB markers, a pulsing (reduced-motion: static) actor outline, and Owner street control in the rail separated from actor actions above the tray.
+- The approved PNG boards and `design/reference/classic/jetonbro-player-bank-insurance.html` remain the visual authority for Tabletop colours, felt, box, jeton and dock tokens. The canonical Blackjack dock labels, Player labels and all `data-table-board` values are unchanged.
+- Not implemented in Tabletop (optional, display-only, deferred): Card Assist rank entry sheets, outcome celebration overlays and the welcome shimmer. Rollback to Classic restores them.
 
 The approved PNG boards under `design/reference/classic/approved/` are literal composition specifications. Game state determines which information and legal actions exist. The PNG determines how those elements are visually arranged. Existing JSX, CSS, component anatomy, selectors and tests have no visual authority. Blackjack presentation markup may be replaced completely without changing game logic, commands, handlers, accounting, permissions or snapshots. Where live product content differs from a mock, preserve the closest visual composition and substitute the real content. Do not invent an alternative layout system.
 
@@ -298,8 +307,9 @@ Full acceptance means:
 ## Current implementation line
 
 - Repository: JetBro II
-- Default skin: Classic
+- Default skin: Tabletop (`src/ui/skins/tabletop/`); Classic is the registered rollback skin
 - Games: Blackjack and Texas Hold’em
-- Active visual authority: `design/reference/classic/approved/` PNGs are literal Blackjack composition specs
+- Active visual authority: `design/reference/classic/approved/` PNGs are literal Blackjack composition specs for Classic and remain the visual authority for Tabletop tokens and composition
+- Next agreed milestone: review Tabletop at 390x844 and 320x700 across Home, Create Table, Phase 0, Blackjack Dealer/Player and Poker, then decide on Card Assist and celebration parity
 - Zilch: deferred
 - Release/deployment status belongs in `CHANGELOG.md` and `docs/IMPLEMENTATION_LOG.md`, not this rules file.

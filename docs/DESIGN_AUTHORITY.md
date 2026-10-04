@@ -4,7 +4,9 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Valid boards
 
-Primary visual authority is the approved PNG set under `design/reference/classic/approved/`. Those files outrank historical HTML prototypes, existing CSS, previously generated screenshots, and existing Classic component anatomy.
+Default production skin is **Tabletop** (`src/ui/skins/tabletop/`, `ACTIVE_SKIN_ID = "tabletop"`). Classic remains registered only as rollback and must not load into Tabletop screens.
+
+Primary visual authority for Tabletop is the approved PNG set under `design/reference/classic/approved/` plus `design/reference/classic/jetonbro-player-bank-insurance.html`. Those files outrank historical HTML prototypes, existing Classic CSS, previously generated screenshots, and Classic component anatomy.
 
 | Approved file | Role |
 |---|---|
