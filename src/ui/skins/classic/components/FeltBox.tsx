@@ -85,25 +85,31 @@ export function FeltBox({
       ) : (
         <div className="box-stake">
           {!showOutcomes ? (
-            <span className="chip-pile">
-              {chips.map((chip, index) => (
-                <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
-                  <span className={`chip ${chip.className}`}>{chip.label}</span>
-                  {retractable ? (
-                    <button
-                      type="button"
-                      className="chip-retract"
-                      aria-label={`Retract ${chip.label} jetons from Box ${box.boxNumber}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onRetractChip?.(chip.amount);
-                      }}
-                    >
-                      ×
-                    </button>
-                  ) : null}
+            <span className={`chip-pile${chips.length === 0 ? " is-empty" : ""}`}>
+              {chips.length === 0 ? (
+                <span className="chip-slot">
+                  <span className="chip c0">0</span>
                 </span>
-              ))}
+              ) : (
+                chips.map((chip, index) => (
+                  <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
+                    <span className={`chip ${chip.className}`}>{chip.label}</span>
+                    {retractable ? (
+                      <button
+                        type="button"
+                        className="chip-retract"
+                        aria-label={`Retract ${chip.label} jetons from Box ${box.boxNumber}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRetractChip?.(chip.amount);
+                        }}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </span>
+                ))
+              )}
             </span>
           ) : null}
           <span className="amount">{box.bet.label}</span>

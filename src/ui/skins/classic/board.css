@@ -287,9 +287,10 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px 8px;
-  align-content: center;
-  align-items: center;
+  align-content: end;
+  align-items: end;
   justify-items: center;
+  padding-bottom: 4px;
   min-height: 0;
   height: 100%;
   z-index: 1;
@@ -495,14 +496,51 @@
 }
 
 .classic-skin .player-box-stage .chip-pile {
-  height: 34px;
+  position: relative;
+  width: 46px;
+  height: 38px;
+}
+
+.classic-skin .player-box-stage .chip-pile:not(.is-empty)::before,
+.classic-skin .player-box-stage .chip-pile:not(.is-empty)::after {
+  content: "";
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px dashed rgba(255, 255, 255, 0.45);
+  background: rgba(8, 28, 22, 0.92);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.22);
+}
+
+.classic-skin .player-box-stage .chip-pile:not(.is-empty)::before {
+  left: 2px;
+  bottom: 6px;
+  opacity: 0.45;
+}
+
+.classic-skin .player-box-stage .chip-pile:not(.is-empty)::after {
+  right: 2px;
+  bottom: 3px;
+  opacity: 0.7;
+}
+
+.classic-skin .player-box-stage .chip-pile .chip-slot {
+  position: relative;
+  z-index: 1;
 }
 
 .classic-skin .player-box-stage .chip {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   font-size: 10px;
-  margin-left: -12px;
+  margin-left: 0;
+}
+
+.classic-skin .player-box-stage .chip-pile.is-empty .chip {
+  opacity: 0.42;
+  background: #2a2a2a;
+  color: #9a9a9a;
 }
 
 .classic-skin .player-box-stage .amount {

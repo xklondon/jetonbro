@@ -4,7 +4,7 @@
 
 ### Blackjack Classic visual fidelity
 
-- Player boxes are SVG betting plaques (128×92, 14px corners, inner rim), not kidney capsules or 168px cards. Box 1 stays in the centre 3-slot cell; Box 2 occupies the left cell.
+- Player boxes are SVG betting plaques (128×92, 8px corners, inner rim), not kidney capsules or 168px cards. Box 1 stays in the centre 3-slot cell; Box 2 occupies the left cell. Boxes sit on the lower felt above ADD BOX.
 - Dealer Players are casino plaques (300×168 solo, 168×108 in a 2×2), not spreadsheet rows. Payout keys stay a large 2×2 under the selected position.
 - Table name is an uppercase low-contrast serif mark printed into the cloth, once. Betting actions stack Amount above RETRACT / PLACE BET.
 
