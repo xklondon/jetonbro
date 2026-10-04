@@ -1,0 +1,165 @@
+/* Shared invite + invitation-sheet owner. Used by Create Table and Phase 0. */
+
+.classic-skin .invite-mask {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  gap: 8px;
+}
+
+.classic-skin .invite-mask-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.classic-skin .invite-mask-head h3 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+
+.classic-skin .invite-mask-head .text-link {
+  width: auto;
+  min-height: 44px;
+}
+
+.classic-skin .invite-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.classic-skin .invite-tabs button {
+  min-height: 44px;
+  border: 1px solid var(--gold-line);
+  background: var(--panel);
+  color: var(--muted);
+  border-radius: 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.classic-skin .invite-tabs button.active {
+  color: var(--gold-ink);
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  border-color: transparent;
+}
+
+.classic-skin .invite-mask-body {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.classic-skin .invite-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.classic-skin .invite-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.classic-skin .invite-inline-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.classic-skin .invite-inline-row p {
+  margin: 0;
+  font-size: 11px;
+}
+
+.classic-skin .invite-card {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+}
+
+.classic-skin .invite-card h3 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+}
+
+.classic-skin .invite-panel input,
+.classic-skin .invite-card input,
+.classic-skin .invite-card select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  border: 1px solid var(--gold-line);
+  background: var(--control-surface);
+  color: var(--ivory);
+  border-radius: var(--radius-card);
+  padding: 8px 10px;
+  font-size: 16px;
+  appearance: none;
+}
+
+.classic-skin .invite-mask .qr-panel img,
+.classic-skin .invite-card .qr-panel img,
+.classic-skin .invite-inline .qr-panel img {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  background: #f4ead5;
+  object-fit: contain;
+}
+
+.classic-skin .invite-inline .qr-panel,
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  width: 100%;
+}
+
+.classic-skin .invite-inline .qr-panel .gold-button,
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr .gold-button,
+.classic-skin .invite-card .gold-button,
+.classic-skin .invite-card .panel-button,
+.classic-skin .invite-inline .invite-inline-row .gold-button {
+  flex: 1;
+  min-height: 40px;
+  width: auto;
+}
+
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr img,
+.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr .qr-slot {
+  width: 112px;
+  height: 112px;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.classic-skin .sheet.setup-mask {
+  align-items: stretch;
+}
+
+.classic-skin .setup-sheet {
+  max-height: min(88dvh, 720px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.classic-skin .sheet.setup-mask .sheet-panel.setup-sheet {
+  padding: 8px 12px 0;
+  max-height: 100%;
+  height: 100%;
+  overflow: hidden;
+}

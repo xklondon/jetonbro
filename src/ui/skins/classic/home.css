@@ -128,7 +128,7 @@
 .classic-skin .home-table-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
 }
 
@@ -160,28 +160,34 @@
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
-  gap: 6px;
-  background: rgba(7, 28, 24, 0.72);
-  border: 1px solid rgba(223, 189, 105, 0.28);
-  border-radius: 12px;
-  padding: 8px 10px;
+  gap: 2px;
+  background: rgba(7, 28, 24, 0.38);
+  border: 1px solid rgba(223, 189, 105, 0.16);
+  border-radius: 8px;
+  padding: 6px 8px;
   transition: transform 160ms ease;
+}
+
+.classic-skin .home-table-card strong {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .classic-skin .home-table-card .home-resume {
   align-self: flex-start;
   width: auto;
-  min-width: 72px;
-  min-height: 32px;
-  padding: 6px 12px;
-  border: 1px solid rgba(223, 189, 105, 0.38);
-  border-radius: 8px;
-  background: rgba(16, 36, 31, 0.9);
+  min-width: 0;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 6px;
+  background: transparent;
   color: var(--gold);
   font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
 }
 
 .classic-skin .home-table-state {
@@ -288,23 +294,29 @@
   scrollbar-width: none;
 }
 
+.classic-skin main.felt.create-setup.compact-create:has([data-selected-invite="guest"]),
+.classic-skin main.felt.create-setup.compact-create:has([data-selected-invite="verified"]),
+.classic-skin main.felt.create-setup.compact-create:has([data-selected-invite="email"]) {
+  overflow-y: auto;
+}
+
 .classic-skin .create-table-mark {
-  width: min(180px, 56%);
-  margin: 2px auto 4px;
-  min-height: 48px;
-  aspect-ratio: 2.6 / 1;
-  border: 1px solid var(--gold-line);
-  border-radius: 50%;
+  width: auto;
+  margin: 2px auto 2px;
+  min-height: 0;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 50% 40%, rgba(223, 189, 105, 0.16), transparent 58%);
+  background: none;
+  border: 0;
 }
 
 .classic-skin .create-table-mark strong {
   font-family: var(--font-display);
-  color: var(--cream);
-  letter-spacing: 0.04em;
-  font-size: 15px;
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(223, 189, 105, 0.32);
+  letter-spacing: 0.05em;
+  font-size: 13px;
 }
 
 .classic-skin .create-block {
@@ -361,101 +373,6 @@
   text-align: center;
 }
 
-.classic-skin .invite-mask {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-  gap: 8px;
-}
-
-.classic-skin .invite-mask-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.classic-skin .invite-mask-head h3 {
-  margin: 0;
-  font-size: 14px;
-  letter-spacing: 0.1em;
-}
-
-.classic-skin .invite-mask-head .text-link {
-  width: auto;
-  min-height: 44px;
-}
-
-.classic-skin .invite-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.classic-skin .invite-tabs button {
-  min-height: 44px;
-  border: 1px solid var(--gold-line);
-  background: var(--panel);
-  color: var(--muted);
-  border-radius: 8px;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-}
-
-.classic-skin .invite-tabs button.active {
-  color: var(--gold-ink);
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
-  border-color: transparent;
-}
-
-.classic-skin .invite-mask-body {
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.classic-skin .invite-mask .qr-panel img,
-.classic-skin .invite-card .qr-panel img {
-  width: 120px;
-  height: 120px;
-}
-
-.classic-skin .invite-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.classic-skin .invite-inline-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.classic-skin .invite-inline-row p {
-  margin: 0;
-  font-size: 11px;
-}
-
-.classic-skin .invite-inline .qr-panel {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.classic-skin .invite-inline .qr-panel img {
-  width: 96px;
-  height: 96px;
-}
-
-.classic-skin .invite-inline .qr-panel .gold-button {
-  flex: 1;
-}
-
 .classic-skin main.felt.create-setup {
   padding-bottom: 0;
   gap: 6px;
@@ -469,26 +386,25 @@
 .classic-skin .create-setup label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   font-size: var(--label-size);
+  font-family: var(--font-ui);
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
 .classic-skin .create-setup input,
-.classic-skin .create-setup select,
-.classic-skin .invite-panel input,
-.classic-skin .invite-card input,
-.classic-skin .invite-card select {
+.classic-skin .create-setup select {
   width: 100%;
   min-width: 0;
-  min-height: var(--control-height);
-  border: 1px solid var(--gold-line);
-  background: var(--control-surface);
+  min-height: 36px;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  background: transparent;
   color: var(--ivory);
-  border-radius: var(--radius-card);
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: var(--font-ui);
   font-size: 16px;
   appearance: none;
 }
@@ -507,53 +423,6 @@
   grid-template-columns: 1fr 1fr;
 }
 
-.classic-skin .invite-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.classic-skin .invite-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.classic-skin .invite-card {
-  border: 1px solid rgba(223, 189, 105, 0.28);
-  border-radius: 12px;
-  padding: 10px;
-  background: rgba(7, 28, 24, 0.55);
-}
-
-.classic-skin .invite-card h3 {
-  margin: 0 0 4px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--gold);
-}
-
-.classic-skin .invite-card .qr-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-.classic-skin .invite-card .qr-panel img {
-  width: 120px;
-  height: 120px;
-  border-radius: 8px;
-  background: #f4ead5;
-}
-
-.classic-skin .invite-card .gold-button,
-.classic-skin .invite-card .panel-button {
-  min-height: 44px;
-}
-
 .classic-skin .home-create {
   letter-spacing: 0.1em;
 }
@@ -562,8 +431,9 @@
 .classic-skin .create-table-form fieldset {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   font-size: 12px;
+  font-family: var(--font-ui);
   color: rgba(244, 234, 213, 0.82);
 }
 
@@ -634,9 +504,10 @@
 
 .classic-skin .field-label {
   font-size: 10px;
-  color: var(--gold);
+  font-family: var(--font-ui);
+  color: var(--muted);
   margin-bottom: 2px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -656,62 +527,6 @@
 .classic-skin .setup-defaults {
   margin: 0;
   font-size: 11px;
-}
-
-.classic-skin .setup-sheet {
-  max-height: min(88dvh, 720px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.classic-skin .sheet.setup-mask {
-  align-items: stretch;
-}
-
-.classic-skin .sheet.setup-mask .sheet-panel.setup-sheet {
-  padding: 8px 12px 0;
-  max-height: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.classic-skin .sheet.setup-mask h3 {
-  margin: 0 0 6px;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.classic-skin .setup-mask .game-pick.compact .game-card {
-  min-height: 44px;
-  aspect-ratio: auto;
-  padding: 4px 2px;
-  gap: 0;
-}
-
-.classic-skin .setup-mask .game-pick.compact .game-card-suit {
-  font-size: 16px;
-}
-
-.classic-skin .setup-mask .game-pick.compact .game-card strong {
-  font-size: 11px;
-}
-
-.classic-skin .setup-mask .game-pick.compact .game-card small {
-  display: none;
-}
-
-.classic-skin .setup-mask .create-table-form label {
-  gap: 2px;
-}
-
-.classic-skin .setup-mask .email-row {
-  margin-bottom: 0;
-}
-
-.classic-skin .setup-mask .field-label {
-  margin-bottom: 4px;
-  letter-spacing: 0.06em;
 }
 
 .classic-skin .create-table-form {
@@ -812,142 +627,6 @@
   width: auto;
   align-self: flex-start;
   padding: 4px 0;
-}
-
-.classic-skin .waiting-players {
-  text-align: center;
-  color: var(--ivory);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.classic-skin .waiting-pulse {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--gold);
-  animation: waiting-bounce 1.2s ease-in-out infinite;
-}
-
-.classic-skin .deal-countdown {
-  margin: 6px 0 8px;
-  font-family: var(--font-display);
-  font-size: 22px;
-  color: var(--gold);
-  animation: countdown-pop 0.45s ease;
-}
-
-.classic-skin main.felt.betting-open {
-  box-shadow: inset 0 0 40px rgba(223, 189, 105, 0.18);
-}
-
-.classic-skin main.felt.betting-closing .chip-pile .chip {
-  animation: chip-settle 0.5s ease;
-}
-
-.classic-skin .box.drop-target {
-  outline: 2px solid var(--gold);
-}
-
-.classic-skin .drag-ghost {
-  position: fixed;
-  z-index: 40;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-}
-
-.classic-skin .chip-lift {
-  transform: scale(1.06);
-}
-
-.classic-skin .chip-slot {
-  position: relative;
-  display: inline-flex;
-}
-
-.classic-skin .chip-retract {
-  position: absolute;
-  top: -6px;
-  right: -4px;
-  width: 18px;
-  height: 18px;
-  border: 0;
-  border-radius: 50%;
-  background: #1a1208;
-  color: var(--ivory);
-  font-size: 12px;
-  line-height: 1;
-  padding: 0;
-}
-
-.classic-skin .c-exact {
-  background: #d7c48a;
-  color: #342706;
-}
-
-@keyframes waiting-bounce {
-  0%, 100% { transform: translateY(0); opacity: 0.7; }
-  50% { transform: translateY(-6px); opacity: 1; }
-}
-
-@keyframes countdown-pop {
-  from { transform: scale(0.92); opacity: 0.6; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes chip-settle {
-  0% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .classic-skin .waiting-pulse,
-  .classic-skin .deal-countdown,
-  .classic-skin main.felt.betting-closing .chip-pile .chip,
-  .classic-skin .chip-lift {
-    animation: none;
-    transform: none;
-  }
-}
-
-.classic-skin .invite-inline .invite-card.invite-inline-row {
-  padding: 8px;
-}
-
-.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  margin: 4px 0 0;
-  width: 100%;
-}
-
-.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr img,
-.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr .qr-slot {
-  width: 128px;
-  height: 128px;
-  padding: 6px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  background: #f4ead5;
-  object-fit: contain;
-}
-
-.classic-skin .invite-inline .invite-card.invite-inline-row .qr-panel.compact-qr .gold-button {
-  flex: 1;
-  min-height: 40px;
-  width: auto;
-}
-
-.classic-skin .invite-inline .invite-inline-row label {
-  gap: 4px;
-}
-
-.classic-skin .invite-inline .invite-inline-row .gold-button {
-  min-height: 40px;
 }
 
 @media (max-width: 360px) {

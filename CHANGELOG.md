@@ -6,7 +6,8 @@
 
 - Home uses a dedicated heading and compact saved-table cards (name + game/state). Owner/Dealer metadata lives in the overflow and swipe reveal.
 - Owners can swipe-left or use the card menu. `END & DELETE` is an Owner-only recoverable archive of an abandoned active table: invitations revoked, members hidden, ledger kept, no settlement.
-- Classic CSS ownership: tokens / board / layouts / table / home. Approved PNG boards are the visual authority.
+- Classic CSS ownership: tokens / layouts / table / home / invite / board. Invite/sheet styles live in `invite.css`. Home CSS does not style a live table. Classic CSS has no `!important`.
+- Live felt uses explicit Dealer 1 / 2 / 3–4 / 5–6 and Player 1 / 2 / 3 compositions. Table name is a single italic cloth mark. Player boxes and Dealer positions share a betting-spot silhouette.
 
 ### Classic screen pack and Blackjack phase-control matrix
 

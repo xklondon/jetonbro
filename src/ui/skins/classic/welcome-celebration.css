@@ -89,7 +89,7 @@
   .classic-skin .welcome-celebration,
   .classic-skin .welcome-particle,
   .classic-skin .brand.brand-shimmer {
-    animation: none !important;
+    animation: none;
     display: none;
   }
 }

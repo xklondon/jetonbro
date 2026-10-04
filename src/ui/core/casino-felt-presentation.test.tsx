@@ -314,5 +314,5 @@ test("Player box geometry stays fixed across slots", () => {
   expect(html).toContain('data-table-name="Salon"');
   expect(html.match(/data-table-name=/g)?.length).toBe(1);
   const tokens = readFileSync(join(process.cwd(), "src/ui/skins/classic/tokens.css"), "utf8");
-  expect(tokens).toContain("--player-box-height: 148px");
+  expect(tokens).toContain("--player-box-height: 168px");
 });

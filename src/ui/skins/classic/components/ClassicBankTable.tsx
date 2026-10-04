@@ -89,6 +89,7 @@ export function ClassicBankTable({
           <div
             className="dealer-list dealer-positions"
             data-dealer-positions="true"
+            data-player-count={view.players.length}
             data-ledger-count={ledgerCount}
             data-ledger-overflow={ledgerCount >= 5 ? "true" : "false"}
           >

@@ -58,6 +58,9 @@ test("Blackjack visual states at canonical mobile sizes", async ({ page, context
   await playerPage.reload();
   await expect(playerPage.locator("[data-phase-heading]")).toHaveText("Betting is open.");
   await capture(page, "02-owner-dealer-betting");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: join(shots, "21-desktop-centred-frame-1440x900.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
   await capture(playerPage, "06-player-betting-empty");
 
   await page.getByRole("button", { name: "Menu" }).click();

@@ -496,6 +496,7 @@ test("Dealer ledger density marks 1, 4, and 6 Players", () => {
       }),
     );
     expect(html).toContain(`data-ledger-count="${count}"`);
+    expect(html).toContain(`data-player-count="${count}"`);
     expect(html).toContain(`data-ledger-overflow="${count >= 5}"`);
     expect(html.match(/data-player-row="true"/g)?.length).toBe(count);
   }

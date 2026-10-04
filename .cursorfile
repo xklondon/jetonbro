@@ -140,10 +140,11 @@ Do not preserve rejected visual anatomy merely because tests assert it. Behaviou
 Classic CSS has exclusive ownership boundaries:
 
 - `tokens.css`: design tokens only
-- `board.css`: shared live-table visual anatomy
 - `layouts.css`: responsive geometry only
-- `table.css`: game-table and phase composition only
+- `table.css`: Blackjack/Poker objects and phase composition only
 - `home.css`: Home and Create Table only
+- `invite.css`: shared invite/sheet owner used by Create Table and Phase 0
+- `board.css`: shared live-table visual anatomy
 
 A selector must not style unrelated surfaces. Remove obsolete rules instead of layering new overrides. Do not use `!important` to resolve architectural cascade conflicts.
 

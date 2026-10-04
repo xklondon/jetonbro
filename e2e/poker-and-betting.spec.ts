@@ -90,10 +90,10 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await mkdir(out, { recursive: true });
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Betting open");
   await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await expect(page.locator("body")).not.toContainText("xklondon");
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeDisabled();
   await openTableMenu(page);
   await expect(page.locator(".sheet.open").getByText("OPEN BANK")).toBeVisible();
   await expect(page.locator(".sheet.open").getByText("LIMITED BANK")).toBeVisible();
@@ -103,7 +103,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
 
   const before = await tableSnapshot(page);
   await openTableMenu(page);
-  await page.locator(".sheet.open").getByRole("button", { name: "SWITCH GAME" }).click();
+  await page.locator(".sheet.open").getByRole("button", { name: /Change Game|SWITCH GAME/ }).click();
   await expect(page.getByRole("button", { name: "Zilch — Coming later" })).toBeDisabled();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await shot(page, "app-poker-setup-sheet-390x844.png");

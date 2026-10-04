@@ -46,7 +46,7 @@ export function ClassicPhaseZero({
     setup?.members.find((member) => member.isBankDealer)?.userId ?? members.find((member) => member.isBankDealer)?.userId ?? "",
   );
   const rows = (setup?.members ?? waiting?.members ?? members).filter((member) => !member.isBankDealer);
-  const invited = (setup?.invitations ?? []).filter((invite) => invite.pending);
+  const invited = (setup?.invitations ?? []).filter((invite) => invite.pending && invite.email);
   const startHand = poker ? pokerControls(poker).find((control) => control.id === "startHand") : null;
   const canOpenBetting = game === "BLACKJACK" && Boolean(setup?.canStartBetting && setup.setupCompleted) && isBank;
   const dealerSetup = blackjackDealerSetupControls(canOpenBetting);
@@ -86,7 +86,11 @@ export function ClassicPhaseZero({
               DEALER
             </div>
           </div>
-          <div className="phase-zero-rows dealer-positions" data-empty-waiting={rows.length === 0 && invited.length === 0 ? "true" : undefined}>
+          <div
+            className="phase-zero-rows dealer-positions"
+            data-player-count={rows.length}
+            data-empty-waiting={rows.length === 0 && invited.length === 0 ? "true" : undefined}
+          >
             {rows.map((row) => (
               <div className="dealer-position is-idle" key={row.userId} data-player-row="true">
                 <span className="position-who">

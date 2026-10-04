@@ -55,7 +55,7 @@ export function ClassicPokerDealer({
   );
 
   return (
-    <TableShell badges={["OWNER"]} onMenu={() => setSheet("menu")}>
+    <TableShell feltIdentity badges={["OWNER"]} onMenu={() => setSheet("menu")}>
       <PhaseBar label={view.phaseLabel.replaceAll("_", " ")}>
         {turn ? (
           <div className={`poker-turn-banner${turn.you ? " is-you" : ""}`} data-turn-state={turn.you ? "you" : "other"}>

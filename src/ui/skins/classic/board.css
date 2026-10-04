@@ -176,13 +176,31 @@
   content: none;
 }
 
+.classic-skin main.felt.player-play-felt,
+.classic-skin main.felt.dealer-list-felt,
+.classic-skin main.felt.phase-zero-felt,
+.classic-skin main.felt.poker-felt {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .classic-skin .player-play-felt .table-surface,
 .classic-skin .dealer-list-felt .table-surface,
-.classic-skin .phase-zero-felt .table-surface {
+.classic-skin .phase-zero-felt .table-surface,
+.classic-skin .poker-felt .table-surface {
+  position: relative;
   border: 0;
-  padding: 4px 0 0;
+  padding: 18px 0 0;
   width: 100%;
-  gap: 6px;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-items: stretch;
 }
 
 .classic-skin .brand.is-felt-identity {
@@ -190,20 +208,27 @@
 }
 
 .classic-skin .cloth-name {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
   display: block;
-  width: 100%;
-  max-width: 100%;
-  margin: 4px 0 8px;
+  width: max-content;
+  max-width: 72%;
+  margin: 0;
   padding: 0;
   border: 0;
   background: none;
   text-align: center;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 400;
   line-height: 1;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(223, 189, 105, 0.38);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: rgba(223, 189, 105, 0.3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -216,7 +241,8 @@
   justify-content: center;
   gap: 10px;
   min-height: 0;
-  margin: 0;
+  margin: 0 0 6px;
+  z-index: 1;
 }
 
 .classic-skin .player-orbit {
@@ -257,9 +283,15 @@
 }
 
 .classic-skin .player-box-stage {
-  grid-auto-rows: var(--player-box-height);
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 8px;
   align-content: center;
+  align-items: center;
+  justify-items: center;
+  min-height: 0;
+  height: 100%;
+  z-index: 1;
 }
 
 .classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected) {
@@ -335,8 +367,17 @@
 }
 
 .classic-skin .player-box-stage .stage-cell,
-.classic-skin .player-box-stage .box,
 .classic-skin .player-box-stage .box-slot {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.classic-skin .player-box-stage .box {
+  width: min(168px, 100%);
   height: var(--player-box-height);
   min-height: var(--player-box-height);
   max-height: var(--player-box-height);
@@ -353,25 +394,27 @@
 
 .classic-skin .player-box-stage .box {
   border-radius: var(--box-radius);
-  padding: 14px 10px 12px;
+  padding: 16px 10px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  background: rgba(2, 23, 18, 0.28);
-  border: 2px solid rgba(223, 189, 105, 0.58);
-  box-shadow: inset 0 0 22px rgba(223, 189, 105, 0.08);
+  justify-content: center;
+  gap: 6px;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(11, 112, 86, 0.18), transparent 58%),
+    rgba(2, 16, 13, 0.42);
+  border: 1px solid rgba(223, 189, 105, 0.52);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.28);
 }
 
 .classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected),
 .classic-skin .player-box-stage .box:not(.selected) {
-  border-color: rgba(223, 189, 105, 0.14);
+  border-color: rgba(223, 189, 105, 0.28);
 }
 
 .classic-skin .player-box-stage .box.selected {
   border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgba(223, 189, 105, 0.32);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(223, 189, 105, 0.7);
 }
 
 .classic-skin .box-head {
@@ -383,9 +426,10 @@
 
 .classic-skin .player-box-stage .box-name {
   position: static;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: rgba(223, 189, 105, 0.72);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(223, 189, 105, 0.58);
 }
 
 .classic-skin .box-kicker {
@@ -402,19 +446,21 @@
 }
 
 .classic-skin .player-box-stage .chip-pile {
-  height: 34px;
+  height: 42px;
 }
 
 .classic-skin .player-box-stage .chip {
-  width: 26px;
-  height: 26px;
-  font-size: 8px;
-  margin-left: -8px;
+  width: 32px;
+  height: 32px;
+  font-size: 9px;
+  margin-left: -10px;
 }
 
 .classic-skin .player-box-stage .amount {
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 26px;
   line-height: 1;
+  color: var(--ivory);
 }
 
 .classic-skin .box-status {
@@ -424,22 +470,55 @@
   margin-top: 1px;
 }
 
-.classic-skin .box-ins {
-  position: static;
-  min-height: 18px;
-  padding: 2px 6px;
-  border: 1px solid var(--gold-line);
-  border-radius: 999px;
+.classic-skin .player-box-stage .box-ins {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  min-height: 52px;
+  padding: 6px 5px;
+  border: 1px solid rgba(223, 189, 105, 0.4);
+  border-radius: 14px 14px 10px 10px;
   font-size: 8px;
   letter-spacing: 0.06em;
   color: var(--gold);
   background: rgba(5, 8, 10, 0.55);
+  text-align: center;
+  line-height: 1.2;
 }
 
+.classic-skin .player-box-stage .box.is-payout {
+  justify-content: center;
+  align-items: center;
+  padding: 16px 10px 14px;
+  overflow: visible;
+}
+
+.classic-skin .player-box-stage .box.is-payout .amount {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+
+.classic-skin .player-box-stage .box-payout-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+}
+
+.classic-skin .player-box-stage .box-payout-line .payout-state,
 .classic-skin .box.is-payout .payout-state {
   display: block;
   font-size: 11px;
   letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .classic-skin .add-box-row {
@@ -556,21 +635,78 @@
   margin: 0 0 6px;
 }
 
-.classic-skin .dealer-list.dealer-positions {
+.classic-skin .dealer-list-felt .table-surface .dealer-list,
+.classic-skin .phase-zero-felt .table-surface .dealer-list,
+.classic-skin .phase-zero-felt .table-surface .phase-zero-rows,
+.classic-skin .poker-felt .table-surface .dealer-list,
+.classic-skin .player-play-felt .player-box-stage {
+  height: 100%;
+  min-height: 0;
+}
+
+.classic-skin .dealer-list.dealer-positions,
+.classic-skin .phase-zero-rows.dealer-positions {
   display: flex;
   flex: 1;
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
-  gap: 10px 12px;
+  align-items: center;
+  gap: 12px 14px;
+  min-height: 0;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: hidden;
   scrollbar-width: none;
   padding: 4px 0 8px;
+  z-index: 1;
 }
 
-.classic-skin .dealer-list.dealer-positions[data-ledger-overflow="true"] {
-  align-content: flex-start;
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"],
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="1"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+}
+
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="2"],
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="2"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  justify-items: center;
+}
+
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="3"],
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="3"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  justify-items: center;
+}
+
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="3"] .dealer-position:first-child,
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="3"] .dealer-position:first-child {
+  grid-column: 1 / -1;
+  width: min(200px, 72%);
+  min-height: 168px;
+}
+
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="4"],
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="4"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  justify-items: center;
+}
+
+.classic-skin .dealer-list.dealer-positions[data-ledger-overflow="true"],
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="5"],
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="6"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
   overflow-y: auto;
   gap: 8px 10px;
 }
@@ -593,26 +729,37 @@
   flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  width: min(186px, calc(50% - 6px));
-  min-height: 132px;
+  width: min(168px, 100%);
+  height: 148px;
+  min-height: 148px;
+  max-height: 168px;
   margin: 0;
-  padding: 14px 10px 12px;
-  border: 0;
+  padding: 16px 10px 14px;
+  border: 1px solid rgba(223, 189, 105, 0.42);
   border-radius: var(--box-radius);
-  background: rgba(2, 14, 12, 0.28);
-  box-shadow: inset 0 0 0 2px rgba(223, 189, 105, 0.42), inset 0 0 22px rgba(223, 189, 105, 0.08);
+  background:
+    radial-gradient(ellipse at 50% 28%, rgba(11, 112, 86, 0.16), transparent 58%),
+    rgba(2, 14, 12, 0.4);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.26);
   overflow: visible;
 }
 
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .dealer-position {
-  width: min(230px, 78%);
-  min-height: 168px;
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .dealer-position,
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="1"] .dealer-position {
+  width: min(220px, 72vw);
+  height: 188px;
+  min-height: 188px;
+  max-height: 188px;
 }
 
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="2"] .dealer-position {
-  width: min(186px, calc(50% - 6px));
-  min-height: 148px;
+.classic-skin .dealer-list.dealer-positions[data-ledger-count="2"] .dealer-position,
+.classic-skin .phase-zero-rows.dealer-positions[data-player-count="2"] .dealer-position {
+  width: min(168px, 100%);
+  height: 168px;
+  min-height: 168px;
+  max-height: 168px;
 }
 
 .classic-skin .dealer-list.dealer-positions:has(.is-unresolved) {
@@ -625,7 +772,9 @@
 
 .classic-skin .dealer-position.is-unresolved {
   width: min(240px, 92%);
+  height: auto;
   min-height: 0;
+  max-height: none;
   padding: 10px 8px 8px;
 }
 
@@ -805,12 +954,6 @@
 }
 
 .classic-skin .phase-zero-rows.dealer-positions {
-  flex: 1;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 10px 12px;
   margin-top: 8px;
 }
 
@@ -857,8 +1000,116 @@
   appearance: none;
 }
 
+.classic-skin .poker-felt .poker-seat {
+  border-radius: var(--box-radius);
+  background:
+    radial-gradient(ellipse at 50% 28%, rgba(11, 112, 86, 0.16), transparent 58%),
+    rgba(2, 14, 12, 0.4);
+  border: 1px solid rgba(223, 189, 105, 0.42);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.26);
+}
+
+.classic-skin main.felt.betting-open {
+  box-shadow: inset 0 0 40px rgba(223, 189, 105, 0.18);
+}
+
+.classic-skin main.felt.betting-closing .chip-pile .chip {
+  animation: chip-settle 0.5s ease;
+}
+
+.classic-skin .box.drop-target {
+  outline: 2px solid var(--gold);
+}
+
+.classic-skin .drag-ghost {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.classic-skin .chip-lift {
+  transform: scale(1.06);
+}
+
+.classic-skin .chip-slot {
+  position: relative;
+  display: inline-flex;
+}
+
+.classic-skin .chip-retract {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #1a1208;
+  color: var(--ivory);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+.classic-skin .c-exact {
+  background: #d7c48a;
+  color: #342706;
+}
+
+.classic-skin .waiting-players {
+  text-align: center;
+  color: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.classic-skin .waiting-pulse {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: waiting-bounce 1.2s ease-in-out infinite;
+}
+
+.classic-skin .deal-countdown {
+  margin: 6px 0 8px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--gold);
+  animation: countdown-pop 0.45s ease;
+}
+
+@keyframes waiting-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes countdown-pop {
+  from { transform: scale(0.92); opacity: 0.6; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chip-settle {
+  0% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classic-skin .waiting-pulse,
+  .classic-skin .deal-countdown,
+  .classic-skin main.felt.betting-closing .chip-pile .chip,
+  .classic-skin .chip-lift {
+    animation: none;
+    transform: none;
+  }
+}
+
 @media (max-width: 360px) {
-  .classic-skin .dealer-position {
-    width: min(168px, calc(50% - 6px));
+  .classic-skin .dealer-list.dealer-positions:not([data-ledger-count="1"]) .dealer-position,
+  .classic-skin .phase-zero-rows.dealer-positions:not([data-player-count="1"]) .dealer-position {
+    width: min(168px, 100%);
   }
 }

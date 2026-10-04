@@ -32,7 +32,7 @@ export function ClassicPokerPlayer({
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
 
   return (
-    <TableShell onMenu={() => setSheet("menu")}>
+    <TableShell feltIdentity onMenu={() => setSheet("menu")}>
       <PhaseBar label={view.phaseLabel.replaceAll("_", " ")}>
         {turn ? (
           <div className={`poker-turn-banner${turn.you ? " is-you" : ""}`} data-turn-state={turn.you ? "you" : "other"}>
