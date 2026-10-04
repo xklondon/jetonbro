@@ -21,7 +21,10 @@ export function HomeClient({
     router.replace("/tables/new");
   }
 
-  async function onTableCommand(tableId: string, command: "saveTable" | "closeTable" | "deleteTable") {
+  async function onTableCommand(
+    tableId: string,
+    command: "saveTable" | "closeTable" | "deleteTable" | "endAndDelete",
+  ) {
     const response = await fetch(`/api/tables/${tableId}/commands`, {
       method: "POST",
       headers: { "content-type": "application/json" },

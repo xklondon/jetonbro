@@ -726,6 +726,52 @@ export async function deleteTable(input: { actorId: string; tableId: string; ide
   });
 }
 
+export async function endAndDelete(input: {
+  actorId: string;
+  tableId: string;
+  idempotencyKey: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "endAndDelete", input, async () => {
+    const table = await prisma.table.findUnique({
+      where: { id: input.tableId },
+      include: { members: true },
+    });
+    if (!table) {
+      return { ok: true, ended: true, hidden: true };
+    }
+    if (table.ownerId !== input.actorId) {
+      throw new ForbiddenError("Only the table owner can do that.");
+    }
+    const ownerHidden = table.members.some(
+      (member) => member.userId === input.actorId && member.leftAt !== null,
+    );
+    if (table.status === "ARCHIVED" && ownerHidden) {
+      return { ok: true, ended: true, hidden: true };
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.invitation.updateMany({
+        where: { tableId: table.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await tx.table.update({
+        where: { id: table.id },
+        data: {
+          status: "ARCHIVED",
+          closedAt: table.closedAt ?? new Date(),
+          pausedAt: null,
+          joinEnabled: false,
+        },
+      });
+      await tx.tableMember.updateMany({
+        where: { tableId: table.id, leftAt: null },
+        data: { leftAt: new Date() },
+      });
+    });
+    publishTable(table.id);
+    return { ok: true, ended: true, hidden: true };
+  });
+}
+
 export async function updateTableSettings(input: {
   actorId: string;
   tableId: string;

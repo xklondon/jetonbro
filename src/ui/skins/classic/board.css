@@ -122,7 +122,6 @@
 }
 
 .classic-skin .gold-button.is-block,
-.classic-skin .home-create,
 .classic-skin .dealer-primary {
   width: 100%;
   min-height: var(--control-height);
@@ -164,10 +163,6 @@
   overflow: hidden;
 }
 
-.classic-skin main.felt.home-stack {
-  justify-content: flex-start;
-}
-
 .classic-skin main.felt.phase-zero-felt {
   justify-content: stretch;
 }
@@ -198,16 +193,17 @@
   display: block;
   width: 100%;
   max-width: 100%;
-  margin: 8px 0 10px;
+  margin: 4px 0 8px;
   padding: 0;
   border: 0;
   background: none;
   text-align: center;
   font-family: var(--font-display);
-  font-size: clamp(15px, 4vw, 20px);
-  line-height: 1.15;
-  letter-spacing: 0.04em;
-  color: rgba(244, 234, 213, 0.42);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(223, 189, 105, 0.38);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -356,16 +352,16 @@
 }
 
 .classic-skin .player-box-stage .box {
-  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
-  padding: 10px 8px 8px;
+  border-radius: var(--box-radius);
+  padding: 14px 10px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  gap: 2px;
-  background: rgba(2, 23, 18, 0.16);
-  border: 1.5px solid rgba(223, 189, 105, 0.42);
-  box-shadow: inset 0 0 18px rgba(223, 189, 105, 0.05);
+  gap: 4px;
+  background: rgba(2, 23, 18, 0.28);
+  border: 2px solid rgba(223, 189, 105, 0.58);
+  box-shadow: inset 0 0 22px rgba(223, 189, 105, 0.08);
 }
 
 .classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected),
@@ -594,35 +590,42 @@
 
 .classic-skin .dealer-position {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  width: min(168px, calc(50% - 6px));
+  gap: 6px;
+  width: min(186px, calc(50% - 6px));
+  min-height: 132px;
   margin: 0;
-  padding: 10px 8px 8px;
+  padding: 14px 10px 12px;
   border: 0;
-  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
-  background: rgba(2, 14, 12, 0.16);
-  box-shadow: inset 0 0 0 1.5px rgba(223, 189, 105, 0.28), inset 0 0 18px rgba(223, 189, 105, 0.04);
+  border-radius: var(--box-radius);
+  background: rgba(2, 14, 12, 0.28);
+  box-shadow: inset 0 0 0 2px rgba(223, 189, 105, 0.42), inset 0 0 22px rgba(223, 189, 105, 0.08);
   overflow: visible;
 }
 
 .classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .dealer-position {
-  width: min(200px, 72%);
+  width: min(230px, 78%);
+  min-height: 168px;
 }
 
 .classic-skin .dealer-list.dealer-positions[data-ledger-count="2"] .dealer-position {
-  width: min(168px, calc(50% - 6px));
+  width: min(186px, calc(50% - 6px));
+  min-height: 148px;
 }
 
 .classic-skin .dealer-list.dealer-positions:has(.is-unresolved) {
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
 }
 
 .classic-skin .dealer-position.is-unresolved {
   width: min(240px, 92%);
+  min-height: 0;
   padding: 10px 8px 8px;
 }
 
@@ -793,16 +796,69 @@
   font-size: 11px;
 }
 
-@media (max-width: 360px) {
-  .classic-skin .player-box-stage .stage-cell,
-  .classic-skin .player-box-stage .box,
-  .classic-skin .player-box-stage .box-slot {
-    height: 108px;
-    min-height: 108px;
-    max-height: 108px;
-  }
+.classic-skin .phase-zero-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
 
+.classic-skin .phase-zero-rows.dealer-positions {
+  flex: 1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 10px 12px;
+  margin-top: 8px;
+}
+
+.classic-skin .phase-zero-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  min-height: 36px;
+  border: 0;
+  background: none;
+}
+
+.classic-skin .phase-zero-empty {
+  text-align: center;
+  margin: 8px 0 0;
+  padding: 0;
+  width: 100%;
+  border: 0;
+  background: none;
+}
+
+.classic-skin .phase-zero-dealer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--label-size);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.classic-skin .phase-zero-dealer select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  border: 1px solid var(--gold-line);
+  background: var(--control-surface);
+  color: var(--ivory);
+  border-radius: var(--radius-card);
+  padding: 8px 10px;
+  font-size: 16px;
+  appearance: none;
+}
+
+@media (max-width: 360px) {
   .classic-skin .dealer-position {
-    width: min(156px, calc(50% - 6px));
+    width: min(168px, calc(50% - 6px));
   }
 }

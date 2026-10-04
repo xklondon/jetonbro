@@ -130,7 +130,7 @@ test("isolated Guest join seats a Player and enables START BETTING", async ({ pa
   await expect(guestPage.locator("[data-table-board=PHASE_ZERO_PLAYER]")).toBeVisible();
   await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await expect(guestPage.getByText("YOUR JETONS")).toBeVisible();
-  await expect(guestPage.getByText("100")).toBeVisible();
+  await expect(guestPage.locator("[data-player-wallet]").getByText("100").first()).toBeVisible();
   await shot(guestPage, "05-guest-player-phase0-390x844.png");
   await guestContext.close();
 });

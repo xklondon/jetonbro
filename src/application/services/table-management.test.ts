@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
 import { listHomeTables } from "@/application/queries/home";
-import { closeTable, createTable, deleteTable } from "@/application/services/tables";
+import { closeTable, createTable, deleteTable, endAndDelete } from "@/application/services/tables";
 import { joinWithToken } from "@/application/services/invitations";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import {
@@ -157,6 +157,7 @@ describeDb("home cards and table delete/archive", () => {
     });
     const home = (await listHomeTables(owner.id)).find((item) => item.id === tableId);
     expect(home?.canClose).toBe(false);
+    expect(home?.canEndAndDelete).toBe(true);
     expect(home?.closeBlockedReason).toMatch(/locked bets or Insurance/i);
 
     await expect(closeTable({ actorId: owner.id, tableId, idempotencyKey: randomUUID() })).rejects.toMatchObject({
@@ -236,5 +237,57 @@ describeDb("home cards and table delete/archive", () => {
     expect((await prisma.playerAccount.findUniqueOrThrow({ where: { userId: sam.id } })).globalAvailableMillis).toBe(
       before.availableMillis,
     );
+  });
+
+  test("owner can end and delete an abandoned active table without settlement", async () => {
+    const { owner, sam, tableId } = await fundedTable();
+    const other = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Keep me",
+      startingJetonsPerPlayer: "50",
+    });
+    await startBetting({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    const samSnap = await loadSnapshot(tableId, sam.id);
+    await placeOrRetractBet({
+      actorId: sam.id,
+      tableId,
+      boxId: samSnap.player!.boxes[0]!.id,
+      amount: "25",
+      mode: "ADD",
+      idempotencyKey: randomUUID(),
+    });
+    const ledgerBefore = await prisma.ledgerEntry.count({ where: { tableId } });
+    const samBefore = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: sam.id } },
+    });
+
+    await expect(
+      endAndDelete({ actorId: sam.id, tableId, idempotencyKey: randomUUID() }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+
+    const first = await endAndDelete({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    expect(first.ended).toBe(true);
+    const again = await endAndDelete({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    expect(again.ended).toBe(true);
+
+    const table = await prisma.table.findUniqueOrThrow({ where: { id: tableId } });
+    expect(table.status).toBe("ARCHIVED");
+    expect(table.joinEnabled).toBe(false);
+    expect(await prisma.ledgerEntry.count({ where: { tableId } })).toBe(ledgerBefore);
+    expect(
+      await prisma.ledgerEntry.count({
+        where: { tableId, playerId: sam.id, transactionType: "TABLE_TRANSFER_OUT" },
+      }),
+    ).toBe(0);
+    expect((await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: sam.id } },
+    })).availableMillis).toBe(samBefore.availableMillis);
+    expect(await prisma.invitation.count({ where: { tableId, revokedAt: null } })).toBe(0);
+    expect((await listHomeTables(owner.id)).some((item) => item.id === tableId)).toBe(false);
+    expect((await listHomeTables(sam.id)).some((item) => item.id === tableId)).toBe(false);
+    const otherTable = await prisma.table.findUniqueOrThrow({ where: { id: other.tableId } });
+    expect(otherTable.status).not.toBe("ARCHIVED");
+    expect(otherTable.id).toBe(other.tableId);
   });
 });

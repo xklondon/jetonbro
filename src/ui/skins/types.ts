@@ -60,7 +60,10 @@ export type JetonBroSkin = {
     onCreateTable: () => Promise<void>;
     onJoinTable: (destination: string) => void;
     onOpenTable: (tableId: string) => void;
-    onTableCommand?: (tableId: string, command: "saveTable" | "closeTable" | "deleteTable") => Promise<void>;
+    onTableCommand?: (
+      tableId: string,
+      command: "saveTable" | "closeTable" | "deleteTable" | "endAndDelete",
+    ) => Promise<void>;
   }>;
   CreateTable: ComponentType<{
     defaultTableName: string;

@@ -34,6 +34,7 @@ const homeCard = (overrides: Partial<HomeTableCard> = {}): HomeTableCard => ({
   canClose: true,
   canDeleteDraft: false,
   canDeleteArchived: false,
+  canEndAndDelete: true,
   closeBlockedReason: null,
   closePreview: {
     kind: "archive",
@@ -141,12 +142,15 @@ test("existing tables remain on the compact home", () => {
   expect(html).toContain("CREATE TABLE");
   expect(html).toContain("Salon table");
   expect(html).toContain("RESUME");
-  expect(html).toContain("Owner · Alex · Dealer · Alex");
-  expect(html).toContain("1 player");
+  expect(html).toContain("data-home-heading");
+  expect(html).toContain("SAVED TABLES");
+  expect(html).toContain("Resume a table or create a new one.");
   expect(html).toContain("SETUP");
   expect(html).toContain("home-table-row");
+  expect(html).toContain("home-resume");
   expect(html).not.toContain("0 boxes");
   expect(html).not.toContain("home-table-players");
+  expect(html).not.toContain("phase-head");
 });
 
 test("owner home card shows compact summary and table menu", () => {
@@ -154,12 +158,12 @@ test("owner home card shows compact summary and table menu", () => {
     createElement(ClassicHome, { ...homeProps, tables: [homeCard()] }),
   );
   expect(html).toContain("Table menu");
-  expect(html).toContain("Owner · Alex");
-  expect(html).toContain("1 player");
+  expect(html).toContain("END &amp; DELETE");
+  expect(html).toContain("home-table-reveal");
   expect(html).not.toContain("home-table-players");
 });
 
-test("non-owner home card hides other player balances", () => {
+test("non-owner home card hides owner actions and other player balances", () => {
   const html = renderToStaticMarkup(
     createElement(ClassicHome, {
       ...homeProps,
@@ -172,6 +176,7 @@ test("non-owner home card hides other player balances", () => {
           canClose: false,
           canDeleteDraft: false,
           canDeleteArchived: false,
+          canEndAndDelete: false,
           closePreview: null,
           players: [
             { userId: "sam", name: "Sam", available: { millis: "100000", label: "100" }, locked: null, isBankDealer: false },
@@ -181,9 +186,12 @@ test("non-owner home card hides other player balances", () => {
       ],
     }),
   );
-  expect(html).toContain("2 players");
+  expect(html).toContain("Salon table");
+  expect(html).toContain("SETUP");
   expect(html).not.toContain("Table menu");
   expect(html).not.toContain("SAVE TABLE");
+  expect(html).not.toContain("END &amp; DELETE");
+  expect(html).not.toContain("data-home-details");
   expect(html).not.toContain("home-table-players");
 });
 

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PhoneShell } from "./PhoneShell";
 import { WelcomeCelebration } from "./WelcomeCelebration";
 import { SheetOverlay } from "./SheetOverlay";
 import { parseJoinDestination } from "@/application/auth-urls";
 import type { HomeTableCard } from "@/application/queries/home";
+
+type OwnerCommand = "saveTable" | "closeTable" | "deleteTable" | "endAndDelete";
 
 export function ClassicHome({
   displayName,
@@ -23,7 +25,7 @@ export function ClassicHome({
   onCreateTable: () => Promise<void>;
   onJoinTable: (destination: string) => void;
   onOpenTable: (tableId: string) => void;
-  onTableCommand?: (tableId: string, command: "saveTable" | "closeTable" | "deleteTable") => Promise<void>;
+  onTableCommand?: (tableId: string, command: OwnerCommand) => Promise<void>;
 }) {
   const empty = tables.length === 0;
   const [joinOpen, setJoinOpen] = useState(false);
@@ -32,11 +34,13 @@ export function ClassicHome({
   const [brandShimmer, setBrandShimmer] = useState(false);
   const [creating, setCreating] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [revealId, setRevealId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{
     tableId: string;
-    command: "closeTable" | "deleteTable";
+    command: "closeTable" | "deleteTable" | "endAndDelete";
     title: string;
   } | null>(null);
+  const drag = useRef<{ id: string; x: number; active: boolean } | null>(null);
 
   function submitJoin() {
     const destination = parseJoinDestination(joinValue);
@@ -60,14 +64,56 @@ export function ClassicHome({
 
   const confirmCard = confirm ? tables.find((table) => table.id === confirm.tableId) : null;
 
+  function ask(table: HomeTableCard, command: "closeTable" | "deleteTable" | "endAndDelete", title: string) {
+    setMenuId(null);
+    setRevealId(null);
+    setConfirm({ tableId: table.id, command, title });
+  }
+
+  function ownerActions(table: HomeTableCard) {
+    if (!table.isOwner) return null;
+    return (
+      <>
+        {table.canSave ? (
+          <button
+            type="button"
+            className="panel-button"
+            onClick={() => {
+              setMenuId(null);
+              setRevealId(null);
+              void onTableCommand?.(table.id, "saveTable");
+            }}
+          >
+            SAVE TABLE
+          </button>
+        ) : null}
+        {table.canClose ? (
+          <button type="button" className="panel-button" data-home-close="true" onClick={() => ask(table, "closeTable", "CLOSE TABLE")}>
+            CLOSE TABLE
+          </button>
+        ) : null}
+        {table.canDeleteDraft || table.canDeleteArchived ? (
+          <button type="button" className="panel-button danger" data-home-delete="true" onClick={() => ask(table, "deleteTable", "DELETE TABLE")}>
+            DELETE
+          </button>
+        ) : null}
+        {table.canEndAndDelete ? (
+          <button type="button" className="panel-button danger" data-home-end-delete="true" onClick={() => ask(table, "endAndDelete", "END & DELETE")}>
+            END & DELETE
+          </button>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <PhoneShell
       overlay={<WelcomeCelebration onActiveChange={setBrandShimmer} />}
       brandClassName={brandShimmer ? "brand-shimmer" : undefined}
     >
-      <div className="phase-head home-head-compact">
-        <strong>SAVED TABLES</strong>
-        <span>{empty ? `Welcome, ${displayName}` : "Resume a table or create a new one."}</span>
+      <div className="home-heading" data-home-heading="true">
+        <h1>SAVED TABLES</h1>
+        <p>{empty ? `Welcome, ${displayName}` : "Resume a table or create a new one."}</p>
       </div>
       <main className="felt home-stack">
         {notice ? <div className="error">{notice}</div> : null}
@@ -83,86 +129,74 @@ export function ClassicHome({
         ) : (
           <div className="home-table-list">
             {tables.map((table) => (
-              <article className={`home-table-card home-table-row${table.closed ? " is-closed" : ""}`} key={table.id} data-table-id={table.id} data-closed={table.closed ? "true" : undefined}>
-                <header className="home-table-row-head">
-                  <div>
-                    <strong>{table.name}</strong>
-                    <div className="muted">
-                      {table.headline.startsWith(table.game) ? table.headline : `${table.game} · ${table.headline}`}
-                    </div>
-                  </div>
-                  {table.isOwner ? (
-                    <button
-                      type="button"
-                      className="home-table-menu"
-                      aria-label="Table menu"
-                      onClick={() => setMenuId(menuId === table.id ? null : table.id)}
-                    >
-                      ⋯
-                    </button>
-                  ) : null}
-                </header>
-                <div className="muted home-table-meta">
-                  {table.playerCount} {table.playerCount === 1 ? "player" : "players"}
-                  {" · "}Owner · {table.ownerName}
-                  {" · "}Dealer · {table.bankName}
-                </div>
-                {menuId === table.id && table.isOwner ? (
-                  <div className="home-table-overflow">
-                    {table.canDeleteDraft || table.canDeleteArchived ? (
-                      <button
-                        type="button"
-                        className="panel-button danger"
-                        onClick={() => {
-                          setMenuId(null);
-                          setConfirm({
-                            tableId: table.id,
-                            command: "deleteTable",
-                            title: "DELETE TABLE",
-                          });
-                        }}
-                      >
-                        DELETE
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="panel-button"
-                          disabled={!table.canSave}
-                          onClick={() => {
-                            setMenuId(null);
-                            void onTableCommand?.(table.id, "saveTable");
-                          }}
-                        >
-                          SAVE TABLE
-                        </button>
-                        <button
-                          type="button"
-                          className="panel-button"
-                          onClick={() => {
-                            setMenuId(null);
-                            setConfirm({
-                              tableId: table.id,
-                              command: "closeTable",
-                              title: "CLOSE TABLE & SAVE BALANCES",
-                            });
-                          }}
-                        >
-                          CLOSE TABLE
-                        </button>
-                      </>
-                    )}
+              <div
+                className={`home-table-swipe${revealId === table.id ? " is-open" : ""}`}
+                key={table.id}
+                data-table-id={table.id}
+                data-closed={table.closed ? "true" : undefined}
+                onPointerDown={(event) => {
+                  if (!table.isOwner) return;
+                  drag.current = { id: table.id, x: event.clientX, active: false };
+                }}
+                onPointerMove={(event) => {
+                  if (!drag.current || drag.current.id !== table.id) return;
+                  const dx = event.clientX - drag.current.x;
+                  if (dx < -36) {
+                    drag.current.active = true;
+                    setRevealId(table.id);
+                  }
+                  if (dx > 24) setRevealId((current) => (current === table.id ? null : current));
+                }}
+                onPointerUp={() => {
+                  drag.current = null;
+                }}
+              >
+                {table.isOwner ? (
+                  <div className="home-table-reveal" hidden={revealId !== table.id} aria-hidden={revealId !== table.id}>
+                    {ownerActions(table)}
                   </div>
                 ) : null}
-                {table.closed ? (
-                  <div className="muted">Closed · balances saved</div>
-                ) : (
-                  <button className="gold-button" type="button" onClick={() => onOpenTable(table.id)}>
-                    RESUME
-                  </button>
-                )}
-              </article>
+                <article className={`home-table-card home-table-row${table.closed ? " is-closed" : ""}`}>
+                  <header className="home-table-row-head">
+                    <div>
+                      <strong>{table.name}</strong>
+                      <div className="muted home-table-state">
+                        {table.headline.startsWith(table.game) ? table.headline : `${table.game} · ${table.headline}`}
+                      </div>
+                    </div>
+                    {table.isOwner ? (
+                      <button
+                        type="button"
+                        className="home-table-menu"
+                        aria-label="Table menu"
+                        onClick={() => {
+                          setRevealId(null);
+                          setMenuId(menuId === table.id ? null : table.id);
+                        }}
+                      >
+                        ⋯
+                      </button>
+                    ) : null}
+                  </header>
+                  {menuId === table.id && table.isOwner ? (
+                    <div className="home-table-overflow">
+                      {ownerActions(table)}
+                      <div className="home-table-details" data-home-details="true">
+                        {table.playerCount} {table.playerCount === 1 ? "player" : "players"}
+                        {" · "}Owner · {table.ownerName}
+                        {" · "}Dealer · {table.bankName}
+                      </div>
+                    </div>
+                  ) : null}
+                  {table.closed ? (
+                    <div className="muted">Closed</div>
+                  ) : (
+                    <button className="home-resume" type="button" onClick={() => onOpenTable(table.id)}>
+                      RESUME
+                    </button>
+                  )}
+                </article>
+              </div>
             ))}
           </div>
         )}
@@ -177,34 +211,35 @@ export function ClassicHome({
             <>
               <h3>{confirm.title}</h3>
               <p>
-                {confirmCard.name}: {confirmCard.closePreview?.confirmation}
+                {confirm.command === "endAndDelete"
+                  ? `${confirmCard.name} will be ended and hidden. The current hand or round will be abandoned. Ledger history is kept.`
+                  : `${confirmCard.name}: ${confirmCard.closePreview?.confirmation}`}
               </p>
               <p className="muted">
-                {confirmCard.closePreview?.kind === "delete-draft"
-                  ? "Permanent draft deletion."
-                  : confirmCard.closePreview?.kind === "delete-archived"
-                    ? "Closed table removal. Ledger and rounds are kept."
-                    : "Historical archival. Ledger and rounds are kept."}
+                {confirm.command === "endAndDelete"
+                  ? "This does not settle winners or change other tables."
+                  : confirmCard.closePreview?.kind === "delete-draft"
+                    ? "Permanent draft deletion."
+                    : confirmCard.closePreview?.kind === "delete-archived"
+                      ? "Closed table removal. Ledger and rounds are kept."
+                      : "Historical archival. Ledger and rounds are kept."}
               </p>
-              {(confirmCard.closePreview?.players ?? []).map((player) => (
-                <div className="member-row" key={player.name}>
-                  <div>
-                    <strong>{player.name}</strong>
-                    <div className="muted">Saving {player.available}</div>
-                    <div className="muted">Locked {player.locked}</div>
-                  </div>
-                </div>
-              ))}
-              {confirmCard.closeBlockedReason && !(confirm.command === "deleteTable" && confirmCard.canDeleteDraft) ? (
-                <div className="error">{confirmCard.closeBlockedReason}</div>
-              ) : null}
+              {confirm.command !== "endAndDelete"
+                ? confirmCard.closePreview?.players.map((player) => (
+                    <p className="muted" key={player.name}>
+                      Saving {player.available}
+                    </p>
+                  ))
+                : null}
               <button
                 className="gold-button"
                 type="button"
                 disabled={
-                  confirm.command === "deleteTable"
-                    ? !(confirmCard.canDeleteDraft || confirmCard.canDeleteArchived || confirmCard.canClose)
-                    : !confirmCard.canClose
+                  confirm.command === "endAndDelete"
+                    ? !confirmCard.canEndAndDelete
+                    : confirm.command === "deleteTable"
+                      ? !(confirmCard.canDeleteDraft || confirmCard.canDeleteArchived)
+                      : !confirmCard.canClose
                 }
                 onClick={() => {
                   const next = confirm;
@@ -239,11 +274,6 @@ export function ClassicHome({
           )}
         </SheetOverlay>
       </main>
-      <footer className="dock">
-        <div className="muted" style={{ textAlign: "center" }}>
-          Virtual jetons only. Cards stay at the physical table.
-        </div>
-      </footer>
     </PhoneShell>
   );
 }

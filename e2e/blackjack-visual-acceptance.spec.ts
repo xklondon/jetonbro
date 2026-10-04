@@ -70,6 +70,10 @@ test("Blackjack visual states at canonical mobile sizes", async ({ page, context
   await expect.poll(async () => (await snapshot(playerPage)).player?.available.label).toBe("75");
   await capture(playerPage, "07-player-betting-placed");
 
+  await playerPage.getByRole("button", { name: "ADD BOX" }).click();
+  await expect.poll(async () => (await snapshot(playerPage)).player?.boxes.length).toBe(2);
+  await capture(playerPage, "16-player-betting-two-boxes");
+
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
@@ -78,14 +82,23 @@ test("Blackjack visual states at canonical mobile sizes", async ({ page, context
   await capture(page, "03-dealer-playing");
   await capture(playerPage, "08-player-playing");
 
+  await page.getByRole("button", { name: "OPEN INSURANCE" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
+  await capture(page, "11-dealer-insurance");
+  await playerPage.reload();
+  await capture(playerPage, "18-player-insurance");
+  await page.getByRole("button", { name: "CLOSE INSURANCE" }).click();
+
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PAYOUT");
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
+  await capture(page, "12-dealer-payout-unresolved");
   const boxId = (await snapshot(page)).bank?.boxes[0]?.id;
   await page.locator(boxId ? `[data-box-id="${boxId}"]` : "[data-blackjack-box-row]").getByRole("button", { name: "WON" }).first().click();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 10_000 });
   await playerPage.reload();
   await expectPlayerPayoutIdle(playerPage);
-  await capture(page, "04-dealer-payout");
+  await capture(page, "04-dealer-payout-resolved");
   await capture(playerPage, "09-player-payout");
 
   await expect(page.getByRole("button", { name: "Change Dealer" })).toHaveCount(0);

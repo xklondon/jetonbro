@@ -90,8 +90,8 @@ export function ClassicCreateTable({
 
   return (
     <PhoneShell>
-      <div className="phase-head home-head-compact" data-table-board="CREATE_TABLE">
-        <strong>CREATE TABLE</strong>
+      <div className="create-heading" data-table-board="CREATE_TABLE">
+        <h1>CREATE TABLE</h1>
       </div>
       <main
         className="felt home-stack create-setup compact-create"

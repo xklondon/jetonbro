@@ -29,3 +29,22 @@ test("classic tokens define one emerald, felt, cream, gold and black dock", () =
   expect(table).toContain("pointer-events: none");
   expect(layouts).toContain(".deal-actions.next-round-row");
 });
+
+test("classic CSS files keep exclusive ownership", () => {
+  const tokens = readFileSync(join(process.cwd(), "src/ui/skins/classic/tokens.css"), "utf8");
+  const layouts = readFileSync(join(process.cwd(), "src/ui/skins/classic/layouts.css"), "utf8");
+  const table = readFileSync(join(process.cwd(), "src/ui/skins/classic/table.css"), "utf8");
+  const board = readFileSync(join(process.cwd(), "src/ui/skins/classic/board.css"), "utf8");
+  const home = readFileSync(join(process.cwd(), "src/ui/skins/classic/home.css"), "utf8");
+  expect(tokens).not.toMatch(/!important/);
+  expect(home).not.toMatch(/!important/);
+  expect(board).not.toMatch(/!important/);
+  expect(table).not.toMatch(/!important/);
+  expect(tokens).not.toMatch(/\.home-heading|\.dealer-position|\.player-box-stage/);
+  expect(home).not.toMatch(/\.player-box-stage|\.dealer-list\.dealer-positions|\[data-table-board="BLACKJACK/);
+  expect(board).not.toMatch(/\.home-heading|\.home-table-card|\.home-resume/);
+  expect(home).toContain(".home-heading");
+  expect(home).toContain(".create-heading");
+  expect(board).toContain(".cloth-name");
+  expect(board).toContain(".dealer-position");
+});

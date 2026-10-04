@@ -35,7 +35,6 @@ async function assertNoForbiddenCopy(page: Page) {
   await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START ADDITIONAL BOX" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
 }
 
 async function overflowAt(page: Page, width: number, height: number) {

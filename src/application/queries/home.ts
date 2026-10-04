@@ -41,6 +41,7 @@ export type HomeTableCard = {
   canClose: boolean;
   canDeleteDraft: boolean;
   canDeleteArchived: boolean;
+  canEndAndDelete: boolean;
   closeBlockedReason: string | null;
   closePreview: HomeClosePreview | null;
 };
@@ -194,9 +195,10 @@ export async function listHomeTables(userId: string): Promise<HomeTableCard[]> {
         isOwner,
         players,
         canSave: isOwner && !emptyDraft && !pokerBlocked && !archived,
-        canClose: canClose && !archived,
+        canClose: canClose && !archived && !emptyDraft,
         canDeleteDraft: isOwner && emptyDraft && !archived,
         canDeleteArchived: isOwner && archived,
+        canEndAndDelete: isOwner && !emptyDraft && !archived,
         closeBlockedReason: isOwner
           ? anyLocked || pokerBlocked
             ? table.game === "POKER"

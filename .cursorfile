@@ -111,7 +111,7 @@ Lower layout on every playable screen: Owner street controls sit in the phase-ac
 
 ## Permissions
 
-- Owner: create table, invite, add a local Player by name without email, add/remove players before a round, assign Bank/Dealer, rename the table, distribute jetons, save table, close table and transport remaining AVAILABLE to `PLAYER_POCKET`, or permanently delete an unused empty draft. Dealer reassignment does not transfer ownership. An Owner who is not the Bank still receives the table menu on the Player surface.
+- Owner: create table, invite, add a local Player by name without email, add/remove players before a round, assign Bank/Dealer, rename the table, distribute jetons, save table, close table and transport remaining AVAILABLE to `PLAYER_POCKET`, permanently delete an unused empty draft, or use Owner-only `END & DELETE` on an abandoned active table as a recoverable termination (not a physical ledger wipe). Dealer reassignment does not transfer ownership. An Owner who is not the Bank still receives the table menu on the Player surface.
 - Bank/Dealer: open betting, deal cards, Insurance window, payout phase, settle boxes, settle Insurance, start next round. Optionally enter/correct ranks on any Player box and the Dealer hand during PLAYING. During PAYOUT the table owner may use `DEALER WON` to settle every currently unresolved active Player box as `LOST` in one transaction; already-settled boxes stay unchanged and Insurance is never settled by this command. May toggle Open/Limited Bank during unstaked BETTING. The Open/Limited toggle is shown only in the table menu on the Bank BETTING surface. Players never see it. May change Card Assist during TABLE_SETUP or unstaked BETTING. A Dealer who is not the Owner cannot rename, assign Dealer, remove Players, switch games, save, or close.
 - Player: own boxes only; bet/retract during BETTING; Double/Split during PLAYING; Insurance only while the window is open. Optionally enter/correct ranks on their own selected box during PLAYING. Never edit another Player’s box or the Dealer hand. In Texas Hold’em only the current actor may Fold/Check/Call/Bet/Raise/All-in. The rotating Dealer/Button is a seated Player and does not inherit Table Owner street or table-management controls.
 - Table Owner: may switch games during TABLE_SETUP, unstaked BETTING, ROUND_COMPLETE, POKER_SETUP, or HAND_COMPLETE. Locked Bet, Insurance, Bank exposure, or LOCKED_POKER blocks switching with `Finish or clear the current hand before switching games`. Switching preserves the table, memberships, AVAILABLE, pockets, owner, invitations/QR, and seat order. Limited Bank buckets freeze in place during Poker and restore unchanged on return to Blackjack.
@@ -132,6 +132,59 @@ src/ui/core/                 semantic screen composition
 src/ui/skins/classic/        Classic components, tokens and styles
 src/ui/skins/registry.ts     typed skin selection
 ```
+
+The approved PNG boards under `design/reference/classic/approved/` are the highest visual authority. Existing components, DOM anatomy, CSS, screenshots and earlier implementation notes are not visual authority. If existing presentation rules prevent a close reconstruction, update or remove those presentation rules. Product state and commands determine what content exists; the boards determine composition, typography, proportions, spacing, colour, shapes and hierarchy.
+
+Do not preserve rejected visual anatomy merely because tests assert it. Behavioural tests protect commands, legal actions, balances, roles and accessibility. Visual DOM-structure assertions may be updated when the approved composition changes.
+
+Classic CSS has exclusive ownership boundaries:
+
+- `tokens.css`: design tokens only
+- `board.css`: shared live-table visual anatomy
+- `layouts.css`: responsive geometry only
+- `table.css`: game-table and phase composition only
+- `home.css`: Home and Create Table only
+
+A selector must not style unrelated surfaces. Remove obsolete rules instead of layering new overrides. Do not use `!important` to resolve architectural cascade conflicts.
+
+There must be one canonical visible component for Home, Create Table, Phase 0, Blackjack Dealer, Blackjack Player, Poker Dealer and Poker Player. Adapter components may remain only when a documented caller requires them. No two route/component paths may independently implement the same visible screen.
+
+Authenticated Home uses the approved Saved Tables composition. Each card prioritises the table name and a concise game/state indicator. Resume/Open and owner actions remain available but must not make the card look like an administration record. Player count, Owner and Dealer metadata may live in the overflow/details surface and are not required on the card face. `CREATE TABLE` remains the primary Home action.
+
+Normal `CLOSE TABLE` follows the existing safe-boundary accounting rules.
+
+An Owner may also choose `END & DELETE` for an abandoned active table. This is a distinct destructive operation with a confirmation sheet naming the table and warning that the current hand/round will be abandoned.
+
+`END & DELETE`:
+
+- is Owner-only;
+- is available from the Home overflow menu and swipe reveal;
+- revokes invitations;
+- hides the table from all active user surfaces;
+- marks the table terminated/archived using the existing recoverable deletion model;
+- does not physically delete ledger, round or accounting history;
+- does not attempt normal settlement or fabricate winners;
+- cannot affect another table;
+- is rejected for non-Owners;
+- must be idempotent.
+
+This exception exists for abandoned/test tables and does not change normal round completion, settlement or `CLOSE TABLE` behaviour.
+
+Visual reconstruction must not rename or relocate commands in a way that changes behaviour. The canonical Blackjack dock remains:
+
+- Phase 0: `START BETTING` | `ADD PLAYER`
+- Betting: `DEAL CARDS` | `ADD PLAYER`
+- Playing: `ENTER PAYOUT` | `OPEN INSURANCE`
+- Insurance open: `ENTER PAYOUT` | `CLOSE INSURANCE`
+- Payout unresolved: result controls + disabled `START BETTING`
+- Payout resolved: `START BETTING`
+
+Player:
+
+- Betting: `PLACE BET` / `RETRACT` / `ADD BOX`
+- Playing: `2×` / `SPLIT` / `INSURANCE` according to legal flags
+- Payout: results only
+- Jeton tray and AVAILABLE remain at the bottom.
 
 ## Deployment
 
@@ -170,27 +223,22 @@ Before working:
 1. Read `docs/MVP_FILE_MAP.md`.
 2. Read `docs/DESIGN_AUTHORITY.md`.
 3. Identify one role/phase slice.
-4. Open only mapped files for that slice.
-5. Do not scan the repository broadly unless blocked.
+4. Open mapped files for that slice first.
+5. For a specifically authorised route/component/CSS audit, Cursor may inspect all UI routes, render selectors, Classic components and imported stylesheets. It may remove proven-dead visual routes, components and selectors. It must not alter domain, accounting, authentication or command behaviour. File-count limits do not apply to an authorised consolidation pass, but every changed production file must be justified.
 
 During work:
 
 - Preserve frozen engine files.
-- No opportunistic refactoring.
-- No route cleanup.
+- No opportunistic domain refactoring.
 - No test-library regeneration.
-- No Card Assist, timers, swipe or Zilch expansion.
-- One visual/functional slice at a time.
-- Maximum five production files per slice unless explained first.
+- Do not expand gameplay swipe gestures, Card Assist, timers or Zilch. Owner swipe-left on a Home saved-table card is permitted as a visual shortcut when the same action remains available through an accessible menu. Blackjack payout swipe behaviour remains unchanged.
+- One visual/functional slice at a time unless this prompt authorises a consolidation pass.
 
 Testing:
 
-- Run targeted tests during implementation.
-- Do not run all 243 tests after each edit.
-- Run the full suite once at prompt completion.
-- Run the production build once at prompt completion.
-
-Presentation follows the attached design boards and the seven-zone grid. Player Blackjack boxes use a fixed 3-slot stage and must not move when other chrome appears. Poker Owner and Player screens follow the Prompt 3 board contract.
+- Visual-only work: guardrails, affected component tests, affected responsive Playwright/screenshots and production build.
+- Accounting, authentication, identity, phase-machine, migration or release work: full acceptance process.
+- Do not run the historical full Playwright catalogue for isolated visual changes unless specifically requested or the focused tests reveal a cross-cutting regression.
 
 ## Change discipline
 
@@ -204,11 +252,11 @@ Read this file first.
 
 Implement only the requested change. Keep the existing architecture, domain rules, ledger, auth and Classic skin boundaries intact.
 
-Run only directly affected tests during development. At completion run:
+Visual-only work: guardrails, affected component tests, affected responsive Playwright/screenshots and production build.
 
-- `npm run guardrails`
-- affected Vitest files
-- `npm run build`
+Accounting, authentication, identity, phase-machine, migration or release work: full acceptance process.
+
+Do not run the historical full Playwright catalogue for isolated visual changes unless specifically requested or the focused tests reveal a cross-cutting regression.
 
 Do not run the full Playwright suite, generate screenshots, update architecture documents, commit, push or deploy unless explicitly requested.
 
@@ -239,41 +287,11 @@ Full acceptance means:
 9. Commit, push, and deploy only when explicitly requested.
 10. Report exact results and genuine limitations.
 
-## Current status
+## Current implementation line
 
-- Repository: Blackjack MVP and Texas Hold’em MVP with authenticated welcome / create-table journey
-- Current game: Blackjack MVP and Texas Hold’em MVP
-- Next milestone: Zilch remains coming later. RC3 (`v1.0.0-rc.3` / `eb7f1e3`) is rejected. Repair branch `fix/rc3-live-acceptance` continues the live identity/invite repair and is not merged or tagged. Create Table invitation-selector controls (Guest QR / Verified QR / Email) must be proven locally before deploy. Do not retag `v1.0.0-rc.1` (`c21fc8b`), `v1.0.0-rc.2` (`8b3aafe`), or `v1.0.0-rc.3`. A real two-phone Railway retest is required.
-- Unresolved Dealer payout rows do not render a WON swipe ghost. Guest identity is table-scoped (`User.isGuest` + signed `jetonbro.guest` cookie); Verified identity stays Auth.js/Resend.
-- Staging host: Railway project `tranquil-unity`, service `JetBro II Web`, public URL `https://jetbro-ii-web-production.up.railway.app`. Railway’s only environment in that project is default-named `production`. This is the JetBro II service linked to this repository, not Lite and not the old `jetonbro-staging` project. `ALLOW_DEV_MAILBOX=false`. `/api/dev/*` 404s. Release candidate tag `v1.0.0-rc.1` points at `c21fc8b`. Tag `v1.0.0-rc.2` points at merge commit `8b3aafe`.
-- Current skin: Classic
-- Accepted references: `design/reference/classic/approved/` PNGs are visual authorities, not data contracts. Spec/state controls screens, privacy, box count, legal actions, the one-screen setup journey, commands, and labels. Boards control hierarchy, density, spacing, shape, balance, positioning, and colour. A spec-mandated content difference from a mock is not a visual failure. Live Blackjack prints the table name once on the felt as a cloth mark (name only, no ornaments or metadata). Compact phase copy is `Table setup` / `Betting open` for Dealer and `Waiting for the table to open betting.` / `Betting is open.` for Player. Owner Change Dealer / Change Game stay in the existing table menu during eligible Betting. Dealer identity/rules/column headings are omitted. Every Dealer phase, including Phase 0, uses the shared 65/35 `DealerActionDock`. Dealer boxes are casino betting positions, not ledger rows.
-- Bank accounting: Open Bank uses unlimited `BANK_VIRTUAL_RESERVE`. Limited Bank stores table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE` in millijetons. Poker locks `LOCKED_POKER` from Player AVAILABLE and never touches Bank buckets. Card Assist defaults to `OFF`. Optional rank records and Limited Bank accounting are accepted: Player credited once per settlement; `BANK_PAYOUT` / `BANK_STAKE_TAKE` are Bank-side; table value `AVAILABLE + LOCKED_BET + LOCKED_INSURANCE + LOCKED_POKER + BANK_AVAILABLE + BANK_LOCKED_EXPOSURE` is conserved except explicit `BANK_VIRTUAL_RESERVE` funding. Limited Bank buckets freeze in place while Texas Hold’em is active.
-- Table settings: `blackjackPayout`, `maxBoxesPerPlayer` (default 3), `insuranceEnabled` (default true), and `startingJetonsPerPlayerMillis` are server-authoritative
-- Starting jetons: credited once on join to the player membership, never to the Bank as a betting stack. The Poker table owner is a seated Player and receives the starting allocation.
-- Authenticated home: compact Saved Tables cards show table name, selected game, phase/status, player count, Owner and Dealer, and `RESUME`. `CREATE TABLE` is the primary home action. Join-by-code is not a second primary action. There are no duplicate Resume labels, giant full-width cards, per-player balances, box counts, felt names, game controls, history, or debug controls on Home. Unused drafts (`setupCompletedAt` null) are hidden; `CREATE TABLE` resumes the owner’s open draft. The owner overflow shows `DELETE` on an empty draft, `SAVE TABLE` and `CLOSE TABLE` (archive) on a started table, then `DELETE` on the archived card. Archived Owner delete sets the owner `TableMember.leftAt` and revokes invitations; it never deletes ledger, round, or table rows. Non-owners never see Delete and receive 4xx on the command.
-- Dealer Phase 0: after `START TABLE`, the waiting table is visible with compact Player names on felt. The shared 65/35 dock is `START BETTING` | `ADD PLAYER` (or Poker `START HAND` | `ADD PLAYER`). Disabled `START BETTING` stays visible; `ADD PLAYER` remains active and opens the invitation mask. Owner menu includes rename, assign Dealer, save/close, and optional tools. No stacked secondary row, no giant empty seat, no dashed felt frame, and no start-game controls above the Create Table form. A joined Player never receives the Dealer Phase 0 board.
-- Betting close: `Round.bettingCloseDeadlineAt` is the server-authoritative 7-second deal deadline
-- Next round: after every box and required Insurance stake is settled, the Bank uses `START BETTING` (`startNextRound`) or menu `IN 7 SECONDS`. The seven-second option stores `Round.nextRoundDeadlineAt` (not `bettingCloseDeadlineAt`). Refresh resumes that deadline. At zero, or on `START BETTING`, the table opens exactly one new BETTING round. A PAYOUT snapshot that already has every required settlement settled can enable next-round. A blocked restart returns `NEXT_ROUND_BLOCKED`.
-- Dealer PAYOUT: compact betting-position cards, not spreadsheet rows. Each unresolved box keeps the large 2×2 result controls: `LOST`, `STAND OFF` (PUSH), `BLACKJACK`, `WON`. Gestures bind to the complete unresolved payout card with Pointer Events and `setPointerCapture`: swipe left LOST, swipe right WON, double-tap STAND OFF/PUSH; BLACKJACK is button-only. Outcome buttons stop propagation and do not start a swipe. Gestures settle only that box. Labels come from `suggestedPayout`. Insurance is independent of box swipes. Owner-only `DEALER WON` stays in the table menu; it is never a felt banner. It runs the existing per-box `LOST` ledger rules for every currently unresolved active box in one transaction; it is idempotent and never settles Insurance.
-- Classic Blackjack table: one app/phone frame only (`width: min(100vw, 480px)`). On viewports wider than 480px the entire app, including header, felt, dock, tray and safe-area, stays inside one rounded max-width 480px frame (`height: min(844px, 100dvh - 40px)`). The green felt is the table. There is no nested wood/leather rail. Live Dealer phases use compact casino betting positions (`DealerBlackjackBoxRow`), not giant ovals and not full-width ledger rows. 1 position is centred; 2 a pair; 3–4 a compact 2-column arrangement if it fits; 5–6 a compact grid that internally scrolls only if needed. Shared slots: `TableShell`, `PhaseBar`, `DealerActionDock`, `DealerHandBox`, `PlayerWallet`, `PhaseActionDock`, `JetonTray`. Player boxes sit in a fixed 3-slot stage: Box 1 centre, Box 2 left, Box 3 right, without jumping. The Player felt is a full-height grid that vertically centres the box stage. A reserved contextual row under the stage holds `ADD BOX` or the compact Insurance panel so chrome changes do not move boxes. The table name appears once on the felt as a printed cloth mark below the phase heading. The live header has menu plus badges or balance only. Dealer `OPEN` / `CLOSE INSURANCE` and `ADD PLAYER` sit in the shared 65/35 bottom dock, never beside the phase heading. Optional Card Assist stays in Menu → Optional tools. Physical cards remain authoritative. Above the felt the Bank and Player screens use a compact phase heading and essential phase controls only. A Player selects a box by tap. Box actions always target the selected owned box. Insurance PAYOUT settle buttons are `INS WON` (`DEALER_BLACKJACK`) and `INS LOST` (`NO_DEALER_BLACKJACK`). A jeton tray tap still places when the pointer did not drop on a box. The document must not scroll. Dealer primary actions (`DEAL CARDS` / `ENTER PAYOUT` / `START BETTING`) are anchored at the bottom. There is no PLAYERS / BOXES / ON TABLE footer.
-- Player celebrations use the settlement ID/box state as the dedupe key: Blackjack always plays the strong overlay once after confirmed settlement; a win sometimes plays the strong overlay and otherwise stays on the row; push is a calm return; loss is restrained Tough Luck. The Dealer keeps compact row confirmation only. Reduced motion disables overlays. Polling, SSE duplication, and refresh must not replay them.
-- Owner SAVE TABLE sets `Table.pausedAt` and keeps membership, table balances, Card Assist, funding mode, Limited Bank buckets, optional rank records, and ledger history. `CLOSE TABLE & SAVE BALANCES` is owner-only. Empty drafts (`TABLE_SETUP`, no joined Players, no ledger, no staked rounds) may be hard-deleted with unused invitations/tokens (`DELETE TABLE`). A started table is never hard-deleted: `CLOSE TABLE & SAVE BALANCES` requires `ROUND_COMPLETE` or `TABLE_SETUP` with no locked Bet/Insurance and no Bank exposure, or Poker `POKER_SETUP` / `HAND_COMPLETE` with no `LOCKED_POKER` and no unsettled hand. It transfers Player AVAILABLE to `PLAYER_POCKET` exactly once via the existing close-table transaction (`TABLE_TRANSFER_OUT`), archives the table including remaining Limited Bank history, keeps it on Home as Closed until the Owner confirms Delete (table name in the confirm sheet), and keeps ledger/round/card history. The second Delete hides the archived table from that Owner (`leftAt`) without dropping database rows. Locked funds, Bank exposure, or an active Poker hand return `LOCKED_FUNDS`. Later joins write `TABLE_TRANSFER_IN`. Open Bank virtual reserve is not stored or transported into a Player pocket. Dealer reassignment does not transfer ownership.
-- Player is credited exactly once per settlement by the existing `BET_*` / `BLACKJACK_RETURN` / `INSURANCE_*` ledger row. `BANK_PAYOUT` and `BANK_STAKE_TAKE` are Bank-side legs (`playerId` null) in the same transaction.
-- Verification: lightweight local changes use guardrails, affected Vitest, and `next build`. Full Playwright, screenshots, commit, push, and Railway deploy only for ledger/auth/phase/migration work or an accepted release batch
-- Staging target: one Railway app replica, one PostgreSQL service, health `/api/health`, `ALLOW_DEV_MAILBOX=false`
-- Email delivery: Resend HTTP API. Magic-link sign-in works on production
-- Phase commands: `START BETTING` starts Betting; `DEAL CARDS` closes Betting and starts Playing; `ENTER PAYOUT` moves Playing to Payout; `START BETTING` after payout starts the next Betting round. Command handlers are unchanged (`startBetting`, `dealCards`, `enterPayout`, `startNextRound`). Wrong-phase clicks return `PHASE_CONFLICT` or `NEXT_ROUND_BLOCKED` instead of a silent no-op.
-- Texas Hold’em role × phase control matrix is the accepted UI contract (`pokerControls()`). Owner chrome follows `isOwner`; the Dealer button is `seat.isDealer` only. `START HAND` starts a hand from `POKER_SETUP`. Seat order is menu-only and locks after the first hand. CALL remains available while BET/RAISE is composed; chips stage until confirm. Shared bottom wallet and game-control layers apply to Blackjack and Poker. Snapshot/SSE loads skip Blackjack close-betting while Poker is active.
-- `DEAL FLOP` / `DEAL TURN` / `DEAL RIVER` each call `startBettingStreet`: reset only street contribution / `hasActedThisStreet` / street wager, preserve totals and `LOCKED_POKER`, assign the first active non-folded non-All-In Player left of the rotating D (`postflopFirstPlayerId`), increment `PokerHand.actionCount`, and bump `Table.updatedAt` so snapshot/SSE show the new street and actor immediately. Owner `SHOWDOWN` stays disabled until River betting is matched. If every remaining Player is All-In, the Owner runs streets with a null actor.
-- A fold-out or showdown payout marks `HAND_COMPLETE` with `currentActorPlayerId = null`, `streetWagerMillis = 0`, and `toCall = 0` on every snapshot. The felt shows `POT PAID` plus `{name} WON {amount}`. Seats never stay Waiting after the hand ends.
-- Compact street rail `DEAL → PRE-FLOP → FLOP → TURN → RIVER → SHOWDOWN` is shared by Owner and Players (`pokerStreetRail()`). Current is gold; completed are subtle; future are muted.
-- Optional physical-card assist: Owner may enter community cards (flop exactly 3, then +1 turn, +1 river). Each Player may enter their own 2 hole cards. Community values are public; hole values are viewer-only (`hasHoleCards` for everyone else). Rank/suit entry lives in Menu → Optional tools (`+ HOLE CARDS` / `+ BOARD CARDS`) and opens a temporary sheet that closes on SAVE or CANCEL. Card commands do not advance phase, settle pots, or write ledger rows, and idempotency hashes `tableId` only so values are not logged. Manual Showdown remains authoritative; there is no automatic hand evaluation.
-- `CREATE TABLE` navigates to `/tables/new`, which ensures a draft and opens `/tables/{id}` on the compact Create Table setup. `START TABLE` (`finalizeSetup`) opens Phase 0. Create Table invitations are inline: the selected method mounts QR + Copy Link or the email SEND INVITE field; later CSS must not clip those controls. Phase 0 `ADD PLAYER` opens the invitation mask. Card Assist and Limited Bank remain available; Limited Bank is also on the Create Table screen.
-- Classic visual system: deep emerald felt with a CSS texture, antique-gold details, cream Georgia cloth identity, Inter UI, matte-black `--dock`, and CSS-rendered jetons. Blackjack live play prints `Table.name` once on the felt (`ClothName` / `data-table-name`) as a 15–20px cloth mark and never as a page title, ornamental rule, metadata line, or JETONBRO brand row. Dealer screens use casino betting positions. Poker Owner and Player screens share the phone shell, one seat row, the street rail, pot/to-call, actor signal, and fixed tray.
-- Design authority: `docs/DESIGN_AUTHORITY.md`. Approved Classic boards: `design/reference/classic/approved/`. Poker boards remain under `docs/design-reference/`.
-- MVP file map: `docs/MVP_FILE_MAP.md`. Frozen engine vs active Classic UI vs deferred Card Assist expansion/Zilch.
-- Player Blackjack boxes occupy a fixed 3-slot stage (Box 1 centre, Box 2 left, Box 3 right) and do not recentre or jump across Betting → Playing → Insurance → Payout.
-- Owner utilities and Card Assist live in the table menu. Phase-action only progresses the round. Insurance copy is `MAIN` / `INSURANCE` / `INS WON` / `INS LOST`.
-- Prompt 8 corrects Player payout overlap, marks the Poker viewer seat against the tray AVAILABLE, and compact Phase 0 empty/joined states. Engines unchanged.
-- Player Blackjack `2×` / `SPLIT` / `INSURANCE` render as one consistent row during PLAYING and dispatch only when snapshot legal flags allow them; illegal actions stay visible and disabled. Player Payout and ROUND_COMPLETE show settlement results plus the wallet and a disabled tray; they do not render playing or betting commands. Player Betting shows `PLACE BET` / `RETRACT` / `ADD BOX` only. The Player tray denominations are `5` / `10` / `25` / `50` / `100`.
+- Repository: JetBro II
+- Default skin: Classic
+- Games: Blackjack and Texas Hold’em
+- Active visual authority: `design/reference/classic/approved/`
+- Zilch: deferred
+- Release/deployment status belongs in `CHANGELOG.md` and `docs/IMPLEMENTATION_LOG.md`, not this rules file.

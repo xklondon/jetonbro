@@ -289,10 +289,6 @@
   min-height: 0;
 }
 
-.classic-skin .player-play-felt[data-box-count="1"] .player-box-stage {
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 172px) minmax(0, 1fr);
-}
-
 .classic-skin .player-box-stage .stage-cell,
 .classic-skin .player-box-stage .box,
 .classic-skin .player-box-stage .box-slot {
@@ -325,7 +321,7 @@
 
 .classic-skin .box {
   height: auto;
-  min-height: 108px;
+  min-height: var(--player-box-height);
   border: 1px solid rgba(223, 189, 105, 0.18);
   border-radius: 16px;
   background: rgba(2, 14, 12, 0.28);
@@ -954,15 +950,15 @@
   }
 
   .classic-skin .player-box-stage {
-    grid-auto-rows: minmax(96px, 120px);
+    grid-auto-rows: var(--player-box-height);
   }
 
   .classic-skin .player-box-stage .stage-cell,
   .classic-skin .player-box-stage .box,
   .classic-skin .player-box-stage .box-slot {
-    height: 108px;
-    min-height: 108px;
-    max-height: 108px;
+    height: var(--player-box-height);
+    min-height: var(--player-box-height);
+    max-height: var(--player-box-height);
   }
 
   .classic-skin .jetons .chip {
@@ -1859,7 +1855,7 @@
 }
 
 .classic-skin .box {
-  min-height: 108px;
+  min-height: var(--player-box-height);
   border-radius: var(--box-radius);
 }
 
