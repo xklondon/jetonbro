@@ -294,5 +294,6 @@ Full acceptance means:
 - Default skin: Classic
 - Games: Blackjack and Texas Hold’em
 - Active visual authority: `design/reference/classic/approved/`
+- Blackjack Classic boxes use an SVG betting-plaque silhouette (`BettingPlaque`, 128×92 Player / larger Dealer spots). Dealer PNG is palette and density only — not spreadsheet anatomy.
 - Zilch: deferred
 - Release/deployment status belongs in `CHANGELOG.md` and `docs/IMPLEMENTATION_LOG.md`, not this rules file.

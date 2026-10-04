@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Blackjack fidelity prototype — development only</title>
+  <style>
+    :root {
+      --emerald: #063d31;
+      --felt: #075744;
+      --felt-hi: #0b7056;
+      --dock: #05080a;
+      --gold: #dfbd69;
+      --gold-ink: #30250d;
+      --ivory: #f4ead5;
+      --muted: rgba(244, 234, 213, 0.68);
+      --red: #b8373f;
+      --blue: #2466a8;
+      --green: #19865c;
+      --spot-w: 128px;
+      --spot-h: 92px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #06140f; color: var(--ivory); font-family: Inter, system-ui, sans-serif; }
+    h1 { margin: 0; padding: 20px 24px 8px; font: 18px Georgia, serif; letter-spacing: 0.08em; }
+    .note { padding: 0 24px 20px; color: var(--muted); font-size: 13px; max-width: 920px; }
+    .pair { display: grid; grid-template-columns: 390px 390px; gap: 24px; padding: 0 24px 36px; }
+    .pair figcaption { margin: 0 0 8px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+    .crop { width: 390px; height: 844px; object-fit: cover; background: #000; border-radius: 12px; }
+    .crop.p1 { object-position: 0% 50%; }
+    .crop.p2 { object-position: 33.4% 50%; }
+    .crop.p3 { object-position: 66.6% 50%; }
+    .crop.p4 { object-position: 100% 50%; }
+    .crop.d1 { object-position: 0% 50%; }
+    .crop.d4 { object-position: 100% 50%; }
+    .phone {
+      width: 390px;
+      height: 844px;
+      border-radius: 34px;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 56px 40px minmax(0, 1fr) auto;
+      background:
+        radial-gradient(ellipse at 50% 8%, rgba(244, 234, 213, 0.08), transparent 42%),
+        radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.42), transparent 58%),
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.035) 0 1px, transparent 1px 3px),
+        radial-gradient(circle at 50% 34%, var(--felt-hi), var(--felt) 48%, var(--emerald));
+    }
+    header { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; padding: 8px 14px; }
+    header .menu { color: var(--muted); font-size: 18px; }
+    .balance { text-align: right; line-height: 1.05; }
+    .balance small { display: block; font-size: 9px; letter-spacing: 0.1em; color: var(--muted); }
+    .balance strong { font: 13px Georgia, serif; color: var(--gold); }
+    .phase { text-align: center; }
+    .phase strong { display: block; font: 500 12px Inter, sans-serif; color: rgba(244, 234, 213, 0.62); }
+    .phase em { display: block; font-style: normal; font-size: 11px; color: var(--muted); }
+    .felt { position: relative; min-height: 0; display: flex; flex-direction: column; }
+    .cloth {
+      position: absolute;
+      top: 14%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font: 13px Georgia, "Palatino Linotype", serif;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(223, 189, 105, 0.28);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.28);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .orbit { height: 40px; display: grid; place-items: center; flex: 0 0 auto; }
+    .dealer-mark {
+      width: 40px; height: 40px; border: 1px solid rgba(223, 189, 105, 0.35);
+      border-radius: 50%; display: grid; place-items: center;
+      font-size: 7px; letter-spacing: 0.08em; color: rgba(223, 189, 105, 0.55);
+    }
+    .stage {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-content: center;
+      align-items: center;
+      justify-items: center;
+      padding: 0 8px;
+      gap: 0 6px;
+    }
+    .spot {
+      position: relative;
+      width: var(--spot-w);
+      height: var(--spot-h);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      color: var(--ivory);
+    }
+    .spot svg.plaque {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .spot > *:not(.plaque) { position: relative; z-index: 1; }
+    .spot .id { font-size: 8px; letter-spacing: 0.14em; color: rgba(223, 189, 105, 0.72); }
+    .spot .who { font-size: 13px; font-weight: 500; }
+    .spot .amt { font: 22px Georgia, serif; line-height: 1; }
+    .spot .side { font-size: 9px; letter-spacing: 0.06em; color: var(--gold); }
+    .pile {
+      position: relative;
+      width: 46px;
+      height: 34px;
+    }
+    .pile b,
+    .pile i {
+      position: absolute;
+      left: 50%;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2.5px dashed rgba(255,255,255,.7);
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,.22), 0 3px 5px rgba(0,0,0,.28);
+    }
+    .pile i:nth-child(1) { bottom: 7px; transform: translateX(-62%); opacity: 0.4; }
+    .pile i:nth-child(2) { bottom: 3px; transform: translateX(-38%); opacity: 0.7; }
+    .pile b {
+      bottom: 0;
+      transform: translateX(-50%);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .c0 { background: #2a2a2a; color: #9a9a9a; }
+    .c0-empty { opacity: 0.45; }
+    .c5 { background: var(--red); }
+    .c10 { background: var(--blue); }
+    .c25 { background: var(--green); }
+    .c50 { background: var(--gold); color: var(--gold-ink); }
+    .c100 { background: #222; color: #fff; }
+    .spot.win .plaque .fill { fill: rgba(31, 122, 74, 0.38); }
+    .spot.lost .plaque .fill { fill: rgba(184, 55, 63, 0.34); }
+    .context {
+      height: 52px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .add-box {
+      width: min(260px, 82%);
+      min-height: 36px;
+      border: 1px solid rgba(223, 189, 105, 0.4);
+      background: rgba(5, 8, 10, 0.35);
+      color: var(--gold);
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+    .ins-panel {
+      width: min(320px, 92%);
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid rgba(223, 189, 105, 0.35);
+      border-radius: 10px;
+      background: rgba(2, 23, 18, 0.35);
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .ins-panel strong { display: block; font: 16px Georgia, serif; color: var(--ivory); }
+    .ins-panel button {
+      min-height: 32px; padding: 4px 12px; border-radius: 8px;
+      border: 1px solid rgba(223, 189, 105, 0.4); background: transparent; color: var(--gold);
+      letter-spacing: 0.08em; font-size: 10px;
+    }
+    .dealer-one {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 8px 16px 4px;
+    }
+    .dealer-one .spot {
+      width: 300px;
+      height: 168px;
+    }
+    .dealer-four {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      place-content: center;
+      place-items: center;
+      gap: 14px 12px;
+      padding: 12px 14px;
+    }
+    .dealer-four .spot {
+      width: 168px;
+      height: 108px;
+    }
+    .keys {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 300px;
+      margin: 0 auto 8px;
+    }
+    .keys button { min-height: 50px; border: 0; border-radius: 10px; font-size: 12px; letter-spacing: 0.06em; }
+    .lost-k { background: #6e2b32; color: #fff; }
+    .push-k { background: var(--ivory); color: #21302b; }
+    .bj-k { background: #111; color: var(--gold); }
+    .won-k { background: #1f7a4a; color: #fff; }
+    footer.dock {
+      background: linear-gradient(180deg, rgba(7, 23, 20, 0.96), var(--dock));
+      border-top: 1px solid rgba(223, 189, 105, 0.4);
+      padding: 8px 14px 14px;
+    }
+    .bet-stack { display: grid; gap: 8px; }
+    .bet-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .play-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .felt-input {
+      width: 100%; min-height: 40px; border: 1px solid rgba(223, 189, 105, 0.28);
+      background: #10241f; color: var(--ivory); border-radius: 10px; padding: 8px 10px; font-size: 16px;
+    }
+    .gold, .ghost {
+      min-height: 48px; border-radius: 12px; font-size: 13px; letter-spacing: 0.08em; width: 100%;
+    }
+    .gold { border: 0; background: linear-gradient(180deg, #ead08a, var(--gold) 55%, #c9a24b); color: var(--gold-ink); }
+    .ghost { border: 1px solid rgba(223, 189, 105, 0.38); background: #10241f; color: var(--ivory); }
+    .wallet { display: flex; justify-content: space-between; align-items: flex-end; margin: 10px 0 8px; }
+    .wallet small { display: block; font-size: 9px; letter-spacing: 0.1em; color: var(--muted); }
+    .wallet strong { font: 20px Georgia, serif; }
+    .tray { display: flex; justify-content: space-between; padding: 0 2px; }
+    .tray .chip {
+      width: 46px; height: 46px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 11px; font-weight: 600;
+      border: 3px dashed rgba(255,255,255,.72);
+      box-shadow: inset 0 0 0 3px rgba(0,0,0,.22), 0 4px 7px rgba(0,0,0,.32);
+    }
+    .dealer-dock { display: grid; grid-template-columns: 1.65fr 1fr; gap: 8px; }
+    .dealer-dock .gold, .dealer-dock .ghost { min-height: 52px; }
+    .badge { font-size: 9px; letter-spacing: 0.08em; border: 1px solid rgba(223, 189, 105, 0.4); border-radius: 999px; padding: 4px 8px; color: var(--gold); }
+    .payout-felt { display: flex; flex-direction: column; min-height: 0; }
+    .payout-felt .dealer-one { flex: 1; place-items: center; padding-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Blackjack fidelity prototype</h1>
+  <p class="note">
+    Development only. 390×844 pairs. Left is an approved crop. Right is the static reconstruction.
+    Player plaques are an SVG path (128×92, 14px corners, inner rim) — not border-radius alone.
+    Three-slot stage: Box 1 stays in the centre cell; Box 2 occupies the left cell.
+    Dealer PNG supplies palette, type, density and control placement only. Positions are casino plaques, not spreadsheet rows.
+  </p>
+
+  <svg width="0" height="0" aria-hidden="true">
+    <symbol id="plaque-player" viewBox="0 0 128 92">
+      <path class="fill" d="M16 3.5 H112 A12.5 12.5 0 0 1 124.5 16 V76 A12.5 12.5 0 0 1 112 88.5 H16 A12.5 12.5 0 0 1 3.5 76 V16 A12.5 12.5 0 0 1 16 3.5 Z" fill="rgba(3,18,15,0.5)" stroke="#dfbd69" stroke-width="1.45"/>
+      <path d="M20 9 H108 A7 7 0 0 1 115 16 V76 A7 7 0 0 1 108 83 H20 A7 7 0 0 1 13 76 V16 A7 7 0 0 1 20 9 Z" fill="none" stroke="rgba(223,189,105,0.22)" stroke-width="1"/>
+    </symbol>
+    <symbol id="plaque-dealer-lg" viewBox="0 0 300 168">
+      <path class="fill" d="M22 5 H278 A17 17 0 0 1 295 22 V146 A17 17 0 0 1 278 163 H22 A17 17 0 0 1 5 146 V22 A17 17 0 0 1 22 5 Z" fill="rgba(3,18,15,0.48)" stroke="#dfbd69" stroke-width="1.6"/>
+      <path d="M28 13 H272 A9 9 0 0 1 281 22 V146 A9 9 0 0 1 272 155 H28 A9 9 0 0 1 19 146 V22 A9 9 0 0 1 28 13 Z" fill="none" stroke="rgba(223,189,105,0.2)" stroke-width="1"/>
+    </symbol>
+    <symbol id="plaque-dealer-sm" viewBox="0 0 168 108">
+      <path class="fill" d="M16 4 H152 A12 12 0 0 1 164 16 V92 A12 12 0 0 1 152 104 H16 A12 12 0 0 1 4 92 V16 A12 12 0 0 1 16 4 Z" fill="rgba(3,18,15,0.48)" stroke="rgba(223,189,105,0.62)" stroke-width="1.35"/>
+      <path d="M21 10 H147 A6 6 0 0 1 153 16 V92 A6 6 0 0 1 147 98 H21 A6 6 0 0 1 15 92 V16 A6 6 0 0 1 21 10 Z" fill="none" stroke="rgba(223,189,105,0.18)" stroke-width="1"/>
+    </symbol>
+  </svg>
+
+  <section class="pair" id="player-betting-1">
+    <figure><figcaption>Approved — Player Betting</figcaption><img class="crop p1" src="approved/blackjack-player-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Player Betting, one box</figcaption>
+      <div class="phone" data-screen="player-betting-1">
+        <header><span class="menu">☰</span><span></span><div class="balance"><small>BALANCE</small><strong>75</strong></div></header>
+        <div class="phase"><strong>Betting is open.</strong></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="stage">
+            <div></div>
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-player"/></svg>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">25</span>
+            </div>
+            <div></div>
+          </div>
+          <div class="context"><button class="add-box">ADD BOX</button></div>
+        </main>
+        <footer class="dock">
+          <div class="bet-stack">
+            <input class="felt-input" placeholder="Amount" />
+            <div class="bet-row"><button class="ghost">RETRACT</button><button class="gold">PLACE BET</button></div>
+          </div>
+          <div class="wallet"><div><small>YOUR JETONS</small></div><div class="balance"><small>AVAILABLE</small><strong>75</strong></div></div>
+          <div class="tray"><span class="chip c5">5</span><span class="chip c10">10</span><span class="chip c25">25</span><span class="chip c50">50</span><span class="chip c100">100</span></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="player-betting-2">
+    <figure><figcaption>Approved — Player Betting two-box region</figcaption><img class="crop p1" src="approved/blackjack-player-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Player Betting, two boxes</figcaption>
+      <div class="phone" data-screen="player-betting-2">
+        <header><span class="menu">☰</span><span></span><div class="balance"><small>BALANCE</small><strong>75</strong></div></header>
+        <div class="phase"><strong>Betting is open.</strong></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="stage">
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-player"/></svg>
+              <span class="id">BOX 2</span>
+              <span class="pile c0-empty"><i class="c0"></i><i class="c0"></i><b class="c0">0</b></span>
+              <span class="amt">0</span>
+            </div>
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-player"/></svg>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">25</span>
+            </div>
+            <div></div>
+          </div>
+          <div class="context"><button class="add-box">ADD BOX</button></div>
+        </main>
+        <footer class="dock">
+          <div class="bet-stack">
+            <input class="felt-input" placeholder="Amount" />
+            <div class="bet-row"><button class="ghost">RETRACT</button><button class="gold">PLACE BET</button></div>
+          </div>
+          <div class="wallet"><div><small>YOUR JETONS</small></div><div class="balance"><small>AVAILABLE</small><strong>75</strong></div></div>
+          <div class="tray"><span class="chip c5">5</span><span class="chip c10">10</span><span class="chip c25">25</span><span class="chip c50">50</span><span class="chip c100">100</span></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="player-playing">
+    <figure><figcaption>Approved — Player Playing</figcaption><img class="crop p2" src="approved/blackjack-player-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Player Playing</figcaption>
+      <div class="phone" data-screen="player-playing">
+        <header><span class="menu">☰</span><span></span><div class="balance"><small>BALANCE</small><strong>75</strong></div></header>
+        <div class="phase"><strong>PLAYING</strong><em>Make your move</em></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="stage">
+            <div></div>
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-player"/></svg>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">25</span>
+            </div>
+            <div></div>
+          </div>
+          <div class="context"></div>
+        </main>
+        <footer class="dock">
+          <div class="play-row"><button class="gold">2×</button><button class="ghost">SPLIT</button><button class="ghost">INSURANCE</button></div>
+          <div class="wallet"><div><small>YOUR JETONS</small></div><div class="balance"><small>AVAILABLE</small><strong>75</strong></div></div>
+          <div class="tray"><span class="chip c5">5</span><span class="chip c10">10</span><span class="chip c25">25</span><span class="chip c50">50</span><span class="chip c100">100</span></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="player-insurance">
+    <figure><figcaption>Approved — Player Insurance</figcaption><img class="crop p3" src="approved/blackjack-player-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Player Insurance</figcaption>
+      <div class="phone" data-screen="player-insurance">
+        <header><span class="menu">☰</span><span></span><div class="balance"><small>BALANCE</small><strong>75</strong></div></header>
+        <div class="phase"><strong>INSURANCE OPEN</strong><em>Take insurance (optional)</em></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="stage">
+            <div></div>
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-player"/></svg>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">25</span>
+              <span class="side">INS 12.5</span>
+            </div>
+            <div></div>
+          </div>
+          <div class="context">
+            <div class="ins-panel">
+              <div><small>INSURANCE</small><strong>12.5</strong></div>
+              <div><small>MAX</small><strong>12.5</strong></div>
+              <button>PLACE</button>
+            </div>
+          </div>
+        </main>
+        <footer class="dock">
+          <div class="play-row"><button class="gold">2×</button><button class="ghost">SPLIT</button><button class="ghost">INSURANCE</button></div>
+          <div class="wallet"><div><small>YOUR JETONS</small></div><div class="balance"><small>AVAILABLE</small><strong>62.5</strong></div></div>
+          <div class="tray"><span class="chip c5">5</span><span class="chip c10">10</span><span class="chip c25">25</span><span class="chip c50">50</span><span class="chip c100">100</span></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="player-payout">
+    <figure><figcaption>Approved — Player Payout</figcaption><img class="crop p4" src="approved/blackjack-player-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Player Payout</figcaption>
+      <div class="phone" data-screen="player-payout">
+        <header><span class="menu">☰</span><span></span><div class="balance"><small>BALANCE</small><strong>125</strong></div></header>
+        <div class="phase"><strong>PAYOUT</strong></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="stage">
+            <div></div>
+            <div class="spot win">
+              <svg class="plaque"><use href="#plaque-player"/></svg>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">50</span>
+              <span class="side">Won +25</span>
+            </div>
+            <div></div>
+          </div>
+          <div class="context"></div>
+        </main>
+        <footer class="dock">
+          <div class="wallet"><div><small>YOUR JETONS</small></div><div class="balance"><small>AVAILABLE</small><strong>125</strong></div></div>
+          <div class="tray"><span class="chip c5">5</span><span class="chip c10">10</span><span class="chip c25">25</span><span class="chip c50">50</span><span class="chip c100">100</span></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="dealer-betting-1">
+    <figure><figcaption>Approved Dealer — palette / density / controls only</figcaption><img class="crop d1" src="approved/blackjack-dealer-owner-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Dealer Betting, one Player</figcaption>
+      <div class="phone" data-screen="dealer-betting-1">
+        <header><span class="menu">☰</span><span></span><span class="badge">OWNER</span></header>
+        <div class="phase"><strong>Betting open</strong></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="dealer-one">
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-dealer-lg"/></svg>
+              <span class="who">Sam</span>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">25</span>
+            </div>
+          </div>
+        </main>
+        <footer class="dock">
+          <div class="dealer-dock"><button class="gold">DEAL CARDS</button><button class="ghost">ADD PLAYER</button></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="dealer-betting-4">
+    <figure><figcaption>Approved Dealer — density / hierarchy only</figcaption><img class="crop d1" src="approved/blackjack-dealer-owner-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Dealer Betting, four Players</figcaption>
+      <div class="phone" data-screen="dealer-betting-4">
+        <header><span class="menu">☰</span><span></span><span class="badge">OWNER</span></header>
+        <div class="phase"><strong>Betting open</strong></div>
+        <main class="felt">
+          <p class="cloth">K's Table</p>
+          <div class="orbit"><div class="dealer-mark">DEALER</div></div>
+          <div class="dealer-four">
+            <div class="spot"><svg class="plaque"><use href="#plaque-dealer-sm"/></svg><span class="who">Sam</span><span class="id">BOX 1</span><span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span><span class="amt">25</span></div>
+            <div class="spot"><svg class="plaque"><use href="#plaque-dealer-sm"/></svg><span class="who">Jo</span><span class="id">BOX 1</span><span class="amt">0</span></div>
+            <div class="spot"><svg class="plaque"><use href="#plaque-dealer-sm"/></svg><span class="who">Casey</span><span class="id">BOX 1</span><span class="amt">0</span></div>
+            <div class="spot"><svg class="plaque"><use href="#plaque-dealer-sm"/></svg><span class="who">Riley</span><span class="id">BOX 1</span><span class="amt">0</span></div>
+          </div>
+        </main>
+        <footer class="dock">
+          <div class="dealer-dock"><button class="gold">DEAL CARDS</button><button class="ghost">ADD PLAYER</button></div>
+        </footer>
+      </div>
+    </figure>
+  </section>
+
+  <section class="pair" id="dealer-payout">
+    <figure><figcaption>Approved Dealer — payout control placement only</figcaption><img class="crop d4" src="approved/blackjack-dealer-owner-phases.png" alt="" /></figure>
+    <figure>
+      <figcaption>Prototype — Dealer Payout unresolved</figcaption>
+      <div class="phone" data-screen="dealer-payout">
+        <header><span class="menu">☰</span><span></span><span class="badge">OWNER</span></header>
+        <div class="phase"><strong>PAYOUT</strong></div>
+        <main class="felt payout-felt">
+          <p class="cloth">K's Table</p>
+          <div class="dealer-one">
+            <div class="spot">
+              <svg class="plaque"><use href="#plaque-dealer-lg"/></svg>
+              <span class="who">Sam</span>
+              <span class="id">BOX 1</span>
+              <span class="pile"><i class="c25"></i><i class="c25"></i><b class="c25">25</b></span>
+              <span class="amt">25</span>
+            </div>
+          </div>
+          <div class="keys">
+            <button class="lost-k">LOST</button>
+            <button class="push-k">STAND OFF</button>
+            <button class="bj-k">BLACKJACK</button>
+            <button class="won-k">WON</button>
+          </div>
+        </main>
+        <footer class="dock">
+          <button class="gold" style="opacity:.38">START BETTING</button>
+        </footer>
+      </div>
+    </figure>
+  </section>
+</body>
+</html>

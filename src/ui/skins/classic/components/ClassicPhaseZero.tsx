@@ -10,6 +10,7 @@ import { PhaseBar } from "./PhaseBar";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
 import { SeatOrderList } from "./SeatOrderList";
+import { BettingPlaque } from "./BettingPlaque";
 import { ClothName } from "./ClothName";
 import { DealerActionDock } from "./DealerActionDock";
 
@@ -74,6 +75,7 @@ export function ClassicPhaseZero({
       <main
         className="felt setup-felt phase-zero-felt"
         data-table-board="PHASE_ZERO_DEALER"
+        data-game={game}
         data-join-url={joinUrl ?? undefined}
         data-guest-join-url={guestJoinUrl ?? undefined}
         data-verified-join-url={joinUrl ?? undefined}
@@ -93,20 +95,44 @@ export function ClassicPhaseZero({
           >
             {rows.map((row) => (
               <div className="dealer-position is-idle" key={row.userId} data-player-row="true">
-                <span className="position-who">
-                  <strong>{row.name}</strong>
-                </span>
-                <span className="position-stake">
-                  <strong className="amount">{row.available?.label ?? "0"}</strong>
-                </span>
+                {game === "BLACKJACK" ? (
+                  <div className="position-spot">
+                    <BettingPlaque />
+                    <span className="position-who">
+                      <strong>{row.name}</strong>
+                    </span>
+                    <span className="position-stake">
+                      <strong className="amount">{row.available?.label ?? "0"}</strong>
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="position-who">
+                      <strong>{row.name}</strong>
+                    </span>
+                    <span className="position-stake">
+                      <strong className="amount">{row.available?.label ?? "0"}</strong>
+                    </span>
+                  </>
+                )}
               </div>
             ))}
             {invited.map((invite) => (
               <div className="dealer-position is-idle" key={invite.id} data-seat-status="Invited">
-                <span className="position-who">
-                  <strong>{invite.email ?? "Player"}</strong>
-                  <small>Invited</small>
-                </span>
+                {game === "BLACKJACK" ? (
+                  <div className="position-spot">
+                    <BettingPlaque />
+                    <span className="position-who">
+                      <strong>{invite.email ?? "Player"}</strong>
+                      <small>Invited</small>
+                    </span>
+                  </div>
+                ) : (
+                  <span className="position-who">
+                    <strong>{invite.email ?? "Player"}</strong>
+                    <small>Invited</small>
+                  </span>
+                )}
               </div>
             ))}
           </div>

@@ -2,12 +2,18 @@
 
 ## Unreleased
 
+### Blackjack Classic visual fidelity
+
+- Player boxes are SVG betting plaques (128×92, 14px corners, inner rim), not kidney capsules or 168px cards. Box 1 stays in the centre 3-slot cell; Box 2 occupies the left cell.
+- Dealer Players are casino plaques (300×168 solo, 168×108 in a 2×2), not spreadsheet rows. Payout keys stay a large 2×2 under the selected position.
+- Table name is an uppercase low-contrast serif mark printed into the cloth, once. Betting actions stack Amount above RETRACT / PLACE BET.
+
 ### Classic visual rebuild and owner table cleanup
 
 - Home uses a dedicated heading and compact saved-table cards (name + game/state). Owner/Dealer metadata lives in the overflow and swipe reveal.
 - Owners can swipe-left or use the card menu. `END & DELETE` is an Owner-only recoverable archive of an abandoned active table: invitations revoked, members hidden, ledger kept, no settlement.
 - Classic CSS ownership: tokens / layouts / table / home / invite / board. Invite/sheet styles live in `invite.css`. Home CSS does not style a live table. Classic CSS has no `!important`.
-- Live felt uses explicit Dealer 1 / 2 / 3–4 / 5–6 and Player 1 / 2 / 3 compositions. Table name is a single italic cloth mark. Player boxes and Dealer positions share a betting-spot silhouette.
+- Live felt uses explicit Dealer 1 / 2 / 3–4 / 5–6 and Player 1 / 2 / 3 compositions. Table name is a single embroidered cloth mark. Player boxes and Dealer positions share an SVG betting-plaque silhouette (128×92 Player; larger solo Dealer).
 
 ### Classic screen pack and Blackjack phase-control matrix
 

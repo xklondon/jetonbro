@@ -53,5 +53,6 @@ test("classic CSS files keep exclusive ownership", () => {
   expect(invite).toContain(".invite-mask");
   expect(board).toContain(".cloth-name");
   expect(board).toContain(".dealer-position");
-  expect(board).toContain('font-style: italic');
+  expect(board).toContain("text-transform: uppercase");
+  expect(board).toContain("felt-plaque");
 });

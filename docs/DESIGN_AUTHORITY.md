@@ -16,6 +16,32 @@ Aliases: `blackjack-player-phases.png`, `table-owner-setup.png`, `blackjack-deal
 
 The approved PNG boards are visual authorities, not literal data contracts.
 
+## Blackjack approved-board authority (locked)
+
+Do not reinterpret this distinction.
+
+The approved Blackjack Player PNG (`blackjack-player-phases.png` / `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png`) is literal visual authority for:
+
+- box silhouette
+- box size
+- chip placement
+- typography
+- phase spacing
+- action row
+- wallet/tray
+- colour and visual hierarchy
+
+The approved Dealer PNG (`blackjack-dealer-owner-phases.png` / `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png`) is authority for:
+
+- palette
+- typography
+- density
+- spacing
+- hierarchy
+- control placement
+
+It is NOT authority for spreadsheet column headings or admin-table anatomy. The later product decision overrides that portion: Dealer players must appear as casino betting positions, not spreadsheet records.
+
 The specification and live state control which screens exist, which Players and balances each role may see, how many boxes a Player owns, legal actions, the one-screen setup journey, commands, and labels. The boards control hierarchy, typography, density, spacing, component shape, visual balance, positioning, colour, and interaction placement.
 
 Do not mark a screen a visual failure merely because:

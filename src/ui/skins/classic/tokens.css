@@ -34,7 +34,12 @@
   --phase-rail-height: 78px;
   --ledger-row-height: 52px;
   --context-panel-height: 56px;
-  --player-box-height: 168px;
+  --player-box-width: 128px;
+  --player-box-height: 92px;
+  --dealer-spot-width: 168px;
+  --dealer-spot-height: 108px;
+  --dealer-spot-width-solo: 300px;
+  --dealer-spot-height-solo: 168px;
   --radius: 10px;
   --radius-card: 8px;
   --box-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;

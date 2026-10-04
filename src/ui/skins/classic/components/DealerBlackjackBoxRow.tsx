@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import { endPayoutDrag, movePayoutDrag, startPayoutDrag, type PayoutDragSession } from "@/ui/core/payout-gesture";
+import { BettingPlaque } from "./BettingPlaque";
 import { chipsFromMillis } from "./chips";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
@@ -142,24 +143,27 @@ export function DealerBlackjackBoxRow({
         }
       }}
     >
-      <span className="position-who">
-        <strong>{box.playerName || "Player"}</strong>
-        <small>BOX {box.boxNumber}</small>
-      </span>
-      <span className="position-stake">
-        {Number(box.bet.millis) > 0 ? (
-          <span className="chip-pile">
-            {chips.map((chip, index) => (
-              <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
-                <span className={`chip ${chip.className}`}>{chip.label}</span>
-              </span>
-            ))}
-          </span>
-        ) : null}
-        <strong className="amount">{box.bet.label}</strong>
-        {box.insurance ? <small className="position-ins">INS {box.insurance.label}</small> : null}
-      </span>
-      {state ? <span className="position-state">{state}</span> : null}
+      <div className="position-spot">
+        <BettingPlaque />
+        <span className="position-who">
+          <strong>{box.playerName || "Player"}</strong>
+          <small>BOX {box.boxNumber}</small>
+        </span>
+        <span className="position-stake">
+          {Number(box.bet.millis) > 0 ? (
+            <span className="chip-pile">
+              {chips.map((chip, index) => (
+                <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
+                  <span className={`chip ${chip.className}`}>{chip.label}</span>
+                </span>
+              ))}
+            </span>
+          ) : null}
+          <strong className="amount">{box.bet.label}</strong>
+          {box.insurance ? <small className="position-ins">INS {box.insurance.label}</small> : null}
+        </span>
+        {state ? <span className="position-state">{state}</span> : null}
+      </div>
       {unresolved ? (
         <span className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
           {railActions.map((action) => (

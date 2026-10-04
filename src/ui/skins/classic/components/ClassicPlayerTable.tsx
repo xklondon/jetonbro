@@ -141,7 +141,7 @@ export function ClassicPlayerTable({
                     dropHighlight={hoverBoxId === box.id}
                     onSelect={() => onSelectBox(box.id)}
                     retractable={view.actions.retract}
-                    status={view.phase === "BETTING" ? "Betting" : view.phase === "PLAYING" ? "In play" : undefined}
+                    status={view.phase === "PLAYING" && box.isDoubled ? "Doubled" : view.phase === "PLAYING" && box.isSplit ? "Split" : undefined}
                     onRetractChip={(amount) =>
                       onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
                     }
@@ -166,7 +166,7 @@ export function ClassicPlayerTable({
                 dropHighlight={hoverBoxId === box.id}
                 onSelect={() => onSelectBox(box.id)}
                 retractable={view.actions.retract}
-                status={view.phase === "BETTING" ? "Betting" : view.phase === "PLAYING" ? "In play" : undefined}
+                status={view.phase === "PLAYING" && box.isDoubled ? "Doubled" : view.phase === "PLAYING" && box.isSplit ? "Split" : undefined}
                 onRetractChip={(amount) =>
                   onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
                 }

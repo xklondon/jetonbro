@@ -6,6 +6,7 @@ import { TableShell } from "./TableShell";
 import { PhaseBar } from "./PhaseBar";
 import { PhaseActionDock } from "./PhaseActionDock";
 import { DealCountdown } from "./DealCountdown";
+import { BettingPlaque } from "./BettingPlaque";
 import { DealerBlackjackBoxRow } from "./DealerBlackjackBoxRow";
 import { ClothName } from "./ClothName";
 import { BankrollPanel } from "./BankrollPanel";
@@ -118,12 +119,15 @@ export function ClassicBankTable({
                       ))
                     : [
                         <div className="dealer-position is-idle" key={player.userId} data-player-row="true" data-player-group={player.userId}>
-                          <span className="position-who">
-                            <strong>{player.name}</strong>
-                          </span>
-                          <span className="position-stake">
-                            <strong className="amount">{player.available.label}</strong>
-                          </span>
+                          <div className="position-spot">
+                            <BettingPlaque />
+                            <span className="position-who">
+                              <strong>{player.name}</strong>
+                            </span>
+                            <span className="position-stake">
+                              <strong className="amount">{player.available.label}</strong>
+                            </span>
+                          </div>
                         </div>,
                       ],
                 )}

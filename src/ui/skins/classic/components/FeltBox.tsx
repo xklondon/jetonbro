@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
+import { BettingPlaque } from "./BettingPlaque";
 import { chipsFromMillis } from "./chips";
 
 function resultCopy(box: BoxView): { kind: string; text: string } | null {
@@ -67,6 +68,7 @@ export function FeltBox({
       : status;
   const content = (
     <>
+      <BettingPlaque />
       <span className="box-head">
         <strong className="box-name">BOX {box.boxNumber}</strong>
         {yours ? <small className="box-kicker">YOUR BOX</small> : null}

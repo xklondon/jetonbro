@@ -299,8 +299,10 @@
 }
 
 .classic-skin .player-box-stage .stage-cell .box {
-  height: 100%;
-  border-radius: var(--box-radius);
+  height: var(--player-box-height);
+  width: var(--player-box-width);
+  max-width: 100%;
+  border-radius: 0;
 }
 
 .classic-skin .player-box-stage .box-slot {
@@ -1851,7 +1853,6 @@
 
 .classic-skin .box {
   min-height: var(--player-box-height);
-  border-radius: var(--box-radius);
 }
 
 .classic-skin .box.is-payout {
