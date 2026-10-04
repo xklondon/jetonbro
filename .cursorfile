@@ -133,18 +133,23 @@ src/ui/skins/classic/        Classic components, tokens and styles
 src/ui/skins/registry.ts     typed skin selection
 ```
 
-The approved PNG boards under `design/reference/classic/approved/` are the highest visual authority. Existing components, DOM anatomy, CSS, screenshots and earlier implementation notes are not visual authority. If existing presentation rules prevent a close reconstruction, update or remove those presentation rules. Product state and commands determine what content exists; the boards determine composition, typography, proportions, spacing, colour, shapes and hierarchy.
+The approved PNG boards under `design/reference/classic/approved/` are literal composition specifications. Game state determines which information and legal actions exist. The PNG determines how those elements are visually arranged. Existing JSX, CSS, component anatomy, selectors and tests have no visual authority. Blackjack presentation markup may be replaced completely without changing game logic, commands, handlers, accounting, permissions or snapshots. Where live product content differs from a mock, preserve the closest visual composition and substitute the real content. Do not invent an alternative layout system.
+
+The Dealer PNG layout must be implemented visually. It may look tabular, but it must use the typography, spacing, borders, hierarchy and density of the supplied design rather than invented plaques.
+
+Player boxes follow the visual arrangement in the supplied board. Stable identity and correct command targeting are required, but the previous fixed three-column CSS grid is not a visual requirement.
 
 Do not preserve rejected visual anatomy merely because tests assert it. Behavioural tests protect commands, legal actions, balances, roles and accessibility. Visual DOM-structure assertions may be updated when the approved composition changes.
 
 Classic CSS has exclusive ownership boundaries:
 
 - `tokens.css`: design tokens only
-- `layouts.css`: responsive geometry only
-- `table.css`: Blackjack/Poker objects and phase composition only
+- `layouts.css`: responsive geometry only (not Blackjack composition)
+- `table.css`: shared phone felt + Poker objects
+- `blackjack-classic.css`: canonical Blackjack Dealer and Player presentation
 - `home.css`: Home and Create Table only
 - `invite.css`: shared invite/sheet owner used by Create Table and Phase 0
-- `board.css`: shared live-table visual anatomy
+- `board.css`: shared live-table shell (header, phase rail, docks) — not Blackjack box/ledger anatomy
 
 A selector must not style unrelated surfaces. Remove obsolete rules instead of layering new overrides. Do not use `!important` to resolve architectural cascade conflicts.
 
@@ -153,6 +158,8 @@ There must be one canonical visible component for Home, Create Table, Phase 0, B
 Authenticated Home uses the approved Saved Tables composition. Each card prioritises the table name and a concise game/state indicator. Resume/Open and owner actions remain available but must not make the card look like an administration record. Player count, Owner and Dealer metadata may live in the overflow/details surface and are not required on the card face. `CREATE TABLE` remains the primary Home action.
 
 Normal `CLOSE TABLE` follows the existing safe-boundary accounting rules.
+
+An Owner may also choose `DELETE ALL MY TABLES` for every table they own (draft or active). This is Owner-only, confirmed by typing `DELETE ALL`, and runs as one idempotent server operation: each owned table is terminated/archived and hidden, invitations revoked, ledger/history kept, no settlement or fabricated results, and other Owners’ tables are untouched.
 
 An Owner may also choose `END & DELETE` for an abandoned active table. This is a distinct destructive operation with a confirmation sheet naming the table and warning that the current hand/round will be abandoned.
 
@@ -293,7 +300,6 @@ Full acceptance means:
 - Repository: JetBro II
 - Default skin: Classic
 - Games: Blackjack and Texas Hold’em
-- Active visual authority: `design/reference/classic/approved/`
-- Blackjack Classic boxes use an SVG betting-plaque silhouette (`BettingPlaque`, 128×92 Player / larger Dealer spots). Dealer PNG is palette and density only — not spreadsheet anatomy.
+- Active visual authority: `design/reference/classic/approved/` PNGs are literal Blackjack composition specs
 - Zilch: deferred
 - Release/deployment status belongs in `CHANGELOG.md` and `docs/IMPLEMENTATION_LOG.md`, not this rules file.

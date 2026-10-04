@@ -50,7 +50,7 @@ test("dealer list payouts, next round countdown and close table", async ({ page,
 
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator(".dealer-list")).toBeVisible();
+  await expect(page.locator("[data-dealer-positions]")).toBeVisible();
   await expect(page.locator(".dealer-grid")).toHaveCount(0);
 
   await samPage.reload();

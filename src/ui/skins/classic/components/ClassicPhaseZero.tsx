@@ -10,7 +10,6 @@ import { PhaseBar } from "./PhaseBar";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
 import { SeatOrderList } from "./SeatOrderList";
-import { BettingPlaque } from "./BettingPlaque";
 import { ClothName } from "./ClothName";
 import { DealerActionDock } from "./DealerActionDock";
 
@@ -66,14 +65,27 @@ export function ClassicPhaseZero({
   void viewerId;
 
   return (
-    <TableShell feltIdentity badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined} onMenu={isOwner ? () => setMenuOpen("menu") : undefined}>
-      <PhaseBar label="Table setup">
-        {waitingForPlayers && startBlocked ? (
-          <p className="muted phase-hint">{startBlocked}</p>
-        ) : null}
-      </PhaseBar>
+    <TableShell
+      title={game === "BLACKJACK" ? tableName : undefined}
+      feltIdentity={game !== "BLACKJACK"}
+      badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined}
+      onMenu={isOwner ? () => setMenuOpen("menu") : undefined}
+    >
+      {game === "BLACKJACK" ? (
+        <div className="bj-phase">
+          <span className="bj-phase-display">SETUP</span>
+          <strong data-phase-heading>Table setup</strong>
+          {waitingForPlayers && startBlocked ? <em>{startBlocked}</em> : null}
+        </div>
+      ) : (
+        <PhaseBar label="Table setup">
+          {waitingForPlayers && startBlocked ? (
+            <p className="muted phase-hint">{startBlocked}</p>
+          ) : null}
+        </PhaseBar>
+      )}
       <main
-        className="felt setup-felt phase-zero-felt"
+        className={`felt setup-felt phase-zero-felt${game === "BLACKJACK" ? " bj-dealer" : ""}`}
         data-table-board="PHASE_ZERO_DEALER"
         data-game={game}
         data-join-url={joinUrl ?? undefined}
@@ -81,8 +93,40 @@ export function ClassicPhaseZero({
         data-verified-join-url={joinUrl ?? undefined}
       >
         <div className="table-surface">
-          <ClothName name={tableName} />
+          {game === "BLACKJACK" ? null : <ClothName name={tableName} />}
           {notice ? <div className="error">{notice}</div> : null}
+          {game === "BLACKJACK" ? (
+            <div className="bj-ledger" data-dealer-positions="true" data-player-count={rows.length}>
+              <div className="bj-ledger-head">
+                <span>#</span>
+                <span>PLAYER</span>
+                <span>AVAILABLE</span>
+                <span></span>
+              </div>
+              {rows.map((row, index) => (
+                <div className="bj-row is-idle" key={row.userId} data-player-row="true">
+                  <span>{index + 1}</span>
+                  <span className="bj-who">
+                    <strong>{row.name}</strong>
+                  </span>
+                  <span className="amount">{row.available?.label ?? "0"}</span>
+                  <span />
+                </div>
+              ))}
+              {invited.map((invite, index) => (
+                <div className="bj-row is-idle" key={invite.id} data-seat-status="Invited">
+                  <span>{rows.length + index + 1}</span>
+                  <span className="bj-who">
+                    <strong>{invite.email ?? "Player"}</strong>
+                    <small>Invited</small>
+                  </span>
+                  <span />
+                  <span />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
           <div className="player-context">
             <div className="player-dealer-ring" data-role="dealer" data-dealer-row="true">
               DEALER
@@ -95,47 +139,25 @@ export function ClassicPhaseZero({
           >
             {rows.map((row) => (
               <div className="dealer-position is-idle" key={row.userId} data-player-row="true">
-                {game === "BLACKJACK" ? (
-                  <div className="position-spot">
-                    <BettingPlaque />
-                    <span className="position-who">
-                      <strong>{row.name}</strong>
-                    </span>
-                    <span className="position-stake">
-                      <strong className="amount">{row.available?.label ?? "0"}</strong>
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="position-who">
-                      <strong>{row.name}</strong>
-                    </span>
-                    <span className="position-stake">
-                      <strong className="amount">{row.available?.label ?? "0"}</strong>
-                    </span>
-                  </>
-                )}
+                <span className="position-who">
+                  <strong>{row.name}</strong>
+                </span>
+                <span className="position-stake">
+                  <strong className="amount">{row.available?.label ?? "0"}</strong>
+                </span>
               </div>
             ))}
             {invited.map((invite) => (
               <div className="dealer-position is-idle" key={invite.id} data-seat-status="Invited">
-                {game === "BLACKJACK" ? (
-                  <div className="position-spot">
-                    <BettingPlaque />
-                    <span className="position-who">
-                      <strong>{invite.email ?? "Player"}</strong>
-                      <small>Invited</small>
-                    </span>
-                  </div>
-                ) : (
-                  <span className="position-who">
-                    <strong>{invite.email ?? "Player"}</strong>
-                    <small>Invited</small>
-                  </span>
-                )}
+                <span className="position-who">
+                  <strong>{invite.email ?? "Player"}</strong>
+                  <small>Invited</small>
+                </span>
               </div>
             ))}
           </div>
+            </>
+          )}
         </div>
       </main>
       <ClassicInviteMask

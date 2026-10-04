@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { MemberView, PlayerTableView } from "@/application/queries/views";
 import { TableShell } from "./TableShell";
-import { PhaseBar } from "./PhaseBar";
 import { BlackjackBox } from "./BlackjackBox";
 import { OutcomeCelebrationOverlay } from "./OutcomeCelebration";
 import { PlayerWallet } from "./PlayerWallet";
@@ -13,14 +12,7 @@ import {
   selectOutcomeCelebration,
   type OutcomeCelebration,
 } from "@/ui/core/outcome-celebration";
-import { blackjackOwnerMenu, blackjackPlayerControls, eligibleDealerCandidates, playerBoxSlots } from "@/ui/core/blackjack-phase-controls";
-import { ClothName } from "./ClothName";
-
-function seatTone(id: string) {
-  let hash = 0;
-  for (const char of id) hash = (hash + char.charCodeAt(0) * 17) % 360;
-  return `hsl(${hash} 42% 42%)`;
-}
+import { blackjackOwnerMenu, blackjackPlayerControls, eligibleDealerCandidates } from "@/ui/core/blackjack-phase-controls";
 
 export function ClassicPlayerTable({
   view,
@@ -49,7 +41,6 @@ export function ClassicPlayerTable({
   const [memberId, setMemberId] = useState(members[0]?.userId ?? "");
   const [dealerId, setDealerId] = useState(members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "");
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
-  const { slots, extras } = playerBoxSlots(view.boxes);
   const controls = blackjackPlayerControls(view, selected);
   const ownerMenu = blackjackOwnerMenu({
     isOwner: view.isOwner,
@@ -68,8 +59,6 @@ export function ClassicPlayerTable({
   );
   const seenInsurance = useRef(new Set(view.boxes.filter((box) => box.insuranceResult).map((box) => box.id)));
   const playing = view.phase === "PLAYING";
-  const selfId = view.boxes[0]?.playerId;
-  const others = members.filter((member) => !member.isBankDealer && member.userId !== selfId);
 
   useEffect(() => {
     for (const box of view.boxes) {
@@ -96,69 +85,48 @@ export function ClassicPlayerTable({
   }
 
   return (
-    <TableShell feltIdentity balance={view.available.label} badges={view.isOwner ? ["OWNER"] : undefined} onMenu={view.isOwner ? () => setSheet("menu") : undefined}>
+    <TableShell
+      title={view.tableName}
+      balance={view.available.label}
+      badges={view.isOwner ? ["OWNER"] : undefined}
+      onMenu={view.isOwner ? () => setSheet("menu") : undefined}
+    >
       <OutcomeCelebrationOverlay celebration={celebration} />
-      <PhaseBar label={controls.phaseLabel} kicker={controls.instruction === "Round complete" ? undefined : controls.instruction} />
       <main
-        className={`felt player-play-felt${view.phase === "BETTING" ? " betting-open" : ""}`}
+        className={`felt bj-player${view.phase === "BETTING" ? " betting-open" : ""}`}
         data-table-board="BLACKJACK_PLAYER"
         data-selected-box={selected?.id ?? ""}
         data-box-count={view.boxes.length}
       >
-        <div className="table-surface">
-          <ClothName name={view.tableName} />
-          {view.isOwner ? (
-            <div
-              hidden
-              data-owner-menu="true"
-              data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
-              data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
-            />
-          ) : null}
-          <div className="player-context">
-            {others.length > 0 ? (
-              <div className="player-orbit" aria-label="Other players">
-                {others.map((member) => (
-                  <div className="player-orbit-chip" key={member.userId}>
-                    <span className="player-dot" style={{ background: seatTone(member.userId) }} />
-                    <strong>{member.name}</strong>
-                    <small>{member.available?.label ?? ""}</small>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            <div className="player-dealer-ring" data-dealer-row="true">
-              DEALER
-            </div>
-          </div>
-          <div className="player-box-stage" data-box-stage="true">
-            {slots.map((box, index) =>
-              box ? (
-                <div className="stage-cell" key={box.id} data-stage-slot={index + 1}>
-                  <BlackjackBox
-                    box={box}
-                    selected={box.id === selected?.id}
-                    dropHighlight={hoverBoxId === box.id}
-                    onSelect={() => onSelectBox(box.id)}
-                    retractable={view.actions.retract}
-                    status={view.phase === "PLAYING" && box.isDoubled ? "Doubled" : view.phase === "PLAYING" && box.isSplit ? "Split" : undefined}
-                    onRetractChip={(amount) =>
-                      onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
-                    }
-                  />
-                </div>
-              ) : (
-                <div
-                  key={`slot-${index + 1}`}
-                  className="box-slot"
-                  data-empty-slot={index + 1}
-                  data-stage-slot={index + 1}
-                  data-box-slot={index + 1}
-                  aria-hidden="true"
-                />
-              ),
-            )}
-            {extras.map((box) => (
+        {view.isOwner ? (
+          <div
+            hidden
+            data-owner-menu="true"
+            data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
+            data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
+          />
+        ) : null}
+        <div className="bj-phase">
+          <span className="bj-phase-display">
+            {view.insuranceWindowOpen && view.phase === "PLAYING"
+              ? "INSURANCE"
+              : view.phase === "TABLE_SETUP"
+                ? "SETUP"
+                : view.phase === "ROUND_COMPLETE"
+                  ? "PAYOUT"
+                  : view.phase}
+          </span>
+          <strong data-phase-heading>{controls.phaseLabel}</strong>
+          {controls.instruction && controls.instruction !== "Round complete" ? <em>{controls.instruction}</em> : null}
+        </div>
+        <div className="bj-dealer-spot" data-dealer-row="true">
+          DEALER
+        </div>
+        <div className="bj-boxes" data-box-stage="true">
+          {view.boxes
+            .slice()
+            .sort((a, b) => a.boxNumber - b.boxNumber)
+            .map((box) => (
               <BlackjackBox
                 key={box.id}
                 box={box}
@@ -167,45 +135,37 @@ export function ClassicPlayerTable({
                 onSelect={() => onSelectBox(box.id)}
                 retractable={view.actions.retract}
                 status={view.phase === "PLAYING" && box.isDoubled ? "Doubled" : view.phase === "PLAYING" && box.isSplit ? "Split" : undefined}
-                onRetractChip={(amount) =>
-                  onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })
-                }
+                onRetractChip={(amount) => onCommand("placeBet", { boxId: box.id, amount, mode: "RETRACT" })}
               />
             ))}
-          </div>
-          <div className="player-context-panel" data-context-panel="true">
-            {controls.addBox ? (
-              <div className="add-box-row">
-                <button type="button" onClick={() => onCommand("addBox")}>
-                  ADD BOX
-                </button>
+        </div>
+        <div className="bj-context" data-context-panel="true">
+          {controls.addBox ? (
+            <button className="bj-add" type="button" onClick={() => onCommand("addBox")}>
+              ADD BOX
+            </button>
+          ) : null}
+          {view.insuranceWindowOpen && selected ? (
+            <div className="bj-insure" data-insurance-panel="true">
+              <div>
+                <small>MAX</small>
+                <span>50% of box stake</span>
               </div>
-            ) : null}
-            {view.insuranceWindowOpen && selected ? (
-              <div className="insurance-panel" data-insurance-panel="true">
-                <div>
-                  <small>INSURANCE</small>
-                  <strong>{selected.insurance?.label ?? "0"}</strong>
-                </div>
-                <div>
-                  <small>MAX</small>
-                  <strong>{selected.insuranceMax.label}</strong>
-                </div>
-                <button
-                  type="button"
-                  disabled={!controls.insurance}
-                  onClick={() =>
-                    onCommand("buyInsurance", {
-                      boxId: selected.id,
-                      amount: selected.insuranceMax.label,
-                    })
-                  }
-                >
-                  {selected.insurance ? "PLACED" : "PLACE"}
-                </button>
-              </div>
-            ) : null}
-          </div>
+              <strong>{selected.insurance?.label ?? selected.insuranceMax.label}</strong>
+              <button
+                type="button"
+                disabled={!controls.insurance}
+                onClick={() =>
+                  onCommand("buyInsurance", {
+                    boxId: selected.id,
+                    amount: selected.insuranceMax.label,
+                  })
+                }
+              >
+                {selected.insurance ? "PLACED" : "PLACE"}
+              </button>
+            </div>
+          ) : null}
         </div>
       </main>
       <footer className="dock player-dock">

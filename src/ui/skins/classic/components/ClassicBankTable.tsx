@@ -3,12 +3,8 @@
 import { useState } from "react";
 import type { BankTableView, MemberView } from "@/application/queries/views";
 import { TableShell } from "./TableShell";
-import { PhaseBar } from "./PhaseBar";
-import { PhaseActionDock } from "./PhaseActionDock";
 import { DealCountdown } from "./DealCountdown";
-import { BettingPlaque } from "./BettingPlaque";
 import { DealerBlackjackBoxRow } from "./DealerBlackjackBoxRow";
-import { ClothName } from "./ClothName";
 import { BankrollPanel } from "./BankrollPanel";
 import { SheetOverlay } from "./SheetOverlay";
 import { ClassicInviteMask } from "./ClassicInvitePanel";
@@ -64,74 +60,100 @@ export function ClassicBankTable({
   }
 
   return (
-    <TableShell feltIdentity badges={badges} onMenu={() => setSheet("menu")}>
-      <PhaseBar label={dealerControls.phaseLabel} kicker={dealerControls.instruction}>
+    <TableShell title={view.tableName} badges={badges} onMenu={() => setSheet("menu")}>
+      <main className="felt bj-dealer" data-table-board="BLACKJACK_DEALER" data-guest-join-url={view.guestJoinUrl ?? undefined} data-verified-join-url={view.verifiedJoinUrl ?? undefined}>
+        <div
+          hidden
+          data-owner-menu="true"
+          data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
+          data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
+        />
+        <div className="bj-summary" data-dealer-row="true">
+          <div className="bj-summary-card">
+            <span className="bj-avatar">D</span>
+            <div>
+              <small>DEALER</small>
+              <strong>{view.dealerName ?? "Dealer"}</strong>
+            </div>
+            <em>{view.bankroll?.available.label ?? "—"}</em>
+          </div>
+          {view.players[0] ? (
+            <div className="bj-summary-card is-play">
+              <small>PLAYING</small>
+              <strong>{view.players[0].name}</strong>
+              <em>{view.players[0].available.label}</em>
+            </div>
+          ) : null}
+        </div>
+        <div className="bj-phase">
+          <span className="bj-phase-display">
+            {view.insurance.window === "OPEN" && view.phase === "PLAYING"
+              ? "INSURANCE"
+              : view.phase === "TABLE_SETUP"
+                ? "SETUP"
+                : view.phase === "ROUND_COMPLETE"
+                  ? "PAYOUT"
+                  : view.phase}
+          </span>
+          <strong data-phase-heading>{dealerControls.phaseLabel}</strong>
+          {dealerControls.instruction ? <em>{dealerControls.instruction}</em> : null}
+        </div>
         {view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
-          <PhaseActionDock>
+          <div className="bj-timers">
             <DealCountdown deadline={view.bettingCloseDeadlineAt} />
             <DealCountdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
-          </PhaseActionDock>
+          </div>
         ) : null}
-      </PhaseBar>
-      <main className="felt dealer-list-felt" data-table-board="BLACKJACK_DEALER" data-guest-join-url={view.guestJoinUrl ?? undefined} data-verified-join-url={view.verifiedJoinUrl ?? undefined}>
-        <div className="table-surface">
-          <ClothName name={view.tableName} />
-          <div
-            hidden
-            data-owner-menu="true"
-            data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
-            data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
-          />
-          <div className="player-context">
-            <div className="player-dealer-ring" data-dealer-row="true">
-              DEALER
-            </div>
+        <p className="bj-rules">Blackjack pays 3 to 2 · Insurance pays 2 to 1</p>
+        <div
+          className="bj-ledger"
+          data-dealer-positions="true"
+          data-player-count={view.players.length}
+          data-ledger-count={ledgerCount}
+          data-ledger-overflow={ledgerCount >= 5 ? "true" : "false"}
+        >
+          <div className="bj-ledger-head">
+            <span>#</span>
+            <span>PLAYER</span>
+            <span>MAIN BET</span>
+            <span>ACTION</span>
           </div>
-          <div
-            className="dealer-list dealer-positions"
-            data-dealer-positions="true"
-            data-player-count={view.players.length}
-            data-ledger-count={ledgerCount}
-            data-ledger-overflow={ledgerCount >= 5 ? "true" : "false"}
-          >
-            {view.players.length === 0
-              ? view.boxes.map((box) => (
-                  <DealerBlackjackBoxRow
-                    key={box.id}
-                    box={box}
-                    phase={view.phase}
-                    payoutEnabled={view.actions.settleBoxes}
-                    onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
-                  />
-                ))
-              : view.players.flatMap((player) =>
-                  player.boxes.length > 0
-                    ? player.boxes.map((box) => (
-                        <DealerBlackjackBoxRow
-                          key={box.id}
-                          box={box}
-                          phase={view.phase}
-                          payoutEnabled={view.actions.settleBoxes}
-                          available={player.available.label}
-                          locked={player.locked.label}
-                          onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
-                        />
-                      ))
-                    : [
-                        <div className="dealer-position is-idle" key={player.userId} data-player-row="true" data-player-group={player.userId}>
-                          <div className="position-spot">
-                            <BettingPlaque />
-                            <span className="position-who">
-                              <strong>{player.name}</strong>
-                            </span>
-                            <span className="position-stake">
-                              <strong className="amount">{player.available.label}</strong>
-                            </span>
-                          </div>
-                        </div>,
-                      ],
-                )}
-          </div>
+          {view.players.length === 0
+            ? view.boxes.map((box, index) => (
+                <DealerBlackjackBoxRow
+                  key={box.id}
+                  box={box}
+                  index={index + 1}
+                  phase={view.phase}
+                  payoutEnabled={view.actions.settleBoxes}
+                  onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
+                />
+              ))
+            : view.players.flatMap((player, playerIndex) =>
+                player.boxes.length > 0
+                  ? player.boxes.map((box, boxIndex) => (
+                      <DealerBlackjackBoxRow
+                        key={box.id}
+                        box={box}
+                        index={playerIndex + boxIndex + 1}
+                        phase={view.phase}
+                        payoutEnabled={view.actions.settleBoxes}
+                        available={player.available.label}
+                        locked={player.locked.label}
+                        onSettle={(outcome) => onCommand("settleBox", { boxId: box.id, outcome })}
+                      />
+                    ))
+                  : [
+                      <div className="bj-row is-idle" key={player.userId} data-player-row="true" data-player-group={player.userId}>
+                        <span>{playerIndex + 1}</span>
+                        <span className="bj-who">
+                          <strong>{player.name}</strong>
+                        </span>
+                        <span className="amount">{player.available.label}</span>
+                        <span />
+                      </div>,
+                    ],
+              )}
         </div>
       </main>
       <DealerActionDock

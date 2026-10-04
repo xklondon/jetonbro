@@ -48,11 +48,13 @@ test("classic CSS files keep exclusive ownership", () => {
   expect(tokens).not.toMatch(/\.home-heading|\.dealer-position|\.player-box-stage/);
   expect(home).not.toMatch(/\.player-box-stage|\.dealer-list\.dealer-positions|\[data-table-board="BLACKJACK|\.invite-mask|\.waiting-pulse|\.dealer-position/);
   expect(board).not.toMatch(/\.home-heading|\.home-table-card|\.home-resume/);
+  expect(board).not.toMatch(/\.felt-plaque|\.player-box-stage|\.dealer-list\.dealer-positions/);
   expect(home).toContain(".home-heading");
   expect(home).toContain(".create-heading");
   expect(invite).toContain(".invite-mask");
   expect(board).toContain(".cloth-name");
-  expect(board).toContain(".dealer-position");
-  expect(board).toContain("text-transform: uppercase");
-  expect(board).toContain("felt-plaque");
+  const blackjack = readFileSync(join(process.cwd(), "src/ui/skins/classic/blackjack-classic.css"), "utf8");
+  expect(blackjack).toContain(".bj-player");
+  expect(blackjack).toContain(".bj-ledger");
+  expect(blackjack).not.toMatch(/!important/);
 });

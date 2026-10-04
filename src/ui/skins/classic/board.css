@@ -283,28 +283,6 @@
   letter-spacing: 0.1em;
 }
 
-.classic-skin .player-box-stage {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px 8px;
-  align-content: end;
-  align-items: end;
-  justify-items: center;
-  padding-bottom: 4px;
-  min-height: 0;
-  height: 100%;
-  z-index: 1;
-}
-
-.classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected) {
-  opacity: 0.72;
-}
-
-.classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box.selected {
-  z-index: 1;
-  box-shadow: none;
-}
-
 .classic-skin .player-context-panel {
   height: var(--context-panel-height);
   min-height: var(--context-panel-height);
@@ -372,116 +350,11 @@
   min-height: var(--control-height);
 }
 
-.classic-skin .player-box-stage .stage-cell,
-.classic-skin .player-box-stage .box-slot {
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.classic-skin .player-box-stage .box {
-  width: var(--player-box-width);
-  max-width: 100%;
-  height: var(--player-box-height);
-  min-height: var(--player-box-height);
-  max-height: var(--player-box-height);
-}
-
-.classic-skin .player-phase-zero .player-box-stage .box-slot.is-focal {
-  visibility: visible;
-  width: var(--player-box-width);
-  height: var(--player-box-height);
-  border: 0;
-  background: rgba(2, 23, 18, 0.16);
-  clip-path: inset(2px round 14px);
-  box-shadow: inset 0 0 0 1.4px rgba(223, 189, 105, 0.36);
-}
-
-.classic-skin .felt-plaque {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.classic-skin .felt-plaque-fill {
-  fill: rgba(3, 18, 15, 0.5);
-  stroke: rgba(223, 189, 105, 0.62);
-  stroke-width: 1.45;
-}
-
-.classic-skin .felt-plaque-inner {
-  fill: none;
-  stroke: rgba(223, 189, 105, 0.22);
-  stroke-width: 1;
-}
-
-.classic-skin .box.selected .felt-plaque-fill,
-.classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box.selected .felt-plaque-fill {
-  stroke: var(--gold);
-  stroke-width: 1.7;
-}
-
-.classic-skin .box.is-won .felt-plaque-fill,
-.classic-skin .dealer-position.is-won .felt-plaque-fill {
-  fill: rgba(31, 122, 74, 0.38);
-}
-
-.classic-skin .box.is-lost .felt-plaque-fill,
-.classic-skin .dealer-position.is-lost .felt-plaque-fill {
-  fill: rgba(184, 55, 63, 0.34);
-}
-
-.classic-skin .player-box-stage .box {
-  border: 0;
-  border-radius: 0;
-  padding: 8px 8px 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  background: none;
-  box-shadow: none;
-}
-
-.classic-skin .player-box-stage .box > :not(.felt-plaque) {
-  position: relative;
-  z-index: 1;
-}
-
-.classic-skin .player-play-felt:not(.betting-open) .player-box-stage .box:not(.selected),
-.classic-skin .player-box-stage .box:not(.selected) {
-  border-color: transparent;
-}
-
-.classic-skin .player-box-stage .box.selected,
-.classic-skin .player-box-stage .box.is-won,
-.classic-skin .player-box-stage .box.is-lost {
-  background: none;
-  border-color: transparent;
-  box-shadow: none;
-}
-
 .classic-skin .box-head {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0;
-}
-
-.classic-skin .player-box-stage .box-name {
-  position: static;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  color: rgba(223, 189, 105, 0.58);
 }
 
 .classic-skin .box-kicker {
@@ -495,114 +368,11 @@
   gap: 2px;
 }
 
-.classic-skin .player-box-stage .chip-pile {
-  position: relative;
-  width: 46px;
-  height: 38px;
-}
-
-.classic-skin .player-box-stage .chip-pile:not(.is-empty)::before,
-.classic-skin .player-box-stage .chip-pile:not(.is-empty)::after {
-  content: "";
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2.5px dashed rgba(255, 255, 255, 0.45);
-  background: rgba(8, 28, 22, 0.92);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.22);
-}
-
-.classic-skin .player-box-stage .chip-pile:not(.is-empty)::before {
-  left: 2px;
-  bottom: 6px;
-  opacity: 0.45;
-}
-
-.classic-skin .player-box-stage .chip-pile:not(.is-empty)::after {
-  right: 2px;
-  bottom: 3px;
-  opacity: 0.7;
-}
-
-.classic-skin .player-box-stage .chip-pile .chip-slot {
-  position: relative;
-  z-index: 1;
-}
-
-.classic-skin .player-box-stage .chip {
-  width: 36px;
-  height: 36px;
-  font-size: 10px;
-  margin-left: 0;
-}
-
-.classic-skin .player-box-stage .chip-pile.is-empty .chip {
-  opacity: 0.42;
-  background: #2a2a2a;
-  color: #9a9a9a;
-}
-
-.classic-skin .player-box-stage .amount {
-  font-family: var(--font-display);
-  font-size: 22px;
-  line-height: 1;
-  color: var(--ivory);
-}
-
 .classic-skin .box-status {
   font-size: 10px;
   letter-spacing: 0.06em;
   color: var(--muted);
   margin-top: 1px;
-}
-
-.classic-skin .player-box-stage .box-ins {
-  position: static;
-  right: auto;
-  top: auto;
-  transform: none;
-  display: block;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  font-size: 8px;
-  letter-spacing: 0.06em;
-  color: var(--gold);
-  background: none;
-  text-align: center;
-  line-height: 1.2;
-}
-
-.classic-skin .player-box-stage .box.is-payout {
-  justify-content: center;
-  align-items: center;
-  padding: 8px 8px 6px;
-  overflow: visible;
-}
-
-.classic-skin .player-box-stage .box.is-payout .amount {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 22px;
-}
-
-.classic-skin .player-box-stage .box-payout-line {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: auto;
-}
-
-.classic-skin .player-box-stage .box-payout-line .payout-state,
-.classic-skin .box.is-payout .payout-state {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-align: center;
 }
 
 .classic-skin .add-box-row {
@@ -720,84 +490,6 @@
   margin: 0 0 6px;
 }
 
-.classic-skin .dealer-list-felt .table-surface .dealer-list,
-.classic-skin .phase-zero-felt .table-surface .dealer-list,
-.classic-skin .phase-zero-felt .table-surface .phase-zero-rows,
-.classic-skin .poker-felt .table-surface .dealer-list,
-.classic-skin .player-play-felt .player-box-stage {
-  height: 100%;
-  min-height: 0;
-}
-
-.classic-skin .dealer-list.dealer-positions,
-.classic-skin .phase-zero-rows.dealer-positions {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  align-items: center;
-  gap: 12px 14px;
-  min-height: 0;
-  height: 100%;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  padding: 36px 0 8px;
-  z-index: 1;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"],
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="1"] {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  align-content: center;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="2"],
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="2"] {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: center;
-  justify-items: center;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="3"],
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="3"] {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: center;
-  justify-items: center;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="3"] .dealer-position:first-child,
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="3"] .dealer-position:first-child {
-  grid-column: 1 / -1;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="4"],
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="4"] {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: center;
-  justify-items: center;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-overflow="true"],
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="5"],
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="6"] {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-  overflow-y: auto;
-  gap: 8px 10px;
-}
-
-.classic-skin .dealer-list.dealer-positions::-webkit-scrollbar {
-  display: none;
-}
-
 .classic-skin .ledger-head,
 .classic-skin .dealer-rules,
 .classic-skin .dealer-summary,
@@ -861,21 +553,6 @@
   padding: 8px 10px;
 }
 
-.classic-skin .position-spot > :not(.felt-plaque) {
-  position: relative;
-  z-index: 1;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .dealer-position,
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="1"] .dealer-position {
-  width: min(var(--dealer-spot-width-solo), calc(100vw - 48px));
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-count="1"] .position-spot,
-.classic-skin .phase-zero-rows.dealer-positions[data-player-count="1"] .position-spot {
-  height: var(--dealer-spot-height-solo);
-}
-
 .classic-skin .phase-zero-rows .dealer-position:not(:has(.position-spot)) {
   width: var(--dealer-spot-width);
   height: var(--dealer-spot-height);
@@ -883,17 +560,6 @@
   background: rgba(3, 18, 15, 0.48);
   clip-path: inset(3px round 14px);
   box-shadow: inset 0 0 0 1.4px rgba(223, 189, 105, 0.55);
-}
-
-.classic-skin .dealer-list.dealer-positions:has(.is-unresolved) {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: flex-start;
-  align-content: flex-start;
-  overflow-y: auto;
-  gap: 12px;
 }
 
 .classic-skin [data-table-board="BLACKJACK_DEALER"] .dealer-position.is-unresolved {
@@ -1228,9 +894,3 @@
   }
 }
 
-@media (max-width: 360px) {
-  .classic-skin .dealer-list.dealer-positions:not([data-ledger-count="1"]) .dealer-position,
-  .classic-skin .phase-zero-rows.dealer-positions:not([data-player-count="1"]) .dealer-position {
-    width: min(152px, 100%);
-  }
-}

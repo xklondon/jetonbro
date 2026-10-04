@@ -4,8 +4,6 @@ import { useRef, useState, type PointerEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import { endPayoutDrag, movePayoutDrag, startPayoutDrag, type PayoutDragSession } from "@/ui/core/payout-gesture";
-import { BettingPlaque } from "./BettingPlaque";
-import { chipsFromMillis } from "./chips";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
   LOST: "LOST",
@@ -44,12 +42,14 @@ export function DealerBlackjackBoxRow({
   phase,
   payoutEnabled = false,
   onSettle,
+  index = 1,
 }: {
   box: BoxView;
   phase: string;
   payoutEnabled?: boolean;
   available?: string;
   locked?: string;
+  index?: number;
   onSettle?: (outcome: BoxView["payoutActions"][number]["outcome"]) => void;
 }) {
   const [dx, setDx] = useState(0);
@@ -65,7 +65,6 @@ export function DealerBlackjackBoxRow({
   const settled = resultCopy(box);
   const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
   const commitment = box.isDoubled ? "Double" : box.isSplit ? "Split" : null;
-  const chips = chipsFromMillis(box.bet.millis);
   const state = commitment ?? settled;
   void dx;
 
@@ -122,7 +121,7 @@ export function DealerBlackjackBoxRow({
 
   return (
     <div
-      className={`dealer-position${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
+      className={`bj-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${dragging ? " is-swiping" : ""}`}
       data-box-id={box.id}
       data-blackjack-box-row="true"
       data-dealer-position="true"
@@ -143,27 +142,16 @@ export function DealerBlackjackBoxRow({
         }
       }}
     >
-      <div className="position-spot">
-        <BettingPlaque />
-        <span className="position-who">
-          <strong>{box.playerName || "Player"}</strong>
-          <small>BOX {box.boxNumber}</small>
-        </span>
-        <span className="position-stake">
-          {Number(box.bet.millis) > 0 ? (
-            <span className="chip-pile">
-              {chips.map((chip, index) => (
-                <span key={`${chip.label}-${index}`} className={`chip-slot${chip.exact ? " is-exact" : ""}`}>
-                  <span className={`chip ${chip.className}`}>{chip.label}</span>
-                </span>
-              ))}
-            </span>
-          ) : null}
-          <strong className="amount">{box.bet.label}</strong>
-          {box.insurance ? <small className="position-ins">INS {box.insurance.label}</small> : null}
-        </span>
-        {state ? <span className="position-state">{state}</span> : null}
-      </div>
+      <span className="bj-idx">{index}</span>
+      <span className="bj-who">
+        <strong>{box.playerName || "Player"}</strong>
+        <small>BOX {box.boxNumber}</small>
+      </span>
+      <span className="bj-stake">
+        <strong className="amount">{box.bet.label}</strong>
+        {box.insurance ? <small>INS {box.insurance.label}</small> : null}
+        {state ? <small>{state}</small> : null}
+      </span>
       {unresolved ? (
         <span className="outcome payout-access" role="group" aria-label={`Settle ${title}`}>
           {railActions.map((action) => (
@@ -183,7 +171,9 @@ export function DealerBlackjackBoxRow({
             </button>
           ))}
         </span>
-      ) : null}
+      ) : (
+        <span className="bj-action-slot">{commitment ?? "—"}</span>
+      )}
     </div>
   );
 }

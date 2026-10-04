@@ -4,45 +4,33 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Valid boards
 
-Primary visual authority is the approved PNG set under `design/reference/classic/approved/`. Those files outrank historical HTML prototypes, existing CSS, and previously generated screenshots. Live Dealer boxes are casino betting positions, not the obsolete compact-ledger / spreadsheet treatment.
+Primary visual authority is the approved PNG set under `design/reference/classic/approved/`. Those files outrank historical HTML prototypes, existing CSS, previously generated screenshots, and existing Classic component anatomy.
 
 | Approved file | Role |
 |---|---|
 | `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png` | Blackjack Player phases |
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2)(2).png` | Home, Create Table, Table Setup, Game Selection |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png` | Blackjack Dealer/Owner phases (casino betting positions, not ledger rows) |
+| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png` | Blackjack Dealer/Owner phases |
 
 Aliases: `blackjack-player-phases.png`, `table-owner-setup.png`, `blackjack-dealer-owner-phases.png`. Historical copies under `docs/design-reference/` remain for Poker boards only.
 
-The approved PNG boards are visual authorities, not literal data contracts.
+## Blackjack PNG composition (literal)
 
-## Blackjack approved-board authority (locked)
+The supplied PNG screens are literal composition specifications.
 
-Do not reinterpret this distinction.
+Game state determines which information and legal actions exist. The PNG determines how those elements are visually arranged.
 
-The approved Blackjack Player PNG (`blackjack-player-phases.png` / `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png`) is literal visual authority for:
+Existing JSX, CSS, component anatomy, selectors and tests have no visual authority.
 
-- box silhouette
-- box size
-- chip placement
-- typography
-- phase spacing
-- action row
-- wallet/tray
-- colour and visual hierarchy
+Blackjack presentation markup may be replaced completely without changing game logic, commands, handlers, accounting, permissions or snapshots.
 
-The approved Dealer PNG (`blackjack-dealer-owner-phases.png` / `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png`) is authority for:
+Where live product content differs from a mock, preserve the closest visual composition and substitute the real content. Do not invent an alternative layout system.
 
-- palette
-- typography
-- density
-- spacing
-- hierarchy
-- control placement
+The Dealer PNG layout must be implemented visually. It may look tabular, but it must use the typography, spacing, borders, hierarchy and density of the supplied design rather than invented plaques.
 
-It is NOT authority for spreadsheet column headings or admin-table anatomy. The later product decision overrides that portion: Dealer players must appear as casino betting positions, not spreadsheet records.
+Player boxes follow the visual arrangement in the supplied board. Stable identity and correct command targeting are required, but the previous fixed three-column CSS grid is not a visual requirement.
 
-The specification and live state control which screens exist, which Players and balances each role may see, how many boxes a Player owns, legal actions, the one-screen setup journey, commands, and labels. The boards control hierarchy, typography, density, spacing, component shape, visual balance, positioning, colour, and interaction placement.
+The specification and live state control which screens exist, which Players and balances each role may see, how many boxes a Player owns, legal actions, the one-screen setup journey, commands, and labels.
 
 Do not mark a screen a visual failure merely because:
 
@@ -57,23 +45,23 @@ A screen passes only when it is both **SPEC CORRECT** (role, phase, commands, pr
 
 `blackjack-phase-controls.ts` still controls which buttons exist, enabled state, command semantics, and accepted labels (`START BETTING`, `DEAL CARDS`, `ENTER PAYOUT`, `ADD PLAYER`, `INS WON` / `INS LOST`). Do not restore obsolete board wording (`OPEN BETTING`, `CLOSE BETTING`, `START NEXT ROUND`, `START ADDITIONAL BOX`).
 
-Do not render Dealer Players/boxes as giant cards, large ovals, or full-width admin ledger rows. Dealer boxes are compact casino betting positions on the felt.
+Implement the Dealer PNG row composition. Do not invent plaque/capsule alternatives. Product labels (`START BETTING`, `DEAL CARDS`, `ENTER PAYOUT`) replace obsolete mock wording (`OPEN BETTING`, `CLOSE BETTING`, `START NEXT ROUND`) in the same visual slots.
 
 ## Reference-to-component mapping
 
 | Board region | Component / slot |
 |---|---|
-| Phone chrome, 56–64px header, menu + badges/balance only | `PhoneShell` / `TableShell` with `feltIdentity` |
-| Felt table name once, printed into cloth below the phase heading | `ClothName` — name only, no ornaments or metadata |
-| Compact phase title + one instruction | `PhaseBar` |
+| Phone chrome, 56–64px header, menu + badges/balance only | `PhoneShell` / `TableShell` |
+| Table name in header on Blackjack PNGs | `TableShell` `title` |
+| Compact phase title + one instruction | `.bj-phase` on Blackjack; `PhaseBar` elsewhere |
 | Shared Dealer 65/35 bottom dock | `DealerActionDock` |
 | Dealer insurance toggle | footer `.dealer-secondary-action` + `blackjackDealerControls().insurance` |
-| Dealer betting positions | `DealerBlackjackBoxRow` inside `.dealer-positions` |
+| Dealer betting rows | `DealerBlackjackBoxRow` inside `.bj-ledger` |
 | Dealer primary (`START BETTING` / `DEAL CARDS` / `ENTER PAYOUT`) | footer `.dealer-primary` (65%) |
 | Dealer secondary (`ADD PLAYER` / insurance) | footer `.dealer-secondary-action` (35%), invitation mask unchanged |
-| Player orbit + Dealer ring | `.player-context` |
-| Player boxes | `BlackjackBox` / `FeltBox` in `player-box-stage` |
-| Player contextual panel (ADD BOX / Insurance) | reserved `.player-context-panel` |
+| Player dealer mark | `.bj-dealer-spot` |
+| Player boxes | `BlackjackBox` / `FeltBox` in `.bj-boxes` |
+| Player contextual panel (ADD BOX / Insurance) | `.bj-context` |
 | Player action row above tray | `.game-controls` |
 | Player tray | `PlayerWallet` / `JetonTray` |
 | Home cards / Create Table / Phase 0 list | `ClassicHome`, `ClassicCreateTable`, `ClassicPhaseZero` |
@@ -152,11 +140,11 @@ Maximum game width approximately 480px. Minimum touch target 44px. At 360×800, 
 6. Current Blackjack controls
 7. Fixed jeton tray (Player) or anchored Dealer primary action (Dealer)
 
-Phase lives in the compact phase rail. Player available balance appears at the header right and with the tray. Player actions sit directly above the tray. Dealer round-progression primary is anchored at the bottom. There is no PLAYERS / BOXES / ON TABLE footer. Bank reserve lives in the table menu. There is no Dealer identity summary card and no column headings.
+Phase lives in the compact phase rail. Player available balance appears at the header right and with the tray. Player actions sit directly above the tray. Dealer round-progression primary is anchored at the bottom. There is no PLAYERS / BOXES / ON TABLE footer. Bank reserve lives in the table menu. Dealer identity, column labels, and row density follow the Dealer PNG.
 
 ## Shared colour and type
 
-Classic tokens already match the boards. Canonical values live in `src/ui/skins/classic/tokens.css`. CSS ownership: `tokens.css` tokens only; `board.css` approved shared shell and anatomy; `layouts.css` responsive grids; `home.css` Home and Create Table only. Do not add another large override sheet.
+Classic tokens already match the boards. Canonical values live in `src/ui/skins/classic/tokens.css`. CSS ownership: `tokens.css` tokens only; `blackjack-classic.css` Blackjack Dealer/Player composition; `board.css` shared shell; `layouts.css` responsive grids; `home.css` Home and Create Table only. Do not layer obsolete Blackjack rules under the canonical Blackjack sheet.
 
 | Token | Role |
 |---|---|
@@ -192,72 +180,37 @@ Never infer role from name, email, or a leftover Auth.js session. Guest cookie w
 
 ## Blackjack Player screen contract
 
-Dominant board: approved Player PNG (`12_50_26 PM (1)(2)`).
+Dominant board: approved Player PNG (`12_50_26 PM (1)(2)`). Reproduce that composition: header with table name and balance, large phase title, dealer mark, owned boxes at the board’s size and grouping, contextual ADD BOX / Insurance, action row, fixed tray.
 
-**Fixed three-slot stage.** Box 1 begins in the centre slot. Adding Box 2 places it to the left of Box 1 without moving Box 1. Box 3 fills the remaining right slot. Boxes must not jump when phases or chrome change. Empty slots keep their space. Extra split boxes wrap to the next row of the same three columns. Controls never live inside the box stage.
+Boxes follow the supplied arrangement (a centred pair when two exist; a single box where the board shows one). Stable `data-box-id` targeting is required. The obsolete three-column CSS grid is not a visual requirement.
 
-### TABLE_SETUP / Phase 0
+If the board shows other Players, omit only privacy-forbidden amounts while keeping useful composition. Do not leave a giant empty felt.
 
-Waiting state. Player identity and AVAILABLE jetons. No Dealer commands.
+### Betting / Playing / Insurance / Payout
 
-### Betting
-
-- Table name once on the felt.
-- Compact Dealer state only — do not fill the felt with other Players’ complete boxes.
-- The Player’s own boxes occupy the fixed stage.
-- Selected box: restrained gold border.
-- Each box shows stake and chip pile.
-- Contextual panel immediately below the box stage: `ADD BOX` only when another box can legally be created. That row stays reserved so boxes do not jump when it empties.
-- Action row immediately above the tray: Amount, `PLACE BET`, and `RETRACT` only when a retractable stake exists.
-- Do not show `2×`, `SPLIT` or `INSURANCE`.
-- Jeton tray fixed at the bottom; available balance beside/above the tray.
-
-### Playing
-
-- Same owned boxes in the same slots.
-- Tray remains visible; betting chips are disabled.
-- Action row contains only legal card actions for the selected owned box: `2×` (Double), `SPLIT`, and `INSURANCE` only while the Dealer has opened insurance and that box may insure.
-- No `ADD BOX`, `PLACE BET` or `RETRACT`.
-- No cards or totals on the default surface.
-
-### Insurance open
-
-- Show `INSURANCE` only where legal for the selected owned box.
-- Keep `2×` and `SPLIT` only if the engine still reports them legal.
-- A compact Insurance panel (amount, maximum, existing `buyInsurance` control) sits between the box stage and the action row.
-- Never allow a Player to act on another Player’s box.
-
-### Payout / Result
-
-- Same box component: Won, Lost, Stand-off, Blackjack, returned/won amount, updated available balance.
-- No `PLACE BET`, `RETRACT`, `ADD BOX`, `2×`, `SPLIT` or `INSURANCE`.
-- Tray remains visible and disabled.
+Visible controls follow `blackjackPlayerControls()`. Betting: `ADD BOX`, Amount, `RETRACT`, `PLACE BET`. Playing: `2×` / `SPLIT` / `INSURANCE` by legal flags. Insurance: same card-action row plus compact purchase. Payout: results only. Tray always at the bottom.
 
 ## Blackjack Dealer / Owner screen contract
 
-Dominant board: approved Dealer/Owner PNG (`12_50_27 PM (3)(2)`). Dealer boxes are compact casino betting positions, not spreadsheet rows. Do not render giant Player/Dealer cards, large ovals, or full-width admin records. Tokens (Georgia display, Inter UI, emerald/gold/ivory) still come from `src/ui/skins/classic/tokens.css`.
+Dominant board: approved Dealer/Owner PNG (`12_50_27 PM (3)(2)`). Implement that layout visually (summary, phase actions, named rows, column density). It may look tabular. Do not invent plaques, circular DEALER objects, or giant cards.
 
-Visible controls follow `blackjackDealerControls()`. Engine commands: `startBetting`, `dealCards`, `openInsurance` / `closeInsurance`, `enterPayout`, `startNextRound`.
+Visible controls follow `blackjackDealerControls()`. Engine commands: `startBetting`, `dealCards`, `openInsurance` / `closeInsurance`, `enterPayout`, `startNextRound`. Mock labels `OPEN BETTING` / `CLOSE BETTING` / `START NEXT ROUND` map to `START BETTING` / `DEAL CARDS` / `START BETTING` in the same slots.
 
 ### Role header
 
-Compact 56–64px header: hamburger and `OWNER` / `DEALER` badges or Player balance only. No table name in the header. No JETONBRO brand row during live play. No Dealer identity summary card.
+Header follows the PNG: menu, table name, `OWNER` / `DEALER` badges.
 
-### TABLE_SETUP / Phase 0
+### TABLE_SETUP / Betting / Playing / Insurance / Payout
 
-Shared `DealerActionDock` 65/35: `START BETTING` | `ADD PLAYER`. `START BETTING` stays visibly disabled until a real seated Player exists; `ADD PLAYER` remains active. No stacked secondary row. No `DEAL CARDS`. No payout controls. Compact Player names on felt, not giant empty seats and not Owner/Dealer metadata under the table name.
+Use the supplied row composition connected to real Player boxes and balances. Payout keys use the supplied arrangement at ≥44px. Dock:
 
-### Betting
-
-Phase once (`BETTING`). Casino betting positions: Player name + Box, chip stack, main stake, optional insurance side bet. 1 position centred; 2 a balanced pair; 3–4 a compact 2-column arrangement if it fits; 5–6 a compact grid that internally scrolls only if needed. `DEAL CARDS` | `ADD PLAYER` in the shared 65/35 dock. Do not show `CLOSE BETTING`. No column headings, row numbers, avatars, or full-width ledger rows.
-
-### Playing
-
-Same betting positions. Show commitments (`Double` / `Split`) as concise state. Shared dock: `ENTER PAYOUT` | `OPEN INSURANCE` or `CLOSE INSURANCE`, never both. `ADD PLAYER` is not required during Playing.
-
-### Payout
-
-Same positions become compact payout cards. Keep the large 2×2 result keys (`LOST` / `STAND OFF` / `BLACKJACK` / `WON`). Insurance settle stays `INS WON` / `INS LOST`. Do not stretch records across the felt. `START BETTING` is full-width in the shared dock and disabled until every required result is resolved.
+```text
+TABLE_SETUP: START BETTING | ADD PLAYER
+BETTING:     DEAL CARDS | ADD PLAYER
+PLAYING:     ENTER PAYOUT | OPEN INSURANCE
+INSURANCE:   ENTER PAYOUT | CLOSE INSURANCE
+PAYOUT:      START BETTING (full width)
+```
 
 ## Owner utilities
 

@@ -49,6 +49,24 @@ export function HomeClient({
       onJoinTable={(destination) => router.push(destination)}
       onOpenTable={(tableId) => router.push(`/tables/${tableId}`)}
       onTableCommand={onTableCommand}
+      onDeleteAllMyTables={async (confirmation) => {
+        const response = await fetch("/api/tables/owner", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            command: "deleteAllMyTables",
+            confirmation,
+            idempotencyKey: crypto.randomUUID(),
+          }),
+        });
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          setNotice(data.error ?? "This action could not be completed.");
+          return;
+        }
+        setNotice(null);
+        router.refresh();
+      }}
     />
   );
 }

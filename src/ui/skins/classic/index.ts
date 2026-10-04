@@ -8,6 +8,7 @@ import "./home.css";
 import "./invite.css";
 import "./welcome-celebration.css";
 import "./board.css";
+import "./blackjack-classic.css";
 import { ClassicPlayerTable } from "./components/ClassicPlayerTable";
 import { ClassicBankTable } from "./components/ClassicBankTable";
 import { ClassicSetupTable } from "./components/ClassicSetupTable";

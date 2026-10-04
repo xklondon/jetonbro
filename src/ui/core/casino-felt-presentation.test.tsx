@@ -251,8 +251,6 @@ test("felt name is printed once without title ornaments or metadata", () => {
     expect(html.match(/data-table-name=/g)?.length).toBe(1);
     expect(html).not.toContain("cloth-name-rule");
     expect(html).not.toContain("phase-zero-meta");
-    expect(html).not.toContain("dealer-summary");
-    expect(html).not.toContain("ledger-head");
     expect(html).not.toContain("ledger-avatar");
   }
   expect(dealer).toContain("dealer-positions");
@@ -274,15 +272,14 @@ test("Dealer payout controls stay a large 2x2 on a compact position", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("dealer-position");
   expect(html).toContain("payout-access");
   expect((html.match(/data-payout-action="true"/g) ?? []).length).toBe(4);
   expect(html.indexOf('rail-title">LOST')).toBeLessThan(html.indexOf('rail-title">STAND OFF'));
   expect(html.indexOf('rail-title">STAND OFF')).toBeLessThan(html.indexOf('rail-title">BLACKJACK'));
   expect(html.indexOf('rail-title">BLACKJACK')).toBeLessThan(html.indexOf('rail-title">WON'));
-  const css = readFileSync(join(process.cwd(), "src/ui/skins/classic/board.css"), "utf8");
-  expect(css).toContain("repeat(2, minmax(88px, 1fr))");
-  expect(css).toContain("min-height: 48px");
+  const css = readFileSync(join(process.cwd(), "src/ui/skins/classic/blackjack-classic.css"), "utf8");
+  expect(css).toContain("grid-template-columns: 1fr 1fr");
+  expect(css).toContain("min-height: 44px");
 });
 
 test("Player box geometry stays fixed across slots", () => {
@@ -310,11 +307,5 @@ test("Player box geometry stays fixed across slots", () => {
   expect(html).toContain("data-box-stage");
   expect(html).toContain('data-box-slot="1"');
   expect(html).toContain("BOX 1");
-  expect(html).toContain("chip-pile");
   expect(html).toContain('data-table-name="Salon"');
-  expect(html.match(/data-table-name=/g)?.length).toBe(1);
-  const tokens = readFileSync(join(process.cwd(), "src/ui/skins/classic/tokens.css"), "utf8");
-  expect(tokens).toContain("--player-box-height: 92px");
-  expect(tokens).toContain("--player-box-width: 128px");
-  expect(html).toContain("felt-plaque");
 });

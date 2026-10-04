@@ -179,9 +179,8 @@ test("player betting keeps the permanent jeton dock below exact-amount controls"
   expect(html).toContain("YOUR JETONS");
   expect(html).toContain("Retract 25 jetons from Box 1");
   expect(html).toContain("data-box-stage");
-  expect(html).toContain('data-stage-slot="1"');
-  expect(html).toContain('data-stage-slot="2"');
-  expect(html).toContain('data-empty-slot="3"');
+  expect(html).toContain('data-box-slot="1"');
+  expect(html).toContain('data-box-slot="2"');
   expect(html).not.toContain("player-boxes two");
   expect(html.indexOf("Amount")).toBeLessThan(html.indexOf("YOUR JETONS"));
   expect(html).not.toContain("DOUBLE");
@@ -207,9 +206,8 @@ test("a single player box begins centred on the fixed stage", () => {
     }),
   );
   expect(html).toContain("data-box-stage");
-  expect(html).toContain('data-stage-slot="2"');
-  expect(html).toContain('data-empty-slot="1"');
-  expect(html).toContain('data-empty-slot="3"');
+  expect(html).toContain('data-box-slot="1"');
+  expect(html).toContain("BOX 1");
   expect(html).not.toContain("player-boxes one");
 });
 

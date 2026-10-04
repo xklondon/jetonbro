@@ -17,6 +17,7 @@ export function ClassicHome({
   onJoinTable,
   onOpenTable,
   onTableCommand,
+  onDeleteAllMyTables,
 }: {
   displayName: string;
   defaultTableName: string;
@@ -26,6 +27,7 @@ export function ClassicHome({
   onJoinTable: (destination: string) => void;
   onOpenTable: (tableId: string) => void;
   onTableCommand?: (tableId: string, command: OwnerCommand) => Promise<void>;
+  onDeleteAllMyTables?: (confirmation: string) => Promise<void>;
 }) {
   const empty = tables.length === 0;
   const [joinOpen, setJoinOpen] = useState(false);
@@ -40,7 +42,10 @@ export function ClassicHome({
     command: "closeTable" | "deleteTable" | "endAndDelete";
     title: string;
   } | null>(null);
+  const [deleteAllPhrase, setDeleteAllPhrase] = useState("");
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const drag = useRef<{ id: string; x: number; active: boolean } | null>(null);
+  const ownsAny = tables.some((table) => table.isOwner);
 
   function submitJoin() {
     const destination = parseJoinDestination(joinValue);
@@ -121,6 +126,19 @@ export function ClassicHome({
           <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
             {creating ? "Opening table" : "CREATE TABLE"}
           </button>
+          {ownsAny ? (
+            <button
+              className="text-link"
+              type="button"
+              data-delete-all-tables="true"
+              onClick={() => {
+                setDeleteAllPhrase("");
+                setDeleteAllOpen(true);
+              }}
+            >
+              DELETE ALL MY TABLES
+            </button>
+          ) : null}
         </div>
         {empty ? (
           <button className="text-link" type="button" onClick={() => setJoinOpen(true)}>
@@ -201,13 +219,41 @@ export function ClassicHome({
           </div>
         )}
         <SheetOverlay
-          open={joinOpen || Boolean(confirm)}
+          open={joinOpen || Boolean(confirm) || deleteAllOpen}
           onClose={() => {
             setJoinOpen(false);
             setConfirm(null);
+            setDeleteAllOpen(false);
+            setDeleteAllPhrase("");
           }}
         >
-          {confirm && confirmCard ? (
+          {deleteAllOpen ? (
+            <>
+              <h3>DELETE ALL MY TABLES</h3>
+              <p>Every table you own will be ended and hidden. Current hands are abandoned. Ledger history is kept. Other owners are not affected.</p>
+              <p className="muted">Type DELETE ALL to confirm.</p>
+              <input
+                aria-label="Type DELETE ALL"
+                value={deleteAllPhrase}
+                onChange={(event) => setDeleteAllPhrase(event.target.value)}
+              />
+              <button
+                className="gold-button"
+                type="button"
+                disabled={deleteAllPhrase !== "DELETE ALL"}
+                onClick={() => {
+                  setDeleteAllOpen(false);
+                  setDeleteAllPhrase("");
+                  void onDeleteAllMyTables?.("DELETE ALL");
+                }}
+              >
+                Confirm
+              </button>
+              <button className="text-link" type="button" onClick={() => { setDeleteAllOpen(false); setDeleteAllPhrase(""); }}>
+                Cancel
+              </button>
+            </>
+          ) : confirm && confirmCard ? (
             <>
               <h3>{confirm.title}</h3>
               <p>

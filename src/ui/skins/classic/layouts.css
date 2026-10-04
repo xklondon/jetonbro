@@ -276,40 +276,6 @@
   letter-spacing: 0.12em;
 }
 
-.classic-skin .player-box-stage {
-  width: 100%;
-  margin-top: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: var(--player-box-height);
-  gap: 8px;
-  align-items: end;
-  align-content: end;
-  justify-items: stretch;
-  min-height: 0;
-}
-
-.classic-skin .player-box-stage .stage-cell,
-.classic-skin .player-box-stage .box,
-.classic-skin .player-box-stage .box-slot {
-  width: 100%;
-  min-width: 0;
-  height: 100%;
-  min-height: var(--player-box-height);
-}
-
-.classic-skin .player-box-stage .stage-cell .box {
-  height: var(--player-box-height);
-  width: var(--player-box-width);
-  max-width: 100%;
-  border-radius: 0;
-}
-
-.classic-skin .player-box-stage .box-slot {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 .classic-skin .player-boxes {
   width: 100%;
   display: flex;
@@ -417,32 +383,6 @@
   color: var(--ivory);
   opacity: 0.62;
   margin-top: 8px;
-}
-
-.classic-skin .dealer-list.dealer-positions {
-  width: 100%;
-  min-height: 0;
-  flex: 1 1 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 10px 12px;
-  align-self: stretch;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  padding: 0;
-}
-
-.classic-skin .dealer-list.dealer-positions[data-ledger-overflow="true"] {
-  align-content: flex-start;
-  overflow-y: auto;
-  gap: 8px 10px;
-}
-
-.classic-skin .dealer-list.dealer-positions::-webkit-scrollbar {
-  display: none;
 }
 
 .classic-skin .outcome {
@@ -946,16 +886,6 @@
 @media (max-width: 360px) {
   .classic-skin .phone {
     min-height: 100dvh;
-  }
-
-  .classic-skin .player-box-stage {
-    grid-auto-rows: var(--player-box-height);
-  }
-
-  .classic-skin .player-box-stage .stage-cell,
-  .classic-skin .player-box-stage .box,
-  .classic-skin .player-box-stage .box-slot {
-    min-height: var(--player-box-height);
   }
 
   .classic-skin .jetons .chip {
