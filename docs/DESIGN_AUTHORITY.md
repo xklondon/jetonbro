@@ -4,17 +4,20 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Valid boards
 
-Default production skin is **Tabletop** (`src/ui/skins/tabletop/`, `ACTIVE_SKIN_ID = "tabletop"`). Classic remains registered only as rollback and must not load into Tabletop screens.
+Default production skin is **Tabletop** (`src/ui/skins/tabletop/`, `ACTIVE_SKIN_ID = "tabletop"`). Classic remains registered only as rollback. Classic CSS must not load into the Tabletop client graph (`registry` imports `classic/skin` without stylesheet side effects).
 
-Primary visual authority for Tabletop is the approved PNG set under `design/reference/classic/approved/` plus `design/reference/classic/jetonbro-player-bank-insurance.html`. Those files outrank historical HTML prototypes, existing Classic CSS, previously generated screenshots, and Classic component anatomy.
+Primary visual authority for Tabletop is `design/reference/tabletop/approved/*.jpg`. Those files outrank Classic CSS, historical HTML prototypes, previously generated screenshots, and component anatomy. Accepted element **placement** is frozen; visual rebuilds change atmosphere and primitives only.
 
 | Approved file | Role |
 |---|---|
-| `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png` | Blackjack Player phases |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2)(2).png` | Home, Create Table, Table Setup, Game Selection |
-| `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png` | Blackjack Dealer/Owner phases |
+| `blackjack-player-phases.jpg` | Blackjack Player phases (Betting / Playing / Insurance / Payout) |
+| `blackjack-player-phases-alt.jpg` | Blackjack Player alternate reference |
+| `blackjack-dealer-phases.jpg` | Blackjack Dealer / Owner phases |
+| `poker-player-phases.jpg` | Poker Player phases |
+| `poker-dealer-phases.jpg` | Poker Dealer / Owner phases |
+| `owner-setup.jpg` | Home, Create Table, Table Setup, Game Selection |
 
-Aliases: `blackjack-player-phases.png`, `table-owner-setup.png`, `blackjack-dealer-owner-phases.png`. Historical copies under `docs/design-reference/` remain for Poker boards only.
+Historical Classic PNG/HTML under `design/reference/classic/` remain composition history for Classic rollback only.
 
 ## Blackjack PNG composition (literal)
 

@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tabletop visual compare</title>
+  <style>
+    body { margin: 0; background: #111; color: #eee; font: 14px/1.4 system-ui, sans-serif; }
+    h1 { padding: 16px 20px 0; font-size: 18px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 20px 32px; }
+    figure { margin: 0; background: #1a1a1a; border-radius: 12px; padding: 10px; }
+    figcaption { margin-bottom: 8px; color: #bbb; }
+    img { width: 100%; height: auto; border-radius: 8px; background: #000; }
+  </style>
+</head>
+<body>
+  <h1>Target (left) vs implementation (right) — equal scale</h1>
+  <div class="row">
+    <figure>
+      <figcaption>Target — Blackjack Player phases</figcaption>
+      <img src="../../../design/reference/tabletop/approved/blackjack-player-phases.jpg" alt="target player" />
+    </figure>
+    <figure>
+      <figcaption>Live — Player Betting empty 390×844</figcaption>
+      <img src="../05-player-betting-empty-390x844.png" alt="live player betting" />
+    </figure>
+  </div>
+  <div class="row">
+    <figure>
+      <figcaption>Target — Blackjack Dealer phases</figcaption>
+      <img src="../../../design/reference/tabletop/approved/blackjack-dealer-phases.jpg" alt="target dealer" />
+    </figure>
+    <figure>
+      <figcaption>Live — Dealer Betting 390×844</figcaption>
+      <img src="../08-dealer-betting-390x844.png" alt="live dealer betting" />
+    </figure>
+  </div>
+  <div class="row">
+    <figure>
+      <figcaption>Target — Owner / Setup</figcaption>
+      <img src="../../../design/reference/tabletop/approved/owner-setup.jpg" alt="target setup" />
+    </figure>
+    <figure>
+      <figcaption>Live — Home 390×844</figcaption>
+      <img src="../01-home-390x844.png" alt="live home" />
+    </figure>
+  </div>
+  <div class="row">
+    <figure>
+      <figcaption>Target — Poker Player</figcaption>
+      <img src="../../../design/reference/tabletop/approved/poker-player-phases.jpg" alt="target poker player" />
+    </figure>
+    <figure>
+      <figcaption>Live — Poker Player 390×844</figcaption>
+      <img src="../15-poker-player-390x844.png" alt="live poker player" />
+    </figure>
+  </div>
+</body>
+</html>
