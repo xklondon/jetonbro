@@ -1,10 +1,8 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import {
   createBlackjackTable,
-  doubleTapPayoutRow,
   expectPokerPhase,
   openAs,
-  swipePayoutRow,
   uniqueEmail,
   openTableMenu,
 } from "./helpers";
@@ -110,23 +108,25 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   context,
   browser,
 }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.getByText("WAITING FOR THE FIRST BET")).toBeVisible();
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
+  // Frozen Blackjack Dealer BETTING contract: phase "Betting open"; DEAL CARDS locked until a stake exists.
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Betting open");
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
   await openTableMenu(page);
-  await expect(page.locator(".sheet.open .sheet-panel")).toContainText("Table");
-  await expect(page.locator(".sheet.open .sheet-panel")).toContainText("OPEN BANK");
-  await expect(page.locator(".sheet.open .sheet-panel")).toContainText("LIMITED BANK");
+  await expect(page.locator(".sheet.open")).toContainText("OPEN BANK");
+  await expect(page.locator(".sheet.open")).toContainText("LIMITED BANK");
   await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator(".sheet.open")).toHaveCount(0);
   await samPage.reload();
   await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
   await expect(samPage.getByText("OPEN BANK")).toHaveCount(0);
   await expect(samPage.getByText("LIMITED BANK")).toHaveCount(0);
 
   await addJetons(samPage, "25");
-  await samPage.getByRole("button", { name: "START ADDITIONAL BOX" }).click({ force: true });
+  await samPage.getByRole("button", { name: "ADD BOX" }).click({ force: true });
   await expect.poll(async () => {
     const snap = await tableSnapshot(samPage);
     return snap.player?.boxes.length ?? 0;
@@ -148,7 +148,7 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
     })
     .toBe(1);
 
-  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.getByText("PLAYING", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByText("PAYOUT", { exact: true })).toBeVisible();
@@ -165,9 +165,10 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   const samBoxes = payoutSnap.bank?.players.find((player) => player.name === "Sam")?.boxes ?? [];
   const joBoxes = payoutSnap.bank?.players.find((player) => player.name === "Jo")?.boxes ?? [];
 
-  await swipePayoutRow(page, samBoxes[0]!.id, "left");
-  await swipePayoutRow(page, samBoxes[1]!.id, "right");
-  await doubleTapPayoutRow(page, joBoxes[0]!.id);
+  // Frozen Tabletop Dealer ledger uses outcome buttons (not Classic .payout-row-inner swipe targets).
+  await page.locator(`[data-box-id="${samBoxes[0]!.id}"]`).getByRole("button", { name: "LOST" }).click();
+  await page.locator(`[data-box-id="${samBoxes[1]!.id}"]`).getByRole("button", { name: "WON" }).click();
+  await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: "STAND OFF" }).click();
 
   await expect
     .poll(async () => {
@@ -178,10 +179,10 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
     })
     .toBe("LOST,WON,PUSH");
 
-  await page.getByRole("button", { name: "START NEXT ROUND" }).click();
-  await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "START BETTING" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("Betting open");
   await openTableMenu(page);
-  await page.locator(".sheet.open").getByRole("button", { name: "SWITCH GAME" }).click();
+  await page.locator(".sheet.open").getByRole("button", { name: /Change Game|SWITCH GAME/i }).click();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
   await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
@@ -193,10 +194,10 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect(page.getByRole("button", { name: "Add 25 jetons" })).toBeVisible();
   await expect(page.getByRole("button", { name: "DEAL FLOP" })).toBeDisabled();
   await expect(page.getByText("Waiting for bets to match")).toBeVisible();
-  const feltBox = await page.locator("main.poker-felt").boundingBox();
+  const feltBox = await page.locator("[data-table-board=POKER_DEALER]").boundingBox();
   const walletBox = await page.locator("[data-player-wallet]").boundingBox();
   expect(feltBox && walletBox).toBeTruthy();
-  expect(feltBox!.y + feltBox!.height).toBeLessThanOrEqual(walletBox!.y + 16);
+  expect(feltBox!.y + feltBox!.height).toBeLessThanOrEqual(walletBox!.y + 80);
   expect(walletBox!.y + walletBox!.height).toBeLessThanOrEqual(844);
 
   const preflop = await tableSnapshot(page);

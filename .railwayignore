@@ -1,0 +1,14 @@
+# Keep Railway uploads small — previous uploads timed out on screenshot artefacts.
+# Keep e2e/ available so `railway run` can retrieve production magic links.
+docs/screenshots/
+docs/design-reference/
+test-results/
+playwright-report/
+.playwright/
+playwright/.cache/
+node_modules/
+.next/
+out/
+coverage/
+*.log
+.git/
