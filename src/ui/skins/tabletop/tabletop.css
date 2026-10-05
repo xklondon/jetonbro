@@ -1788,13 +1788,14 @@
   padding: 0 6px;
 }
 
-/* ========== POKER ========== */
+/* ========== POKER (scoped — do not alter Blackjack surfaces) ========== */
 .tabletop-skin .tt-poker {
   padding-top: 0;
 }
 
 .tabletop-skin .tt-poker .tt-surface-body {
-  padding-top: 30px;
+  padding-top: 28px;
+  overflow: hidden;
 }
 
 .tabletop-skin .tt-poker-top {
@@ -1803,6 +1804,19 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 6px 8px;
+  position: relative;
+  z-index: 2;
+}
+
+.tabletop-skin .tt-poker .tt-phase {
+  margin: 0;
+  text-align: center;
+}
+
+.tabletop-skin .tt-poker .tt-phase strong {
+  font: 700 11px/1.2 var(--tt-sans);
+  letter-spacing: 0.18em;
+  color: var(--tt-gold);
 }
 
 .tabletop-skin .tt-turn {
@@ -1819,6 +1833,23 @@
   background: linear-gradient(180deg, var(--tt-gold-hi), var(--tt-gold));
   color: var(--tt-ink);
   border-color: transparent;
+}
+
+.tabletop-skin .tt-turn-banner {
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  padding: 8px 10px;
+  border: 1px solid rgba(223, 189, 105, 0.35);
+  border-radius: 12px;
+  color: var(--tt-ivory);
+  background: rgba(2, 23, 18, 0.45);
+}
+
+.tabletop-skin .tt-turn-banner.is-you {
+  border-color: var(--tt-gold);
+  color: var(--tt-ink);
+  background: linear-gradient(180deg, var(--tt-gold-hi), var(--tt-gold));
 }
 
 .tabletop-skin .tt-streets {
@@ -1853,45 +1884,58 @@
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.tabletop-skin .tt-poker-table[data-seat-layout="full"] {
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .tabletop-skin .tt-poker-oval {
   position: absolute;
-  inset: 9% 7%;
-  border: 1px solid rgba(223, 189, 105, 0.22);
+  inset: 8% 6%;
+  border: 2px solid rgba(223, 189, 105, 0.55);
   border-radius: 50%;
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.16);
+  box-shadow:
+    inset 0 0 48px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(223, 189, 105, 0.18);
+  pointer-events: none;
 }
 
-.tabletop-skin .tt-poker-cloth {
+.tabletop-skin .tt-poker-felt-name {
   position: absolute;
   left: 50%;
-  top: 31%;
-  width: 70%;
+  top: 28%;
+  width: 72%;
   transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
 }
 
-.tabletop-skin .tt-poker-cloth .tt-table-name {
+.tabletop-skin .tt-poker-felt-name .tt-table-name {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
 }
 
 .tabletop-skin .tt-pot {
   position: absolute;
   left: 50%;
-  top: 49%;
+  top: 48%;
   transform: translate(-50%, -50%);
-  min-width: 112px;
-  max-width: 62%;
+  min-width: 118px;
+  max-width: 64%;
   display: grid;
   justify-items: center;
   gap: 3px;
   padding: 8px 12px;
   text-align: center;
   border-radius: 18px;
-  background: rgba(2, 23, 18, 0.42);
-  border: 1px solid rgba(223, 189, 105, 0.32);
+  background: rgba(2, 23, 18, 0.5);
+  border: 1px solid rgba(223, 189, 105, 0.38);
+  z-index: 2;
 }
 
 .tabletop-skin .tt-pot small {
@@ -1936,10 +1980,44 @@
   color: var(--tt-ivory);
 }
 
+.tabletop-skin .tt-hand-complete {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  transform: translate(-50%, 0);
+  width: min(86%, 280px);
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  text-align: center;
+  border-radius: 14px;
+  background: rgba(2, 23, 18, 0.62);
+  border: 1px solid rgba(223, 189, 105, 0.45);
+  z-index: 3;
+}
+
+.tabletop-skin .tt-hand-complete strong {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--tt-gold);
+}
+
+.tabletop-skin .tt-hand-complete p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--tt-ivory);
+}
+
+.tabletop-skin .tt-hand-complete small {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: rgba(244, 234, 213, 0.75);
+}
+
 .tabletop-skin .tt-seat {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 94px;
+  width: 96px;
   display: grid;
   justify-items: center;
   gap: 1px;
@@ -1947,11 +2025,14 @@
   text-align: center;
   border: 1.5px solid rgba(223, 189, 105, 0.45);
   border-radius: 14px;
-  background: rgba(2, 23, 18, 0.5);
+  background: rgba(2, 23, 18, 0.55);
+  z-index: 2;
 }
 
 .tabletop-skin .tt-seat.is-you {
   border-color: var(--tt-gold-line);
+  outline: 1px dashed rgba(223, 189, 105, 0.55);
+  outline-offset: 2px;
 }
 
 .tabletop-skin .tt-seat.is-dealer {
@@ -1959,13 +2040,33 @@
 }
 
 .tabletop-skin .tt-seat.is-folded {
-  opacity: 0.5;
+  opacity: 0.48;
+  filter: saturate(0.7);
+}
+
+.tabletop-skin .tt-seat.is-allin {
+  border-style: dashed;
+}
+
+.tabletop-skin .tt-seat.is-winner {
+  border-color: var(--tt-gold);
+  box-shadow: 0 0 0 1px var(--tt-gold);
 }
 
 .tabletop-skin .tt-seat.is-actor {
   border-color: var(--tt-gold);
   box-shadow: 0 0 0 2px var(--tt-gold), 0 0 16px rgba(223, 189, 105, 0.5);
   animation: tt-actor-pulse 1.3s ease-in-out infinite;
+}
+
+.tabletop-skin .tt-seat.is-actor::after {
+  content: "●";
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 10px;
+  color: var(--tt-gold);
+  text-shadow: 0 0 6px rgba(223, 189, 105, 0.8);
 }
 
 @keyframes tt-actor-pulse {
@@ -2038,11 +2139,28 @@
   color: var(--tt-gold);
 }
 
+.tabletop-skin .tt-seat-status.is-won {
+  color: var(--tt-ivory);
+  font-weight: 700;
+}
+
 .tabletop-skin .tt-owner-zone {
   display: grid;
   gap: 6px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(223, 189, 105, 0.22);
+}
+
+.tabletop-skin .tt-owner-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.tabletop-skin .tt-owner-row > .tt-btn,
+.tabletop-skin .tt-owner-street {
+  flex: 1 1 120px;
 }
 
 .tabletop-skin .tt-owner-street {
@@ -2062,6 +2180,11 @@
   font-size: 12px;
 }
 
+.tabletop-skin .tt-actor .tt-btn:disabled {
+  opacity: 0.55;
+  color: rgba(244, 234, 213, 0.75);
+}
+
 .tabletop-skin .tt-compose {
   grid-column: 1 / -1;
   display: grid;
@@ -2079,9 +2202,24 @@
   font-size: 11px;
 }
 
+.tabletop-skin .tt-award-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.tabletop-skin .tt-award-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .tabletop-skin .tt-pot-assign {
   display: grid;
   gap: 6px;
+}
+
+.tabletop-skin .tt-pot-assign.is-awarded {
+  opacity: 0.55;
 }
 
 .tabletop-skin .tt-pot-winners {
@@ -2116,15 +2254,18 @@
     width: 40px;
     height: 40px;
   }
-  .tabletop-skin .tt-seat {
+  .tabletop-skin .tt-poker .tt-seat {
     width: 84px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tabletop-skin .tt-seat.is-actor {
+  .tabletop-skin .tt-poker .tt-seat.is-actor {
     animation: none;
     box-shadow: 0 0 0 3px var(--tt-gold), 0 0 18px rgba(223, 189, 105, 0.6);
+  }
+  .tabletop-skin .tt-poker .tt-seat.is-actor::after {
+    content: "◆";
   }
   .tabletop-skin .tt-jeton,
   .tabletop-skin .tt-pbox {

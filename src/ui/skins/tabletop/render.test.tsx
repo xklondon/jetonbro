@@ -383,7 +383,9 @@ describe("tabletop skin renders", () => {
     expect(player).toContain("SB");
     expect(player).toContain("BB");
     expect(player).toContain("data-player-wallet");
+    expect(player).toContain("YOU ·");
     expect(player).not.toContain("DEAL FLOP");
+    expect(player).not.toContain("POKER CLOTH");
 
     const owner = render(
       createElement(tabletopSkin.PokerDealer, { view: poker({ role: "POKER_DEALER", isOwner: true }), members, onCommand: noop }),
@@ -391,5 +393,90 @@ describe("tabletop skin renders", () => {
     expect(owner).toContain('data-table-board="POKER_DEALER"');
     expect(owner).toContain("DEAL FLOP");
     expect(owner).toContain("Waiting for bets to match");
+    expect(owner).toContain("OWNER");
+
+    const setup = render(
+      createElement(tabletopSkin.PokerDealer, {
+        view: poker({
+          role: "POKER_DEALER",
+          isOwner: true,
+          phase: "POKER_SETUP",
+          phaseLabel: "POKER_SETUP",
+          legalActions: [],
+          waitingCopy: null,
+          currentActorId: null,
+          canAddPlayer: true,
+          streetRail: [],
+        }),
+        members,
+        onCommand: noop,
+      }),
+    );
+    expect(setup).toContain("POKER SETUP");
+    expect(setup).toContain("START HAND");
+    expect(setup).toContain("ADD PLAYER");
+    expect(setup).not.toContain("TO CALL");
+
+    const complete = render(
+      createElement(tabletopSkin.PokerPlayer, {
+        view: poker({
+          phase: "HAND_COMPLETE",
+          phaseLabel: "HAND_COMPLETE",
+          potPaid: true,
+          toCall: money("0", "0"),
+          legalActions: [],
+          waitingCopy: null,
+          currentActorId: null,
+          currentActorName: null,
+          winners: [{ userId: "v", name: "Vi", amount: money("15") }],
+          canNextHand: false,
+          seats: [
+            {
+              userId: "v",
+              name: "Vi",
+              available: money("115"),
+              contribution: money("0", "0"),
+              streetContribution: money("0", "0"),
+              toCall: money("0", "0"),
+              status: "ACTIVE",
+              isDealer: true,
+              isSmallBlind: true,
+              isBigBlind: false,
+              isActor: false,
+              sittingOut: false,
+              orderIndex: 0,
+              hasHoleCards: false,
+              holeCards: null,
+            },
+            {
+              userId: "s",
+              name: "Sam",
+              available: money("85"),
+              contribution: money("0", "0"),
+              streetContribution: money("0", "0"),
+              toCall: money("0", "0"),
+              status: "ACTIVE",
+              isDealer: false,
+              isSmallBlind: false,
+              isBigBlind: true,
+              isActor: false,
+              sittingOut: false,
+              orderIndex: 1,
+              hasHoleCards: false,
+              holeCards: null,
+            },
+          ],
+        }),
+        onCommand: noop,
+      }),
+    );
+    expect(complete).toContain("HAND COMPLETE");
+    expect(complete).toContain("WON 15");
+    expect(complete).toContain('data-next-rotation="true"');
+    expect(complete).toContain('data-hand-complete="true"');
+    expect(complete).not.toContain("YOUR TURN");
+    expect(complete).not.toContain("TO CALL");
+    expect(complete).not.toContain("CALL 10");
+    expect((complete.match(/WON 15/g) ?? []).length).toBe(1);
   });
 });

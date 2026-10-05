@@ -307,9 +307,10 @@ Full acceptance means:
 - Default skin: Tabletop (`src/ui/skins/tabletop/`); Classic is the registered rollback skin
 - Games: Blackjack and Texas Hold’em
 - Active visual authority: original approved PNGs in `design/reference/classic/approved/` (literal anatomy). Product contracts control commands/roles/data. HTML prototype is secondary token reference only.
-- Blackjack FROZEN (visual + functional) after the final polish commit: Dealer payout result badges, card totals under cards, Player one-shot result celebrations (`prefers-reduced-motion` static), compact Create Table. Do not reopen Blackjack presentation or engine unless a focused test exposes a functional regression. Next milestone: Poker Tabletop polish.
+- Blackjack FROZEN (visual + functional) after the final polish commit: Dealer payout result badges, card totals under cards, Player one-shot result celebrations (`prefers-reduced-motion` static), compact Create Table. Do not reopen Blackjack presentation or engine unless a focused test exposes a functional regression.
+- Poker Tabletop presentation: shared `PokerBoard` via `PokerDealer` / `PokerPlayer`; primitives `PokerSeat`, `PokerPot` / `PokerStreet`, `PokerActionDock`, `PokerAward` / Hand Complete next-rotation preview; ellipse seats; Owner street + award dock; Player actions above tray; screenshots under `docs/screenshots/tabletop/poker-final/`. Engine/accounting/phases unchanged.
 - Classic CSS isolation retained: active Tabletop bundle must not load Classic stylesheets (`registry` → `classic/skin`)
-- Tabletop presentation primitives live under `src/ui/skins/tabletop/components/primitives/` (`DealerLedger`, `PlayerBox`, `JetonTray`, `HandCards` / Dealer hand panel, structural `TableRail` SVG on Shell felt)
+- Tabletop presentation primitives live under `src/ui/skins/tabletop/components/primitives/` (`DealerLedger`, `PlayerBox`, `JetonTray`, `HandCards` / Dealer hand panel, structural `TableRail` SVG on Shell felt, PokerSeat / PokerPot / PokerActionDock / PokerAward)
 - Split maps to existing engine boxes (`isSplit` / `isSplitOffshoot` / parent offshoot row); UI never fabricates split hands
 - Zilch: deferred
 - Release/deployment status belongs in `CHANGELOG.md` and `docs/IMPLEMENTATION_LOG.md`, not this rules file.
