@@ -11,9 +11,16 @@ import { OwnerMenu, type OwnerMenuItem } from "./OwnerMenu";
 import { Countdown } from "./Spot";
 import { ActionDock } from "./primitives/ActionDock";
 import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
+import { DealerHandPanel } from "./primitives/HandCards";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
-import { TableButton } from "./primitives/TableButton";
 import { TableName } from "./primitives/TableName";
+
+/** Collect every active box instance — one row each; never aggregate by Player. */
+function activeBoxes(view: BankTableView): BoxView[] {
+  const fromPlayers = view.players.flatMap((player) => player.boxes);
+  if (fromPlayers.length > 0) return fromPlayers;
+  return view.boxes;
+}
 
 /** Immersive Blackjack Dealer: dense ledger for real boxes; actions in the rail. */
 export function BankTable({
@@ -48,47 +55,27 @@ export function BankTable({
           ? "PAYOUT"
           : view.phase;
 
+  const boxes = activeBoxes(view);
+  const showDealerHand =
+    view.phase === "PLAYING" || view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE" || view.phase === "BETTING";
+  const dealerCanEdit = Boolean(view.dealerHand?.canEdit);
+
   const settle = (box: BoxView) => (outcome: BoxOutcome) => void onCommand("settleBox", { boxId: box.id, outcome });
 
-  const rows: ReactNode[] = [];
-  if (view.players.length === 0) {
-    for (const box of view.boxes) {
-      rows.push(
-        <DealerLedgerRow
-          key={box.id}
-          box={box}
-          phase={view.phase}
-          payoutEnabled={view.actions.settleBoxes}
-          onSettle={settle(box)}
-        />,
-      );
-    }
-  } else {
-    for (const player of view.players) {
-      if (player.boxes.length === 0) {
-        rows.push(
-          <DealerLedgerRow
-            key={player.userId}
-            empty
-            playerName={player.name}
-            availableLabel={player.available.label}
-          />,
-        );
-        continue;
-      }
-      for (const box of player.boxes) {
-        rows.push(
-          <DealerLedgerRow
-            key={box.id}
-            box={box}
-            phase={view.phase}
-            payoutEnabled={view.actions.settleBoxes}
-            onSettle={settle(box)}
-          />,
-        );
-      }
-    }
-  }
+  const rows: ReactNode[] = boxes.map((box) => (
+    <DealerLedgerRow
+      key={box.id}
+      box={box}
+      phase={view.phase}
+      payoutEnabled={view.actions.settleBoxes}
+      insuranceSettleEnabled={view.actions.settleInsurance}
+      onSettle={settle(box)}
+      onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
+      dealerMayCorrect={view.phase === "PLAYING"}
+      onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
+      onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
+    />
+  ));
 
   const menuItems: OwnerMenuItem[] = [];
   if (view.phase === "BETTING") {
@@ -98,41 +85,18 @@ export function BankTable({
     menuItems.push({ label: "IN 7 SECONDS", disabled: !view.actions.scheduleNextRound, onClick: () => void onCommand("scheduleNextRound") });
   }
 
-  const summary =
-    view.dealerName || view.players[0] ? (
-      <div className="tt-dealer-summary" data-dealer-row="true">
-        {view.dealerName ? (
-          <div className="tt-dealer-summary-card">
-            <small>DEALER</small>
-            <strong>{view.dealerName}</strong>
-            <em>{view.bankroll?.available.label ?? "—"}</em>
-          </div>
-        ) : null}
-        {view.players[0] ? (
-          <div className="tt-dealer-summary-card is-play">
-            <small>PLAYING</small>
-            <strong>{view.players[0].name}</strong>
-            <em>{view.players[0].available.label}</em>
-          </div>
-        ) : null}
-      </div>
-    ) : null;
+  const summary = showDealerHand ? (
+    <DealerHandPanel
+      hand={view.dealerHand}
+      canEdit={dealerCanEdit}
+      onAdd={(rank) => void onCommand("addCard", { dealer: "true", rank })}
+      onUndo={() => void onCommand("removeCard", { dealer: "true" })}
+    />
+  ) : null;
 
   const dock = (
     <ActionDock
       notice={notice ? <div className="tt-error">{notice}</div> : null}
-      extra={
-        controls.showInsuranceSettle ? (
-          <div className="tt-ins-settle">
-            <TableButton variant="compact" className="ins-win" onClick={() => void onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}>
-              INS WON
-            </TableButton>
-            <TableButton variant="compact" className="ins-lose" onClick={() => void onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}>
-              INS LOST
-            </TableButton>
-          </div>
-        ) : null
-      }
       primary={
         controls.primary
           ? {
@@ -167,6 +131,7 @@ export function BankTable({
         "data-table-board": "BLACKJACK_DEALER",
         "data-guest-join-url": view.guestJoinUrl ?? undefined,
         "data-verified-join-url": view.verifiedJoinUrl ?? undefined,
+        "data-box-count": boxes.length,
       }}
       overlay={
         <>
@@ -226,7 +191,7 @@ export function BankTable({
           INSURANCE · {view.insurance.total.label} · {view.insurance.count} {view.insurance.count === 1 ? "bet" : "bets"}
         </div>
       ) : null}
-      <DealerLedger playerCount={view.players.length} summary={summary}>
+      <DealerLedger playerCount={view.players.length} boxCount={boxes.length} summary={summary}>
         {rows}
       </DealerLedger>
     </Shell>

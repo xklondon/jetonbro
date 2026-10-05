@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent, ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
+import { HandTiles } from "./HandCards";
 import { ChipStack } from "./Jeton";
 
 function resultCopy(box: BoxView): { kind: string; text: string } | null {
@@ -31,6 +32,7 @@ export function PlayerBox({
   onSelect,
   status,
   insurancePanel,
+  showCards = false,
 }: {
   box?: BoxView;
   selected?: boolean;
@@ -39,6 +41,7 @@ export function PlayerBox({
   onSelect?: () => void;
   status?: string | null;
   insurancePanel?: ReactNode;
+  showCards?: boolean;
 }) {
   if (empty || !box) {
     return (
@@ -53,8 +56,9 @@ export function PlayerBox({
 
   const result = resultCopy(box);
   const isSelected = selected;
-  const commitment = result ? null : box.isDoubled ? "Doubled" : box.isSplit ? "Split" : status ?? null;
+  const commitment = result ? null : box.isDoubled ? "2×" : box.isSplit ? "Split" : status ?? null;
   const insured = box.insurance || box.insuranceResult;
+  const cardsVisible = showCards || Boolean(box.hand?.ranks?.length) || Boolean(result);
 
   function onKey(event: KeyboardEvent<HTMLDivElement>) {
     if (!onSelect) return;
@@ -91,7 +95,10 @@ export function PlayerBox({
         ) : (
           <>
             <ChipStack millis={box.bet.millis} />
-            <span className="tt-pbox-stake">{box.bet.label}</span>
+            <span className="tt-pbox-stake">
+              {box.bet.label}
+              {box.isDoubled ? <em className="tt-pbox-2x"> 2×</em> : null}
+            </span>
           </>
         )}
         {insured ? (
@@ -100,6 +107,7 @@ export function PlayerBox({
             {box.insuranceResult ? ` · ${insuranceCopy(box.insuranceResult)}` : ""}
           </span>
         ) : null}
+        {cardsVisible ? <HandTiles hand={box.hand} emptyLabel="" /> : null}
         {commitment ? <span className="tt-pbox-status">{commitment}</span> : null}
       </div>
       {insurancePanel}

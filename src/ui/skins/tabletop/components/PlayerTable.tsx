@@ -7,6 +7,7 @@ import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
 import { OwnerMenu } from "./OwnerMenu";
 import { DealerMark } from "./Spot";
+import { RankPadSheet } from "./primitives/HandCards";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { PlayerBox } from "./primitives/PlayerBox";
 import { TableButton } from "./primitives/TableButton";
@@ -32,6 +33,7 @@ export function PlayerTable({
   const [exact, setExact] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [cardPadOpen, setCardPadOpen] = useState(false);
 
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const controls = blackjackPlayerControls(view, selected);
@@ -42,6 +44,7 @@ export function PlayerTable({
     changeGame: Boolean(view.canSwitchGame),
   });
   const playing = view.phase === "PLAYING";
+  const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const sorted = view.boxes.slice().sort((a, b) => a.boxNumber - b.boxNumber);
   const phaseDisplay =
     view.insuranceWindowOpen && playing
@@ -51,6 +54,9 @@ export function PlayerTable({
         : view.phase === "ROUND_COMPLETE"
           ? "PAYOUT"
           : view.phase;
+
+  const canEditCards = Boolean(playing && selected?.hand?.canEdit);
+  const canUndo = Boolean(canEditCards && (selected?.hand?.ranks?.length ?? 0) > 0);
 
   function place(amount: string, boxId: string) {
     void onCommand("placeBet", { boxId, amount, mode: "ADD" });
@@ -121,6 +127,24 @@ export function PlayerTable({
             >
               INSURANCE
             </TableButton>
+            <TableButton
+              variant="compact"
+              data-player-action="add-card"
+              data-card-action="add"
+              disabled={!canEditCards}
+              onClick={() => setCardPadOpen(true)}
+            >
+              + CARD
+            </TableButton>
+            <TableButton
+              variant="compact"
+              data-player-action="undo-card"
+              data-card-action="undo"
+              disabled={!canUndo}
+              onClick={() => selected && void onCommand("removeCard", { boxId: selected.id })}
+            >
+              UNDO
+            </TableButton>
           </div>
         ) : null}
       </div>
@@ -139,6 +163,14 @@ export function PlayerTable({
         }}
         onHover={setHoverBoxId}
       />
+      {selected ? (
+        <RankPadSheet
+          open={cardPadOpen && canEditCards}
+          title={`Box ${selected.boxNumber}`}
+          onClose={() => setCardPadOpen(false)}
+          onAdd={(rank) => void onCommand("addCard", { boxId: selected.id, rank })}
+        />
+      ) : null}
     </>
   );
 
@@ -201,6 +233,7 @@ export function PlayerTable({
                 selected={isSelected}
                 dropHighlight={hoverBoxId === box.id}
                 onSelect={() => onSelectBox(box.id)}
+                showCards={playing || payout}
                 insurancePanel={
                   showInsure ? (
                     <div className="tt-insure" data-insurance-panel="true" data-for-box={box.id}>

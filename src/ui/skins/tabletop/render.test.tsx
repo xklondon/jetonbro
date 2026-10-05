@@ -255,6 +255,8 @@ describe("tabletop skin renders", () => {
     expect(playing).toContain("2×");
     expect(playing).toContain("SPLIT");
     expect(playing).toContain("INSURANCE");
+    expect(playing).toContain("+ CARD");
+    expect(playing).toContain("UNDO");
     expect(playing).toContain('data-insurance-panel="true"');
     expect(playing).not.toContain("ADD BOX");
   });
@@ -268,9 +270,11 @@ describe("tabletop skin renders", () => {
     expect(betting).toContain("data-blackjack-box-row");
     expect(betting).toContain("Alex");
     expect(betting).toContain("Jo");
-    expect(betting).toContain("Mia");
+    expect(betting).not.toContain("Mia");
     expect(betting).toContain("Blackjack pays 3 to 2");
     expect(betting).toContain("Insurance pays 2 to 1");
+    expect(betting).toContain("DEALER HAND");
+    expect(betting).not.toContain("tt-dealer-summary");
     expect(betting).not.toContain("data-dealer-positions");
     expect(betting).not.toContain("data-payout-action");
 
@@ -278,10 +282,35 @@ describe("tabletop skin renders", () => {
     for (const label of ["LOST", "STAND OFF", "BLACKJACK", "WON"]) expect(payout).toContain(label);
     expect(payout).toContain("data-payout-action");
     expect(payout).toContain("START BETTING");
+    expect(payout).toContain("DEALER HAND");
 
-    const playing = render(createElement(tabletopSkin.BankTable, { view: bank("PLAYING"), members, onCommand: noop }));
+    const playing = render(
+      createElement(tabletopSkin.BankTable, {
+        view: bank("PLAYING", {
+          dealerHand: { ranks: [], complete: false, label: "", suggestedOutcome: null, canEdit: true },
+          boxes: [box(1), box(2, { id: "b9", playerId: "p2", playerName: "Jo" })],
+          players: [
+            { userId: "p1", name: "Alex", available: money("100"), locked: money("25"), status: "", boxes: [box(1)] },
+            {
+              userId: "p2",
+              name: "Jo",
+              available: money("80"),
+              locked: money("25"),
+              status: "",
+              boxes: [box(2, { id: "b9", playerId: "p2", playerName: "Jo" })],
+            },
+          ],
+        }),
+        members,
+        onCommand: noop,
+      }),
+    );
     expect(playing).toContain("ENTER PAYOUT");
     expect(playing).toContain("OPEN INSURANCE");
+    expect(playing).toContain("DEALER HAND");
+    expect(playing).toContain("+ CARD");
+    expect(playing).toContain('data-dealer-hand="true"');
+    expect(playing).not.toContain('class="tt-dealer-summary');
   });
 
   it("Player privacy: own boxes only; Dealer sees all real boxes", () => {
@@ -301,9 +330,10 @@ describe("tabletop skin renders", () => {
     const dealerHtml = render(createElement(tabletopSkin.BankTable, { view: bank("BETTING"), members, onCommand: noop }));
     expect(dealerHtml).toContain("Alex");
     expect(dealerHtml).toContain("Jo");
-    expect(dealerHtml).toContain("Mia");
+    expect(dealerHtml).not.toContain("Mia");
     expect(dealerHtml).toContain('data-box-id="b1"');
     expect(dealerHtml).toContain('data-box-id="b9"');
+    expect(dealerHtml).toContain('data-box-count="2"');
   });
 
   it("Phase 0, setup, waiting, entry, home and create render", () => {

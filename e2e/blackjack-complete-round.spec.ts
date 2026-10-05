@@ -128,9 +128,9 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expectNoDocumentScroll(page);
   await page.screenshot({ path: join(shots, "payout-unresolved-dealer-390x844.png") });
 
-  await page.locator(`[data-box-id="${box1.id}"]`).getByRole("button", { name: "WON" }).click();
-  await page.locator(`[data-box-id="${box2.id}"]`).getByRole("button", { name: "LOST" }).click();
-  await page.getByRole("button", { name: "INS LOST" }).click();
+  await page.locator(`[data-box-id="${box1.id}"] [data-payout-action="true"]`).filter({ hasText: /^WON$/ }).click();
+  await page.locator(`[data-box-id="${box2.id}"] [data-payout-action="true"]`).filter({ hasText: /^LOST$/ }).click();
+  await page.locator(`[data-box-id="${box1.id}"] [data-insurance-action="lost"]`).click();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 10_000 });
   await expectNoDocumentScroll(page);
   await page.screenshot({ path: join(shots, "payout-dealer-390x844.png") });

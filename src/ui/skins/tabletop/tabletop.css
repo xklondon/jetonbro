@@ -707,9 +707,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
-  padding-bottom: 4px;
+  padding: 8px 0 4px;
+}
+
+.tabletop-skin .tt-bj-player.is-betting .tt-stage {
+  justify-content: flex-end;
 }
 
 .tabletop-skin .tt-boxes {
@@ -748,42 +752,48 @@
 .tabletop-skin .tt-pbox {
   position: relative;
   width: 100%;
-  min-height: clamp(112px, 22dvh, 168px);
+  min-height: clamp(128px, 24dvh, 176px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 22px 8px 10px;
+  gap: 5px;
+  padding: 24px 10px 12px;
   color: #fff;
   background:
-    linear-gradient(180deg, rgba(8, 40, 32, 0.55), rgba(2, 20, 16, 0.72)),
-    rgba(2, 23, 18, 0.4);
-  border: 1.5px solid var(--tt-gold-line);
-  border-radius: 14px;
+    linear-gradient(165deg, rgba(18, 58, 46, 0.72), rgba(3, 22, 17, 0.88)),
+    radial-gradient(120% 80% at 50% 0%, rgba(223, 189, 105, 0.12), transparent 55%);
+  border: 1.75px solid rgba(223, 189, 105, 0.55);
+  border-radius: 16px;
   box-shadow:
-    inset 0 0 0 3px rgba(223, 189, 105, 0.08),
-    inset 0 12px 28px rgba(223, 189, 105, 0.04),
-    0 8px 16px rgba(0, 0, 0, 0.22);
+    inset 0 0 0 4px rgba(223, 189, 105, 0.1),
+    inset 0 14px 30px rgba(223, 189, 105, 0.06),
+    0 10px 18px rgba(0, 0, 0, 0.28);
   cursor: pointer;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 
 .tabletop-skin .tt-pbox-inlay {
   position: absolute;
-  inset: 5px;
-  border-radius: 10px;
-  border: 1px solid rgba(223, 189, 105, 0.22);
+  inset: 6px;
+  border-radius: 11px;
+  border: 1px solid rgba(223, 189, 105, 0.28);
   pointer-events: none;
 }
 
 .tabletop-skin .tt-pbox.is-selected {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  border-color: var(--tt-gold);
   box-shadow:
-    inset 0 0 0 3px rgba(223, 189, 105, 0.14),
-    0 0 0 1px var(--tt-gold),
-    0 10px 22px rgba(0, 0, 0, 0.28),
-    0 0 20px rgba(223, 189, 105, 0.18);
+    inset 0 0 0 4px rgba(223, 189, 105, 0.18),
+    0 0 0 1.5px var(--tt-gold-hi),
+    0 12px 24px rgba(0, 0, 0, 0.32),
+    0 0 24px rgba(223, 189, 105, 0.22);
+}
+
+.tabletop-skin .tt-pbox .tt-hand-tiles {
+  justify-content: center;
+  margin-top: 2px;
 }
 
 .tabletop-skin .tt-pbox.is-drop {
@@ -907,58 +917,129 @@
 
 .tabletop-skin .tt-play-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
 }
 
-/* ========== DEALER LEDGER ========== */
+.tabletop-skin .tt-play-row .tt-btn {
+  min-width: 0;
+  padding-inline: 4px;
+  font-size: 11px;
+}
+
+/* ========== DEALER HAND + LEDGER ========== */
 .tabletop-skin .tt-ledger-wrap {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin-top: 8px;
+  margin-top: 6px;
   gap: 6px;
 }
 
-.tabletop-skin .tt-dealer-summary {
+.tabletop-skin .tt-dealer-hand {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(223, 189, 105, 0.34);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(8, 36, 28, 0.72), rgba(2, 16, 12, 0.82)),
+    rgba(2, 14, 12, 0.55);
 }
 
-.tabletop-skin .tt-dealer-summary-card {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border: 1px solid rgba(223, 189, 105, 0.28);
-  border-radius: 10px;
-  background: rgba(2, 14, 12, 0.4);
+.tabletop-skin .tt-dealer-hand-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.tabletop-skin .tt-dealer-summary-card small {
-  grid-column: 1 / -1;
-  font-size: 8px;
-  letter-spacing: 0.12em;
+.tabletop-skin .tt-dealer-hand-head small {
+  font-size: 9px;
+  letter-spacing: 0.14em;
   color: var(--tt-gold);
 }
 
-.tabletop-skin .tt-dealer-summary-card strong {
-  font-size: 13px;
-  color: var(--tt-ivory);
+.tabletop-skin .tt-dealer-hand-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.tabletop-skin .tt-dealer-summary-card em {
+.tabletop-skin .tt-hand-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+
+.tabletop-skin .tt-hand-tiles.is-empty {
+  font-size: 11px;
+  color: rgba(244, 234, 213, 0.45);
+}
+
+.tabletop-skin .tt-rank-tile {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 34px;
+  padding: 0 5px;
+  border-radius: 5px;
+  border: 1px solid rgba(244, 234, 213, 0.55);
+  background: linear-gradient(180deg, #fffef8, #ece4d4);
+  color: #1a1a1a;
+  font: 700 12px/1 var(--tt-serif);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.tabletop-skin .tt-hand-total {
   font-style: normal;
-  font-size: 12px;
-  color: var(--tt-cream);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--tt-gold);
+  margin-left: 2px;
 }
 
-.tabletop-skin .tt-dealer-summary-card.is-play {
-  border-color: rgba(223, 189, 105, 0.45);
+.tabletop-skin .tt-box-cards {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+
+.tabletop-skin .tt-box-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tabletop-skin .tt-correct {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+}
+
+.tabletop-skin .tt-rank-pad {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 4px 0 8px;
+}
+
+.tabletop-skin .tt-rank-key {
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(223, 189, 105, 0.35);
+  background: rgba(2, 18, 14, 0.85);
+  color: var(--tt-ivory);
+  font: 600 14px/1 var(--tt-serif);
+}
+
+.tabletop-skin .tt-rank-note {
+  margin: 0;
+  font-size: 11px;
 }
 
 .tabletop-skin .tt-dealer-rules {
@@ -1007,14 +1088,34 @@
   border-bottom: 1px solid rgba(223, 189, 105, 0.12);
 }
 
-.tabletop-skin .tt-ledger-row.is-unresolved {
-  min-height: 120px;
+.tabletop-skin .tt-ledger-row.is-unresolved,
+.tabletop-skin .tt-ledger-row.has-cards {
+  min-height: 72px;
   align-items: start;
+}
+
+.tabletop-skin .tt-ledger-row.is-unresolved {
+  min-height: 128px;
   grid-template-rows: auto auto;
 }
 
-.tabletop-skin .tt-ledger-row.is-unresolved .tt-ledger-action {
+.tabletop-skin .tt-ledger-row.is-unresolved .tt-ledger-settle {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+}
+
+.tabletop-skin .tt-ledger-ins-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tabletop-skin .tt-ledger-2x,
+.tabletop-skin .tt-pbox-2x {
+  font-style: normal;
+  color: var(--tt-gold);
+  letter-spacing: 0.04em;
 }
 
 .tabletop-skin .tt-ledger-who strong,

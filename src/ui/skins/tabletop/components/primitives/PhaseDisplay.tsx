@@ -1,6 +1,6 @@
 "use client";
 
-/** Compact phase pill + title + optional instruction. */
+/** Compact phase title + optional instruction. Avoids repeating the same phase word twice. */
 export function PhaseDisplay({
   display,
   label,
@@ -10,10 +10,12 @@ export function PhaseDisplay({
   label: string;
   instruction?: string;
 }) {
+  const heading = label || display || "";
+  const showPill = Boolean(display && heading && display.toUpperCase() !== heading.toUpperCase());
   return (
     <div className="tt-phase">
-      {display ? <span className="tt-phase-display">{display}</span> : null}
-      <strong data-phase-heading>{label}</strong>
+      {showPill ? <span className="tt-phase-display">{display}</span> : null}
+      <strong data-phase-heading>{heading}</strong>
       {instruction ? <em>{instruction}</em> : null}
     </div>
   );
