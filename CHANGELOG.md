@@ -2,11 +2,10 @@
 
 ## Unreleased
 
-### Tabletop visual architecture rebuild
+### Tabletop visual recovery
 
-- Visual-only rebuild of `tabletop.css` tokens and primitives against `design/reference/tabletop/approved/*.jpg` (deep emerald felt, metallic gold rail, dimensional chips, gold-gradient primary controls). Placement and commands unchanged.
-- Registry loads Classic components via `classic/skin` without Classic CSS side effects while Tabletop is active.
-- Display font: Playfair (`--font-display`); interface font: Inter. Isolation tests assert one shell/board/tray and no `classic-*` DOM classes.
+- Reverted the rejected `c9fea51` visual restyle. Restored `tabletop.css` and layout typography from `bfd4f3c`.
+- Retained Classic CSS isolation: registry imports `./classic/skin` only; Classic stylesheets are not loaded while Tabletop is active.
 
 ### Tabletop skin (default)
 
