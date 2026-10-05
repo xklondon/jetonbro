@@ -1,16 +1,17 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { HandTiles } from "./HandCards";
 import { ChipStack } from "./Jeton";
+import { nextCelebrateClass } from "./result-celebrate";
 
-function resultCopy(box: BoxView): { kind: string; text: string } | null {
+function resultCopy(box: BoxView): { kind: string; text: string; label: string } | null {
   if (!box.outcome) return null;
-  if (box.outcome === "WON") return { kind: "won", text: box.returned ? `WON +${box.returned.label}` : "WON" };
-  if (box.outcome === "LOST") return { kind: "lost", text: box.returned && box.returned.label !== "0" ? `LOST ${box.returned.label}` : "LOST" };
-  if (box.outcome === "PUSH") return { kind: "push", text: box.returned ? `STAND OFF ${box.returned.label}` : "STAND OFF" };
-  return { kind: "blackjack", text: box.returned ? `BLACKJACK +${box.returned.label}` : "BLACKJACK" };
+  if (box.outcome === "WON") return { kind: "won", label: "WON", text: box.returned ? `WON +${box.returned.label}` : "WON" };
+  if (box.outcome === "LOST") return { kind: "lost", label: "LOST", text: box.returned && box.returned.label !== "0" ? `LOST ${box.returned.label}` : "LOST" };
+  if (box.outcome === "PUSH") return { kind: "push", label: "STAND OFF", text: box.returned ? `STAND OFF ${box.returned.label}` : "STAND OFF" };
+  return { kind: "blackjack", label: "BLACKJACK", text: box.returned ? `BLACKJACK +${box.returned.label}` : "BLACKJACK" };
 }
 
 function insuranceCopy(result: string | null): string | null {
@@ -21,6 +22,25 @@ function insuranceCopy(result: string | null): string | null {
     return returned ? `INS WON +${returned}` : "INS WON";
   }
   return result;
+}
+
+/** One-shot celebrate class when outcome newly arrives; refresh mounts stay static. */
+function useResultCelebrate(boxId: string, outcome: string | null | undefined) {
+  const prev = useRef<string | null | undefined>(undefined);
+  const [celebrate, setCelebrate] = useState<string | null>(null);
+
+  useEffect(() => {
+    const step = nextCelebrateClass(prev.current, outcome);
+    prev.current = step.nextPrev;
+    if (step.celebrate) {
+      setCelebrate(step.celebrate);
+      const timer = window.setTimeout(() => setCelebrate(null), 1400);
+      return () => window.clearTimeout(timer);
+    }
+    if (!outcome) setCelebrate(null);
+  }, [boxId, outcome]);
+
+  return celebrate;
 }
 
 /** Player betting box — gold inlay, chip focus, selected depth (approved PNG silhouette). */
@@ -43,6 +63,8 @@ export function PlayerBox({
   insurancePanel?: ReactNode;
   showCards?: boolean;
 }) {
+  const celebrate = useResultCelebrate(box?.id ?? "empty", box?.outcome);
+
   if (empty || !box) {
     return (
       <div className="tt-box-wrap" data-slot="1">
@@ -71,11 +93,13 @@ export function PlayerBox({
   return (
     <div className="tt-box-wrap" data-slot={box.boxNumber}>
       <div
-        className={`tt-pbox${isSelected ? " is-selected" : ""}${dropHighlight ? " is-drop" : ""}${result ? ` is-${result.kind} is-payout` : ""}`}
+        className={`tt-pbox${isSelected ? " is-selected" : ""}${dropHighlight ? " is-drop" : ""}${result ? ` is-${result.kind} is-payout` : ""}${celebrate ? ` ${celebrate}` : ""}`}
         data-drop-box={box.id}
         data-box-id={box.id}
         data-box-slot={box.boxNumber}
         data-payout-box={result ? "true" : undefined}
+        data-result-celebrate={celebrate ? "true" : undefined}
+        data-celebrate-kind={celebrate ? result?.kind : undefined}
         role={onSelect ? "button" : undefined}
         aria-label={box.label}
         aria-pressed={onSelect ? isSelected : undefined}
@@ -87,10 +111,10 @@ export function PlayerBox({
         <span className="tt-pbox-name">BOX {box.boxNumber}</span>
         {result ? (
           <span className="tt-pbox-payout" data-payout-main="true">
-            <strong className="tt-pbox-stake">{box.returned?.label ?? box.bet.label}</strong>
             <em className={`tt-pbox-result is-${result.kind}`} data-payout-state={box.outcome ?? ""}>
-              {result.text}
+              {result.label}
             </em>
+            <strong className="tt-pbox-stake">{box.returned?.label ?? box.bet.label}</strong>
           </span>
         ) : (
           <>

@@ -21,10 +21,8 @@ const RESULT_KIND: Record<BoxOutcome, "lost" | "push" | "blackjack" | "won"> = {
   WON: "won",
 };
 
-function resultCopy(box: BoxView): string | null {
-  if (!box.outcome) return null;
-  const result = box.outcome === "WON" ? "Won" : box.outcome === "PUSH" ? "Stand off" : box.outcome === "LOST" ? "Lost" : "Blackjack";
-  return box.returned ? `${result} · ${box.returned.label}` : result;
+function resultBadge(outcome: BoxOutcome): string {
+  return RAIL_TITLE[outcome];
 }
 
 function insuranceCopy(result: string | null): string | null {
@@ -67,6 +65,27 @@ export function ResultControls({
           </TableButton>
         );
       })}
+    </span>
+  );
+}
+
+/** Large settled result badge — stronger than stake copy. */
+export function BoxResultBadge({
+  outcome,
+  returnedLabel,
+  insuranceResult,
+}: {
+  outcome: BoxOutcome;
+  returnedLabel?: string | null;
+  insuranceResult?: string | null;
+}) {
+  const kind = RESULT_KIND[outcome];
+  const ins = insuranceCopy(insuranceResult ?? null);
+  return (
+    <span className={`tt-result-badge is-${kind}`} data-box-result={outcome} data-payout-state={outcome}>
+      <strong>{resultBadge(outcome)}</strong>
+      {returnedLabel ? <em data-returned="true">{returnedLabel}</em> : null}
+      {ins ? <small className="tt-ledger-ins" data-insurance-result={insuranceResult ?? ""}>{ins}</small> : null}
     </span>
   );
 }
@@ -114,19 +133,19 @@ export function DealerLedgerRow({
     );
   }
 
+  const payoutPhase = phase === "PAYOUT" || phase === "ROUND_COMPLETE";
   const unresolved = Boolean(payoutEnabled && !box.outcome && onSettle);
-  const settled = resultCopy(box);
   const doubled = box.isDoubled;
   const split = box.isSplit;
-  const showCards = phase === "PLAYING" || phase === "PAYOUT" || phase === "ROUND_COMPLETE";
+  const showCards = phase === "PLAYING" || payoutPhase;
   const hand = box.hand as HandView | undefined;
   const canCorrect = Boolean(dealerMayCorrect && hand?.canEdit && onAddCard && onUndoCard);
   const showInsSettle = Boolean(insuranceSettleEnabled && box.insurance && !box.insuranceResult && onSettleInsurance);
-  const insSettled = insuranceCopy(box.insuranceResult);
+  const settled = Boolean(box.outcome);
 
   return (
     <div
-      className={`tt-ledger-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}${showCards ? " has-cards" : ""}`}
+      className={`tt-ledger-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : settled ? " is-settled" : " is-idle"}${showCards ? " has-cards" : ""}${payoutPhase ? " is-payout" : ""}`}
       data-box-id={box.id}
       data-blackjack-box-row="true"
       data-box-phase={phase}
@@ -135,7 +154,7 @@ export function DealerLedgerRow({
       data-box-number={box.boxNumber}
       data-doubled={doubled ? "true" : undefined}
       data-split={split ? "true" : undefined}
-      data-payout-row={unresolved || Boolean(box.outcome) ? "true" : undefined}
+      data-payout-row={unresolved || settled ? "true" : undefined}
     >
       <span className="tt-ledger-who">
         <strong>{box.playerName || "Player"}</strong>
@@ -152,10 +171,8 @@ export function DealerLedgerRow({
           {doubled ? <em className="tt-ledger-2x"> 2×</em> : null}
         </strong>
         {box.insurance ? <small className="tt-ledger-ins">INS {box.insurance.label}</small> : null}
-        {settled ? <small>{settled}</small> : null}
-        {insSettled ? <small className="tt-ledger-ins">{insSettled}</small> : null}
       </span>
-      <span className="tt-ledger-action">
+      <span className={`tt-ledger-action${payoutPhase ? " is-cards" : ""}`}>
         {showCards ? (
           canCorrect ? (
             <BoxCardControls
@@ -173,8 +190,14 @@ export function DealerLedgerRow({
           <span className="tt-ledger-slot">{doubled ? "2×" : split ? "SPLIT" : "—"}</span>
         )}
       </span>
-      {unresolved && onSettle ? (
-        <span className="tt-ledger-settle">
+      {payoutPhase && settled && box.outcome ? (
+        <span className="tt-ledger-result-col">
+          <BoxResultBadge outcome={box.outcome} returnedLabel={box.returned?.label} insuranceResult={box.insuranceResult} />
+        </span>
+      ) : null}
+      {payoutPhase && !settled ? <span className="tt-ledger-result-col"><span className="tt-ledger-slot">—</span></span> : null}
+      {payoutPhase && unresolved && onSettle ? (
+        <span className="tt-ledger-settle is-full">
           <ResultControls box={box} onSettle={onSettle} />
           {showInsSettle ? (
             <span className="tt-ledger-ins-results" role="group" aria-label={`Settle insurance · Box ${box.boxNumber}`}>
@@ -209,12 +232,14 @@ export function DealerLedger({
   boxCount,
   showRules = true,
   summary,
+  payoutMode = false,
 }: {
   children: ReactNode;
   playerCount?: number;
   boxCount?: number;
   showRules?: boolean;
   summary?: ReactNode;
+  payoutMode?: boolean;
 }) {
   return (
     <div className="tt-ledger-wrap">
@@ -224,11 +249,18 @@ export function DealerLedger({
           Blackjack pays 3 to 2 · Insurance pays 2 to 1
         </p>
       ) : null}
-      <div className="tt-ledger" data-player-count={playerCount} data-box-count={boxCount} data-ledger="true">
+      <div
+        className={`tt-ledger${payoutMode ? " is-payout" : ""}`}
+        data-player-count={playerCount}
+        data-box-count={boxCount}
+        data-ledger="true"
+        data-ledger-mode={payoutMode ? "payout" : "play"}
+      >
         <div className="tt-ledger-head">
           <span>PLAYER</span>
           <span>MAIN BET</span>
-          <span>ACTION</span>
+          <span>{payoutMode ? "CARDS" : "ACTION"}</span>
+          {payoutMode ? <span>RESULT</span> : null}
         </div>
         {children}
       </div>

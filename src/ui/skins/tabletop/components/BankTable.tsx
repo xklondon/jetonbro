@@ -191,7 +191,12 @@ export function BankTable({
           INSURANCE · {view.insurance.total.label} · {view.insurance.count} {view.insurance.count === 1 ? "bet" : "bets"}
         </div>
       ) : null}
-      <DealerLedger playerCount={view.players.length} boxCount={boxes.length} summary={summary}>
+      <DealerLedger
+        playerCount={view.players.length}
+        boxCount={boxes.length}
+        summary={summary}
+        payoutMode={view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE"}
+      >
         {rows}
       </DealerLedger>
     </Shell>

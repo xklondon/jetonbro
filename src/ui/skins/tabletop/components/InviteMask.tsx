@@ -135,19 +135,23 @@ export function InviteMethods({
         ))}
       </div>
       {tab === "guest" ? (
-        <section className="tt-invite-card" data-invite-kind="guest" data-guest-join-url={guestJoinUrl ?? undefined}>
-          <p className="tt-muted">Join this table without email. Starts with {startingJetons} jetons.</p>
+        <section className="tt-invite-panel" data-invite-kind="guest" data-guest-join-url={guestJoinUrl ?? undefined}>
           {guestJoinUrl ? (
-            <div className="tt-qr" data-join-url={guestJoinUrl} aria-label="Guest QR — no email">
-              {guestQr ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={guestQr} alt="Guest QR — no email" width={128} height={128} />
-              ) : (
-                <div className="tt-qr-slot tt-muted">Preparing guest QR…</div>
-              )}
-              <button className="tt-btn gold" type="button" onClick={() => void copy("guest", guestJoinUrl)}>
-                {copied === "guest" ? "Copied" : "Copy Link"}
-              </button>
+            <div className="tt-qr-row" data-join-url={guestJoinUrl} aria-label="Guest QR — no email">
+              <div className="tt-qr">
+                {guestQr ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={guestQr} alt="Guest QR — no email" width={152} height={152} />
+                ) : (
+                  <div className="tt-qr-slot tt-muted">Preparing guest QR…</div>
+                )}
+              </div>
+              <div className="tt-qr-side">
+                <p className="tt-muted">Join this table without email. Starts with {startingJetons} jetons.</p>
+                <button className="tt-btn gold" type="button" onClick={() => void copy("guest", guestJoinUrl)}>
+                  {copied === "guest" ? "Copied" : "Copy Link"}
+                </button>
+              </div>
             </div>
           ) : (
             <p className="tt-muted">Guest link is not ready yet.</p>
@@ -155,19 +159,23 @@ export function InviteMethods({
         </section>
       ) : null}
       {tab === "verified" ? (
-        <section className="tt-invite-card" data-invite-kind="verified" data-verified-join-url={verifiedJoinUrl ?? undefined}>
-          <p className="tt-muted">Confirm email to become a verified user. Completing the magic link seats them at this table.</p>
+        <section className="tt-invite-panel" data-invite-kind="verified" data-verified-join-url={verifiedJoinUrl ?? undefined}>
           {verifiedJoinUrl ? (
-            <div className="tt-qr" data-join-url={verifiedJoinUrl} aria-label="Verified QR — email confirmation">
-              {verifiedQr ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={verifiedQr} alt="Verified QR — email confirmation" width={128} height={128} />
-              ) : (
-                <div className="tt-qr-slot tt-muted">Preparing verified QR…</div>
-              )}
-              <button className="tt-btn gold" type="button" onClick={() => void copy("verified", verifiedJoinUrl)}>
-                {copied === "verified" ? "Copied" : "Copy Link"}
-              </button>
+            <div className="tt-qr-row" data-join-url={verifiedJoinUrl} aria-label="Verified QR — email confirmation">
+              <div className="tt-qr">
+                {verifiedQr ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={verifiedQr} alt="Verified QR — email confirmation" width={152} height={152} />
+                ) : (
+                  <div className="tt-qr-slot tt-muted">Preparing verified QR…</div>
+                )}
+              </div>
+              <div className="tt-qr-side">
+                <p className="tt-muted">Confirm email to become a verified user. Completing the magic link seats them at this table.</p>
+                <button className="tt-btn gold" type="button" onClick={() => void copy("verified", verifiedJoinUrl)}>
+                  {copied === "verified" ? "Copied" : "Copy Link"}
+                </button>
+              </div>
             </div>
           ) : (
             <p className="tt-muted">Verified link is not ready yet.</p>
@@ -175,30 +183,32 @@ export function InviteMethods({
         </section>
       ) : null}
       {tab === "email" ? (
-        <section className="tt-invite-card" data-invite-kind="email">
-          <label className="tt-field">
-            Player email
-            <input
-              className="tt-input"
-              placeholder="player@email"
-              aria-label="Player email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={emails}
-              disabled={!emailConfigured || status === "sending"}
-              onChange={(event) => {
-                setEmails(event.target.value);
-                if (status === "invalid" || status === "error" || status === "sent") {
-                  setStatus("idle");
-                  setMessage(null);
-                }
-              }}
-            />
-          </label>
-          <button className="tt-btn gold" type="button" disabled={!emailConfigured || status === "sending"} onClick={() => void sendInvite()}>
-            {status === "sending" ? "SENDING…" : "SEND INVITE"}
-          </button>
+        <section className="tt-invite-panel" data-invite-kind="email">
+          <div className="tt-email-row">
+            <label className="tt-field">
+              Player email
+              <input
+                className="tt-input"
+                placeholder="player@email"
+                aria-label="Player email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={emails}
+                disabled={!emailConfigured || status === "sending"}
+                onChange={(event) => {
+                  setEmails(event.target.value);
+                  if (status === "invalid" || status === "error" || status === "sent") {
+                    setStatus("idle");
+                    setMessage(null);
+                  }
+                }}
+              />
+            </label>
+            <button className="tt-btn gold" type="button" disabled={!emailConfigured || status === "sending"} onClick={() => void sendInvite()}>
+              {status === "sending" ? "SENDING…" : "SEND INVITE"}
+            </button>
+          </div>
           {!emailConfigured ? <p className="tt-muted">Email delivery is not configured.</p> : null}
           {message ? (
             <p className={status === "error" || status === "invalid" ? "tt-error" : "tt-muted"} data-invite-email-status={status}>

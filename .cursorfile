@@ -307,7 +307,7 @@ Full acceptance means:
 - Default skin: Tabletop (`src/ui/skins/tabletop/`); Classic is the registered rollback skin
 - Games: Blackjack and Texas Hold’em
 - Active visual authority: original approved PNGs in `design/reference/classic/approved/` (literal anatomy). Product contracts control commands/roles/data. HTML prototype is secondary token reference only.
-- Next agreed milestone: final Blackjack Tabletop pass complete for box-instance ledger, Dealer hand panel, per-box payout composition, and Card Assist rank entry reuse; remaining work is visual fidelity polish against approved PNG crops only (no engine/accounting changes); Home/Create Table remain functional on the same token system
+- Blackjack FROZEN (visual + functional) after the final polish commit: Dealer payout result badges, card totals under cards, Player one-shot result celebrations (`prefers-reduced-motion` static), compact Create Table. Do not reopen Blackjack presentation or engine unless a focused test exposes a functional regression. Next milestone: Poker Tabletop polish.
 - Classic CSS isolation retained: active Tabletop bundle must not load Classic stylesheets (`registry` → `classic/skin`)
 - Tabletop presentation primitives live under `src/ui/skins/tabletop/components/primitives/` (`DealerLedger`, `PlayerBox`, `JetonTray`, `HandCards` / Dealer hand panel, structural `TableRail` SVG on Shell felt)
 - Split maps to existing engine boxes (`isSplit` / `isSplitOffshoot` / parent offshoot row); UI never fabricates split hands

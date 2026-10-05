@@ -16,7 +16,7 @@ export function handStatusLabel(hand?: HandView | null): string {
   return hand.label.toUpperCase();
 }
 
-/** Compact physical-card tiles for recorded ranks (display only). */
+/** Compact physical-card tiles with total centred beneath the card group. */
 export function HandTiles({
   hand,
   emptyLabel = "—",
@@ -35,12 +35,18 @@ export function HandTiles({
   }
   return (
     <span className="tt-hand-tiles" data-box-cards="true">
-      {ranks.map((rank, index) => (
-        <span key={`${rank}-${index}`} className="tt-rank-tile" data-rank={rank}>
-          {rank}
-        </span>
-      ))}
-      {status ? <em className="tt-hand-total">{status}</em> : null}
+      <span className="tt-hand-rank-row">
+        {ranks.map((rank, index) => (
+          <span key={`${rank}-${index}`} className="tt-rank-tile" data-rank={rank}>
+            {rank}
+          </span>
+        ))}
+      </span>
+      {status ? (
+        <em className="tt-hand-total" data-hand-total="true">
+          {status}
+        </em>
+      ) : null}
     </span>
   );
 }
@@ -85,7 +91,7 @@ export function RankPadSheet({
   );
 }
 
-/** Dealer hand panel — replaces the rejected top-right PLAYING / H summary. */
+/** Dealer hand panel — ranks with total under the cards. */
 export function DealerHandPanel({
   hand,
   canEdit,
@@ -99,13 +105,11 @@ export function DealerHandPanel({
 }) {
   const [open, setOpen] = useState(false);
   const ranks = hand?.ranks ?? [];
-  const status = handStatusLabel(hand);
 
   return (
     <div className="tt-dealer-hand" data-dealer-hand="true" data-dealer-row="true">
       <div className="tt-dealer-hand-head">
         <small>DEALER HAND</small>
-        {status ? <strong className="tt-hand-total">{status}</strong> : null}
       </div>
       <HandTiles hand={hand} emptyLabel="No cards" />
       {canEdit ? (

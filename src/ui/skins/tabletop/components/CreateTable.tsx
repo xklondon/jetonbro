@@ -163,12 +163,10 @@ export function CreateTable({
     >
       <div className="tt-create-heading">
         <h1>CREATE TABLE</h1>
-        <strong className="tt-create-name">{name || "New Table"}</strong>
       </div>
       <div className="tt-create-body">
         {notice ? <div className="tt-error">{notice}</div> : null}
-        <section className="tt-block">
-          <div className="tt-label">TABLE</div>
+        <section className="tt-block is-compact">
           <div className="tt-two">
             <label className="tt-field">
               Table name
@@ -215,11 +213,8 @@ export function CreateTable({
               />
             </label>
           ) : (
-            <div className="tt-muted">Owner · {view.ownerName}</div>
+            <div className="tt-muted tt-create-meta">Owner · {view.ownerName}</div>
           )}
-        </section>
-        <section className="tt-block">
-          <div className="tt-label">GAME</div>
           <div className="tt-segment" role="group" aria-label="Game">
             {playable.map((entry) => (
               <button
@@ -238,15 +233,12 @@ export function CreateTable({
             ))}
           </div>
           {later.map((entry) => (
-            <p className="tt-muted" key={entry.id}>
+            <p className="tt-muted tt-create-meta" key={entry.id}>
               {entry.label} · Coming later
             </p>
           ))}
-        </section>
-        <section className="tt-block">
-          <div className="tt-label">{game === "POKER" ? "BLINDS / DEALER" : "BANK / DEALER"}</div>
           {game === "BLACKJACK" ? (
-            <div className="tt-segment">
+            <div className="tt-segment" role="group" aria-label="Bank">
               <button
                 type="button"
                 className={bankFundingMode === "OPEN" ? "active" : ""}
@@ -318,12 +310,12 @@ export function CreateTable({
               </select>
             </label>
           ) : (
-            <div className="tt-muted">Dealer · {view?.bankName ?? "Owner (default)"}</div>
+            <div className="tt-muted tt-create-meta">Dealer · {view?.bankName ?? "Owner (default)"}</div>
           )}
         </section>
-        <section className="tt-block">
+        <section className="tt-block is-compact">
           <div className="tt-label">PLAYERS</div>
-          {playerRows.length || pendingInvites.length ? (
+          {playerRows.length ? (
             <div className="tt-chip-rows">
               {playerRows.map((member) => (
                 <div className="tt-chip-row" key={member.userId} data-player-row="true">
@@ -334,16 +326,10 @@ export function CreateTable({
                   </small>
                 </div>
               ))}
-              {pendingInvites.map((invite) => (
-                <div className="tt-chip-row" key={invite.id} data-seat-status="Invited">
-                  <strong>{invite.email ?? "Player"}</strong>
-                  <small>Pending</small>
-                </div>
-              ))}
             </div>
-          ) : (
-            <p className="tt-muted">No players yet.</p>
-          )}
+          ) : pendingInvites.length === 0 ? (
+            <p className="tt-muted tt-create-meta">No players yet.</p>
+          ) : null}
           <InviteInline
             guestJoinUrl={guestJoinUrl}
             verifiedJoinUrl={verifiedJoinUrl}
