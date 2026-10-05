@@ -1,25 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { chipsFromMillis } from "./chips";
+import { ChipStack } from "./primitives/Jeton";
+import { PhaseDisplay } from "./primitives/PhaseDisplay";
+import { TableName } from "./primitives/TableName";
 
-/** Small pile of jetons derived from a stake (display only). */
+/** @deprecated Prefer ChipStack. */
 export function ChipPile({ millis, max = 5 }: { millis: string; max?: number }) {
-  const chips = chipsFromMillis(millis);
-  const shown = chips.slice(0, max);
-  return (
-    <span className={`tt-pile${shown.length === 0 ? " is-empty" : ""}`} aria-hidden="true">
-      {shown.length === 0 ? (
-        <span className="tt-chip tt-c0">0</span>
-      ) : (
-        shown.map((chip, index) => (
-          <span key={`${chip.label}-${index}`} className={`tt-chip tt-${chip.className}`}>
-            {chip.label}
-          </span>
-        ))
-      )}
-    </span>
-  );
+  return <ChipStack millis={millis} max={max} />;
 }
 
 /** Compact countdown pill driven by a server deadline. */
@@ -46,15 +34,9 @@ export function Countdown({ deadline, label }: { deadline: string | null; label:
   );
 }
 
-/** Compact phase pill printed near the top of the felt. */
+/** @deprecated Prefer PhaseDisplay. */
 export function PhasePill({ display, label, instruction }: { display?: string; label: string; instruction?: string }) {
-  return (
-    <div className="tt-phase">
-      {display ? <span className="tt-phase-display">{display}</span> : null}
-      <strong data-phase-heading>{label}</strong>
-      {instruction ? <em>{instruction}</em> : null}
-    </div>
-  );
+  return <PhaseDisplay display={display} label={label} instruction={instruction} />;
 }
 
 export function DealerMark({ name }: { name?: string }) {
@@ -65,10 +47,7 @@ export function DealerMark({ name }: { name?: string }) {
   );
 }
 
+/** @deprecated Prefer TableName. */
 export function ClothName({ name }: { name: string }) {
-  return (
-    <div className="tt-cloth-name" data-table-name={name}>
-      {name}
-    </div>
-  );
+  return <TableName name={name} />;
 }

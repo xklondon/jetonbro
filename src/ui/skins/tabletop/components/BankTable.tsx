@@ -2,91 +2,20 @@
 
 import { useState, type ReactNode } from "react";
 import type { BankTableView, BoxView, MemberView } from "@/application/queries/views";
-import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
+import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import { blackjackDealerControls, blackjackOwnerMenu } from "@/ui/core/blackjack-phase-controls";
 import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
-import { Dock } from "./Dock";
 import { InviteMask } from "./InviteMask";
 import { OwnerMenu, type OwnerMenuItem } from "./OwnerMenu";
-import { ChipPile, ClothName, Countdown, PhasePill } from "./Spot";
+import { Countdown } from "./Spot";
+import { ActionDock } from "./primitives/ActionDock";
+import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
+import { PhaseDisplay } from "./primitives/PhaseDisplay";
+import { TableButton } from "./primitives/TableButton";
+import { TableName } from "./primitives/TableName";
 
-const RAIL_TITLE: Record<BoxOutcome, string> = {
-  LOST: "LOST",
-  PUSH: "STAND OFF",
-  BLACKJACK: "BLACKJACK",
-  WON: "WON",
-};
-
-function resultCopy(box: BoxView): string | null {
-  if (!box.outcome) return null;
-  const result = box.outcome === "WON" ? "Won" : box.outcome === "PUSH" ? "Stand off" : box.outcome === "LOST" ? "Lost" : "Blackjack";
-  return box.returned ? `${result} · ${box.returned.label}` : result;
-}
-
-/** One player's box on the dealer's felt: stake plus payout buttons while unresolved. */
-function PositionSpot({
-  box,
-  phase,
-  payoutEnabled,
-  onSettle,
-}: {
-  box: BoxView;
-  phase: string;
-  payoutEnabled: boolean;
-  onSettle: (outcome: BoxOutcome) => void;
-}) {
-  const [submitted, setSubmitted] = useState(false);
-  const unresolved = payoutEnabled && !box.outcome && !submitted;
-  const settled = resultCopy(box);
-  const commitment = box.isDoubled ? "Double" : box.isSplit ? "Split" : null;
-  const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
-
-  return (
-    <div
-      className={`tt-spot${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : " is-idle"}`}
-      data-box-id={box.id}
-      data-blackjack-box-row="true"
-      data-dealer-position="true"
-      data-box-phase={phase}
-      data-player-row="true"
-      data-player-group={box.playerId}
-      data-payout-row={unresolved || Boolean(box.outcome) ? "true" : undefined}
-    >
-      <span className="tt-spot-who">
-        <strong>{box.playerName || "Player"}</strong>
-        <small>BOX {box.boxNumber}</small>
-      </span>
-      <ChipPile millis={box.bet.millis} max={4} />
-      <span className="tt-amount">{box.bet.label}</span>
-      {box.insurance ? <small className="tt-spot-note">INS {box.insurance.label}</small> : null}
-      {commitment || settled ? <small className="tt-spot-note">{commitment ?? settled}</small> : null}
-      {unresolved ? (
-        <span className="tt-payouts" role="group" aria-label={`Settle ${title}`}>
-          {PAYOUT_RAIL_ORDER.map((outcome) => {
-            const action = box.payoutActions.find((entry) => entry.outcome === outcome);
-            return (
-              <button
-                key={outcome}
-                type="button"
-                className={`tt-pay tt-pay-${outcome.toLowerCase()}`}
-                data-payout-action="true"
-                onClick={() => {
-                  setSubmitted(true);
-                  onSettle(outcome);
-                }}
-              >
-                {action?.title ?? RAIL_TITLE[outcome]}
-              </button>
-            );
-          })}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-/** Immersive Blackjack Dealer: player boxes as betting spots on the felt, actions anchored in the rail. */
+/** Immersive Blackjack Dealer: dense ledger for real boxes; actions in the rail. */
 export function BankTable({
   view,
   members,
@@ -119,37 +48,44 @@ export function BankTable({
           ? "PAYOUT"
           : view.phase;
 
-  const spots: Array<{ key: string; node: ReactNode }> = [];
   const settle = (box: BoxView) => (outcome: BoxOutcome) => void onCommand("settleBox", { boxId: box.id, outcome });
+
+  const rows: ReactNode[] = [];
   if (view.players.length === 0) {
     for (const box of view.boxes) {
-      spots.push({
-        key: box.id,
-        node: <PositionSpot box={box} phase={view.phase} payoutEnabled={view.actions.settleBoxes} onSettle={settle(box)} />,
-      });
+      rows.push(
+        <DealerLedgerRow
+          key={box.id}
+          box={box}
+          phase={view.phase}
+          payoutEnabled={view.actions.settleBoxes}
+          onSettle={settle(box)}
+        />,
+      );
     }
   } else {
     for (const player of view.players) {
       if (player.boxes.length === 0) {
-        spots.push({
-          key: player.userId,
-          node: (
-            <div className="tt-spot is-idle is-empty" data-player-row="true" data-player-group={player.userId}>
-              <span className="tt-spot-who">
-                <strong>{player.name}</strong>
-                <small>AVAILABLE</small>
-              </span>
-              <span className="tt-amount">{player.available.label}</span>
-            </div>
-          ),
-        });
+        rows.push(
+          <DealerLedgerRow
+            key={player.userId}
+            empty
+            playerName={player.name}
+            availableLabel={player.available.label}
+          />,
+        );
         continue;
       }
       for (const box of player.boxes) {
-        spots.push({
-          key: box.id,
-          node: <PositionSpot box={box} phase={view.phase} payoutEnabled={view.actions.settleBoxes} onSettle={settle(box)} />,
-        });
+        rows.push(
+          <DealerLedgerRow
+            key={box.id}
+            box={box}
+            phase={view.phase}
+            payoutEnabled={view.actions.settleBoxes}
+            onSettle={settle(box)}
+          />,
+        );
       }
     }
   }
@@ -162,18 +98,38 @@ export function BankTable({
     menuItems.push({ label: "IN 7 SECONDS", disabled: !view.actions.scheduleNextRound, onClick: () => void onCommand("scheduleNextRound") });
   }
 
+  const summary =
+    view.dealerName || view.players[0] ? (
+      <div className="tt-dealer-summary" data-dealer-row="true">
+        {view.dealerName ? (
+          <div className="tt-dealer-summary-card">
+            <small>DEALER</small>
+            <strong>{view.dealerName}</strong>
+            <em>{view.bankroll?.available.label ?? "—"}</em>
+          </div>
+        ) : null}
+        {view.players[0] ? (
+          <div className="tt-dealer-summary-card is-play">
+            <small>PLAYING</small>
+            <strong>{view.players[0].name}</strong>
+            <em>{view.players[0].available.label}</em>
+          </div>
+        ) : null}
+      </div>
+    ) : null;
+
   const dock = (
-    <Dock
+    <ActionDock
       notice={notice ? <div className="tt-error">{notice}</div> : null}
       extra={
         controls.showInsuranceSettle ? (
           <div className="tt-ins-settle">
-            <button type="button" className="tt-btn ins-win" onClick={() => void onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}>
+            <TableButton variant="compact" className="ins-win" onClick={() => void onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}>
               INS WON
-            </button>
-            <button type="button" className="tt-btn ins-lose" onClick={() => void onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}>
+            </TableButton>
+            <TableButton variant="compact" className="ins-lose" onClick={() => void onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}>
               INS LOST
-            </button>
+            </TableButton>
           </div>
         ) : null
       }
@@ -257,8 +213,8 @@ export function BankTable({
         data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
         data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
       />
-      <PhasePill display={phaseDisplay} label={controls.phaseLabel} instruction={controls.instruction || undefined} />
-      <ClothName name={view.tableName} />
+      <PhaseDisplay display={phaseDisplay} label={controls.phaseLabel} instruction={controls.instruction || undefined} />
+      <TableName name={view.tableName} />
       {view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
         <div className="tt-timers">
           <Countdown deadline={view.bettingCloseDeadlineAt} label="Cards in" />
@@ -270,19 +226,9 @@ export function BankTable({
           INSURANCE · {view.insurance.total.label} · {view.insurance.count} {view.insurance.count === 1 ? "bet" : "bets"}
         </div>
       ) : null}
-      <div
-        className="tt-dealer-grid"
-        data-dealer-positions="true"
-        data-player-count={view.players.length}
-        data-position-count={spots.length}
-        data-count={Math.min(spots.length, 6)}
-      >
-        {spots.map((spot) => (
-          <div className="tt-spot-cell" key={spot.key}>
-            {spot.node}
-          </div>
-        ))}
-      </div>
+      <DealerLedger playerCount={view.players.length} summary={summary}>
+        {rows}
+      </DealerLedger>
     </Shell>
   );
 }

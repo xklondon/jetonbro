@@ -19,10 +19,11 @@ import type { CommandHandler } from "@/ui/skins/types";
 import { communityCardLimit } from "@/domain/poker/cards";
 import { Shell } from "./Shell";
 import { Sheet } from "./Sheet";
-import { Wallet } from "./Tray";
 import { OwnerMenu, type OwnerMenuItem } from "./OwnerMenu";
 import { PokerCardSheet } from "./PokerCardSheet";
-import { ChipPile, ClothName } from "./Spot";
+import { ChipStack } from "./primitives/Jeton";
+import { TableName } from "./primitives/TableName";
+import { Wallet } from "./primitives/JetonTray";
 
 function seatStatus(seat: PokerSeatView, view: PokerTableView): string {
   if (view.phase === "HAND_COMPLETE") {
@@ -436,7 +437,7 @@ export function PokerBoard({
       <div className="tt-poker-table">
         <div className="tt-poker-oval" aria-hidden="true" />
         <div className="tt-poker-cloth">
-          <ClothName name={view.tableName} />
+          <TableName name={view.tableName} />
         </div>
         {setup ? (
           <div className="tt-pot tt-blinds">
@@ -451,7 +452,7 @@ export function PokerBoard({
           <div className="tt-pot" data-drop-pot="pot" data-pot-paid={view.potPaid ? "true" : "false"}>
             <small>{view.potPaid ? "POT PAID" : "POT"}</small>
             {view.potPaid ? null : <strong className="tt-pot-amount">{view.pot.label}</strong>}
-            {!view.potPaid && view.pot.millis !== "0" ? <ChipPile millis={view.pot.millis} max={4} /> : null}
+            {!view.potPaid && view.pot.millis !== "0" ? <ChipStack millis={view.pot.millis} max={4} /> : null}
             {owed ? (
               <span className="tt-to-call">
                 TO CALL <strong>{view.toCall.label}</strong>

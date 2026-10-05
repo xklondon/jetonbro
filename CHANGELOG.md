@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Approved Tabletop visual system
+
+- Implemented PNG-authority presentation primitives under `src/ui/skins/tabletop/components/primitives/`: `TableRail`, `Jeton` / `ChipStack`, `TableButton`, `PhaseDisplay`, `TableName`, `PlayerBox`, `DealerLedger` / `ResultControls`, `ActionDock`, `JetonTray`.
+- Rewrote `tabletop.css` with designed cloth felt (soft grain/vignette), structural SVG gold rail, layered jetons, gold-gradient primary buttons, and dense Dealer ledger — no kidney plaques, diamond-hatch wallpaper, or dashed-circle chips as finished anatomy.
+- Wired Blackjack `BankTable`, `PlayerTable`, `PhaseZero`, `WaitingTable`, and Shell/Dock/Tray into those primitives. Playfair Display loads as `--font-display` for table name / phase titles only.
+- Behavioural render tests assert docks, tray/wallet, payout labels, and board ids; they no longer require `data-arc` / `data-dealer-positions` or forbid Dealer rules text.
+
 ### Tabletop visual recovery
 
 - Reverted the rejected `c9fea51` visual restyle. Restored `tabletop.css` and layout typography from `bfd4f3c`.
@@ -11,7 +18,7 @@
 
 - New isolated skin at `src/ui/skins/tabletop/` with its own `tabletop.css` (`.tabletop-skin` / `data-skin="tabletop"`). Does not import Classic CSS.
 - Registry default is `tabletop`; Classic remains registered for rollback only.
-- Immersive felt board for Blackjack and Poker: cloth identity, spatial spots, bottom rail actions/tray. Home/Create Table/Delete All use the same palette.
+- Immersive felt board for Blackjack and Poker: cloth identity, Dealer ledger / Player boxes, bottom rail actions/tray. Home/Create Table/Delete All use the same palette.
 - Visual captures under `docs/screenshots/tabletop/`.
 
 ### Blackjack PNG composition and owner delete-all

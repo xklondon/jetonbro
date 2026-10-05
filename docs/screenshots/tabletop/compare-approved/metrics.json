@@ -1,0 +1,42 @@
+[
+  {
+    "name": "06-dealer-betting",
+    "rmse": 45.93
+  },
+  {
+    "name": "09-dealer-playing",
+    "rmse": 54.78
+  },
+  {
+    "name": "11-dealer-insurance",
+    "rmse": 54.49
+  },
+  {
+    "name": "13-dealer-payout-unresolved",
+    "rmse": 56.32
+  },
+  {
+    "name": "07-player-betting-empty",
+    "rmse": 56.31
+  },
+  {
+    "name": "10-player-playing",
+    "rmse": 53.14
+  },
+  {
+    "name": "12-player-insurance",
+    "rmse": 58.99
+  },
+  {
+    "name": "15-player-payout",
+    "rmse": 53.6
+  },
+  {
+    "name": "01-home",
+    "rmse": 64.86
+  },
+  {
+    "name": "02-create-table",
+    "rmse": 45.6
+  }
+]

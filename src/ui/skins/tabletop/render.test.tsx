@@ -223,7 +223,7 @@ const setup = (extra: Partial<SetupTableView> = {}): SetupTableView => ({
 const render = (node: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(node);
 
 describe("tabletop skin renders", () => {
-  it("Blackjack Player: boxes arc, tray, wallet, add box, insurance on selected box", () => {
+  it("Blackjack Player: tray, wallet, add box, insurance, play actions", () => {
     const html = render(
       createElement(tabletopSkin.PlayerTable, {
         view: player("BETTING", [box(1), box(2), box(3)]),
@@ -234,12 +234,14 @@ describe("tabletop skin renders", () => {
     );
     expect(html).toContain('data-skin="tabletop"');
     expect(html).toContain('data-table-board="BLACKJACK_PLAYER"');
-    expect(html).toContain('data-arc="true"');
     expect(html).toContain("ADD BOX");
     expect(html).toContain("PLACE BET");
     expect(html).toContain("RETRACT");
     expect(html).toContain("data-player-wallet");
+    expect(html).toContain("data-jeton-tray");
     expect(html).toContain("YOUR JETONS");
+    expect(html).toContain('data-box-id="b1"');
+    expect(html).not.toContain("data-arc");
     expect(html).not.toMatch(/classic-skin/);
 
     const playing = render(
@@ -257,14 +259,19 @@ describe("tabletop skin renders", () => {
     expect(playing).not.toContain("ADD BOX");
   });
 
-  it("Blackjack Dealer: spatial positions, payout buttons, docks, no summary or rules", () => {
+  it("Blackjack Dealer: ledger, docks, payout labels, rules strip allowed", () => {
     const betting = render(createElement(tabletopSkin.BankTable, { view: bank("BETTING"), members, onCommand: noop }));
+    expect(betting).toContain('data-skin="tabletop"');
     expect(betting).toContain('data-table-board="BLACKJACK_DEALER"');
-    expect(betting).toContain("data-dealer-positions");
     expect(betting).toContain("DEAL CARDS");
     expect(betting).toContain("ADD PLAYER");
-    expect(betting).not.toContain("bj-summary");
-    expect(betting).not.toContain("Blackjack pays 3 to 2");
+    expect(betting).toContain("data-blackjack-box-row");
+    expect(betting).toContain("Alex");
+    expect(betting).toContain("Jo");
+    expect(betting).toContain("Mia");
+    expect(betting).toContain("Blackjack pays 3 to 2");
+    expect(betting).toContain("Insurance pays 2 to 1");
+    expect(betting).not.toContain("data-dealer-positions");
     expect(betting).not.toContain("data-payout-action");
 
     const payout = render(createElement(tabletopSkin.BankTable, { view: bank("PAYOUT"), members, onCommand: noop }));
@@ -277,6 +284,28 @@ describe("tabletop skin renders", () => {
     expect(playing).toContain("OPEN INSURANCE");
   });
 
+  it("Player privacy: own boxes only; Dealer sees all real boxes", () => {
+    const playerHtml = render(
+      createElement(tabletopSkin.PlayerTable, {
+        view: player("BETTING", [box(1), box(2)]),
+        selectedBoxId: "b1",
+        onSelectBox: noop,
+        onCommand: noop,
+      }),
+    );
+    expect(playerHtml).toContain('data-box-id="b1"');
+    expect(playerHtml).toContain('data-box-id="b2"');
+    expect(playerHtml).not.toContain("Jo");
+    expect(playerHtml).not.toContain("Mia");
+
+    const dealerHtml = render(createElement(tabletopSkin.BankTable, { view: bank("BETTING"), members, onCommand: noop }));
+    expect(dealerHtml).toContain("Alex");
+    expect(dealerHtml).toContain("Jo");
+    expect(dealerHtml).toContain("Mia");
+    expect(dealerHtml).toContain('data-box-id="b1"');
+    expect(dealerHtml).toContain('data-box-id="b9"');
+  });
+
   it("Phase 0, setup, waiting, entry, home and create render", () => {
     const phaseZero = render(
       createElement(tabletopSkin.PhaseZero, { setup: setup(), waiting: null, poker: null, members, onCommand: noop, isOwner: true, isBank: true, viewerId: "d1", game: "BLACKJACK" }),
@@ -284,6 +313,7 @@ describe("tabletop skin renders", () => {
     expect(phaseZero).toContain('data-table-board="PHASE_ZERO_DEALER"');
     expect(phaseZero).toContain("START BETTING");
     expect(phaseZero).toContain("ADD PLAYER");
+    expect(phaseZero).not.toContain("data-dealer-positions");
 
     expect(render(createElement(tabletopSkin.SetupTable, { view: setup({ setupCompleted: false }), onCommand: noop }))).toContain("START TABLE");
     expect(render(createElement(tabletopSkin.SetupTable, { view: setup(), onCommand: noop }))).toContain("START BETTING");
@@ -292,6 +322,7 @@ describe("tabletop skin renders", () => {
     const waitingHtml = render(createElement(tabletopSkin.WaitingTable, { view: waiting }));
     expect(waitingHtml).toContain('data-table-board="PHASE_ZERO_PLAYER"');
     expect(waitingHtml).toContain("data-player-wallet");
+    expect(waitingHtml).toContain("data-jeton-tray");
 
     const entry = render(createElement(tabletopSkin.Entry, { title: "Sign in", copy: "Email", actionLabel: "Send link", onSubmit: noop }));
     expect(entry).toContain("Send link");

@@ -1,12 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { TableRail } from "./primitives/TableRail";
 
 export type ShellFeltProps = Record<string, string | number | boolean | undefined>;
 
 /**
- * Tabletop root. One physical table: compact chrome on top, a single continuous felt
- * between the chrome and the bottom rail, and the rail (tray / dock) anchored below.
+ * Tabletop root. Compact chrome, designed felt surface with structural gold rail,
+ * and bottom rail (tray / dock).
  */
 export function Shell({
   children,
@@ -21,6 +22,7 @@ export function Shell({
   feltClassName,
   feltProps,
   hideBrand = false,
+  showRail = true,
 }: {
   children: ReactNode;
   rail?: ReactNode;
@@ -33,8 +35,10 @@ export function Shell({
   rightLabel?: string;
   feltClassName?: string;
   feltProps?: ShellFeltProps;
-  /** Poker prints the table name once on the cloth, so the header brand stays empty. */
+  /** Hide header brand; table name belongs on the felt via children. */
   hideBrand?: boolean;
+  /** Structural curved gold rail on the felt (default on). */
+  showRail?: boolean;
 }) {
   return (
     <div className="tabletop-skin" data-skin="tabletop">
@@ -43,7 +47,7 @@ export function Shell({
           <button className="tt-menu" type="button" aria-label={menuLabel} disabled={!onMenu} onClick={onMenu}>
             <span aria-hidden="true">☰</span>
           </button>
-          <div className={`tt-brand${hideBrand ? " is-hidden" : ""}`} data-table-name={hideBrand ? undefined : title || undefined}>
+          <div className={`tt-brand${hideBrand ? " is-hidden" : ""}`}>
             {hideBrand ? null : title || "JETONBRO"}
           </div>
           {balance ? (
@@ -65,8 +69,9 @@ export function Shell({
             </span>
           )}
         </header>
-        <main className={`tt-felt${feltClassName ? ` ${feltClassName}` : ""}`} {...feltProps}>
-          {children}
+        <main className={`tt-surface tt-felt${feltClassName ? ` ${feltClassName}` : ""}`} {...feltProps}>
+          {showRail ? <TableRail /> : null}
+          <div className="tt-surface-body">{children}</div>
         </main>
         {rail ? <footer className="tt-rail">{rail}</footer> : <footer className="tt-rail is-empty" aria-hidden="true" />}
         {overlay}

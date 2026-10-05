@@ -1,34 +1,38 @@
 /*
- * Tabletop skin — one physical table.
+ * Tabletop skin — approved PNG visual system.
  * Every rule is scoped under .tabletop-skin / [data-skin="tabletop"].
- * Tokens extracted from design/reference/classic/jetonbro-player-bank-insurance.html:
- * felt, emerald, night, panel, gold, ivory, chip colours, dock, kidney box shape.
- * No Classic CSS or Classic selectors are used here.
+ * No Classic CSS. No !important. No kidney plaques as Dealer UI.
+ * No diamond-hatch wallpaper felt. No dashed-circle finished jetons.
  */
 
+/* ========== TOKENS ========== */
 .tabletop-skin,
 [data-skin="tabletop"] {
   --tt-emerald: #063d31;
   --tt-felt: #075744;
   --tt-felt-hi: #0b7056;
+  --tt-felt-deep: #042a22;
   --tt-night: #071714;
   --tt-panel: #0a241e;
   --tt-input: #10241f;
   --tt-input-hi: #102f27;
   --tt-gold: #dfbd69;
+  --tt-gold-hi: #f0d78a;
   --tt-gold-line: rgba(223, 189, 105, 0.72);
   --tt-gold-soft: rgba(223, 189, 105, 0.32);
   --tt-ivory: #f4ead5;
+  --tt-cream: #efe2c4;
   --tt-red: #b8373f;
   --tt-blue: #2466a8;
   --tt-green: #19865c;
   --tt-black: #22282c;
   --tt-ink: #30250d;
-  --tt-serif: Georgia, "Times New Roman", serif;
+  --tt-serif: var(--font-display, "Playfair Display"), Georgia, "Times New Roman", serif;
   --tt-sans: var(--font-inter, Inter), system-ui, sans-serif;
+  --tt-disabled: 0.55;
 }
 
-/* ---------- root: full viewport, no scroll ---------- */
+/* ========== ROOT ========== */
 .tabletop-skin {
   position: relative;
   width: 100vw;
@@ -57,21 +61,17 @@
   cursor: default;
 }
 
-/* The phone frame is the felt: header, felt and rail share one continuous cloth. */
+/* Phone frame = dark surround; cloth lives on .tt-surface */
 .tabletop-skin .tt-phone {
   position: relative;
   height: 100%;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.07), transparent 58%),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px 3px),
-    radial-gradient(circle at 50% 34%, var(--tt-felt-hi), var(--tt-felt) 48%, var(--tt-emerald));
+  background: var(--tt-night);
 }
 
-/* ---------- compact chrome ---------- */
+/* ========== COMPACT HEADER ========== */
 .tabletop-skin .tt-top {
   position: relative;
   z-index: 3;
@@ -102,7 +102,7 @@
   text-align: center;
   font-family: var(--tt-serif);
   color: var(--tt-gold);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   font-size: 15px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -110,8 +110,8 @@
   text-overflow: ellipsis;
 }
 
-.tabletop-skin .tt-brand[data-table-name] {
-  letter-spacing: 0.1em;
+.tabletop-skin .tt-brand.is-hidden {
+  visibility: hidden;
 }
 
 .tabletop-skin .tt-mark {
@@ -155,64 +155,68 @@
   white-space: nowrap;
 }
 
-/* ---------- felt: one continuous surface with a curved far rail ---------- */
-.tabletop-skin .tt-felt {
+/* ========== FELT SURFACE + STRUCTURAL RAIL ========== */
+/* Designed cloth: soft grain + vignette — NOT diamond hatch wallpaper */
+.tabletop-skin .tt-surface {
   position: relative;
   z-index: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 34px 10px 6px;
   overflow: hidden;
+  padding: 0 10px 6px;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 28%, rgba(255, 255, 255, 0.07), transparent 55%),
+    radial-gradient(ellipse 120% 90% at 50% 110%, rgba(0, 0, 0, 0.45), transparent 55%),
+    radial-gradient(circle at 50% 36%, var(--tt-felt-hi), var(--tt-felt) 46%, var(--tt-emerald) 78%, var(--tt-felt-deep));
 }
 
-/* Dark corners outside the curved rail. */
-.tabletop-skin .tt-felt::before {
+.tabletop-skin .tt-surface::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 54px;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(ellipse 62% 100% at 50% 100%, transparent 98%, rgba(3, 22, 18, 0.9) 100%);
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
 }
 
-/* Warm gold rail line. */
-.tabletop-skin .tt-felt::after {
-  content: "";
+.tabletop-skin .tt-rail-svg {
   position: absolute;
-  left: -14%;
-  right: -14%;
-  top: -1px;
+  left: -6%;
+  right: -6%;
+  top: 0;
+  width: 112%;
   height: 56px;
   pointer-events: none;
   z-index: 0;
-  border: 2px solid rgba(223, 189, 105, 0.55);
-  border-bottom: 0;
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  box-shadow: inset 0 6px 14px rgba(223, 189, 105, 0.12);
 }
 
-.tabletop-skin .tt-felt > * {
+.tabletop-skin .tt-surface-body {
   position: relative;
   z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 34px;
+  overflow: hidden;
 }
 
-.tabletop-skin .tt-felt.is-form {
+.tabletop-skin .tt-surface.is-form .tt-surface-body {
   align-items: stretch;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
 }
 
-.tabletop-skin .tt-felt.is-form::-webkit-scrollbar {
+.tabletop-skin .tt-surface.is-form .tt-surface-body::-webkit-scrollbar {
   display: none;
 }
 
-/* ---------- bottom rail ---------- */
+/* ========== BOTTOM RAIL ========== */
 .tabletop-skin .tt-rail {
   position: relative;
   z-index: 3;
@@ -228,9 +232,9 @@
   display: none;
 }
 
-/* ---------- shared controls ---------- */
+/* ========== TABLE BUTTON ========== */
 .tabletop-skin .tt-btn {
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid rgba(223, 189, 105, 0.32);
   border-radius: 10px;
   background: var(--tt-input);
@@ -241,10 +245,12 @@
   letter-spacing: 0.03em;
 }
 
+.tabletop-skin .tt-btn-primary,
 .tabletop-skin .tt-btn.gold {
   border-color: transparent;
-  background: var(--tt-gold);
+  background: linear-gradient(180deg, var(--tt-gold-hi) 0%, var(--tt-gold) 48%, #c9a84a 100%);
   color: var(--tt-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 6px rgba(0, 0, 0, 0.22);
 }
 
 .tabletop-skin .tt-btn.danger {
@@ -253,12 +259,67 @@
   color: #ffd9db;
 }
 
+.tabletop-skin .tt-btn-secondary {
+  background: rgba(8, 28, 24, 0.92);
+  border-color: rgba(223, 189, 105, 0.45);
+  color: var(--tt-ivory);
+}
+
+.tabletop-skin .tt-btn-compact {
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.tabletop-skin .tt-btn-ghost {
+  border-style: dashed;
+  background: rgba(2, 23, 18, 0.35);
+  color: var(--tt-gold);
+  letter-spacing: 0.12em;
+}
+
+.tabletop-skin .tt-btn-result {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.tabletop-skin .tt-btn-result.is-lost {
+  background: #6e2b32;
+  color: #fff;
+}
+
+.tabletop-skin .tt-btn-result.is-push {
+  background: var(--tt-ivory);
+  color: #21302b;
+}
+
+.tabletop-skin .tt-btn-result.is-blackjack {
+  background: #111;
+  color: var(--tt-gold);
+}
+
+.tabletop-skin .tt-btn-result.is-won {
+  background: #1f7a4a;
+  color: #fff;
+}
+
 .tabletop-skin .tt-btn:disabled {
-  opacity: 0.4;
+  opacity: var(--tt-disabled);
+}
+
+.tabletop-skin .tt-btn-primary:disabled,
+.tabletop-skin .tt-btn.gold:disabled {
+  opacity: var(--tt-disabled);
+  color: var(--tt-ink);
+  background: linear-gradient(180deg, var(--tt-gold-hi) 0%, var(--tt-gold) 48%, #c9a84a 100%);
 }
 
 .tabletop-skin .tt-btn:focus-visible,
-.tabletop-skin .tt-box:focus-visible,
+.tabletop-skin .tt-pbox:focus-visible,
 .tabletop-skin .tt-link:focus-visible,
 .tabletop-skin .tt-menu:focus-visible {
   outline: 2px solid var(--tt-gold);
@@ -345,13 +406,13 @@
 }
 
 .tabletop-skin .tt-segment button.active {
-  background: var(--tt-gold);
+  background: linear-gradient(180deg, var(--tt-gold-hi), var(--tt-gold));
   color: var(--tt-ink);
   border-color: transparent;
 }
 
 .tabletop-skin .tt-segment button:disabled {
-  opacity: 0.45;
+  opacity: var(--tt-disabled);
 }
 
 .tabletop-skin .tt-chip-rows {
@@ -377,63 +438,124 @@
   text-align: right;
 }
 
-/* ---------- jetons ---------- */
-.tabletop-skin .tt-chip {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 3px dashed rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.24), 0 5px 8px rgba(0, 0, 0, 0.3);
-  display: grid;
+/* ========== LAYERED JETONS ========== */
+.tabletop-skin .tt-jeton {
+  position: relative;
+  display: inline-grid;
   place-items: center;
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35), inset 0 -2px 3px rgba(0, 0, 0, 0.28);
   color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
 }
 
-.tabletop-skin .tt-c5 {
-  background: var(--tt-red);
+.tabletop-skin .tt-jeton-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 9px;
 }
-.tabletop-skin .tt-c10 {
-  background: var(--tt-blue);
-}
-.tabletop-skin .tt-c25 {
-  background: var(--tt-green);
-}
-.tabletop-skin .tt-c50 {
-  background: var(--tt-gold);
-  color: #342706;
-}
-.tabletop-skin .tt-c100 {
-  background: var(--tt-black);
-  border-color: var(--tt-gold);
-}
-.tabletop-skin .tt-c-exact,
-.tabletop-skin .tt-c0 {
-  background: #3b4a45;
+
+.tabletop-skin .tt-jeton-md {
+  width: 40px;
+  height: 40px;
   font-size: 11px;
 }
-.tabletop-skin .tt-c0 {
-  opacity: 0.45;
+
+.tabletop-skin .tt-jeton-lg {
+  width: 46px;
+  height: 46px;
+  font-size: 12px;
 }
 
-.tabletop-skin .tt-pile {
+.tabletop-skin .tt-jeton-edge {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.55) 0deg 12deg,
+    transparent 12deg 24deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  opacity: 0.9;
+}
+
+.tabletop-skin .tt-jeton-ring {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.tabletop-skin .tt-jeton-shine {
+  position: absolute;
+  inset: 3px 6px 55% 6px;
+  border-radius: 50% 50% 40% 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent);
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-jeton-face {
+  position: relative;
+  z-index: 1;
+}
+
+.tabletop-skin .tt-j5 {
+  background: radial-gradient(circle at 35% 30%, #d85a60, var(--tt-red) 55%, #8e242a);
+}
+
+.tabletop-skin .tt-j10 {
+  background: radial-gradient(circle at 35% 30%, #4a8fd0, var(--tt-blue) 55%, #184a7a);
+}
+
+.tabletop-skin .tt-j25 {
+  background: radial-gradient(circle at 35% 30%, #2db87a, var(--tt-green) 55%, #0f5a3c);
+}
+
+.tabletop-skin .tt-j50 {
+  background: radial-gradient(circle at 35% 30%, #f0d78a, var(--tt-gold) 55%, #a8862e);
+  color: var(--tt-ink);
+}
+
+.tabletop-skin .tt-j100 {
+  background: radial-gradient(circle at 35% 30%, #3a4248, var(--tt-black) 55%, #121518);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35), 0 0 0 1.5px var(--tt-gold);
+}
+
+.tabletop-skin .tt-jexact {
+  background: radial-gradient(circle at 35% 30%, #5a6a64, #3b4a45 55%, #2a3430);
+  font-size: 0.85em;
+}
+
+.tabletop-skin .tt-jeton.is-selected {
+  transform: translateY(-3px) scale(1.05);
+}
+
+.tabletop-skin .tt-jeton.is-disabled {
+  opacity: var(--tt-disabled);
+}
+
+.tabletop-skin .tt-chip-stack {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  min-height: 34px;
+  min-height: 30px;
 }
 
-.tabletop-skin .tt-pile .tt-chip {
-  width: 30px;
-  height: 30px;
-  border-width: 2px;
-  font-size: 10px;
-  margin-left: -9px;
+.tabletop-skin .tt-chip-stack .tt-jeton {
+  margin-left: -8px;
 }
 
-.tabletop-skin .tt-pile .tt-chip:first-child {
+.tabletop-skin .tt-chip-stack .tt-jeton:first-child {
   margin-left: 0;
+}
+
+.tabletop-skin .tt-chip-stack.is-empty .tt-jeton {
+  opacity: 0.4;
 }
 
 .tabletop-skin .tt-tray {
@@ -446,28 +568,16 @@
   border: 0;
   background: transparent;
   padding: 1px;
+  min-height: 44px;
 }
 
 .tabletop-skin .tt-tray button:disabled {
-  opacity: 0.38;
+  opacity: 1;
 }
 
-.tabletop-skin .tt-tray .tt-chip {
-  width: 46px;
-  height: 46px;
-  border-width: 4px;
-  transition: transform 0.12s ease;
-}
-
-.tabletop-skin .tt-tray .tt-chip.is-lift {
-  transform: translateY(-4px) scale(1.06);
-}
-
-.tabletop-skin .tt-ghost {
+.tabletop-skin .tt-jeton-ghost {
   position: fixed;
   z-index: 60;
-  width: 46px;
-  height: 46px;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -495,7 +605,7 @@
   color: var(--tt-ivory);
 }
 
-/* ---------- table furniture on the felt ---------- */
+/* ========== PHASE / TABLE NAME / DEALER MARK ========== */
 .tabletop-skin .tt-dealer-mark {
   display: inline-flex;
   align-items: center;
@@ -537,8 +647,9 @@
 }
 
 .tabletop-skin .tt-phase strong {
-  font: 16px var(--tt-serif);
+  font: 600 15px/1.2 var(--tt-serif);
   color: var(--tt-ivory);
+  letter-spacing: 0.02em;
 }
 
 .tabletop-skin .tt-phase em {
@@ -547,15 +658,14 @@
   color: rgba(244, 234, 213, 0.7);
 }
 
-.tabletop-skin .tt-cloth-name {
-  margin: 14px auto 0;
+.tabletop-skin .tt-table-name {
+  margin: 10px auto 0;
   max-width: 90%;
   text-align: center;
-  font: 20px var(--tt-serif);
-  letter-spacing: 0.22em;
+  font: 500 13px/1.2 var(--tt-serif);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(223, 189, 105, 0.38);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  color: rgba(223, 189, 105, 0.42);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -573,7 +683,7 @@
 }
 
 .tabletop-skin .tt-countdown {
-  background: var(--tt-gold);
+  background: linear-gradient(180deg, var(--tt-gold-hi), var(--tt-gold));
   color: var(--tt-ink);
 }
 
@@ -589,7 +699,7 @@
   align-items: center;
 }
 
-/* ---------- Blackjack Player: kidney betting spots ---------- */
+/* ========== PLAYER BOXES ========== */
 .tabletop-skin .tt-stage {
   flex: 1 1 auto;
   min-height: 0;
@@ -614,22 +724,18 @@
   grid-template-columns: minmax(0, 210px);
   justify-content: center;
 }
+
 .tabletop-skin .tt-boxes[data-count="2"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.tabletop-skin .tt-boxes[data-count="3"],
-.tabletop-skin .tt-boxes[data-arc="true"] {
+
+.tabletop-skin .tt-boxes[data-count="3"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
 .tabletop-skin .tt-boxes[data-count="4"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-}
-
-/* Three boxes curve around the player: the centre box nearest, the two sides lifted. */
-.tabletop-skin .tt-boxes[data-arc="true"] .tt-box-wrap[data-slot="2"],
-.tabletop-skin .tt-boxes[data-arc="true"] .tt-box-wrap[data-slot="3"] {
-  margin-bottom: clamp(18px, 6dvh, 52px);
 }
 
 .tabletop-skin .tt-box-wrap {
@@ -639,64 +745,77 @@
   align-items: center;
 }
 
-.tabletop-skin .tt-box {
+.tabletop-skin .tt-pbox {
   position: relative;
   width: 100%;
-  height: clamp(128px, 27dvh, 220px);
+  min-height: clamp(112px, 22dvh, 168px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 18px 5px 6px;
+  gap: 4px;
+  padding: 22px 8px 10px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(223, 189, 105, 0.06), transparent 70%),
-    rgba(2, 23, 18, 0.16);
+    linear-gradient(180deg, rgba(8, 40, 32, 0.55), rgba(2, 20, 16, 0.72)),
+    rgba(2, 23, 18, 0.4);
   border: 1.5px solid var(--tt-gold-line);
-  /* kidney / betting spot */
-  border-radius: 44% 44% 18px 18px / 22% 22% 18px 18px;
-  box-shadow: inset 0 0 0 5px rgba(223, 189, 105, 0.05), 0 6px 14px rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 3px rgba(223, 189, 105, 0.08),
+    inset 0 12px 28px rgba(223, 189, 105, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.22);
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
-.tabletop-skin .tt-box.selected {
-  background: rgba(223, 189, 105, 0.1);
-  box-shadow: 0 0 0 2px var(--tt-gold), inset 0 0 25px rgba(223, 189, 105, 0.07);
+.tabletop-skin .tt-pbox-inlay {
+  position: absolute;
+  inset: 5px;
+  border-radius: 10px;
+  border: 1px solid rgba(223, 189, 105, 0.22);
+  pointer-events: none;
 }
 
-.tabletop-skin .tt-box.drop-target {
-  box-shadow: 0 0 0 3px var(--tt-ivory), 0 0 22px rgba(244, 234, 213, 0.35);
+.tabletop-skin .tt-pbox.is-selected {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 3px rgba(223, 189, 105, 0.14),
+    0 0 0 1px var(--tt-gold),
+    0 10px 22px rgba(0, 0, 0, 0.28),
+    0 0 20px rgba(223, 189, 105, 0.18);
 }
 
-.tabletop-skin .tt-box.is-ghost {
+.tabletop-skin .tt-pbox.is-drop {
+  box-shadow: 0 0 0 2px var(--tt-ivory), 0 0 22px rgba(244, 234, 213, 0.35);
+}
+
+.tabletop-skin .tt-pbox.is-empty {
   border-style: dashed;
   opacity: 0.7;
   cursor: default;
 }
 
-.tabletop-skin .tt-box-name {
+.tabletop-skin .tt-pbox-name {
   position: absolute;
   top: 10px;
   font-size: 10px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--tt-gold);
 }
 
-.tabletop-skin .tt-amount {
-  font: 26px var(--tt-serif);
+.tabletop-skin .tt-pbox-stake {
+  font: 600 24px/1.1 var(--tt-serif);
   color: var(--tt-ivory);
-  line-height: 1.1;
 }
 
-.tabletop-skin .tt-box-payout {
+.tabletop-skin .tt-pbox-payout {
   display: grid;
   justify-items: center;
   gap: 3px;
 }
 
-.tabletop-skin .tt-result {
+.tabletop-skin .tt-pbox-result {
   font-style: normal;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -706,30 +825,28 @@
   color: #21302b;
 }
 
-.tabletop-skin .tt-result.is-won,
-.tabletop-skin .tt-result.is-blackjack {
+.tabletop-skin .tt-pbox-result.is-won,
+.tabletop-skin .tt-pbox-result.is-blackjack {
   background: var(--tt-gold);
   color: var(--tt-ink);
 }
 
-.tabletop-skin .tt-result.is-lost {
+.tabletop-skin .tt-pbox-result.is-lost {
   background: var(--tt-red);
   color: #fff;
 }
 
-.tabletop-skin .tt-box-ins,
-.tabletop-skin .tt-box-status,
-.tabletop-skin .tt-spot-note {
+.tabletop-skin .tt-pbox-ins,
+.tabletop-skin .tt-pbox-status {
   font-size: 10px;
   letter-spacing: 0.05em;
   color: rgba(244, 234, 213, 0.78);
 }
 
-.tabletop-skin .tt-box-ins {
+.tabletop-skin .tt-pbox-ins {
   color: #bfe6fa;
 }
 
-/* Insurance hangs off the selected box through a short stub. */
 .tabletop-skin .tt-insure {
   position: relative;
   margin-top: 8px;
@@ -759,9 +876,10 @@
   opacity: 0.8;
 }
 
-.tabletop-skin .tt-insure button {
+.tabletop-skin .tt-insure .tt-btn {
   border: 0;
   border-radius: 999px;
+  min-height: 32px;
   padding: 5px 10px;
   background: #82c5e8;
   color: #082534;
@@ -769,21 +887,13 @@
   font-weight: 600;
 }
 
-.tabletop-skin .tt-insure button:disabled {
-  opacity: 0.45;
-}
-
 .tabletop-skin .tt-addbox {
-  border: 1px dashed var(--tt-gold-line);
   border-radius: 999px;
-  background: rgba(2, 23, 18, 0.35);
-  color: var(--tt-gold);
   padding: 7px 18px;
   font-size: 11px;
-  letter-spacing: 0.14em;
 }
 
-/* ---------- Player rail controls ---------- */
+/* ========== PLAYER RAIL CONTROLS ========== */
 .tabletop-skin .tt-controls {
   display: grid;
   gap: 7px;
@@ -801,152 +911,166 @@
   gap: 7px;
 }
 
-/* ---------- Dealer: spots on the felt ---------- */
-.tabletop-skin .tt-dealer-grid,
-.tabletop-skin .tt-setup-spots {
+/* ========== DEALER LEDGER ========== */
+.tabletop-skin .tt-ledger-wrap {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  align-content: center;
-  align-items: start;
-  margin-top: 10px;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.tabletop-skin .tt-dealer-grid::-webkit-scrollbar,
-.tabletop-skin .tt-setup-spots::-webkit-scrollbar {
-  display: none;
-}
-
-.tabletop-skin .tt-dealer-grid[data-count="1"],
-.tabletop-skin .tt-setup-spots[data-count="1"] {
-  grid-template-columns: minmax(0, 220px);
-  justify-content: center;
-}
-
-/* Alternate spots sit lower so they read as an arc around the dealer. */
-.tabletop-skin .tt-dealer-grid .tt-spot-cell:nth-child(even) {
-  margin-top: 12px;
-}
-
-.tabletop-skin .tt-spot-cell {
-  min-width: 0;
-}
-
-.tabletop-skin .tt-spot {
-  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 10px 6px 8px;
-  color: #fff;
-  background: rgba(2, 23, 18, 0.18);
-  border: 1.5px solid var(--tt-gold-line);
-  border-radius: 34px 34px 14px 14px / 26px 26px 14px 14px;
-  box-shadow: inset 0 0 0 4px rgba(223, 189, 105, 0.05);
+  margin-top: 8px;
+  gap: 6px;
 }
 
-.tabletop-skin .tt-spot.is-idle {
-  border-color: rgba(223, 189, 105, 0.38);
-}
-
-.tabletop-skin .tt-spot.is-unresolved {
-  background: rgba(223, 189, 105, 0.08);
-}
-
-.tabletop-skin .tt-spot.is-lost {
-  border-color: rgba(184, 55, 63, 0.8);
-}
-
-.tabletop-skin .tt-spot.is-won,
-.tabletop-skin .tt-spot.is-blackjack {
-  border-color: var(--tt-gold);
-  box-shadow: 0 0 0 1px var(--tt-gold), 0 0 14px rgba(223, 189, 105, 0.25);
-}
-
-.tabletop-skin .tt-spot-who {
+.tabletop-skin .tt-dealer-summary {
   display: grid;
-  justify-items: center;
-  line-height: 1.15;
-  max-width: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 
-.tabletop-skin .tt-spot-who strong {
-  font-size: 13px;
-  color: var(--tt-ivory);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.tabletop-skin .tt-dealer-summary-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 10px;
+  background: rgba(2, 14, 12, 0.4);
 }
 
-.tabletop-skin .tt-spot-who small {
-  font-size: 9px;
-  letter-spacing: 0.1em;
+.tabletop-skin .tt-dealer-summary-card small {
+  grid-column: 1 / -1;
+  font-size: 8px;
+  letter-spacing: 0.12em;
   color: var(--tt-gold);
 }
 
-.tabletop-skin .tt-spot .tt-amount {
-  font-size: 22px;
+.tabletop-skin .tt-dealer-summary-card strong {
+  font-size: 13px;
+  color: var(--tt-ivory);
 }
 
-.tabletop-skin .tt-compact-spot {
-  padding: 8px 6px;
+.tabletop-skin .tt-dealer-summary-card em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--tt-cream);
 }
 
-.tabletop-skin .tt-compact-spot .tt-amount {
-  font-size: 18px;
+.tabletop-skin .tt-dealer-summary-card.is-play {
+  border-color: rgba(223, 189, 105, 0.45);
 }
 
-.tabletop-skin .tt-spot.is-invited {
+.tabletop-skin .tt-dealer-rules {
+  margin: 0;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(244, 234, 213, 0.55);
+}
+
+.tabletop-skin .tt-ledger,
+.tabletop-skin .tt-setup-ledger {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  border-radius: 10px;
+  background: rgba(2, 14, 12, 0.45);
+}
+
+.tabletop-skin .tt-ledger::-webkit-scrollbar,
+.tabletop-skin .tt-setup-ledger::-webkit-scrollbar {
+  display: none;
+}
+
+.tabletop-skin .tt-ledger-head,
+.tabletop-skin .tt-ledger-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(72px, 0.9fr) minmax(96px, 1.2fr);
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+}
+
+.tabletop-skin .tt-ledger-head {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--tt-gold);
+  border-bottom: 1px solid rgba(223, 189, 105, 0.28);
+}
+
+.tabletop-skin .tt-ledger-row {
+  min-height: 52px;
+  border-bottom: 1px solid rgba(223, 189, 105, 0.12);
+}
+
+.tabletop-skin .tt-ledger-row.is-unresolved {
+  min-height: 120px;
+  align-items: start;
+  grid-template-rows: auto auto;
+}
+
+.tabletop-skin .tt-ledger-row.is-unresolved .tt-ledger-action {
+  grid-column: 1 / -1;
+}
+
+.tabletop-skin .tt-ledger-who strong,
+.tabletop-skin .tt-ledger-stake strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tt-ivory);
+  font-size: 13px;
+}
+
+.tabletop-skin .tt-ledger-who small,
+.tabletop-skin .tt-ledger-stake small {
+  display: block;
+  font-size: 9px;
+  color: rgba(244, 234, 213, 0.6);
+}
+
+.tabletop-skin .tt-ledger-stake {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+.tabletop-skin .tt-ledger-ins {
+  color: #bfe6fa;
+}
+
+.tabletop-skin .tt-ledger-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+}
+
+.tabletop-skin .tt-ledger-slot {
+  font-size: 11px;
+  color: rgba(244, 234, 213, 0.55);
+}
+
+.tabletop-skin .tt-ledger-row.is-invited {
   border-style: dashed;
 }
 
 .tabletop-skin .tt-setup-stage {
   justify-content: center;
-}
-
-.tabletop-skin .tt-payouts {
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin-top: 4px;
 }
 
-.tabletop-skin .tt-pay {
-  min-height: 34px;
-  border: 0;
-  border-radius: 7px;
-  padding: 6px 2px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+.tabletop-skin .tt-setup-ledger {
+  width: 100%;
+  margin-top: 10px;
 }
 
-.tabletop-skin .tt-pay-lost {
-  background: var(--tt-red);
-  color: #fff;
-}
-.tabletop-skin .tt-pay-push {
-  background: var(--tt-ivory);
-  color: #21302b;
-}
-.tabletop-skin .tt-pay-blackjack {
-  background: var(--tt-blue);
-  color: #fff;
-}
-.tabletop-skin .tt-pay-won {
-  background: var(--tt-gold);
-  color: var(--tt-ink);
-}
-
-/* ---------- dock ---------- */
+/* ========== ACTION DOCK ========== */
 .tabletop-skin .tt-dock {
   display: grid;
   gap: 8px;
@@ -984,7 +1108,7 @@
   color: #d8f1ff;
 }
 
-/* ---------- sheets (bottom overlays inside the phone) ---------- */
+/* ========== SHEETS ========== */
 .tabletop-skin .tt-sheet {
   display: none;
   position: absolute;
@@ -1097,7 +1221,7 @@
   color: var(--tt-ivory);
 }
 
-/* ---------- invitation ---------- */
+/* ========== INVITATION ========== */
 .tabletop-skin .tt-invite {
   display: grid;
   gap: 8px;
@@ -1120,7 +1244,7 @@
 }
 
 .tabletop-skin .tt-tabs button.active {
-  background: var(--tt-gold);
+  background: linear-gradient(180deg, var(--tt-gold-hi), var(--tt-gold));
   color: var(--tt-ink);
   border-color: transparent;
 }
@@ -1155,8 +1279,13 @@
   border-radius: 10px;
 }
 
-/* ---------- Home / Create / Entry on felt ---------- */
+/* ========== HOME / CREATE / ENTRY ========== */
 .tabletop-skin .tt-home {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.tabletop-skin .tt-home .tt-surface-body {
   align-items: stretch;
   gap: 10px;
 }
@@ -1214,7 +1343,7 @@
   gap: 8px;
   padding: 12px 14px;
   border: 1.5px solid var(--tt-gold-line);
-  border-radius: 22px 22px 14px 14px / 18px 18px 14px 14px;
+  border-radius: 14px;
   background: rgba(2, 23, 18, 0.28);
 }
 
@@ -1265,6 +1394,10 @@
   gap: 0;
 }
 
+.tabletop-skin .tt-create .tt-surface-body {
+  align-items: stretch;
+}
+
 .tabletop-skin .tt-create-heading {
   text-align: center;
   margin: 2px 0 8px;
@@ -1299,6 +1432,11 @@
   gap: 14px;
 }
 
+.tabletop-skin .tt-entry .tt-surface-body {
+  justify-content: center;
+  gap: 14px;
+}
+
 .tabletop-skin .tt-entry-head {
   text-align: center;
 }
@@ -1310,8 +1448,12 @@
   padding: 0 6px;
 }
 
-/* ---------- Poker: seats around one felt ---------- */
+/* ========== POKER ========== */
 .tabletop-skin .tt-poker {
+  padding-top: 0;
+}
+
+.tabletop-skin .tt-poker .tt-surface-body {
   padding-top: 30px;
 }
 
@@ -1334,7 +1476,7 @@
 }
 
 .tabletop-skin .tt-turn.is-you {
-  background: var(--tt-gold);
+  background: linear-gradient(180deg, var(--tt-gold-hi), var(--tt-gold));
   color: var(--tt-ink);
   border-color: transparent;
 }
@@ -1390,9 +1532,9 @@
   transform: translate(-50%, -50%);
 }
 
-.tabletop-skin .tt-poker-cloth .tt-cloth-name {
+.tabletop-skin .tt-poker-cloth .tt-table-name {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .tabletop-skin .tt-pot {
@@ -1464,7 +1606,7 @@
   padding: 14px 4px 6px;
   text-align: center;
   border: 1.5px solid rgba(223, 189, 105, 0.45);
-  border-radius: 30px 30px 14px 14px / 22px 22px 14px 14px;
+  border-radius: 14px;
   background: rgba(2, 23, 18, 0.5);
 }
 
@@ -1608,22 +1750,29 @@
   gap: 6px;
 }
 
-/* ---------- small phones ---------- */
+/* Legacy class aliases used by Home/Create feltClassName modifiers */
+.tabletop-skin .tt-bj-dealer .tt-surface-body,
+.tabletop-skin .tt-bj-player .tt-surface-body,
+.tabletop-skin .tt-phase-zero .tt-surface-body {
+  width: 100%;
+}
+
+/* ========== RESPONSIVE ========== */
 @media (max-height: 700px) {
-  .tabletop-skin .tt-box {
-    height: clamp(110px, 24dvh, 180px);
+  .tabletop-skin .tt-pbox {
+    min-height: clamp(96px, 20dvh, 140px);
   }
-  .tabletop-skin .tt-tray .tt-chip {
+  .tabletop-skin .tt-jeton-lg {
     width: 40px;
     height: 40px;
   }
-  .tabletop-skin .tt-cloth-name {
-    margin-top: 8px;
+  .tabletop-skin .tt-table-name {
+    margin-top: 6px;
   }
 }
 
 @media (max-width: 360px) {
-  .tabletop-skin .tt-tray .tt-chip {
+  .tabletop-skin .tt-jeton-lg {
     width: 40px;
     height: 40px;
   }
@@ -1637,8 +1786,8 @@
     animation: none;
     box-shadow: 0 0 0 3px var(--tt-gold), 0 0 18px rgba(223, 189, 105, 0.6);
   }
-  .tabletop-skin .tt-tray .tt-chip,
-  .tabletop-skin .tt-box {
+  .tabletop-skin .tt-jeton,
+  .tabletop-skin .tt-pbox {
     transition: none;
   }
 }

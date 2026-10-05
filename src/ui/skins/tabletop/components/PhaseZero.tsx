@@ -6,12 +6,14 @@ import { pokerControls } from "@/application/queries/poker-controls";
 import { blackjackDealerSetupControls } from "@/ui/core/blackjack-phase-controls";
 import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
-import { Dock } from "./Dock";
 import { InviteMask } from "./InviteMask";
 import { OwnerMenu } from "./OwnerMenu";
-import { ClothName, PhasePill } from "./Spot";
+import { ActionDock } from "./primitives/ActionDock";
+import { DealerLedgerRow } from "./primitives/DealerLedger";
+import { PhaseDisplay } from "./primitives/PhaseDisplay";
+import { TableName } from "./primitives/TableName";
 
-/** Dealer / Owner Phase 0: players are compact spots on the felt; START BETTING | ADD PLAYER anchored below. */
+/** Dealer / Owner Phase 0: compact player list; START BETTING | ADD PLAYER in the dock. */
 export function PhaseZero({
   setup,
   waiting,
@@ -53,7 +55,7 @@ export function PhaseZero({
   const canManage = isOwner || isBank;
 
   const dock = (
-    <Dock
+    <ActionDock
       notice={notice ? <div className="tt-error">{notice}</div> : null}
       primary={
         game === "POKER"
@@ -121,30 +123,26 @@ export function PhaseZero({
         </>
       }
     >
-      <PhasePill display="SETUP" label="Table setup" instruction={waitingForPlayers && startBlocked ? startBlocked : undefined} />
-      <ClothName name={tableName} />
+      <PhaseDisplay display="SETUP" label="Table setup" instruction={waitingForPlayers && startBlocked ? startBlocked : undefined} />
+      <TableName name={tableName} />
       <div className="tt-stage tt-setup-stage">
         <div
-          className="tt-setup-spots"
-          data-dealer-positions="true"
+          className="tt-ledger tt-setup-ledger"
           data-player-count={rows.length}
           data-count={Math.min(rows.length + invited.length, 6)}
           data-empty-waiting={rows.length === 0 && invited.length === 0 ? "true" : undefined}
         >
           {rows.map((row) => (
-            <div className="tt-spot is-idle tt-compact-spot" key={row.userId} data-player-row="true">
-              <span className="tt-spot-who">
-                <strong>{row.name}</strong>
-              </span>
-              <span className="tt-amount">{row.available?.label ?? "0"}</span>
-            </div>
+            <DealerLedgerRow key={row.userId} empty playerName={row.name} availableLabel={row.available?.label ?? "0"} />
           ))}
           {invited.map((invite) => (
-            <div className="tt-spot is-idle is-invited tt-compact-spot" key={invite.id} data-seat-status="Invited">
-              <span className="tt-spot-who">
+            <div className="tt-ledger-row is-idle is-invited" key={invite.id} data-seat-status="Invited">
+              <span className="tt-ledger-who">
                 <strong>{invite.email ?? "Player"}</strong>
                 <small>Invited</small>
               </span>
+              <span className="tt-ledger-stake" />
+              <span className="tt-ledger-action">—</span>
             </div>
           ))}
         </div>

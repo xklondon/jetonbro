@@ -1,0 +1,37 @@
+{
+  "notes": [
+    {
+      "sheet": "design/reference/classic/approved/ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png",
+      "sha": "9d53d58afcb294b5626abdbf6eb3739cfd6aad702ab0a607aa270b3707c5ed2e",
+      "panelNative": "256x554",
+      "scaled": "390x844",
+      "letterbox": {
+        "left": 0,
+        "top": 0
+      },
+      "method": "proportional-contain-on-390x844"
+    },
+    {
+      "sheet": "design/reference/classic/approved/ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png",
+      "sha": "c401ddec54e305d60bcb4f6ce025f635afb184a405893e5f5bc69cb5f326c5d1",
+      "panelNative": "256x554",
+      "scaled": "390x844",
+      "letterbox": {
+        "left": 0,
+        "top": 0
+      },
+      "method": "proportional-contain-on-390x844"
+    },
+    {
+      "sheet": "design/reference/classic/approved/ChatGPT Image Sep 22, 2026, 12_50_27 PM (2)(2).png",
+      "sha": "2ffa477db6ac46bae88c5abb3e43ac7c28b39e7aae753e2287d3e969fd3ba1ea",
+      "panelNative": "256x554",
+      "scaled": "390x844",
+      "letterbox": {
+        "left": 0,
+        "top": 0
+      },
+      "method": "proportional-contain-on-390x844"
+    }
+  ]
+}
