@@ -136,7 +136,7 @@ export async function addLocalPlayerFromMenu(page: Page, name: string) {
   await openTableMenu(page);
   await page.getByRole("button", { name: "ADD LOCAL PLAYER" }).click();
   await page.getByLabel("Player name").fill(name);
-  await page.getByRole("button", { name: "Add Local Player" }).click();
+  await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText(name).first()).toBeVisible({ timeout: 15_000 });
   await page.keyboard.press("Escape");
   await expect(page.locator(".sheet.open")).toHaveCount(0);

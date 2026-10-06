@@ -56,7 +56,7 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
 
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeVisible();
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
 
@@ -149,11 +149,11 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.screenshot({ path: join(shots, "payout-player-390x844.png") });
 
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await page.reload();
   await playerPage.reload();
-  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
-  await expect(playerPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
+  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   const ownerAfter = await snapshot(page);
   const playerAfter = await snapshot(playerPage);
   expect(ownerAfter.phase).toBe("BETTING");

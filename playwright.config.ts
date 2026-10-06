@@ -44,6 +44,7 @@ export default defineConfig({
           ...process.env,
           ALLOW_DEV_MAILBOX: "true",
           NODE_OPTIONS: "--max-old-space-size=8192",
+          JETONBRO_ADMIN_EMAIL: process.env.JETONBRO_ADMIN_EMAIL || "p6-admin-wipe@jetonbro.test",
         },
       },
 });

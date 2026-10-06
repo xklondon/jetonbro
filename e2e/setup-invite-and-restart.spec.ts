@@ -135,7 +135,7 @@ test("two Bank sessions cannot create two next rounds after payout", async ({ pa
     .get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`)
     .then((response) => response.json())) as { bank?: { boxes: { id: string }[] } };
   for (const box of payout.bank?.boxes ?? []) {
-    await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /STAND OFF/ }).click({ force: true });
+    await page.locator(`[data-box-id="${box.id}"]`).getByRole("button", { name: /Set Box .* result: Stand-off/ }).click({ force: true });
   }
   await expect(page.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
 

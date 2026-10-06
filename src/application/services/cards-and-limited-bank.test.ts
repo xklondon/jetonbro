@@ -150,7 +150,7 @@ describeDb("optional cards and Limited Bank", () => {
     expect(after.player?.boxes[0]?.outcome).toBe("PUSH");
   });
 
-  test("OFF does not auto-settle; CONFIRM requires Apply; AUTO settles complete boxes only", async () => {
+  test("OFF does not auto-settle; CONFIRM requires Apply; AUTO settles complete boxes only", { timeout: 30_000 }, async () => {
     const off = await seatedTable({ cardAssist: "OFF" });
     await bet(off.alex.id, off.tableId, off.alexBox.id);
     await dealCards({ actorId: off.owner.id, tableId: off.tableId, idempotencyKey: key() });

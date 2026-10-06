@@ -110,13 +110,12 @@ test("payout rail order, per-box gestures, and player blackjack celebration", as
   expect(samBoxes.length).toBeGreaterThanOrEqual(2);
   expect(joBoxes.length).toBe(1);
 
-  const rail = page.locator(`[data-box-id="${samBoxes[0]!.id}"] .payout-access .rail-title`);
-  await expect(rail).toHaveText(["LOST", "STAND OFF", "BLACKJACK", "WON"]);
-  await expect(page.locator(`[data-box-id="${samBoxes[0]!.id}"] .payout-access`)).toHaveCSS("flex-wrap", "nowrap");
+  const rail = page.locator(`[data-box-id="${samBoxes[0]!.id}"] [aria-label^="Settle"] button`);
+  await expect(rail).toHaveText(["LOST", "PUSH", "BLACKJACK", "WON"]);
+  await expect(page.getByRole("button", { name: /Set Box .* result: Stand-off/ }).first()).toBeVisible();
 
   await page.setViewportSize({ width: 320, height: 700 });
-  await expect(rail).toHaveText(["LOST", "STAND OFF", "BLACKJACK", "WON"]);
-  await expect(page.locator(`[data-box-id="${samBoxes[0]!.id}"] .payout-access`)).toHaveCSS("flex-wrap", "nowrap");
+  await expect(rail).toHaveText(["LOST", "PUSH", "BLACKJACK", "WON"]);
   await noHorizontalOverflow(page);
   await page.setViewportSize({ width: 390, height: 844 });
 

@@ -90,7 +90,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await mkdir(out, { recursive: true });
   const { tableId, samContext, samPage, joContext, joPage } = await threeSeated(page, context, browser);
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("Betting open");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await expect(page.locator("body")).not.toContainText("xklondon");
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeDisabled();
@@ -104,11 +104,13 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   const before = await tableSnapshot(page);
   await openTableMenu(page);
   await page.locator(".sheet.open").getByRole("button", { name: /Change Game|SWITCH GAME/ }).click();
+  const skipLedger = page.getByRole("button", { name: "START NEW GAME WITHOUT PERSONAL LEDGER" });
+  if (await skipLedger.count()) await skipLedger.click();
   await expect(page.getByRole("button", { name: "Zilch — Coming later" })).toBeDisabled();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
   await shot(page, "app-poker-setup-sheet-390x844.png");
-  await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
-  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "START NEW GAME" }).click();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.locator("[data-table-name]").first()).toHaveText("Hold em table");
   await page.getByRole("button", { name: "START HAND", exact: true }).click();
   await expectPokerPhase(page, "PRE-FLOP");
@@ -170,7 +172,7 @@ test("three-player showdown split pot and street screenshots", async ({ page, co
   await command(page, tableId, "switchGame", { game: "POKER" });
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("POKER SETUP", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible({ timeout: 15_000 });
   await shot(page, "app-poker-dealer-setup-390x844.png");
   await shot(samPage, "app-poker-player-setup-390x844.png");
   await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });

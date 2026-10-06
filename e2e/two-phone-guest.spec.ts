@@ -108,7 +108,7 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await guestPage.reload();
   await shot(guestPage, "07-phase0-guest-player-390x844.png");
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await guestPage.reload();
   await expect(guestPage.getByText("YOUR JETONS")).toBeVisible();
   await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
@@ -253,7 +253,7 @@ test("three roles keep Owner, Dealer, and Player controls separate", async ({ pa
   await expect(dealerPage.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await dealerPage.getByRole("button", { name: "START BETTING" }).click();
-  await expect(dealerPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await expect(dealerPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   await page.reload();
   await guestPage.reload();
   await expect(page.getByText("YOUR JETONS")).toBeVisible();

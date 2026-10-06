@@ -35,6 +35,7 @@ async function seatedTable(names: string[], stacks: string[] = []) {
     actorId: owner.id,
     idempotencyKey: key(),
     name: "Protocol table",
+    game: "POKER",
     startingJetonsPerPlayer: "0",
     bankFundingMode: "LIMITED",
     startingBank: "500",

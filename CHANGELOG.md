@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Prompt 6 — migration gate tests (not merged)
+
+- Release-gate fixtures use accessible payout names, `BETTING` copy, Game Session switch sheets, and a local-only admin email fixture for wipe screenshots. Production deploy and live acceptance are still required before merge/tag.
+
 ### Prompt 5 — Game Sessions, payout density, personal ledger
 
 - Unresolved Dealer payout is one horizontal result row. Betting copy is `BETTING` only.

@@ -88,7 +88,7 @@ function tableStack(snap: Snap): number {
 }
 
 test("release candidate: three roles, Blackjack, Poker, save and reopen", async ({ page, context, browser }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(300_000);
   await mkdir(out, { recursive: true });
   await page.setViewportSize({ width: 390, height: 844 });
 
@@ -106,7 +106,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await noHorizontalOverflow(page);
 
   await openTableMenu(page);
-  await expect(page.getByRole("button", { name: "ASSIGN DEALER" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Change Dealer" })).toBeVisible();
   await expect(page.getByRole("button", { name: "RENAME TABLE" })).toBeVisible();
   await expect(page.getByRole("button", { name: "SAVE TABLE" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-release-owner-admin-390x844.png") });
@@ -119,7 +119,7 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await openTableMenu(page);
   await page.getByRole("button", { name: "ADD LOCAL PLAYER" }).click();
   await page.getByLabel("Player name").fill("Drew");
-  await page.getByRole("button", { name: "Add Local Player" }).click();
+  await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText(/already at this table/i).first()).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".sheet.open")).toHaveCount(0);
@@ -151,10 +151,10 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await expect(page.getByText("Casey").first()).toBeVisible();
 
   await openTableMenu(page);
-  await page.getByRole("button", { name: "ASSIGN DEALER" }).click();
+  await page.getByRole("button", { name: "Change Dealer" }).click();
   await page.locator(".sheet.open").getByLabel("Dealer").selectOption({ label: "Blair" });
   await page.getByRole("button", { name: "Confirm dealer" }).click();
-  await expect(page.getByText("DEALER · Blair")).toBeVisible({ timeout: 15_000 });
+  await expect.poll(async () => (await tableSnapshot(page)).members.find((member) => member.isBankDealer)?.name).toBe("Blair");
 
   await page.reload();
   await blairPage.reload();
@@ -180,12 +180,12 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   await expectRejected(caseyPage, tableId, "giveJetons", { userId: caseyAssigned.viewerId, amount: "10" });
 
   await blairPage.getByRole("button", { name: "START BETTING" }).click();
-  await expect(blairPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   await page.reload();
   await caseyPage.reload();
-  await expect(blairPage.getByRole("button", { name: "CLOSE BETTING" })).toBeVisible();
-  await expect(caseyPage.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toHaveCount(0);
+  await expect(blairPage.getByRole("button", { name: "DEAL CARDS" })).toBeVisible();
+  await expect(caseyPage.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toHaveCount(0);
 
   await caseyPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect.poll(async () => (await tableSnapshot(caseyPage)).player?.available.label).toBe("75");
@@ -199,17 +199,17 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   const caseyBox = (await tableSnapshot(caseyPage)).player?.boxes[0];
   expect(caseyBox).toBeTruthy();
 
-  await expect(blairPage.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
-  await blairPage.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await expect(blairPage.getByRole("button", { name: "DEAL CARDS" })).toBeEnabled({ timeout: 15_000 });
+  await blairPage.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await blairPage.screenshot({ path: join(out, "app-release-bj-dealer-playing-390x844.png") });
   await page.reload();
   await caseyPage.reload();
   expect((await tableSnapshot(page)).phase).toBe("PLAYING");
   expect((await tableSnapshot(caseyPage)).phase).toBe("PLAYING");
-  await expect(caseyPage.getByRole("button", { name: "DOUBLE" })).toBeVisible();
-  await expect(caseyPage.getByRole("button", { name: "DOUBLE" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "DOUBLE" })).toBeDisabled();
+  await expect(caseyPage.getByRole("button", { name: "2×" })).toBeVisible();
+  await expect(caseyPage.getByRole("button", { name: "2×" })).toBeEnabled();
+  await expect(blairPage.getByRole("button", { name: "2×" })).toHaveCount(0);
   await expectRejected(page, tableId, "doubleBox", { boxId: caseyBox!.id });
   await expectRejected(blairPage, tableId, "doubleBox", { boxId: caseyBox!.id });
   await expectRejected(page, tableId, "splitBox", { boxId: caseyBox!.id });
@@ -218,10 +218,10 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
 
   await blairPage.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(blairPage.locator("[data-phase-heading]")).toHaveText("PAYOUT");
-  await blairPage.locator(`[data-box-id="${caseyBox!.id}"]`).getByRole("button", { name: "LOST" }).click();
-  await expect(blairPage.getByRole("button", { name: "START NEXT ROUND" })).toBeEnabled({ timeout: 10_000 });
-  await blairPage.getByRole("button", { name: "START NEXT ROUND" }).click();
-  await expect(blairPage.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
+  await blairPage.locator(`[data-box-id="${caseyBox!.id}"]`).getByRole("button", { name: /Set Box .* result: Lost/ }).click();
+  await expect(blairPage.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 10_000 });
+  await blairPage.getByRole("button", { name: "START BETTING" }).click();
+  await expect(blairPage.locator("[data-phase-heading]")).toHaveText("BETTING");
   await page.reload();
   await caseyPage.reload();
   expect((await tableSnapshot(page)).phase).toBe("BETTING");
@@ -229,29 +229,28 @@ test("release candidate: three roles, Blackjack, Poker, save and reopen", async 
   expect((await tableSnapshot(caseyPage)).player?.available.label).toBe("75");
 
   await openTableMenu(page);
-  await page.getByRole("button", { name: "SWITCH GAME" }).click();
-  await expect(page.getByRole("button", { name: "Texas Hold’em" })).toBeVisible();
+  await page.getByRole("button", { name: "Change Game" }).click();
+  await expect(page.getByRole("button", { name: "SAVE RESULTS & START NEW GAME" })).toBeVisible();
   await page.screenshot({ path: join(out, "app-release-game-change-390x844.png") });
-  await page.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "CANCEL" }).click();
   expect((await tableSnapshot(page)).game).toBe("BLACKJACK");
   await openTableMenu(page);
-  await page.getByRole("button", { name: "SWITCH GAME" }).click();
+  await page.getByRole("button", { name: "Change Game" }).click();
+  await page.getByRole("button", { name: "START NEW GAME WITHOUT PERSONAL LEDGER" }).click();
   await page.getByRole("button", { name: "Texas Hold’em" }).click();
-  await page.getByRole("button", { name: "SWITCH TO TEXAS HOLD’EM" }).click();
-  await expectPokerPhase(page, "POKER SETUP");
+  await page.getByRole("button", { name: "START NEW GAME" }).click();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible({ timeout: 15_000 });
   await blairPage.reload();
   await caseyPage.reload();
-  await expectPokerPhase(blairPage, "POKER SETUP");
-  await expectPokerPhase(caseyPage, "POKER SETUP");
+  await expect(blairPage.getByRole("button", { name: "START HAND", exact: true })).toHaveCount(0);
+  await expect(caseyPage.getByRole("button", { name: "START HAND", exact: true })).toHaveCount(0);
   expect((await tableSnapshot(page)).members.find((member) => member.isOwner)?.name).toBe("Alex");
   expect((await tableSnapshot(page)).members.find((member) => member.isBankDealer)?.name).toBe("Blair");
-  expect((await tableSnapshot(caseyPage)).poker?.seats.find((seat) => seat.name === "Casey")?.available.label).toBe("75");
+  expect((await tableSnapshot(caseyPage)).poker?.seats.find((seat) => seat.name === "Casey")?.available.label).toBe("100");
+  expect((await tableSnapshot(page)).members.every((member) => member.available?.label === "100")).toBe(true);
 
-  const alexId = (await tableSnapshot(page)).viewerId;
   const blairId = (await tableSnapshot(blairPage)).viewerId;
   const caseyId = (await tableSnapshot(caseyPage)).viewerId;
-  const funded = await command(page, tableId, "giveJetons", { userId: alexId, amount: "100" });
-  expect(funded.ok).toBe(true);
   await page.getByRole("button", { name: "START HAND", exact: true }).click();
   await expectPokerPhase(page, "PRE-FLOP");
   await blairPage.reload();

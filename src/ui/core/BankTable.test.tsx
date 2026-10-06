@@ -111,13 +111,13 @@ test("Bank betting anchors DEAL CARDS under the felt positions", () => {
     createElement(ClassicBankTable, { view: bankView({}), members, onCommand: () => undefined }),
   );
   expect(html).toContain('data-phase-heading');
-  expect(html).toContain("Betting open");
+  expect(html).toContain("BETTING");
   expect(html).toContain("DEAL CARDS");
   expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("WAITING FOR PLAYERS");
   expect(html).not.toContain("CURRENT PHASE:");
   expect(html).not.toContain("DEAL CARDS closes Betting and starts Playing.");
-  expect(html.indexOf("Betting open")).toBeLessThan(html.indexOf("DEAL CARDS"));
+  expect(html.indexOf("BETTING")).toBeLessThan(html.indexOf("DEAL CARDS"));
   expect(html).not.toContain("ON TABLE");
   expect(html).toContain('data-blackjack-box-row="true"');
   expect(html).not.toContain('data-dealer-box="true"');

@@ -254,9 +254,9 @@ test("Phase 0 empty waiting is a compact card, not a blank placeholder", () => {
       onCommand: () => undefined,
     }),
   );
-  expect(html).toContain("data-empty-waiting");
-  expect(html).toContain("DEALER");
-  expect(html).toContain("data-role=\"dealer\"");
+  expect(html).toContain('data-player-count="0"');
+  expect(html).toContain("Table setup");
+  expect(html).toContain("START BETTING");
   expect(html).not.toContain("waiting-room");
   expect(html).not.toContain("setup-mask");
 });
