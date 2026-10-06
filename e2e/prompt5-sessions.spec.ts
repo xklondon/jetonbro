@@ -111,7 +111,7 @@ test("prompt 5 payout row, betting copy, session switch, ledger, wipe privacy", 
   await shot(page, "07-new-poker-setup-390x844");
   await expect(page.getByText("PLAYING FOR")).toBeVisible();
   await shot(page, "08-playing-for-money-390x844");
-  await page.getByRole("button", { name: "SOMETHING ELSE" }).click();
+  await page.getByRole("button", { name: "Something else" }).click();
   await page.getByLabel("Custom unit label").fill("Dinner");
   await shot(page, "09-playing-for-dinner-390x844");
   await page.getByRole("button", { name: "START NEW GAME" }).click();

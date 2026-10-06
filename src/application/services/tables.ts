@@ -15,7 +15,7 @@ import { dropPokerSeat, ensurePokerSeat, replacePokerSeats } from "@/application
 import { openInitialGameSession, recordSessionStarter } from "@/application/services/game-session";
 import { collectInviteEmails } from "@/domain/invitations/email";
 import { pokerHandIsOpen } from "@/domain/tables/active-game";
-import { parseStakeSpec } from "@/domain/stakes";
+import { parseStakeSpec, stakePersistFields } from "@/domain/stakes";
 import { Prisma } from "@prisma/client";
 
 function isOpenDraftConflict(error: unknown): boolean {
@@ -864,6 +864,7 @@ export async function updateTableSettings(input: {
   stakeType?: string;
   currencyCode?: string;
   moneyPerJeton?: string;
+  moneyBuyIn?: string;
   customUnitLabel?: string;
   jetonsPerCustomUnit?: string;
 }) {
@@ -927,23 +928,26 @@ export async function updateTableSettings(input: {
             stakeType: input.stakeType,
             currencyCode: input.currencyCode,
             moneyPerJeton: input.moneyPerJeton,
+            moneyBuyIn: input.moneyBuyIn,
+            startingJetonsPerPlayer: input.startingJetonsPerPlayer,
             customUnitLabel: input.customUnitLabel,
             jetonsPerCustomUnit: input.jetonsPerCustomUnit,
           });
           const current = await tx.table.findUniqueOrThrow({
             where: { id: input.tableId },
-            select: { currentGameSessionId: true },
+            select: { currentGameSessionId: true, startingJetonsPerPlayerMillis: true },
           });
           if (current.currentGameSessionId) {
+            let fields = stakePersistFields(stake);
+            if (stake.type === "MONEY" && stake.moneyBuyInMinorUnits != null && !input.startingJetonsPerPlayer) {
+              fields = stakePersistFields({
+                ...stake,
+                startingJetonsMillis: current.startingJetonsPerPlayerMillis,
+              });
+            }
             await tx.gameSession.update({
               where: { id: current.currentGameSessionId },
-              data: {
-                stakeType: stake.type,
-                currencyCode: stake.type === "MONEY" ? stake.currencyCode : null,
-                minorUnitsPerJeton: stake.type === "MONEY" ? stake.minorUnitsPerJeton : null,
-                customUnitLabel: stake.type === "CUSTOM" ? stake.customUnitLabel : null,
-                jetonsPerCustomUnit: stake.type === "CUSTOM" ? stake.jetonsPerCustomUnit : null,
-              },
+              data: fields,
             });
           }
         }

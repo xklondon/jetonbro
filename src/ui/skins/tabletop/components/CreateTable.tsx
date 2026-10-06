@@ -7,6 +7,7 @@ import { GAME_CATALOG } from "@/domain/games";
 import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
 import { InviteInline, type InviteTab } from "./InviteMask";
+import { DEFAULT_STAKE_MODE, StakeModeControl, stakeModeToPayload, type StakeModeValue } from "./StakeModeControl";
 
 type CreateTableFields = {
   name: string;
@@ -69,11 +70,7 @@ export function CreateTable({
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
   const [inviteMethod, setInviteMethod] = useState<InviteTab | null>(null);
-  const [stakeType, setStakeType] = useState<"MONEY" | "CUSTOM">("MONEY");
-  const [currency, setCurrency] = useState("GBP");
-  const [moneyPerJeton, setMoneyPerJeton] = useState("1");
-  const [customLabel, setCustomLabel] = useState("Dinner");
-  const [jetonsPerUnit, setJetonsPerUnit] = useState("50");
+  const [stake, setStake] = useState<StakeModeValue>(DEFAULT_STAKE_MODE);
 
   useEffect(() => {
     if (!view) return;
@@ -82,6 +79,10 @@ export function CreateTable({
     setBankFundingMode(view.bankFundingMode ?? "OPEN");
     if (view.bankFundingMode === "LIMITED" && view.startingBank?.label) setStartingBank(limitedReserve(view.startingBank.label));
     setDealerId(view.members.find((member) => member.isBankDealer)?.userId ?? "");
+    const sessionStake = view.gameSession?.stakeType;
+    if (sessionStake === "FUN_ONLY" || sessionStake === "MONEY" || sessionStake === "CUSTOM") {
+      setStake((current) => ({ ...current, stakeType: sessionStake }));
+    }
   }, [view, nameDirty, startingDirty]);
 
   async function persist(payload: Record<string, string>) {
@@ -94,7 +95,6 @@ export function CreateTable({
   const guestJoinUrl = view?.guestJoinUrl ?? null;
   const verifiedJoinUrl = view?.verifiedJoinUrl ?? view?.joinUrl ?? null;
   const playable = GAME_CATALOG.filter((entry) => entry.available);
-  const later = GAME_CATALOG.filter((entry) => !entry.available);
 
   const rail = (
     <div className="tt-dock">
@@ -108,6 +108,7 @@ export function CreateTable({
           setPending(true);
           try {
             if (onCommand && view) {
+              await persist(stakeModeToPayload(stake, startingJetonsPerPlayer));
               await onCommand("finalizeSetup", {
                 name,
                 startingJetonsPerPlayer,
@@ -171,7 +172,7 @@ export function CreateTable({
       </div>
       <div className="tt-create-body">
         {notice ? <div className="tt-error">{notice}</div> : null}
-        <section className="tt-block is-compact">
+        <section className="tt-block is-compact tt-create-setup">
           <div className="tt-two">
             <label className="tt-field">
               Table name
@@ -220,7 +221,7 @@ export function CreateTable({
           ) : (
             <div className="tt-muted tt-create-meta">Owner · {view.ownerName}</div>
           )}
-          <div className="tt-segment" role="group" aria-label="Game">
+          <div className="tt-segment tt-compact-segment" role="group" aria-label="Game">
             {playable.map((entry) => (
               <button
                 key={entry.id}
@@ -237,13 +238,8 @@ export function CreateTable({
               </button>
             ))}
           </div>
-          {later.map((entry) => (
-            <p className="tt-muted tt-create-meta" key={entry.id}>
-              {entry.label} · Coming later
-            </p>
-          ))}
           {game === "BLACKJACK" ? (
-            <div className="tt-segment" role="group" aria-label="Bank">
+            <div className="tt-segment tt-compact-segment" role="group" aria-label="Bank">
               <button
                 type="button"
                 className={bankFundingMode === "OPEN" ? "active" : ""}
@@ -295,7 +291,7 @@ export function CreateTable({
             </label>
           ) : null}
           {view?.members.length ? (
-            <label className="tt-field">
+            <label className="tt-field tt-dealer-row">
               Dealer
               <select
                 className="tt-input"
@@ -317,63 +313,12 @@ export function CreateTable({
           ) : (
             <div className="tt-muted tt-create-meta">Dealer · {view?.bankName ?? "Owner (default)"}</div>
           )}
-        </section>
-        <section className="tt-block is-compact" data-playing-for="true">
-          <div className="tt-label">PLAYING FOR</div>
-          <div className="tt-segment">
-            <button
-              type="button"
-              className={stakeType === "MONEY" ? "active" : ""}
-              onClick={() => {
-                setStakeType("MONEY");
-                void onCommand?.("updateSettings", { stakeType: "MONEY", currencyCode: currency, moneyPerJeton });
-              }}
-            >
-              MONEY
-            </button>
-            <button
-              type="button"
-              className={stakeType === "CUSTOM" ? "active" : ""}
-              onClick={() => {
-                setStakeType("CUSTOM");
-                void onCommand?.("updateSettings", { stakeType: "CUSTOM", customUnitLabel: customLabel, jetonsPerCustomUnit: jetonsPerUnit });
-              }}
-            >
-              SOMETHING ELSE
-            </button>
-          </div>
-          {stakeType === "MONEY" ? (
-            <>
-              <label className="tt-field">
-                Currency
-                <select className="tt-input" aria-label="Currency" value={currency} onChange={(event) => {
-                  setCurrency(event.target.value);
-                  void onCommand?.("updateSettings", { stakeType: "MONEY", currencyCode: event.target.value, moneyPerJeton });
-                }}>
-                  <option value="GBP">GBP</option>
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                </select>
-              </label>
-              <label className="tt-field">
-                Value of one jeton
-                <input className="tt-input" aria-label="Value of one jeton" value={moneyPerJeton} onChange={(event) => setMoneyPerJeton(event.target.value)} onBlur={() => void onCommand?.("updateSettings", { stakeType: "MONEY", currencyCode: currency, moneyPerJeton })} />
-              </label>
-              <p className="tt-muted">1 jeton = {currency === "GBP" ? "£" : currency === "EUR" ? "€" : "$"}{moneyPerJeton || "1"}</p>
-            </>
-          ) : (
-            <>
-              <label className="tt-field">
-                Unit
-                <input className="tt-input" aria-label="Custom unit label" value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} onBlur={() => void onCommand?.("updateSettings", { stakeType: "CUSTOM", customUnitLabel: customLabel, jetonsPerCustomUnit: jetonsPerUnit })} />
-              </label>
-              <label className="tt-field">
-                Jetons per unit
-                <input className="tt-input" aria-label="Jetons per custom unit" value={jetonsPerUnit} onChange={(event) => setJetonsPerUnit(event.target.value)} onBlur={() => void onCommand?.("updateSettings", { stakeType: "CUSTOM", customUnitLabel: customLabel, jetonsPerCustomUnit: jetonsPerUnit })} />
-              </label>
-              <p className="tt-muted">{jetonsPerUnit || "50"} jetons = 1 {customLabel || "Dinner"}</p>
-            </>
-          )}
+          <StakeModeControl
+            value={stake}
+            startingJetons={startingJetonsPerPlayer}
+            onChange={setStake}
+            onPersist={(payload) => void persist(payload)}
+          />
         </section>
         <section className="tt-block is-compact">
           <div className="tt-label">PLAYERS</div>

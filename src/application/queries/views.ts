@@ -108,7 +108,7 @@ export type GameSessionView = {
   status: string;
   startedAt: string;
   startingJetons: MoneyView;
-  stakeType: "MONEY" | "CUSTOM";
+  stakeType: "FUN_ONLY" | "MONEY" | "CUSTOM";
   stakeExample: string;
   players: { userId: string; name: string; available: MoneyView; isOwner: boolean; isDealer: boolean }[];
 };

@@ -8,6 +8,7 @@ export type LedgerEntryView = {
   tableName: string;
   game: string;
   stakeType: string;
+  stakeExample?: string;
   startingJetons: string;
   endingJetons: string;
   netJetons: string;
@@ -28,7 +29,9 @@ export function LedgerClient({ entries }: { entries: LedgerEntryView[] }) {
               <div>
                 <strong>{entry.tableName}</strong>
                 <div className="tt-muted tt-home-state">
-                  {new Date(entry.date).toLocaleDateString()} · {entry.game} · {entry.stakeType} · {entry.role} · {entry.status}
+                  {new Date(entry.date).toLocaleDateString()} · {entry.game} · {entry.stakeType}
+                  {entry.stakeExample && entry.stakeExample !== "Fun only" ? ` · ${entry.stakeExample}` : ""} · {entry.role} ·{" "}
+                  {entry.status}
                 </div>
               </div>
             </header>

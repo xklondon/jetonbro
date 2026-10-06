@@ -1772,6 +1772,102 @@
   gap: 5px;
 }
 
+.tabletop-skin .tt-create .tt-compact-segment button {
+  min-height: 46px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.tabletop-skin .tt-create-setup {
+  gap: 5px;
+  padding: 6px 8px;
+}
+
+.tabletop-skin .tt-stake-mode {
+  display: grid;
+  gap: 5px;
+  padding-top: 2px;
+  border-top: 1px solid rgba(223, 189, 105, 0.16);
+}
+
+.tabletop-skin .tt-stake-segments button {
+  min-height: 46px;
+  padding: 6px 4px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.tabletop-skin .tt-stake-money,
+.tabletop-skin .tt-stake-custom {
+  display: grid;
+  gap: 5px;
+}
+
+.tabletop-skin .tt-stake-money-row,
+.tabletop-skin .tt-stake-convert-row,
+.tabletop-skin .tt-stake-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.tabletop-skin .tt-stake-currency {
+  width: 88px;
+  flex: 0 0 88px;
+}
+
+.tabletop-skin .tt-check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.tabletop-skin .tt-check-inline input {
+  width: 18px;
+  height: 18px;
+  accent-color: #dfbd69;
+}
+
+.tabletop-skin .tt-stake-buyin {
+  width: 88px;
+  flex: 0 0 88px;
+}
+
+.tabletop-skin .tt-stake-per-unit {
+  width: 64px;
+  flex: 0 0 64px;
+}
+
+.tabletop-skin .tt-stake-custom-row .tt-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tabletop-skin .tt-stake-hint {
+  margin: 0;
+  font-size: 11px;
+}
+
+.tabletop-skin .tt-dealer-row {
+  margin: 0;
+}
+
+.tabletop-skin .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .tabletop-skin .tt-create-meta {
   margin: 0;
   font-size: 11px;

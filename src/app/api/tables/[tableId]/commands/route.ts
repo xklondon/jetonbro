@@ -248,6 +248,7 @@ async function dispatch(
         stakeType: p.stakeType ? String(p.stakeType) : undefined,
         currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
         moneyPerJeton: p.moneyPerJeton ? String(p.moneyPerJeton) : undefined,
+        moneyBuyIn: p.moneyBuyIn ? String(p.moneyBuyIn) : undefined,
         customUnitLabel: p.customUnitLabel ? String(p.customUnitLabel) : undefined,
         jetonsPerCustomUnit: p.jetonsPerCustomUnit ? String(p.jetonsPerCustomUnit) : undefined,
       });
@@ -313,6 +314,7 @@ async function dispatch(
         stakeType: p.stakeType ? String(p.stakeType) : undefined,
         currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
         moneyPerJeton: p.moneyPerJeton ? String(p.moneyPerJeton) : undefined,
+        moneyBuyIn: p.moneyBuyIn ? String(p.moneyBuyIn) : undefined,
         customUnitLabel: p.customUnitLabel ? String(p.customUnitLabel) : undefined,
         jetonsPerCustomUnit: p.jetonsPerCustomUnit ? String(p.jetonsPerCustomUnit) : undefined,
         dealerUserId: p.dealerUserId ? String(p.dealerUserId) : undefined,
@@ -330,6 +332,7 @@ async function dispatch(
         stakeType: p.stakeType ? String(p.stakeType) : undefined,
         currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
         moneyPerJeton: p.moneyPerJeton ? String(p.moneyPerJeton) : undefined,
+        moneyBuyIn: p.moneyBuyIn ? String(p.moneyBuyIn) : undefined,
         customUnitLabel: p.customUnitLabel ? String(p.customUnitLabel) : undefined,
         jetonsPerCustomUnit: p.jetonsPerCustomUnit ? String(p.jetonsPerCustomUnit) : undefined,
         dealerUserId: p.dealerUserId ? String(p.dealerUserId) : undefined,

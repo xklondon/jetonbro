@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { GameSessionView, MemberView } from "@/application/queries/views";
 import type { CommandHandler } from "@/ui/skins/types";
+import { DEFAULT_STAKE_MODE, StakeModeControl, stakeModeToPayload, type StakeModeValue } from "./StakeModeControl";
 
 type Step = "save" | "game" | "setup";
 
@@ -27,11 +28,10 @@ export function GameChangeSheet({
   const [selected, setSelected] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(members.map((member) => [member.userId, true])),
   );
-  const [stakeType, setStakeType] = useState<"MONEY" | "CUSTOM">(session?.stakeType ?? "MONEY");
-  const [currency, setCurrency] = useState("GBP");
-  const [moneyPerJeton, setMoneyPerJeton] = useState("1");
-  const [customLabel, setCustomLabel] = useState("Dinner");
-  const [jetonsPerUnit, setJetonsPerUnit] = useState("50");
+  const [stake, setStake] = useState<StakeModeValue>(() => ({
+    ...DEFAULT_STAKE_MODE,
+    stakeType: session?.stakeType === "MONEY" || session?.stakeType === "CUSTOM" ? session.stakeType : "FUN_ONLY",
+  }));
   const [dealerId, setDealerId] = useState(members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "");
 
   const chosen = useMemo(() => members.filter((member) => selected[member.userId]), [members, selected]);
@@ -42,11 +42,7 @@ export function GameChangeSheet({
       savePersonalLedger: savePersonal ? "true" : "false",
       startingJetonsPerPlayer: starting,
       participantUserIds: chosen.map((member) => member.userId).join(","),
-      stakeType,
-      currencyCode: currency,
-      moneyPerJeton,
-      customUnitLabel: customLabel,
-      jetonsPerCustomUnit: jetonsPerUnit,
+      ...stakeModeToPayload(stake, starting),
       dealerUserId: chosen.some((member) => member.userId === dealerId) ? dealerId : chosen[0]?.userId ?? "",
     });
   }
@@ -146,44 +142,7 @@ export function GameChangeSheet({
           </select>
         </label>
       ) : null}
-      <div className="tt-label">PLAYING FOR</div>
-      <div className="tt-segment" data-playing-for="true">
-        <button type="button" className={stakeType === "MONEY" ? "active" : ""} onClick={() => setStakeType("MONEY")}>
-          MONEY
-        </button>
-        <button type="button" className={stakeType === "CUSTOM" ? "active" : ""} onClick={() => setStakeType("CUSTOM")}>
-          SOMETHING ELSE
-        </button>
-      </div>
-      {stakeType === "MONEY" ? (
-        <>
-          <label className="tt-field">
-            Currency
-            <select className="tt-input" aria-label="Currency" value={currency} onChange={(event) => setCurrency(event.target.value)}>
-              <option value="GBP">GBP</option>
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-            </select>
-          </label>
-          <label className="tt-field">
-            Value of one jeton
-            <input className="tt-input" aria-label="Value of one jeton" value={moneyPerJeton} onChange={(event) => setMoneyPerJeton(event.target.value)} />
-          </label>
-          <p className="tt-muted">1 jeton = {currency === "GBP" ? "£" : currency === "EUR" ? "€" : "$"}{moneyPerJeton || "1"}</p>
-        </>
-      ) : (
-        <>
-          <label className="tt-field">
-            Unit
-            <input className="tt-input" aria-label="Custom unit label" value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} />
-          </label>
-          <label className="tt-field">
-            Jetons per unit
-            <input className="tt-input" aria-label="Jetons per custom unit" value={jetonsPerUnit} onChange={(event) => setJetonsPerUnit(event.target.value)} />
-          </label>
-          <p className="tt-muted">{jetonsPerUnit || "50"} jetons = 1 {customLabel || "Dinner"}</p>
-        </>
-      )}
+      <StakeModeControl value={stake} startingJetons={starting} onChange={setStake} />
       <button className="tt-btn gold" type="button" data-start-new-game="true" onClick={start}>
         START NEW GAME
       </button>

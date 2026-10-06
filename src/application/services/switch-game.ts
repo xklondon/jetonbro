@@ -15,6 +15,7 @@ export async function switchGame(input: {
   stakeType?: string;
   currencyCode?: string;
   moneyPerJeton?: string;
+  moneyBuyIn?: string;
   customUnitLabel?: string;
   jetonsPerCustomUnit?: string;
   dealerUserId?: string;

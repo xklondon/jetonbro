@@ -100,6 +100,7 @@ enum GameSessionStatus {
 }
 
 enum StakeType {
+  FUN_ONLY
   MONEY
   CUSTOM
 }
@@ -278,9 +279,10 @@ model GameSession {
   gameType                GameId
   status                  GameSessionStatus @default(SETUP)
   startingJetonsMillis    BigInt
-  stakeType               StakeType         @default(MONEY)
+  stakeType               StakeType         @default(FUN_ONLY)
   currencyCode            String?
   minorUnitsPerJeton      BigInt?
+  moneyBuyInMinorUnits    BigInt?
   customUnitLabel         String?
   jetonsPerCustomUnit     BigInt?
   startedAt               DateTime          @default(now())

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Prompt 7 — FUN ONLY default, compact stakes, money buy-in
+
+- Stake modes: `FUN_ONLY` (default) | `MONEY` | `CUSTOM`. Fun only never implies owe/owed.
+- Money defaults to USD at 1 jeton = $1; optional Custom rate stores `moneyBuyInMinorUnits` for stack↔buy-in ratios.
+- Compact Create Table / New Game `StakeModeControl`; forward-only migrations add `FUN_ONLY` then buy-in column/default.
+
 ### Prompt 6 — migration gate tests (not merged)
 
 - Release-gate fixtures use accessible payout names, `BETTING` copy, Game Session switch sheets, and a local-only admin email fixture for wipe screenshots. Production deploy and live acceptance are still required before merge/tag.

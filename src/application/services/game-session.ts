@@ -8,7 +8,7 @@ import { assertCanSwitchGame, SWITCH_BLOCKED } from "@/domain/tables/switch-game
 import { isPlayableGame } from "@/domain/games";
 import { DomainError, ForbiddenError, NotFoundError } from "@/domain/errors";
 import { formatJetons, parseWholeJetons } from "@/domain/money";
-import { parseStakeSpec, personalResultCopy, stakeFromSession } from "@/domain/stakes";
+import { parseStakeSpec, personalResultCopy, stakeExample, stakeFromSession, stakePersistFields, stakeTypeLabel } from "@/domain/stakes";
 import { assertFundedPokerDealer } from "@/domain/poker/dealer-stack";
 import type { Prisma } from "@prisma/client";
 
@@ -31,9 +31,7 @@ export async function openInitialGameSession(
       gameType: table.game,
       status: "SETUP",
       startingJetonsMillis: table.startingJetonsPerPlayerMillis,
-      stakeType: "MONEY",
-      currencyCode: "GBP",
-      minorUnitsPerJeton: 100n,
+      stakeType: "FUN_ONLY",
     },
   });
   await tx.table.update({
@@ -234,6 +232,7 @@ export async function startNewGame(input: {
   stakeType?: string;
   currencyCode?: string;
   moneyPerJeton?: string;
+  moneyBuyIn?: string;
   customUnitLabel?: string;
   jetonsPerCustomUnit?: string;
   smallBlind?: string;
@@ -268,6 +267,7 @@ export async function startNewGame(input: {
       }
       await closeCurrentSession(tx, table, input.actorId, publishPersonal);
 
+      const stakeFields = stakePersistFields(stake);
       const session = await tx.gameSession.create({
         data: {
           tableId: table.id,
@@ -275,11 +275,7 @@ export async function startNewGame(input: {
           gameType: input.game === "POKER" ? "POKER" : "BLACKJACK",
           status: "SETUP",
           startingJetonsMillis: starting,
-          stakeType: stake.type,
-          currencyCode: stake.type === "MONEY" ? stake.currencyCode : null,
-          minorUnitsPerJeton: stake.type === "MONEY" ? stake.minorUnitsPerJeton : null,
-          customUnitLabel: stake.type === "CUSTOM" ? stake.customUnitLabel : null,
-          jetonsPerCustomUnit: stake.type === "CUSTOM" ? stake.jetonsPerCustomUnit : null,
+          ...stakeFields,
         },
       });
 
@@ -425,10 +421,8 @@ export async function listPersonalLedger(userId: string) {
       date: (row.resultRecordedAt ?? row.gameSession.startedAt).toISOString(),
       tableName: row.gameSession.tableName,
       game: row.gameSession.gameType === "POKER" ? "Poker" : "Blackjack",
-      stakeType: row.gameSession.stakeType,
-      stakeExample: stake.type === "MONEY"
-        ? `1 jeton = ${stake.currencyCode === "GBP" ? "£" : stake.currencyCode === "EUR" ? "€" : "$"}${(stake.minorUnitsPerJeton / 100n).toString()}`
-        : `${stake.jetonsPerCustomUnit.toString()} jetons = 1 ${stake.customUnitLabel}`,
+      stakeType: stake.type === "FUN_ONLY" ? "Fun only" : stake.type === "MONEY" ? `Money · ${stake.currencyCode}` : stakeTypeLabel(stake.type),
+      stakeExample: stakeExample(stake),
       startingJetons: formatJetons(row.startingBalanceMillis),
       endingJetons: formatJetons(row.endingBalanceMillis ?? row.startingBalanceMillis),
       netJetons: formatJetons(net < 0n ? -net : net),
