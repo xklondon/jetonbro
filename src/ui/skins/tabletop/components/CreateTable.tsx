@@ -73,6 +73,7 @@ export function CreateTable({
   const [stake, setStake] = useState<StakeModeValue>(DEFAULT_STAKE_MODE);
   const stakeRef = useRef(stake);
   stakeRef.current = stake;
+  const [stakeTouched, setStakeTouched] = useState(false);
 
   useEffect(() => {
     if (!view) return;
@@ -82,10 +83,10 @@ export function CreateTable({
     if (view.bankFundingMode === "LIMITED" && view.startingBank?.label) setStartingBank(limitedReserve(view.startingBank.label));
     setDealerId(view.members.find((member) => member.isBankDealer)?.userId ?? "");
     const sessionStake = view.gameSession?.stakeType;
-    if (sessionStake === "FUN_ONLY" || sessionStake === "MONEY" || sessionStake === "CUSTOM") {
+    if (!stakeTouched && (sessionStake === "FUN_ONLY" || sessionStake === "MONEY" || sessionStake === "CUSTOM")) {
       setStake((current) => ({ ...current, stakeType: sessionStake }));
     }
-  }, [view, nameDirty, startingDirty]);
+  }, [view, nameDirty, startingDirty, stakeTouched]);
 
   async function persist(payload: Record<string, string>) {
     if (!onCommand) return;
@@ -318,7 +319,10 @@ export function CreateTable({
           <StakeModeControl
             value={stake}
             startingJetons={startingJetonsPerPlayer}
-            onChange={setStake}
+            onChange={(next) => {
+              setStakeTouched(true);
+              setStake(next);
+            }}
             onPersist={(payload) => void persist(payload)}
           />
         </section>

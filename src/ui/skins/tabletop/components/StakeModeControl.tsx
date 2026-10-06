@@ -67,6 +67,11 @@ export function StakeModeControl({
     onPersist?.(stakeModeToPayload(next, startingJetons));
   }
 
+  function persistIfCurrent(expected: StakeModeValue["stakeType"], next: StakeModeValue) {
+    if (value.stakeType !== expected) return;
+    persist(next);
+  }
+
   return (
     <div className="tt-stake-mode" data-playing-for="true" data-stake-type={value.stakeType}>
       <div className="tt-label">PLAYING FOR</div>
@@ -76,6 +81,7 @@ export function StakeModeControl({
           className={value.stakeType === "FUN_ONLY" ? "active" : ""}
           aria-label="Fun only"
           aria-pressed={value.stakeType === "FUN_ONLY"}
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => persist({ ...value, stakeType: "FUN_ONLY" })}
         >
           FUN ONLY
@@ -85,6 +91,7 @@ export function StakeModeControl({
           className={value.stakeType === "MONEY" ? "active" : ""}
           aria-label="Money"
           aria-pressed={value.stakeType === "MONEY"}
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => persist({ ...value, stakeType: "MONEY", customRate: false })}
         >
           MONEY
@@ -94,6 +101,7 @@ export function StakeModeControl({
           className={value.stakeType === "CUSTOM" ? "active" : ""}
           aria-label="Something else"
           aria-pressed={value.stakeType === "CUSTOM"}
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => persist({ ...value, stakeType: "CUSTOM" })}
         >
           OTHER
@@ -145,7 +153,7 @@ export function StakeModeControl({
                 inputMode="decimal"
                 value={value.moneyBuyIn}
                 onChange={(event) => onChange({ ...value, moneyBuyIn: event.target.value })}
-                onBlur={() => onPersist?.(stakeModeToPayload(value, startingJetons))}
+                onBlur={() => persistIfCurrent("MONEY", value)}
               />
             </div>
           ) : (
@@ -163,7 +171,7 @@ export function StakeModeControl({
               aria-label="Custom unit label"
               value={value.customUnitLabel}
               onChange={(event) => onChange({ ...value, customUnitLabel: event.target.value })}
-              onBlur={() => persist(value)}
+              onBlur={() => persistIfCurrent("CUSTOM", value)}
             />
           </div>
           <div className="tt-stake-custom-row">
@@ -173,7 +181,7 @@ export function StakeModeControl({
               inputMode="numeric"
               value={value.jetonsPerCustomUnit}
               onChange={(event) => onChange({ ...value, jetonsPerCustomUnit: event.target.value })}
-              onBlur={() => persist(value)}
+              onBlur={() => persistIfCurrent("CUSTOM", value)}
             />
             <span>
               jetons = 1 {value.customUnitLabel.trim() || "…"}
