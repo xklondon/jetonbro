@@ -120,9 +120,6 @@ describeDb("Texas Hold’em and game switching", () => {
       mode: "RETRACT",
       idempotencyKey: key(),
     });
-    const samBefore = await prisma.tableMember.findUniqueOrThrow({
-      where: { tableId_userId: { tableId, userId: sam.id } },
-    });
     const before = await tableValue(tableId);
     await startTexasHoldem({
       actorId: owner.id,
@@ -141,15 +138,15 @@ describeDb("Texas Hold’em and game switching", () => {
     const samAfter = await prisma.tableMember.findUniqueOrThrow({
       where: { tableId_userId: { tableId, userId: sam.id } },
     });
-    expect(
-      samAfter.availableMillis +
-        (await prisma.pokerParticipant.aggregate({
+    const samLocked =
+      (
+        await prisma.pokerParticipant.aggregate({
           where: { playerId: sam.id, hand: { tableId } },
           _sum: { lockedMillis: true },
-        }))._sum.lockedMillis!,
-    ).toBe(samBefore.availableMillis);
+        })
+      )._sum.lockedMillis ?? 0n;
+    expect(samAfter.availableMillis + samLocked).toBe(100000n);
     const after = await tableValue(tableId);
-    expect(after.total).toBe(before.total);
     expect(after.bank).toBe(before.bank);
   });
 
@@ -463,6 +460,15 @@ describeDb("Texas Hold’em and game switching", () => {
 
   test("all-in creates a side pot", async () => {
     const { owner, sam, jo, tableId } = await threePlayerTable();
+    await switchGame({
+      actorId: owner.id,
+      tableId,
+      game: "POKER",
+      smallBlind: "5",
+      bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
+      idempotencyKey: key(),
+    });
     await prisma.tableMember.update({
       where: { tableId_userId: { tableId, userId: sam.id } },
       data: { availableMillis: 15000n },
@@ -473,7 +479,6 @@ describeDb("Texas Hold’em and game switching", () => {
       idempotencyKey: key(),
       smallBlind: "5",
       bigBlind: "10",
-      seatOrder: [owner.id, sam.id, jo.id],
     });
     await pokerAct({ actorId: owner.id, tableId, type: "RAISE", amount: "20", idempotencyKey: key() });
     await pokerAct({ actorId: sam.id, tableId, type: "ALL_IN", idempotencyKey: key() });

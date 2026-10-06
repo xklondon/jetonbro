@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BankrollView, CloseTablePreview, MemberView, PokerSeatView } from "@/application/queries/views";
 import type { CommandHandler } from "@/ui/skins/types";
 import { Sheet } from "./Sheet";
+import { GameChangeSheet } from "./GameChangeSheet";
+import type { GameSessionView } from "@/application/queries/views";
 
-type View = "menu" | "rename" | "dealer" | "player" | "jetons" | "game" | "poker" | "close" | "dealerWon" | "funding" | "seats";
+type View = "menu" | "rename" | "dealer" | "player" | "jetons" | "game" | "poker" | "close" | "dealerWon" | "funding" | "seats" | "session";
 
 export type OwnerMenuItem = { label: string; disabled?: boolean; onClick: () => void; attrs?: Record<string, string> };
 
@@ -36,6 +38,8 @@ export type OwnerMenuProps = {
   canClose?: boolean;
   closePreview?: CloseTablePreview | null;
   closeCopy?: string;
+  gameSession?: GameSessionView | null;
+  startView?: View;
 };
 
 function moveSeat(ids: string[], index: number, delta: -1 | 1) {
@@ -72,8 +76,10 @@ export function OwnerMenu({
   canClose = true,
   closePreview = null,
   closeCopy,
+  gameSession = null,
+  startView = "menu",
 }: OwnerMenuProps) {
-  const [view, setView] = useState<View>("menu");
+  const [view, setView] = useState<View>(startView);
   const [name, setName] = useState(tableName);
   const [playerName, setPlayerName] = useState("");
   const [email, setEmail] = useState("");
@@ -83,6 +89,10 @@ export function OwnerMenu({
   const [smallBlind, setSmallBlind] = useState("5");
   const [bigBlind, setBigBlind] = useState("10");
   const [startingBank, setStartingBank] = useState(bankroll?.available.label || "500");
+
+  useEffect(() => {
+    if (open) setView(startView);
+  }, [open, startView]);
 
   function done() {
     setView("menu");
@@ -157,7 +167,7 @@ export function OwnerMenu({
               </button>
             ) : null}
             {switchGame ? (
-              <button type="button" className="tt-btn" data-owner-change-game="true" onClick={() => setView("game")}>
+              <button type="button" className="tt-btn" data-owner-change-game="true" onClick={() => setView("session")}>
                 Change Game
               </button>
             ) : null}
@@ -313,72 +323,23 @@ export function OwnerMenu({
           >
             Confirm dealer
           </button>
-          <button className="tt-link" type="button" onClick={back}>
+          <button className="tt-link" type="button" onClick={done}>
             Cancel
           </button>
         </>
       ) : null}
 
-      {current === "game" ? (
-        <>
-          <h3>Switch game</h3>
-          {game === "POKER" ? (
-            <button
-              className="tt-btn gold"
-              type="button"
-              onClick={() => {
-                void onCommand("switchGame", { game: "BLACKJACK" });
-                done();
-              }}
-            >
-              Blackjack
-            </button>
-          ) : (
-            <button className="tt-btn gold" type="button" onClick={() => setView("poker")}>
-              Texas Hold’em
-            </button>
-          )}
-          <button type="button" className="tt-btn" disabled>
-            Zilch — Coming later
-          </button>
-          <button className="tt-link" type="button" onClick={back}>
-            Cancel
-          </button>
-        </>
-      ) : null}
-
-      {current === "poker" ? (
-        <>
-          <h3>Texas Hold’em</h3>
-          <div className="tt-two">
-            <label className="tt-field">
-              Small blind
-              <input className="tt-input" aria-label="Small blind" value={smallBlind} onChange={(event) => setSmallBlind(event.target.value)} />
-            </label>
-            <label className="tt-field">
-              Big blind
-              <input className="tt-input" aria-label="Big blind" value={bigBlind} onChange={(event) => setBigBlind(event.target.value)} />
-            </label>
-          </div>
-          <button
-            className="tt-btn gold"
-            type="button"
-            onClick={() => {
-              void onCommand("switchGame", {
-                game: "POKER",
-                smallBlind,
-                bigBlind,
-                seatOrder: members.map((member) => member.userId).join(","),
-              });
-              done();
-            }}
-          >
-            SWITCH TO TEXAS HOLD’EM
-          </button>
-          <button className="tt-link" type="button" onClick={() => setView("game")}>
-            Cancel
-          </button>
-        </>
+      {current === "session" || current === "game" || current === "poker" ? (
+        <GameChangeSheet
+          game={game}
+          members={members}
+          session={gameSession}
+          onCommand={(command, payload) => {
+            void onCommand(command, payload);
+            done();
+          }}
+          onCancel={done}
+        />
       ) : null}
 
       {current === "funding" ? (

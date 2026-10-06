@@ -25,7 +25,7 @@ describe("tabletop approved primitives gallery", () => {
       renderToStaticMarkup(createElement(TableButton, { variant: "primary", children: "START BETTING" })),
       renderToStaticMarkup(createElement(TableButton, { variant: "secondary", children: "ADD PLAYER" })),
       renderToStaticMarkup(createElement(TableButton, { variant: "primary", disabled: true, children: "START BETTING" })),
-      renderToStaticMarkup(createElement(PhaseDisplay, { display: "BETTING", label: "Betting open" })),
+      renderToStaticMarkup(createElement(PhaseDisplay, { display: "BETTING", label: "BETTING" })),
       renderToStaticMarkup(createElement(TableName, { name: "Salon" })),
     ].join("\n");
     expect(html).toContain("tt-rail-svg");

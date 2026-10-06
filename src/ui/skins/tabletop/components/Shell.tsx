@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { TableRail } from "./primitives/TableRail";
+import { RoleBadges, type RoleBadge } from "./primitives/RoleBadges";
 
 export type ShellFeltProps = Record<string, string | number | boolean | undefined>;
 
@@ -29,7 +30,7 @@ export function Shell({
   overlay?: ReactNode;
   title?: string;
   balance?: string;
-  badges?: string[];
+  badges?: Array<string | RoleBadge>;
   onMenu?: () => void;
   menuLabel?: string;
   rightLabel?: string;
@@ -56,13 +57,9 @@ export function Shell({
               <strong>{balance}</strong>
             </div>
           ) : badges?.length ? (
-            <div className="tt-badges" data-role-badges="true">
-              {badges.map((badge) => (
-                <span key={badge} className="tt-badge">
-                  {badge}
-                </span>
-              ))}
-            </div>
+            <RoleBadges
+              badges={badges.map((badge) => (typeof badge === "string" ? { id: badge, label: badge } : badge))}
+            />
           ) : (
             <span className="tt-mark" aria-hidden="true">
               {rightLabel ?? "♠"}

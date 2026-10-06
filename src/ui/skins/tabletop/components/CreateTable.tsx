@@ -69,6 +69,11 @@ export function CreateTable({
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
   const [inviteMethod, setInviteMethod] = useState<InviteTab | null>(null);
+  const [stakeType, setStakeType] = useState<"MONEY" | "CUSTOM">("MONEY");
+  const [currency, setCurrency] = useState("GBP");
+  const [moneyPerJeton, setMoneyPerJeton] = useState("1");
+  const [customLabel, setCustomLabel] = useState("Dinner");
+  const [jetonsPerUnit, setJetonsPerUnit] = useState("50");
 
   useEffect(() => {
     if (!view) return;
@@ -311,6 +316,63 @@ export function CreateTable({
             </label>
           ) : (
             <div className="tt-muted tt-create-meta">Dealer · {view?.bankName ?? "Owner (default)"}</div>
+          )}
+        </section>
+        <section className="tt-block is-compact" data-playing-for="true">
+          <div className="tt-label">PLAYING FOR</div>
+          <div className="tt-segment">
+            <button
+              type="button"
+              className={stakeType === "MONEY" ? "active" : ""}
+              onClick={() => {
+                setStakeType("MONEY");
+                void onCommand?.("updateSettings", { stakeType: "MONEY", currencyCode: currency, moneyPerJeton });
+              }}
+            >
+              MONEY
+            </button>
+            <button
+              type="button"
+              className={stakeType === "CUSTOM" ? "active" : ""}
+              onClick={() => {
+                setStakeType("CUSTOM");
+                void onCommand?.("updateSettings", { stakeType: "CUSTOM", customUnitLabel: customLabel, jetonsPerCustomUnit: jetonsPerUnit });
+              }}
+            >
+              SOMETHING ELSE
+            </button>
+          </div>
+          {stakeType === "MONEY" ? (
+            <>
+              <label className="tt-field">
+                Currency
+                <select className="tt-input" aria-label="Currency" value={currency} onChange={(event) => {
+                  setCurrency(event.target.value);
+                  void onCommand?.("updateSettings", { stakeType: "MONEY", currencyCode: event.target.value, moneyPerJeton });
+                }}>
+                  <option value="GBP">GBP</option>
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                </select>
+              </label>
+              <label className="tt-field">
+                Value of one jeton
+                <input className="tt-input" aria-label="Value of one jeton" value={moneyPerJeton} onChange={(event) => setMoneyPerJeton(event.target.value)} onBlur={() => void onCommand?.("updateSettings", { stakeType: "MONEY", currencyCode: currency, moneyPerJeton })} />
+              </label>
+              <p className="tt-muted">1 jeton = {currency === "GBP" ? "£" : currency === "EUR" ? "€" : "$"}{moneyPerJeton || "1"}</p>
+            </>
+          ) : (
+            <>
+              <label className="tt-field">
+                Unit
+                <input className="tt-input" aria-label="Custom unit label" value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} onBlur={() => void onCommand?.("updateSettings", { stakeType: "CUSTOM", customUnitLabel: customLabel, jetonsPerCustomUnit: jetonsPerUnit })} />
+              </label>
+              <label className="tt-field">
+                Jetons per unit
+                <input className="tt-input" aria-label="Jetons per custom unit" value={jetonsPerUnit} onChange={(event) => setJetonsPerUnit(event.target.value)} onBlur={() => void onCommand?.("updateSettings", { stakeType: "CUSTOM", customUnitLabel: customLabel, jetonsPerCustomUnit: jetonsPerUnit })} />
+              </label>
+              <p className="tt-muted">{jetonsPerUnit || "50"} jetons = 1 {customLabel || "Dinner"}</p>
+            </>
           )}
         </section>
         <section className="tt-block is-compact">

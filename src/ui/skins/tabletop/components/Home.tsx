@@ -19,6 +19,10 @@ export function Home({
   onOpenTable,
   onTableCommand,
   onDeleteAllMyTables,
+  onWipeAllMyTables,
+  canWipeAllTables,
+  ownedTableCount,
+  showPersonalLedger = true,
 }: {
   displayName: string;
   defaultTableName: string;
@@ -29,6 +33,10 @@ export function Home({
   onOpenTable: (tableId: string) => void;
   onTableCommand?: (tableId: string, command: OwnerCommand) => Promise<void>;
   onDeleteAllMyTables?: (confirmation: string) => Promise<void>;
+  onWipeAllMyTables?: (confirmation: string) => Promise<void>;
+  canWipeAllTables?: boolean;
+  ownedTableCount?: number;
+  showPersonalLedger?: boolean;
 }) {
   const empty = tables.length === 0;
   const [joinOpen, setJoinOpen] = useState(false);
@@ -40,6 +48,8 @@ export function Home({
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [deleteAllPhrase, setDeleteAllPhrase] = useState("");
+  const [wipeOpen, setWipeOpen] = useState(false);
+  const [wipePhrase, setWipePhrase] = useState("");
   const drag = useRef<{ id: string; x: number } | null>(null);
   const ownsAny = tables.some((table) => table.isOwner);
   const confirmCard = confirm ? tables.find((table) => table.id === confirm.tableId) : null;
@@ -75,6 +85,8 @@ export function Home({
     setConfirm(null);
     setDeleteAllOpen(false);
     setDeleteAllPhrase("");
+    setWipeOpen(false);
+    setWipePhrase("");
   }
 
   function ownerActions(table: HomeTableCard) {
@@ -131,6 +143,24 @@ export function Home({
           DELETE ALL MY TABLES
         </button>
       ) : null}
+      {showPersonalLedger ? (
+        <a className="tt-link" href="/ledger">
+          GAME LEDGER
+        </a>
+      ) : null}
+      {canWipeAllTables ? (
+        <button
+          className="tt-link"
+          type="button"
+          data-wipe-all-tables="true"
+          onClick={() => {
+            setWipePhrase("");
+            setWipeOpen(true);
+          }}
+        >
+          WIPE ALL MY TABLES
+        </button>
+      ) : null}
     </div>
   );
 
@@ -139,8 +169,35 @@ export function Home({
       rail={rail}
       feltClassName="tt-home"
       overlay={
-        <Sheet open={joinOpen || Boolean(confirm) || deleteAllOpen} onClose={closeSheet}>
-          {deleteAllOpen ? (
+        <Sheet open={joinOpen || Boolean(confirm) || deleteAllOpen || wipeOpen} onClose={closeSheet}>
+          {wipeOpen ? (
+            <>
+              <h3>WIPE ALL MY TABLES</h3>
+              <p>
+                All tables owned by this account, including active tables, will be permanently removed. Invitations are
+                revoked. Game-session results already saved to personal ledgers are kept.
+              </p>
+              <p>All tables owned by this account, including active tables, will be permanently removed. Invitations are revoked. Operational table records are deleted. Your user account is not deleted.</p>
+              <p className="tt-muted">{ownedTableCount ?? 0} owned tables will be affected. Type WIPE ALL TABLES to confirm.</p>
+              <input className="tt-input" aria-label="Type WIPE ALL TABLES" value={wipePhrase} onChange={(event) => setWipePhrase(event.target.value)} />
+              <button
+                className="tt-btn gold"
+                type="button"
+                data-wipe-confirm="true"
+                disabled={wipePhrase !== "WIPE ALL TABLES"}
+                onClick={() => {
+                  setWipeOpen(false);
+                  setWipePhrase("");
+                  void onWipeAllMyTables?.("WIPE ALL TABLES");
+                }}
+              >
+                Confirm wipe
+              </button>
+              <button className="tt-link" type="button" onClick={closeSheet}>
+                Cancel
+              </button>
+            </>
+          ) : deleteAllOpen ? (
             <>
               <h3>DELETE ALL MY TABLES</h3>
               <p>Every table you own will be ended and hidden. Current hands are abandoned. Ledger history is kept. Other owners are not affected.</p>

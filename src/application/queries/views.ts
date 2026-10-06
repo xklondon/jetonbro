@@ -102,6 +102,17 @@ export type BankPlayerGroupView = {
   boxes: BoxView[];
 };
 
+export type GameSessionView = {
+  id: string;
+  gameType: "BLACKJACK" | "POKER";
+  status: string;
+  startedAt: string;
+  startingJetons: MoneyView;
+  stakeType: "MONEY" | "CUSTOM";
+  stakeExample: string;
+  players: { userId: string; name: string; available: MoneyView; isOwner: boolean; isDealer: boolean }[];
+};
+
 export type CloseTablePreview = {
   confirmation: string;
   players: { userId: string; name: string; available: MoneyView; locked: MoneyView }[];
@@ -145,6 +156,7 @@ export type PlayerTableView = {
   isOwner?: boolean;
   canSwitchGame?: boolean;
   closePreview?: CloseTablePreview | null;
+  gameSession?: GameSessionView | null;
 };
 
 export type BankTableView = {
@@ -183,6 +195,7 @@ export type BankTableView = {
   invitations?: InvitationView[];
   emailConfigured?: boolean;
   startingJetons?: MoneyView;
+  gameSession?: GameSessionView | null;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";
@@ -228,6 +241,7 @@ export type SetupTableView = {
   startingBank?: MoneyView | null;
   canSwitchGame?: boolean;
   emailConfigured?: boolean;
+  gameSession?: GameSessionView | null;
 };
 
 export type PokerLegalActionView = {
@@ -319,6 +333,7 @@ export type PokerTableView = {
   canEditCommunity: boolean;
   canEditHole: boolean;
   streetRail: PokerStreetRailView[];
+  gameSession?: GameSessionView | null;
 };
 
 export type WaitingTableView = {
@@ -362,4 +377,5 @@ export type ClientSnapshot = {
   player: PlayerTableView | null;
   bank: BankTableView | null;
   poker: PokerTableView | null;
+  gameSession?: GameSessionView | null;
 };

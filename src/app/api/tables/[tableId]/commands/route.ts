@@ -40,6 +40,7 @@ import {
   setBankFunding,
 } from "@/application/services/blackjack-round";
 import { switchGame } from "@/application/services/switch-game";
+import { saveGameSessionResults } from "@/application/services/game-session";
 import {
   advancePokerStreet,
   awardPokerPots,
@@ -244,6 +245,11 @@ async function dispatch(
         bankFundingMode: p.bankFundingMode ? String(p.bankFundingMode) : undefined,
         startingBank: p.startingBank ? String(p.startingBank) : undefined,
         startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
+        stakeType: p.stakeType ? String(p.stakeType) : undefined,
+        currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
+        moneyPerJeton: p.moneyPerJeton ? String(p.moneyPerJeton) : undefined,
+        customUnitLabel: p.customUnitLabel ? String(p.customUnitLabel) : undefined,
+        jetonsPerCustomUnit: p.jetonsPerCustomUnit ? String(p.jetonsPerCustomUnit) : undefined,
       });
     case "addCard":
       return mutateCards({
@@ -301,6 +307,32 @@ async function dispatch(
         smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
         bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
         seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
+        savePersonalLedger: p.savePersonalLedger === true || p.savePersonalLedger === "true" ? "true" : p.savePersonalLedger === false || p.savePersonalLedger === "false" ? "false" : undefined,
+        startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
+        participantUserIds: typeof p.participantUserIds === "string" ? p.participantUserIds.split(",").filter(Boolean) : undefined,
+        stakeType: p.stakeType ? String(p.stakeType) : undefined,
+        currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
+        moneyPerJeton: p.moneyPerJeton ? String(p.moneyPerJeton) : undefined,
+        customUnitLabel: p.customUnitLabel ? String(p.customUnitLabel) : undefined,
+        jetonsPerCustomUnit: p.jetonsPerCustomUnit ? String(p.jetonsPerCustomUnit) : undefined,
+        dealerUserId: p.dealerUserId ? String(p.dealerUserId) : undefined,
+      });
+    case "startNewGame":
+      return switchGame({
+        ...ctx,
+        game: String(p.game ?? ""),
+        smallBlind: p.smallBlind ? String(p.smallBlind) : undefined,
+        bigBlind: p.bigBlind ? String(p.bigBlind) : undefined,
+        seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
+        savePersonalLedger: p.savePersonalLedger === true || p.savePersonalLedger === "true" ? "true" : p.savePersonalLedger === false || p.savePersonalLedger === "false" ? "false" : undefined,
+        startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
+        participantUserIds: typeof p.participantUserIds === "string" ? p.participantUserIds.split(",").filter(Boolean) : undefined,
+        stakeType: p.stakeType ? String(p.stakeType) : undefined,
+        currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
+        moneyPerJeton: p.moneyPerJeton ? String(p.moneyPerJeton) : undefined,
+        customUnitLabel: p.customUnitLabel ? String(p.customUnitLabel) : undefined,
+        jetonsPerCustomUnit: p.jetonsPerCustomUnit ? String(p.jetonsPerCustomUnit) : undefined,
+        dealerUserId: p.dealerUserId ? String(p.dealerUserId) : undefined,
       });
     case "configurePoker":
       return configurePoker({
@@ -348,6 +380,8 @@ async function dispatch(
       return startNextPokerHand(ctx);
     case "scheduleNextPokerHand":
       return scheduleNextPokerHand(ctx);
+    case "saveGameSessionResults":
+      return saveGameSessionResults({ ...ctx, sessionId: p.sessionId ? String(p.sessionId) : undefined });
     case "saveTable":
       return saveTable(ctx);
     case "closeTable":

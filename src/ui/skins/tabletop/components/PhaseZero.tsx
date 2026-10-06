@@ -8,6 +8,7 @@ import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
 import { InviteMask } from "./InviteMask";
 import { OwnerMenu } from "./OwnerMenu";
+import { ownerChrome } from "./owner-chrome";
 import { ActionDock } from "./primitives/ActionDock";
 import { DealerLedgerRow } from "./primitives/DealerLedger";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
@@ -41,6 +42,15 @@ export function PhaseZero({
   const tableName = setup?.tableName ?? waiting?.tableName ?? poker?.tableName ?? "";
   const [inviteOpen, setInviteOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
+  const interactive = { changeDealer: isOwner, changeGame: isOwner };
+  const badges = ownerChrome(isOwner, isBank, game, interactive, () => {
+    setMenuView("dealer");
+    setMenuOpen(true);
+  }, () => {
+    setMenuView("session");
+    setMenuOpen(true);
+  });
   const menuMembers = setup?.members ?? members;
   const rows = (setup?.members ?? waiting?.members ?? members).filter((member) => !member.isBankDealer);
   const invited = (setup?.invitations ?? []).filter((invite) => invite.pending && invite.email);
@@ -77,7 +87,7 @@ export function PhaseZero({
   return (
     <Shell
       hideBrand
-      badges={isOwner ? ["OWNER"] : isBank ? ["DEALER"] : undefined}
+      badges={badges}
       onMenu={isOwner ? () => setMenuOpen(true) : undefined}
       rail={dock}
       feltClassName="tt-phase-zero"
@@ -105,7 +115,10 @@ export function PhaseZero({
           {isOwner ? (
             <OwnerMenu
               open={menuOpen}
-              onClose={() => setMenuOpen(false)}
+              onClose={() => {
+                setMenuOpen(false);
+                setMenuView("menu");
+              }}
               tableName={tableName}
               members={menuMembers}
               onCommand={onCommand}
@@ -113,11 +126,14 @@ export function PhaseZero({
               addPlayer="name"
               giveJetons={false}
               changeDealer
+              switchGame
               seats={poker?.canReorderSeats ? poker.seats : null}
               seatsHint="Dealer button follows this order after START HAND. Order locks when the first hand begins."
               cardAssist={setup?.cardAssist ?? "OFF"}
               closePreview={setup?.closePreview}
               closeCopy="Save each Player’s remaining jetons and close this table?"
+              gameSession={setup?.gameSession ?? poker?.gameSession}
+              startView={menuView}
             />
           ) : null}
         </>

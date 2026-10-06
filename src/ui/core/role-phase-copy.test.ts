@@ -5,10 +5,10 @@ test("Blackjack role and phase copy is compact and exact", () => {
   expect(blackjackPhaseLabel({ role: "PLAYER", phase: "TABLE_SETUP" })).toBe(
     "Waiting for the table to open betting.",
   );
-  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING" })).toBe("Betting is open.");
-  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING", hasStake: true })).toBe("Betting is open.");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING" })).toBe("BETTING");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING", hasStake: true })).toBe("BETTING");
   expect(blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" })).toBe("Table setup");
-  expect(blackjackPhaseLabel({ role: "DEALER", phase: "BETTING" })).toBe("Betting open");
+  expect(blackjackPhaseLabel({ role: "DEALER", phase: "BETTING" })).toBe("BETTING");
   expect(blackjackPhaseLabel({ role: "DEALER", phase: "PLAYING" })).toBe("PLAYING");
   expect(blackjackPhaseLabel({ role: "DEALER", phase: "PAYOUT" })).toBe("PAYOUT");
   expect(blackjackPhaseLabel({ role: "PLAYER", phase: "PLAYING" })).toBe("PLAYING");

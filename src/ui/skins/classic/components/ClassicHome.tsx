@@ -28,6 +28,10 @@ export function ClassicHome({
   onOpenTable: (tableId: string) => void;
   onTableCommand?: (tableId: string, command: OwnerCommand) => Promise<void>;
   onDeleteAllMyTables?: (confirmation: string) => Promise<void>;
+  onWipeAllMyTables?: (confirmation: string) => Promise<void>;
+  canWipeAllTables?: boolean;
+  ownedTableCount?: number;
+  showPersonalLedger?: boolean;
 }) {
   const empty = tables.length === 0;
   const [joinOpen, setJoinOpen] = useState(false);

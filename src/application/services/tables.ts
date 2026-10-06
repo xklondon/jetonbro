@@ -12,8 +12,10 @@ import type { BlackjackPayoutRule } from "@/domain/blackjack/payouts";
 import { BLACKJACK_TABLE_DEFAULTS, parseMaxBoxesPerPlayer } from "@/domain/blackjack/settings";
 import { applyBankFundingMode, parseBankFunding, parseCardAssist } from "@/application/services/bankroll";
 import { dropPokerSeat, ensurePokerSeat, replacePokerSeats } from "@/application/services/poker-seats";
+import { openInitialGameSession, recordSessionStarter } from "@/application/services/game-session";
 import { collectInviteEmails } from "@/domain/invitations/email";
 import { pokerHandIsOpen } from "@/domain/tables/active-game";
+import { parseStakeSpec } from "@/domain/stakes";
 import { Prisma } from "@prisma/client";
 
 function isOpenDraftConflict(error: unknown): boolean {
@@ -83,10 +85,15 @@ export async function creditStartingJetonsOnce(
     return;
   }
   const { before, after } = await creditTableAvailable(tx, input.memberId, amount);
+  const table = await tx.table.findUnique({
+    where: { id: input.tableId },
+    select: { currentGameSessionId: true },
+  });
   await appendLedger(tx, {
     playerId: input.userId,
     actorId: input.actorId,
     tableId: input.tableId,
+    gameSessionId: table?.currentGameSessionId ?? null,
     transactionType: "INITIAL_ALLOCATION",
     amountMillis: amount,
     balanceBeforeMillis: before,
@@ -97,6 +104,13 @@ export async function creditStartingJetonsOnce(
   await tx.tableMember.update({
     where: { id: input.memberId },
     data: { startingJetonsCredited: true },
+  });
+  await recordSessionStarter(tx, {
+    tableId: input.tableId,
+    memberId: input.memberId,
+    userId: input.userId,
+    amount,
+    playedAsDealer: Boolean(input.isBankDealer && input.game === "POKER"),
   });
 }
 
@@ -209,6 +223,13 @@ export async function createTable(input: {
           },
         });
       }
+
+      await openInitialGameSession(tx, {
+        id: created.id,
+        name: created.name,
+        game,
+        startingJetonsPerPlayerMillis,
+      });
 
       if (game === "POKER") {
         await ensurePokerSeat(tx, created.id, input.actorId);
@@ -840,6 +861,11 @@ export async function updateTableSettings(input: {
   bankFundingMode?: string;
   startingBank?: string;
   startingJetonsPerPlayer?: string;
+  stakeType?: string;
+  currencyCode?: string;
+  moneyPerJeton?: string;
+  customUnitLabel?: string;
+  jetonsPerCustomUnit?: string;
 }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "updateTableSettings", input, async () => {
     const wantsName = input.name !== undefined;
@@ -854,7 +880,8 @@ export async function updateTableSettings(input: {
       input.cardAssist !== undefined ||
       input.bankFundingMode !== undefined ||
       input.startingBank !== undefined ||
-      input.startingJetonsPerPlayer !== undefined;
+      input.startingJetonsPerPlayer !== undefined ||
+      input.stakeType !== undefined;
     if (wantsName) {
       const table = await requireOwner(input.tableId, input.actorId);
       const name = input.name!.trim();
@@ -895,6 +922,31 @@ export async function updateTableSettings(input: {
               : undefined,
           },
         });
+        if (input.stakeType) {
+          const stake = parseStakeSpec({
+            stakeType: input.stakeType,
+            currencyCode: input.currencyCode,
+            moneyPerJeton: input.moneyPerJeton,
+            customUnitLabel: input.customUnitLabel,
+            jetonsPerCustomUnit: input.jetonsPerCustomUnit,
+          });
+          const current = await tx.table.findUniqueOrThrow({
+            where: { id: input.tableId },
+            select: { currentGameSessionId: true },
+          });
+          if (current.currentGameSessionId) {
+            await tx.gameSession.update({
+              where: { id: current.currentGameSessionId },
+              data: {
+                stakeType: stake.type,
+                currencyCode: stake.type === "MONEY" ? stake.currencyCode : null,
+                minorUnitsPerJeton: stake.type === "MONEY" ? stake.minorUnitsPerJeton : null,
+                customUnitLabel: stake.type === "CUSTOM" ? stake.customUnitLabel : null,
+                jetonsPerCustomUnit: stake.type === "CUSTOM" ? stake.jetonsPerCustomUnit : null,
+              },
+            });
+          }
+        }
         if (input.bankFundingMode || input.startingBank) {
           const fresh = await tx.table.findUniqueOrThrow({
             where: { id: input.tableId },

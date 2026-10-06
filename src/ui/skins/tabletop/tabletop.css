@@ -153,6 +153,11 @@
   letter-spacing: 0.08em;
   color: var(--tt-gold);
   white-space: nowrap;
+  background: transparent;
+}
+
+.tabletop-skin .tt-badge.is-action {
+  cursor: pointer;
 }
 
 /* ========== FELT SURFACE + STRUCTURAL RAIL ========== */
@@ -1180,7 +1185,7 @@
 }
 
 .tabletop-skin .tt-ledger-row.is-unresolved.is-payout {
-  min-height: 148px;
+  min-height: 88px;
   grid-template-rows: auto auto;
 }
 
@@ -1300,9 +1305,16 @@
 
 .tabletop-skin .tt-ledger-results {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
   width: 100%;
+}
+
+.tabletop-skin .tt-ledger-results .tt-btn-result {
+  min-height: 44px;
+  padding: 0 2px;
+  font-size: 9px;
+  letter-spacing: 0.02em;
 }
 
 .tabletop-skin .tt-ledger-slot {
@@ -1319,9 +1331,12 @@
   width: 100%;
 }
 
-.tabletop-skin .tt-setup-ledger {
-  width: 100%;
-  margin-top: 10px;
+.tabletop-skin .tt-check-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 13px;
 }
 
 /* ========== ACTION DOCK ========== */

@@ -11,6 +11,7 @@ import { assignBlinds, nextActorFrom, nextDealer, orderedSeats, type PokerSeat a
 import { allLiveAllIn, livePlayers, onlyOneLive, stillNeedsToAct, streetIsComplete } from "@/domain/poker/street";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, PhaseConflictError } from "@/domain/errors";
 import { formatJetons, parseWholeJetons } from "@/domain/money";
+import { assertFundedPokerDealer } from "@/domain/poker/dealer-stack";
 import { pokerHandIsOpen } from "@/domain/tables/active-game";
 import type { Prisma } from "@prisma/client";
 
@@ -236,10 +237,19 @@ async function createHand(
   if (seats.length < 2) throw new DomainError("POKER_SEATS", "Texas Hold’em needs at least two Players.");
   const dealer = nextDealer(seats, previousDealerId);
   const blinds = assignBlinds(seats, dealer.playerId);
+  const sessionStarting = !previousDealerId;
+  assertFundedPokerDealer({
+    dealerPlayerId: blinds.dealerPlayerId,
+    seats: table.members
+      .filter((member) => seats.some((seat) => seat.playerId === member.userId))
+      .map((member) => ({ playerId: member.userId, availableMillis: member.availableMillis })),
+    sessionStarting,
+  });
   const number = (await tx.pokerHand.count({ where: { tableId: table.id } })) + 1;
   const hand = await tx.pokerHand.create({
     data: {
       tableId: table.id,
+      gameSessionId: table.currentGameSessionId,
       number,
       phase: "PRE_FLOP",
       dealerPlayerId: blinds.dealerPlayerId,
@@ -298,6 +308,12 @@ async function createHand(
     where: { id: table.id },
     data: { currentPokerHandId: hand.id, updatedAt: new Date() },
   });
+  if (table.currentGameSessionId) {
+    await tx.gameSession.update({
+      where: { id: table.currentGameSessionId },
+      data: { status: "ACTIVE" },
+    });
+  }
   await rebuildPots(tx, hand.id);
   return hand.id;
 }

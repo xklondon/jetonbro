@@ -14,6 +14,7 @@ export async function appendLedger(
     boxId?: string | null;
     insuranceBetId?: string | null;
     pokerHandId?: string | null;
+    gameSessionId?: string | null;
     transactionType: LedgerTransactionType;
     amountMillis: bigint;
     balanceBeforeMillis: bigint;
@@ -31,6 +32,7 @@ export async function appendLedger(
       boxId: input.boxId ?? null,
       insuranceBetId: input.insuranceBetId ?? null,
       pokerHandId: input.pokerHandId ?? null,
+      gameSessionId: input.gameSessionId ?? null,
       transactionType: input.transactionType,
       amountMillis: input.amountMillis,
       balanceBeforeMillis: input.balanceBeforeMillis,

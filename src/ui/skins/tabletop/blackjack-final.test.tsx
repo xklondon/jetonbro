@@ -334,3 +334,35 @@ describe("Blackjack polish — Player result presentation", () => {
     expect(evaluateHand(["K", "Q", "5"]).label).toBe("Bust");
   });
 });
+
+describe("Prompt 5 payout density and BETTING copy", () => {
+  it("unresolved payout uses one horizontal result row with accessible names", () => {
+    const html = renderToStaticMarkup(
+      createElement(BankTable, {
+        view: bank("PAYOUT", [
+          box({ id: "b1", boxNumber: 1, playerId: "p1", playerName: "Casey", outcome: null }),
+        ]),
+        members,
+        onCommand: noop,
+      }),
+    );
+    expect(html).toContain("tt-ledger-results");
+    expect(html).toContain("Set Box 1 result: Lost");
+    expect(html).toContain("Set Box 1 result: Stand-off");
+    expect(html).toContain("Set Box 1 result: Blackjack");
+    expect(html).toContain("Set Box 1 result: Won");
+    expect(html).not.toContain("Betting open");
+  });
+
+  it("Betting heading is only BETTING", () => {
+    const html = renderToStaticMarkup(
+      createElement(BankTable, {
+        view: bank("BETTING", []),
+        members,
+        onCommand: noop,
+      }),
+    );
+    expect(html).toContain(">BETTING<");
+    expect(html).not.toContain("Betting open");
+  });
+});

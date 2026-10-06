@@ -1,3 +1,28 @@
+# Prompt 5 — acceptance repairs + Game Sessions
+
+Date: 2026-10-06
+
+- Branch `fix/rc3-live-acceptance` from SHA `9ff89cb6a2362678dc043f8e24e9dc70260d604c`.
+- Migration `20261006120000_game_sessions_and_stakes`.
+- Payout row, BETTING copy, Owner badges, Game Session close/open with GAME_SESSION_CLOSE/OPEN, personal ledger, admin wipe, Local Table Mode note only.
+- Not pushed. Not deployed.
+
+---
+
+# Prompt 4 RC3 — clean release gate + Railway live acceptance
+
+Date: 2026-10-05
+
+- Candidate SHA: `9ff89cb6a2362678dc043f8e24e9dc70260d604c` on `fix/rc3-live-acceptance` (matches origin).
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `0850b377-e73a-4ef0-be83-fc008255cc23` SUCCESS / Online.
+- Start command: `prisma migrate deploy && next start` → 12 migrations, no pending; Next production build Compiled; `/api/health` 200 database connected; `/api/dev/*` 404.
+- Live Playwright (`e2e/prompt4-live-railway.spec.ts` @ mobile-390 against Railway): pass — Alex/Casey/Blair isolated contexts, Guest+Verified QR, Blair as Dealer (Owner retains controls; Blair `switchGame` FORBIDDEN), BJ two-box settle to 85, Poker through SHOWDOWN award + NEXT HAND rotate + SAVE TABLE.
+- Screenshots: `docs/screenshots/production-live/*-390x844.png` (18 files).
+- Not merged. Not tagged. Other Railway projects untouched.
+- Deferred for human two-phone: side-pot smoke, BJ Double/Split/Insurance, reduced-motion, full END & DELETE / DELETE ALL MY TABLES phrase path.
+
+---
+
 # Prompt 6 diagnosis — setup / Phase 0 journey
 
 Inspected only Home, Create Table, setup routes, Phase 0/waiting, invitations, deletion, session routing, related CSS/tests at `4ad450d`, `66e6f8c`, `945ef0d`, and current `ec96aa0`.

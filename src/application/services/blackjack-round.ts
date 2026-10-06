@@ -276,6 +276,7 @@ export async function startBetting(input: { actorId: string; tableId: string; id
       const round = await tx.round.create({
         data: {
           tableId: table.id,
+          gameSessionId: table.currentGameSessionId,
           number: roundCount + 1,
           phase: "BETTING",
         },
@@ -299,6 +300,12 @@ export async function startBetting(input: { actorId: string; tableId: string; id
           pausedAt: null,
         },
       });
+      if (table.currentGameSessionId) {
+        await tx.gameSession.update({
+          where: { id: table.currentGameSessionId },
+          data: { status: "ACTIVE" },
+        });
+      }
       return { created: true, roundId: round.id };
     });
     clearNextRoundTimer(input.tableId);

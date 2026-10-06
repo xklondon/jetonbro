@@ -12,6 +12,7 @@ import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { PlayerBox } from "./primitives/PlayerBox";
 import { TableButton } from "./primitives/TableButton";
 import { TableName } from "./primitives/TableName";
+import { ownerChrome } from "./owner-chrome";
 import { Wallet } from "./primitives/JetonTray";
 
 /** Immersive Blackjack Player: owned boxes on the felt; tray anchored below. */
@@ -33,18 +34,30 @@ export function PlayerTable({
   const [exact, setExact] = useState("");
   const [hoverBoxId, setHoverBoxId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
   const [cardPadOpen, setCardPadOpen] = useState(false);
 
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const controls = blackjackPlayerControls(view, selected);
+  const playing = view.phase === "PLAYING";
+  const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const ownerMenu = blackjackOwnerMenu({
     isOwner: view.isOwner,
     phase: view.phase,
-    changeDealer: view.phase === "BETTING",
+    changeDealer: view.phase === "BETTING" || view.phase === "TABLE_SETUP" || view.phase === "ROUND_COMPLETE",
     changeGame: Boolean(view.canSwitchGame),
+    insuranceOpen: view.insuranceWindowOpen,
+    payoutResolved: view.phase === "ROUND_COMPLETE" || (payout && view.boxes.every((box) => box.outcome)),
   });
-  const playing = view.phase === "PLAYING";
-  const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const badges = view.isOwner
+    ? ownerChrome(true, false, "BLACKJACK", ownerMenu, () => {
+        setMenuView("dealer");
+        setMenuOpen(true);
+      }, () => {
+        setMenuView("session");
+        setMenuOpen(true);
+      })
+    : undefined;
   const sorted = view.boxes.slice().sort((a, b) => a.boxNumber - b.boxNumber);
   const phaseDisplay =
     view.insuranceWindowOpen && playing
@@ -178,7 +191,7 @@ export function PlayerTable({
     <Shell
       hideBrand
       balance={view.available.label}
-      badges={view.isOwner ? ["OWNER"] : undefined}
+      badges={badges}
       onMenu={view.isOwner ? () => setMenuOpen(true) : undefined}
       rail={rail}
       feltClassName={`tt-bj-player${view.phase === "BETTING" ? " is-betting" : ""}`}
@@ -191,7 +204,10 @@ export function PlayerTable({
         view.isOwner ? (
           <OwnerMenu
             open={menuOpen}
-            onClose={() => setMenuOpen(false)}
+            onClose={() => {
+              setMenuOpen(false);
+              setMenuView("menu");
+            }}
             tableName={view.tableName}
             members={members}
             onCommand={onCommand}
@@ -202,6 +218,8 @@ export function PlayerTable({
             switchGame={ownerMenu.changeGame}
             closePreview={view.closePreview}
             closeCopy={`Save remaining jetons and close ${view.tableName}?`}
+            gameSession={view.gameSession}
+            startView={menuView}
           />
         ) : null
       }

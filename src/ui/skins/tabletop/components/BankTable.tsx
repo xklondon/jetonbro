@@ -8,6 +8,7 @@ import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
 import { InviteMask } from "./InviteMask";
 import { OwnerMenu, type OwnerMenuItem } from "./OwnerMenu";
+import { ownerChrome } from "./owner-chrome";
 import { Countdown } from "./Spot";
 import { ActionDock } from "./primitives/ActionDock";
 import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
@@ -20,6 +21,12 @@ function activeBoxes(view: BankTableView): BoxView[] {
   const fromPlayers = view.players.flatMap((player) => player.boxes);
   if (fromPlayers.length > 0) return fromPlayers;
   return view.boxes;
+}
+
+function boxesReady(view: BankTableView) {
+  const boxes = activeBoxes(view);
+  if (boxes.length === 0) return view.phase === "ROUND_COMPLETE";
+  return boxes.every((box) => Boolean(box.outcome));
 }
 
 /** Immersive Blackjack Dealer: dense ledger for real boxes; actions in the rail. */
@@ -36,15 +43,23 @@ export function BankTable({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const dealerMember = members.find((member) => member.isBankDealer);
-  const dealerPlays = Boolean(dealerMember && view.players.some((player) => player.userId === dealerMember.userId && player.boxes.length > 0));
-  const badges = [...(view.isOwner ? ["OWNER"] : []), dealerPlays ? "DEALER · PLAYING" : "DEALER"];
+  const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
   const controls = blackjackDealerControls(view);
+  const payoutResolved = boxesReady(view);
   const ownerMenu = blackjackOwnerMenu({
     isOwner: view.isOwner,
     phase: view.phase,
     changeDealer: view.actions.changeBank,
-    changeGame: view.actions.switchGame,
+    changeGame: view.actions.switchGame || Boolean(view.canSwitchGame),
+    insuranceOpen: view.insurance.window === "OPEN",
+    payoutResolved,
+  });
+  const badges = ownerChrome(view.isOwner, true, "BLACKJACK", ownerMenu, () => {
+    setMenuView("dealer");
+    setMenuOpen(true);
+  }, () => {
+    setMenuView("session");
+    setMenuOpen(true);
   });
   const phaseDisplay =
     view.insurance.window === "OPEN" && view.phase === "PLAYING"
@@ -149,7 +164,10 @@ export function BankTable({
           />
           <OwnerMenu
             open={menuOpen}
-            onClose={() => setMenuOpen(false)}
+            onClose={() => {
+              setMenuOpen(false);
+              setMenuView("menu");
+            }}
             tableName={view.tableName}
             members={members}
             onCommand={onCommand}
@@ -168,6 +186,8 @@ export function BankTable({
             canSave={view.actions.saveTable}
             canClose={view.actions.closeTable}
             closePreview={view.closePreview}
+            gameSession={view.gameSession}
+            startView={menuView}
           />
         </>
       }

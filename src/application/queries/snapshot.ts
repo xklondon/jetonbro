@@ -12,12 +12,14 @@ import { buildPokerView } from "./poker-snapshot";
 import { boxCoverageOk, FUNDING_LOCKED, insuranceCoverageOk, roundHasLockedStake } from "@/application/services/bankroll";
 import { handView, ranksFromJson, suggestedBoxOutcome, suggestedInsuranceResolution } from "@/application/services/card-hands";
 import { pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
+import { stakeExample, stakeFromSession } from "@/domain/stakes";
 import type {
   BankPlayerGroupView,
   BankTableView,
   BoxView,
   ClientSnapshot,
   CloseTablePreview,
+  GameSessionView,
   MoneyView,
   PlayerTableView,
   SetupTableView,
@@ -86,6 +88,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           insuranceBets: true,
         },
       },
+      currentGameSession: { include: { participants: true } },
     },
   });
   if (!table) throw new NotFoundError("Table not found.");
@@ -498,10 +501,22 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance && !tableClosed,
           addPlayer: (isOwner || isBank) && table.currentPhase === "BETTING" && !tableClosed,
           giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
-          changeBank: table.currentPhase === "BETTING" && isOwner && !tableClosed,
+          changeBank:
+            isOwner &&
+            !tableClosed &&
+            (table.currentPhase === "BETTING" ||
+              table.currentPhase === "ROUND_COMPLETE" ||
+              (table.currentPhase === "PAYOUT" && canNextHand)),
           saveTable: isOwner && !tableClosed && !pokerOpen && !anyLocked,
           closeTable: canCloseTable,
-          switchGame: isOwner && !fundingLocked && !pokerOpen && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+          switchGame:
+            isOwner &&
+            !fundingLocked &&
+            !pokerOpen &&
+            !tableClosed &&
+            (table.currentPhase === "BETTING" ||
+              table.currentPhase === "ROUND_COMPLETE" ||
+              (table.currentPhase === "PAYOUT" && canNextHand)),
         },
         insuranceSettleActions: [
           { id: "DEALER_BLACKJACK", label: "INSURANCE WON" },
@@ -519,7 +534,14 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         dealerHand: dealerHandView,
         dealerName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
         insuranceSuggestion,
-        canSwitchGame: isOwner && !fundingLocked && !pokerOpen && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+        canSwitchGame:
+          isOwner &&
+          !fundingLocked &&
+          !pokerOpen &&
+          !tableClosed &&
+          (table.currentPhase === "BETTING" ||
+            table.currentPhase === "ROUND_COMPLETE" ||
+            (table.currentPhase === "PAYOUT" && canNextHand)),
         switchBlockedReason: fundingLocked || pokerOpen || table.currentPhase === "PLAYING" || table.currentPhase === "PAYOUT"
           ? "Finish or clear the current hand before switching games"
           : null,
@@ -559,6 +581,29 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         })
       : null;
   const blackjack = table.game === "BLACKJACK";
+  const gameSession: GameSessionView | null = table.currentGameSession
+    ? {
+        id: table.currentGameSession.id,
+        gameType: table.currentGameSession.gameType,
+        status: table.currentGameSession.status,
+        startedAt: table.currentGameSession.startedAt.toISOString(),
+        startingJetons: money(table.currentGameSession.startingJetonsMillis),
+        stakeType: table.currentGameSession.stakeType,
+        stakeExample: stakeExample(stakeFromSession(table.currentGameSession)),
+        players: table.members.map((member) => ({
+          userId: member.userId,
+          name: displayName(member.user),
+          available: money(member.availableMillis),
+          isOwner: member.isOwner,
+          isDealer: member.isBankDealer,
+        })),
+      }
+    : null;
+
+  if (bank) bank.gameSession = gameSession;
+  if (setup) setup.gameSession = gameSession;
+  if (player) player.gameSession = gameSession;
+  if (poker) poker.gameSession = gameSession;
 
   return {
     tableId: table.id,
@@ -609,6 +654,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     player: blackjack ? player : null,
     bank: blackjack ? bank : null,
     poker,
+    gameSession,
   };
 }
 

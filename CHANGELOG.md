@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Prompt 5 — Game Sessions, payout density, personal ledger
+
+- Unresolved Dealer payout is one horizontal result row. Betting copy is `BETTING` only.
+- Owner top-right DEALER / game badges open existing sheets at safe boundaries.
+- Persisted Game Session + participants; switch-game closes the session and opens a fresh allocation. Poker Dealer must be seated and funded at session start.
+- Verified GAME LEDGER. Admin-only `WIPE ALL MY TABLES` (`JETONBRO_ADMIN_EMAIL`, phrase `WIPE ALL TABLES`). Local Table Mode documented, not implemented.
+
+### RC3 live acceptance candidate (JetBro II Web)
+
+- Branch `fix/rc3-live-acceptance` at `9ff89cb` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`0850b377-e73a-4ef0-be83-fc008255cc23`, SUCCESS / Online).
+- Pre-deploy gate: stale Poker e2e aligned to frozen Blackjack copy; deterministic flop CALL capture `07-flop-player-facing-call-390x844.png`; focused Playwright + guardrails + build green.
+- Live isolated-context acceptance against `https://jetbro-ii-web-production.up.railway.app` passed (roles, create/join QR, BJ round, Poker streets through award + NEXT HAND, save). Production shots under `docs/screenshots/production-live/`. Not merged or tagged.
+
 ### Approved Tabletop visual system
 
 - Implemented PNG-authority presentation primitives under `src/ui/skins/tabletop/components/primitives/`: `TableRail`, `Jeton` / `ChipStack`, `TableButton`, `PhaseDisplay`, `TableName`, `PlayerBox`, `DealerLedger` / `ResultControls`, `ActionDock`, `JetonTray`.

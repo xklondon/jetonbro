@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import {
+  blackjackOwnerMenu,
   blackjackDealerControls,
   blackjackDealerSetupControls,
   blackjackPhaseInstruction,
@@ -109,9 +110,9 @@ function bank(phase: BankTableView["phase"], extra: Partial<BankTableView> = {})
 test("role and phase copy stays compact and never uses Waiting for players during Betting", () => {
   expect(blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" })).toBe("Table setup");
   expect(blackjackPhaseLabel({ role: "PLAYER", phase: "TABLE_SETUP" })).toBe("Waiting for the table to open betting.");
-  expect(blackjackPhaseLabel({ role: "DEALER", phase: "BETTING" })).toBe("Betting open");
-  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING" })).toBe("Betting is open.");
-  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING", hasStake: true })).toBe("Betting is open.");
+  expect(blackjackPhaseLabel({ role: "DEALER", phase: "BETTING" })).toBe("BETTING");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING" })).toBe("BETTING");
+  expect(blackjackPhaseLabel({ role: "PLAYER", phase: "BETTING", hasStake: true })).toBe("BETTING");
   expect(blackjackPhaseInstruction({ role: "PLAYER", phase: "TABLE_SETUP" })).not.toMatch(/waiting for players/i);
   expect(blackjackPhaseInstruction({ role: "PLAYER", phase: "BETTING" })).not.toMatch(/waiting for players/i);
   expect(blackjackPhaseInstruction({ role: "DEALER", phase: "TABLE_SETUP" })).not.toMatch(/waiting for players/i);
@@ -120,7 +121,7 @@ test("role and phase copy stays compact and never uses Waiting for players durin
 test("Dealer Phase 0 / Betting / Playing / Payout labels follow the canonical matrix", () => {
   expect(blackjackPhaseLabel({ role: "DEALER", phase: "TABLE_SETUP" })).toBe("Table setup");
   const betting = blackjackDealerControls(bank("BETTING"));
-  expect(betting.phaseLabel).toBe("Betting open");
+  expect(betting.phaseLabel).toBe("BETTING");
   expect(betting.primary?.label).toBe("DEAL CARDS");
   expect(betting.showAddPlayer).toBe(true);
   const playing = blackjackDealerControls(bank("PLAYING"));
@@ -184,6 +185,36 @@ test("Player controls are legal-only by phase", () => {
   expect(payout.double).toBe(false);
   expect(payout.insurance).toBe(false);
   expect(payout.trayEnabled).toBe(false);
+});
+
+test("Owner dealer/game chrome is interactive only at safe Blackjack boundaries", () => {
+  expect(
+    blackjackOwnerMenu({ isOwner: true, phase: "BETTING", changeDealer: true, changeGame: true, payoutResolved: false }),
+  ).toEqual({ changeDealer: true, changeGame: true });
+  expect(
+    blackjackOwnerMenu({ isOwner: true, phase: "PLAYING", changeDealer: true, changeGame: true }),
+  ).toEqual({ changeDealer: false, changeGame: false });
+  expect(
+    blackjackOwnerMenu({
+      isOwner: true,
+      phase: "PAYOUT",
+      changeDealer: true,
+      changeGame: true,
+      payoutResolved: false,
+    }),
+  ).toEqual({ changeDealer: false, changeGame: false });
+  expect(
+    blackjackOwnerMenu({
+      isOwner: true,
+      phase: "PAYOUT",
+      changeDealer: true,
+      changeGame: true,
+      payoutResolved: true,
+    }),
+  ).toEqual({ changeDealer: true, changeGame: true });
+  expect(
+    blackjackOwnerMenu({ isOwner: false, phase: "BETTING", changeDealer: true, changeGame: true }),
+  ).toEqual({ changeDealer: false, changeGame: false });
 });
 
 test("three-slot stage centres Box 1 then fills left then right", () => {

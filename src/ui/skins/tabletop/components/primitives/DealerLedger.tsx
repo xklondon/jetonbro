@@ -14,6 +14,20 @@ const RAIL_TITLE: Record<BoxOutcome, string> = {
   WON: "WON",
 };
 
+const COMPACT_LABEL: Record<BoxOutcome, string> = {
+  LOST: "LOST",
+  PUSH: "PUSH",
+  BLACKJACK: "BLACKJACK",
+  WON: "WON",
+};
+
+const ACCESS_NAME: Record<BoxOutcome, string> = {
+  LOST: "Lost",
+  PUSH: "Stand-off",
+  BLACKJACK: "Blackjack",
+  WON: "Won",
+};
+
 const RESULT_KIND: Record<BoxOutcome, "lost" | "push" | "blackjack" | "won"> = {
   LOST: "lost",
   PUSH: "push",
@@ -48,23 +62,21 @@ export function ResultControls({
   const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
   return (
     <span className="tt-ledger-results" role="group" aria-label={`Settle ${title}`}>
-      {PAYOUT_RAIL_ORDER.map((outcome) => {
-        const action = box.payoutActions.find((entry) => entry.outcome === outcome);
-        return (
+      {PAYOUT_RAIL_ORDER.map((outcome) => (
           <TableButton
             key={outcome}
             variant="result"
             result={RESULT_KIND[outcome]}
             data-payout-action="true"
+            aria-label={`Set Box ${box.boxNumber} result: ${ACCESS_NAME[outcome]}`}
             onClick={() => {
               setSubmitted(true);
               onSettle(outcome);
             }}
           >
-            {action?.title ?? RAIL_TITLE[outcome]}
+            {COMPACT_LABEL[outcome] === "BJ" ? "BJ" : COMPACT_LABEL[outcome]}
           </TableButton>
-        );
-      })}
+      ))}
     </span>
   );
 }

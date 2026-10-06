@@ -26,6 +26,7 @@ import { PokerPot, PokerStreet } from "./primitives/PokerPot";
 import { PokerSeat, pokerSeatPosition } from "./primitives/PokerSeat";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { TableName } from "./primitives/TableName";
+import { ownerChrome } from "./owner-chrome";
 import { Wallet } from "./primitives/JetonTray";
 
 function phaseHeading(phase: string, label: string): string {
@@ -51,6 +52,7 @@ export function PokerBoard({
   owner: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [compose, setCompose] = useState<PokerComposeKind | null>(null);
@@ -256,7 +258,16 @@ export function PokerBoard({
     });
   }
 
-  const badges = owner ? (view.isOwner ? ["OWNER", "DEALER"] : ["DEALER"]) : undefined;
+  const pokerSafe = view.phase === "POKER_SETUP" || view.phase === "HAND_COMPLETE";
+  const badges = owner
+    ? ownerChrome(view.isOwner, owner, "POKER", { changeDealer: view.isOwner && pokerSafe, changeGame: menuIds.includes("switchGame") && pokerSafe }, () => {
+        setMenuView("dealer");
+        setMenuOpen(true);
+      }, () => {
+        setMenuView("session");
+        setMenuOpen(true);
+      })
+    : undefined;
 
   return (
     <Shell
@@ -276,7 +287,10 @@ export function PokerBoard({
           {owner ? (
             <OwnerMenu
               open={menuOpen}
-              onClose={() => setMenuOpen(false)}
+              onClose={() => {
+                setMenuOpen(false);
+                setMenuView("menu");
+              }}
               tableName={view.tableName}
               members={members}
               onCommand={onCommand}
@@ -289,6 +303,8 @@ export function PokerBoard({
               seats={menuIds.includes("reorderSeats") ? view.seats : null}
               seatsHint="Dealer button follows this order after START HAND. Order locks when the first hand begins."
               closeCopy={`Save each Player’s remaining jetons to their personal ledger and close ${view.tableName}?`}
+              gameSession={view.gameSession}
+              startView={menuView}
             />
           ) : showCardMenu ? (
             <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} labelledBy="tt-poker-tools-title" className="invite-mask">

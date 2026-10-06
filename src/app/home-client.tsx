@@ -9,10 +9,16 @@ export function HomeClient({
   displayName,
   defaultTableName,
   tables,
+  canWipeAllTables,
+  ownedTableCount,
+  showPersonalLedger,
 }: {
   displayName: string;
   defaultTableName: string;
   tables: HomeTableCard[];
+  canWipeAllTables?: boolean;
+  ownedTableCount?: number;
+  showPersonalLedger?: boolean;
 }) {
   const skin = getSkin();
   const router = useRouter();
@@ -55,6 +61,27 @@ export function HomeClient({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             command: "deleteAllMyTables",
+            confirmation,
+            idempotencyKey: crypto.randomUUID(),
+          }),
+        });
+        const data = (await response.json()) as { error?: string };
+        if (!response.ok) {
+          setNotice(data.error ?? "This action could not be completed.");
+          return;
+        }
+        setNotice(null);
+        router.refresh();
+      }}
+      canWipeAllTables={canWipeAllTables}
+      ownedTableCount={ownedTableCount}
+      showPersonalLedger={showPersonalLedger}
+      onWipeAllMyTables={async (confirmation) => {
+        const response = await fetch("/api/tables/owner", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            command: "wipeAllMyTables",
             confirmation,
             idempotencyKey: crypto.randomUUID(),
           }),

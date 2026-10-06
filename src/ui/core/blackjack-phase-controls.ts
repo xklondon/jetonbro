@@ -54,7 +54,7 @@ export function blackjackPhaseLabel(input: {
   if (input.phase === "TABLE_SETUP") {
     return input.role === "PLAYER" ? "Waiting for the table to open betting." : "Table setup";
   }
-  if (input.phase === "BETTING") return input.role === "PLAYER" ? "Betting is open." : "Betting open";
+  if (input.phase === "BETTING") return "BETTING";
   if (input.phase === "PLAYING") return "PLAYING";
   if (input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") return "PAYOUT";
   return input.phase.replaceAll("_", " ");
@@ -238,12 +238,20 @@ export function blackjackOwnerMenu(input: {
   phase: string;
   changeDealer?: boolean;
   changeGame?: boolean;
+  insuranceOpen?: boolean;
+  payoutResolved?: boolean;
 }): { changeDealer: boolean; changeGame: boolean } {
   if (!input.isOwner) return { changeDealer: false, changeGame: false };
-  const unsafe = input.phase === "PLAYING" || input.phase === "PAYOUT";
+  const payoutSafe =
+    (input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") && Boolean(input.payoutResolved);
+  const unsafe =
+    input.phase === "PLAYING" ||
+    Boolean(input.insuranceOpen) ||
+    ((input.phase === "PAYOUT" || input.phase === "ROUND_COMPLETE") && !input.payoutResolved);
+  const safe = input.phase === "TABLE_SETUP" || input.phase === "BETTING" || payoutSafe;
   return {
-    changeDealer: Boolean(input.changeDealer) && input.phase === "BETTING",
-    changeGame: Boolean(input.changeGame) && !unsafe,
+    changeDealer: Boolean(input.changeDealer) && safe && !unsafe,
+    changeGame: Boolean(input.changeGame) && safe && !unsafe,
   };
 }
 
