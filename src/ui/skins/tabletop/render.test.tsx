@@ -413,10 +413,18 @@ describe("tabletop skin renders", () => {
         onCommand: noop,
       }),
     );
-    expect(setup).toContain("POKER SETUP");
+    expect(setup).toContain("TABLE SETUP");
+    expect(setup).toContain("Waiting for Players");
     expect(setup).toContain("START HAND");
     expect(setup).toContain("ADD PLAYER");
+    expect(setup).toContain('data-poker-rail="oval"');
+    expect(setup).toContain('data-centre-divider="absent"');
+    expect(setup).not.toContain("POKER SETUP");
     expect(setup).not.toContain("TO CALL");
+    expect(setup).not.toMatch(/STREET\s+\d/i);
+    expect(setup).toContain('data-role-badge="game-switch"');
+    expect(setup).toContain("BLACKJACK");
+    expect(setup).not.toContain('data-role-badge="game"');
 
     const complete = render(
       createElement(tabletopSkin.PokerPlayer, {

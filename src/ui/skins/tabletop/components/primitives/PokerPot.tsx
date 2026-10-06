@@ -3,8 +3,8 @@
 import type { PokerTableView } from "@/application/queries/views";
 import { ChipStack } from "./Jeton";
 
-/** Compact central pot / street / award summary. Never invents pot math. */
-export function PokerPot({ view }: { view: PokerTableView }) {
+/** Compact central pot / street / award on the cloth — not a rectangular card. */
+export function PokerPot({ view, dropHot = false }: { view: PokerTableView; dropHot?: boolean }) {
   const setup = view.phase === "POKER_SETUP";
   const complete = view.phase === "HAND_COMPLETE";
   const showdown = view.phase === "SHOWDOWN";
@@ -13,7 +13,8 @@ export function PokerPot({ view }: { view: PokerTableView }) {
 
   if (setup) {
     return (
-      <div className="tt-pot tt-blinds" data-poker-pot="setup">
+      <div className="tt-pot tt-pot-cloth tt-blinds" data-poker-pot="setup">
+        <span className="tt-pot-street">TABLE SETUP</span>
         <span>
           SB <strong>{view.smallBlind.label}</strong>
         </span>
@@ -25,7 +26,13 @@ export function PokerPot({ view }: { view: PokerTableView }) {
   }
 
   return (
-    <div className="tt-pot" data-drop-pot="pot" data-pot-paid={view.potPaid ? "true" : "false"} data-poker-pot="live">
+    <div
+      className={`tt-pot tt-pot-cloth${dropHot ? " is-drop-hot" : ""}`}
+      data-drop-pot="pot"
+      data-pot-paid={view.potPaid ? "true" : "false"}
+      data-poker-pot="live"
+    >
+      <span className="tt-pot-street">{(view.phaseLabel || view.phase).replaceAll("_", " ")}</span>
       <small>{view.potPaid || complete ? "POT PAID" : "POT"}</small>
       {!view.potPaid && !complete ? <strong className="tt-pot-amount">{view.pot.label}</strong> : null}
       {!view.potPaid && !complete && view.pot.millis !== "0" ? <ChipStack millis={view.pot.millis} max={4} /> : null}

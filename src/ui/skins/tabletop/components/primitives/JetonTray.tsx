@@ -9,6 +9,7 @@ const DENOMS = ["5", "10", "25", "50", "100"] as const;
 /**
  * Jeton tray: tap adds to the selected target, drag drops on any element matching `dropSelector`
  * (read from data-drop-box / data-drop-pot). The tray only reports gestures; the caller owns commands.
+ * Uses Pointer Events with capture; document scroll is locked only while dragging.
  */
 export function JetonTray({
   enabled,
@@ -27,6 +28,7 @@ export function JetonTray({
   const skipClick = useRef(false);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const active = useRef<string | null>(null);
+  const scrolling = useRef(false);
   const tapRef = useRef(onTap);
   const dropRef = useRef(onDrop);
   const hoverRef = useRef(onHover);
@@ -37,6 +39,21 @@ export function JetonTray({
     typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function lockScroll(on: boolean) {
+    if (typeof document === "undefined") return;
+    if (on && !scrolling.current) {
+      scrolling.current = true;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    } else if (!on && scrolling.current) {
+      scrolling.current = false;
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    }
+  }
 
   function targetAt(x: number, y: number): string | null {
     const stack =
@@ -62,7 +79,10 @@ export function JetonTray({
     const upName = kind === "pointer" ? "pointerup" : "mouseup";
     const move = (event: PointerEvent | MouseEvent) => {
       if (active.current !== denom || !origin.current) return;
-      if (Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y) > 8) skipClick.current = true;
+      if (Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y) > 8) {
+        skipClick.current = true;
+        lockScroll(true);
+      }
       setDrag({ denom, x: event.clientX, y: event.clientY });
       hoverRef.current?.(targetAt(event.clientX, event.clientY));
     };
@@ -77,6 +97,7 @@ export function JetonTray({
       origin.current = null;
       setDrag(null);
       hoverRef.current?.(null);
+      lockScroll(false);
       if (current && dragged && target) {
         dropRef.current?.(current, target);
         return;
@@ -128,7 +149,7 @@ export function JetonTray({
         ))}
       </div>
       {drag ? (
-        <span className="tt-jeton-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+        <span className="tt-jeton-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true" data-jeton-dragging="true">
           <Jeton denomination={drag.denom} size="lg" label={drag.denom} />
         </span>
       ) : null}

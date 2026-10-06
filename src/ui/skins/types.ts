@@ -37,6 +37,8 @@ export type JetonBroSkin = {
     members: MemberView[];
     onCommand: CommandHandler;
     notice?: string | null;
+    guestJoinUrl?: string | null;
+    verifiedJoinUrl?: string | null;
   }>;
   PokerPlayer: ComponentType<{
     view: PokerTableView;

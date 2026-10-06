@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { MemberView, PlayerTableView } from "@/application/queries/views";
+import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import { blackjackOwnerMenu, blackjackPlayerControls } from "@/ui/core/blackjack-phase-controls";
 import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
@@ -59,15 +60,11 @@ export function PlayerTable({
       })
     : undefined;
   const sorted = view.boxes.slice().sort((a, b) => a.boxNumber - b.boxNumber);
-  const phaseDisplay =
-    view.insuranceWindowOpen && playing
-      ? "INSURANCE"
-      : view.phase === "TABLE_SETUP"
-        ? "SETUP"
-        : view.phase === "ROUND_COMPLETE"
-          ? "PAYOUT"
-          : view.phase;
-
+  const phaseCopy = blackjackPhaseCopy({
+    role: view.isOwner ? "DEALER" : "PLAYER",
+    phase: view.phase,
+    insuranceOpen: view.insuranceWindowOpen,
+  });
   const canEditCards = Boolean(playing && selected?.hand?.canEdit);
   const canUndo = Boolean(canEditCards && (selected?.hand?.ranks?.length ?? 0) > 0);
 
@@ -234,8 +231,7 @@ export function PlayerTable({
       ) : null}
       <DealerMark />
       <PhaseDisplay
-        display={phaseDisplay}
-        label={controls.phaseLabel}
+        label={phaseCopy.primary}
         instruction={controls.instruction && controls.instruction !== "Round complete" ? controls.instruction : undefined}
       />
       <TableName name={view.tableName} />

@@ -907,9 +907,12 @@ export async function updateTableSettings(input: {
         }
       }
       await prisma.$transaction(async (tx) => {
+        const nextGame =
+          input.game === "POKER" ? "POKER" : input.game === "BLACKJACK" ? "BLACKJACK" : undefined;
         await tx.table.update({
           where: { id: input.tableId },
           data: {
+            game: nextGame,
             minBetMillis: input.minBet === undefined ? undefined : parseOptionalJetons(input.minBet),
             maxBetMillis: input.maxBet === undefined ? undefined : parseOptionalJetons(input.maxBet),
             blackjackPayout: input.blackjackPayout,
@@ -921,8 +924,21 @@ export async function updateTableSettings(input: {
             startingJetonsPerPlayerMillis: input.startingJetonsPerPlayer
               ? parseWholeJetons(input.startingJetonsPerPlayer)
               : undefined,
+            currentPokerHandId: nextGame === "POKER" ? null : undefined,
+            currentPhase: nextGame ? "TABLE_SETUP" : undefined,
           },
         });
+        if (nextGame === "POKER") {
+          // Draft Create Table may have only the Owner. Seat them without a hand.
+          await ensurePokerSeat(tx, input.tableId, table.ownerId);
+          const members = await tx.tableMember.findMany({ where: { tableId: input.tableId, leftAt: null } });
+          for (const member of members) {
+            if (member.userId !== table.ownerId) await ensurePokerSeat(tx, input.tableId, member.userId);
+          }
+        }
+        if (nextGame === "BLACKJACK") {
+          await tx.pokerSeat.deleteMany({ where: { tableId: input.tableId } });
+        }
         if (input.stakeType) {
           const stake = parseStakeSpec({
             stakeType: input.stakeType,

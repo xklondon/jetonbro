@@ -2006,20 +2006,32 @@
 
 .tabletop-skin .tt-poker-oval {
   position: absolute;
-  inset: 8% 6%;
-  border: 2px solid rgba(223, 189, 105, 0.55);
+  inset: 6% 4%;
+  border: 3px solid rgba(223, 189, 105, 0.62);
   border-radius: 50%;
   box-shadow:
-    inset 0 0 48px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(223, 189, 105, 0.18);
+    0 0 0 6px rgba(8, 40, 32, 0.85),
+    0 0 0 8px rgba(223, 189, 105, 0.28),
+    inset 0 0 48px rgba(0, 0, 0, 0.28);
   pointer-events: none;
+  z-index: 0;
+}
+
+.tabletop-skin .tt-poker-rim {
+  position: absolute;
+  inset: 9% 7%;
+  border: 1px solid rgba(223, 189, 105, 0.22);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at 50% 45%, rgba(11, 112, 86, 0.35), transparent 62%);
 }
 
 .tabletop-skin .tt-poker-felt-name {
   position: absolute;
   left: 50%;
-  top: 28%;
-  width: 72%;
+  top: 30%;
+  width: 58%;
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 1;
@@ -2027,8 +2039,11 @@
 
 .tabletop-skin .tt-poker-felt-name .tt-table-name {
   margin: 0;
-  font-size: 13px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: rgba(223, 189, 105, 0.42);
+  text-shadow: none;
+  opacity: 0.9;
 }
 
 .tabletop-skin .tt-pot {
@@ -2036,17 +2051,88 @@
   left: 50%;
   top: 48%;
   transform: translate(-50%, -50%);
-  min-width: 118px;
-  max-width: 64%;
+  min-width: 0;
+  max-width: 56%;
   display: grid;
   justify-items: center;
-  gap: 3px;
-  padding: 8px 12px;
+  gap: 2px;
+  padding: 4px 8px;
   text-align: center;
-  border-radius: 18px;
-  background: rgba(2, 23, 18, 0.5);
-  border: 1px solid rgba(223, 189, 105, 0.38);
+  border-radius: 0;
+  background: transparent;
+  border: 0;
   z-index: 2;
+}
+
+.tabletop-skin .tt-pot.tt-pot-cloth {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.tabletop-skin .tt-pot.is-drop-hot,
+.tabletop-skin .tt-poker-table.is-drop-hot .tt-pot {
+  outline: 2px solid var(--tt-gold-hi);
+  outline-offset: 8px;
+  border-radius: 50%;
+}
+
+.tabletop-skin .tt-pot-street {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: rgba(223, 189, 105, 0.85);
+  text-transform: uppercase;
+}
+
+.tabletop-skin .tt-inline-hint {
+  margin: 0 10px 6px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--tt-ivory);
+  opacity: 0.92;
+}
+
+.tabletop-skin .tt-seat-wager {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-seat-wager strong {
+  font-size: 10px;
+  color: var(--tt-ivory);
+  letter-spacing: 0.04em;
+}
+
+.tabletop-skin .tt-badge-icon {
+  display: inline-flex;
+  margin-right: 3px;
+  vertical-align: -1px;
+}
+
+.tabletop-skin .tt-poker-empty {
+  position: absolute;
+  width: 56px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(223, 189, 105, 0.22);
+  border-radius: 10px;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tabletop-skin .tt-poker [data-centre-divider="absent"]::before,
+.tabletop-skin .tt-poker [data-centre-divider="absent"]::after,
+.tabletop-skin .tt-setup-stage[data-centre-divider="absent"]::before,
+.tabletop-skin .tt-setup-stage[data-centre-divider="absent"]::after {
+  content: none;
+  display: none;
 }
 
 .tabletop-skin .tt-pot small {

@@ -8,6 +8,7 @@ import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
 import { InviteMask } from "./InviteMask";
 import { OwnerMenu } from "./OwnerMenu";
+import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import { ownerChrome } from "./owner-chrome";
 import { ActionDock } from "./primitives/ActionDock";
 import { DealerLedgerRow } from "./primitives/DealerLedger";
@@ -57,8 +58,12 @@ export function PhaseZero({
   const startHand = poker ? pokerControls(poker).find((control) => control.id === "startHand") : null;
   const canOpenBetting = game === "BLACKJACK" && Boolean(setup?.canStartBetting && setup.setupCompleted) && isBank;
   const dealerSetup = blackjackDealerSetupControls(canOpenBetting);
-  const startBlocked = game === "POKER" ? (startHand && !startHand.enabled ? "Waiting for Players" : null) : setup?.startBlockedReason;
-  const waitingForPlayers = game === "POKER" ? !startHand?.enabled : !canOpenBetting;
+  const phaseCopy = blackjackPhaseCopy({
+    role: isBank || isOwner ? "DEALER" : "PLAYER",
+    phase: "TABLE_SETUP",
+  });
+  const startBlocked = setup?.startBlockedReason;
+  const waitingForPlayers = !canOpenBetting;
   const verifiedUrl = setup?.verifiedJoinUrl ?? setup?.joinUrl ?? null;
   const guestUrl = setup?.guestJoinUrl ?? null;
   const starting = setup?.startingJetonsPerPlayer.label ?? waiting?.startingJetons?.label ?? "100";
@@ -139,9 +144,12 @@ export function PhaseZero({
         </>
       }
     >
-      <PhaseDisplay display="SETUP" label="Table setup" instruction={waitingForPlayers && startBlocked ? startBlocked : undefined} />
+      <PhaseDisplay
+        label={phaseCopy.primary}
+        instruction={waitingForPlayers ? phaseCopy.instruction ?? startBlocked ?? undefined : undefined}
+      />
       <TableName name={tableName} />
-      <div className="tt-stage tt-setup-stage">
+      <div className="tt-stage tt-setup-stage" data-centre-divider="absent">
         <div
           className="tt-ledger tt-setup-ledger"
           data-player-count={rows.length}

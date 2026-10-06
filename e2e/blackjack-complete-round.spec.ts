@@ -113,7 +113,7 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expect(page.getByRole("button", { name: "OPEN INSURANCE" })).toHaveCount(0);
   await page.screenshot({ path: join(shots, "insurance-dealer-390x844.png") });
   await playerPage.reload();
-  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE OPEN");
+  await expect(playerPage.locator("[data-phase-heading]")).toHaveText("INSURANCE");
   await expect(playerPage.getByRole("button", { name: "INSURANCE", exact: true })).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "ADD BOX" })).toHaveCount(0);
   const box1AtIns = await playerPage.locator(`[data-box-id="${box1.id}"]`).boundingBox();

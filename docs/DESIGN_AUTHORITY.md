@@ -162,6 +162,18 @@ PAYOUT:      START BETTING (full width; disabled until resolved)
 
 Poker boards under `docs/design-reference/poker-*.jpg` / `design/reference/tabletop/approved/poker-*.jpg` remain historical copies when the original `12_50_27 PM (5)` file is unavailable. Use the same Tabletop palette, rail, jetons and button primitives. Do not invent a second skin.
 
+Canonical Poker path: `/tables/{id}` → `TableSession` → `selectTableBoard()` → Tabletop `PokerDealer` / `PokerPlayer` → shared `PokerBoard` → `tabletop.css`.
+
+Composition (all roles and phases, including Phase 0):
+- Full-height green felt with one oval gold outer rail and padded inner rim.
+- Table name printed once on the cloth (low-contrast gold/ivory), behind pot/seats.
+- Seats around the oval; viewer nearest the tray. Committed street wagers sit as chip stacks on the cloth inward from each seat (never as `STREET N` text).
+- Centre shows street label + POT amount on the cloth (not a rectangular pot card). No digital community-card placeholders.
+- Phase copy: one primary label (`TABLE SETUP`, `PRE-FLOP`, …) and at most one short instruction. No SETUP badge + Table setup duplication.
+- Owner top-right shows the opposite-game switch control only at safe boundaries (opens existing Change Game sheet). Hide when not legal.
+- `START HAND` with too few Players keeps Phase 0 and shows one compact dock hint — never a Create Table / full-width top error.
+- Tray: tap and Pointer Events drag-and-drop both stage BET/RAISE via the same composer; confirmation still requires BET/RAISE.
+
 ## Must never appear
 
 - Kidney / spatial Dealer plaques as the finished Dealer board

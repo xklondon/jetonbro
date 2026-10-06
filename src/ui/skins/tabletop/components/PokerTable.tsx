@@ -8,16 +8,17 @@ import {
   pokerControlIds,
   pokerControls,
   pokerTrayEnabled,
-  pokerTurnLabel,
   visiblePokerLegalActions,
   type PokerComposeKind,
 } from "@/application/queries/poker-controls";
 import type { MemberView, PokerTableView } from "@/application/queries/views";
 import { addChipToAmount } from "@/ui/core/poker-chip-action";
+import { pokerPhaseCopy, pokerStartHandNotice } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
 import { communityCardLimit } from "@/domain/poker/cards";
 import { Shell } from "./Shell";
 import { Sheet } from "./Sheet";
+import { InviteMask } from "./InviteMask";
 import { OwnerMenu, type OwnerMenuItem } from "./OwnerMenu";
 import { PokerCardSheet } from "./PokerCardSheet";
 import { PokerActionDock } from "./primitives/PokerActionDock";
@@ -29,14 +30,9 @@ import { TableName } from "./primitives/TableName";
 import { ownerChrome } from "./owner-chrome";
 import { Wallet } from "./primitives/JetonTray";
 
-function phaseHeading(phase: string, label: string): string {
-  if (phase === "POKER_SETUP") return "POKER SETUP";
-  return (label || phase).replaceAll("_", " ");
-}
-
 /**
- * Shared Poker felt. Owner gets street controls in the rail and the table menu;
- * Player gets the same felt with actor actions and the wallet only.
+ * Shared Poker felt for Owner/Dealer and Player — same oval anatomy.
+ * Role differences are dock controls only.
  */
 export function PokerBoard({
   view,
@@ -44,22 +40,31 @@ export function PokerBoard({
   onCommand,
   notice,
   owner,
+  guestJoinUrl = null,
+  verifiedJoinUrl = null,
 }: {
   view: PokerTableView;
   members?: MemberView[];
   onCommand: CommandHandler;
   notice?: string | null;
   owner: boolean;
+  guestJoinUrl?: string | null;
+  verifiedJoinUrl?: string | null;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [compose, setCompose] = useState<PokerComposeKind | null>(null);
   const [staged, setStaged] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dropHot, setDropHot] = useState(false);
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
   const showCardMenu = Boolean(view.canEditHole || view.canEditCommunity);
+  const setup = view.phase === "POKER_SETUP";
+  const seatNotice = pokerStartHandNotice(notice);
+  const isSeatHint = Boolean(seatNotice && /Add at least two Players/i.test(seatNotice));
 
   useEffect(() => {
     setCompose(null);
@@ -74,10 +79,12 @@ export function PokerBoard({
   const layout = pokerActorLayout(visiblePokerLegalActions(view));
   const menuIds = owner ? pokerControlIds(view, "owner", "menu") : [];
   const ownerDock = owner ? pokerControls(view).filter((control) => control.layer === "owner" && control.surface === "dock") : [];
-  const turn =
-    view.phase === "HAND_COMPLETE" || view.phase === "SHOWDOWN" || view.phase === "POKER_SETUP"
-      ? null
-      : pokerTurnLabel(view.waitingCopy);
+  const phaseCopy = pokerPhaseCopy({
+    phase: view.phase,
+    waitingCopy: view.waitingCopy,
+    isActor: view.seats.some((seat) => seat.isActor && seat.userId === view.viewerId),
+    actorName: view.currentActorName,
+  });
   const viewerIndex = view.seats.findIndex((seat) => seat.userId === view.viewerId);
   const showActions = Boolean(layout.primary || layout.secondary.length > 0);
   const winnerPayload = useMemo(
@@ -126,7 +133,7 @@ export function PokerBoard({
     void onCommand("awardPokerPots", { pots: winnerPayload });
   }
 
-  const canAddBesideStart = owner && view.canAddPlayer && view.phase === "POKER_SETUP";
+  const canAddBesideStart = owner && view.canAddPlayer && setup;
 
   const ownerZone =
     ownerDock.length > 0 || canAddBesideStart || (owner && view.canAward) ? (
@@ -164,7 +171,7 @@ export function PokerBoard({
                     key={control.id}
                     type="button"
                     className="tt-btn gold"
-                    disabled={!control.enabled}
+                    data-start-hand="true"
                     onClick={() => void onCommand("startTexasHoldem")}
                   >
                     {control.label}
@@ -181,7 +188,7 @@ export function PokerBoard({
               return null;
             })}
             {canAddBesideStart ? (
-              <button type="button" className="tt-btn" data-add-player-dock="true" onClick={() => setMenuOpen(true)}>
+              <button type="button" className="tt-btn" data-add-player-dock="true" onClick={() => setInviteOpen(true)}>
                 ADD PLAYER
               </button>
             ) : null}
@@ -193,16 +200,21 @@ export function PokerBoard({
   const rail = (
     <>
       {ownerZone}
-      {notice || showActions || turn ? (
+      {isSeatHint ? (
+        <p className="tt-inline-hint" data-poker-seat-hint="true" role="status">
+          {seatNotice}
+        </p>
+      ) : null}
+      {!isSeatHint && (notice || showActions || phaseCopy.instruction) ? (
         <div className="tt-controls" data-game-controls="true">
-          {notice ? <div className="tt-error">{notice}</div> : null}
-          {!showActions && turn ? (
+          {notice && !isSeatHint ? <div className="tt-error">{notice}</div> : null}
+          {!showActions && phaseCopy.instruction && !setup ? (
             <div
-              className={`tt-turn-banner${turn.you ? " is-you" : ""}`}
-              data-turn-banner={turn.you ? "you" : "other"}
-              data-turn-state={turn.you ? "you" : "other"}
+              className={`tt-turn-banner${phaseCopy.instruction === "YOUR TURN" ? " is-you" : ""}`}
+              data-turn-banner={phaseCopy.instruction === "YOUR TURN" ? "you" : "other"}
+              data-turn-state={phaseCopy.instruction === "YOUR TURN" ? "you" : "other"}
             >
-              {turn.you ? "YOUR TURN" : `TURN · ${view.currentActorName ?? "Player"}`}
+              {phaseCopy.instruction}
             </div>
           ) : null}
           {showActions ? (
@@ -225,13 +237,16 @@ export function PokerBoard({
           ) : null}
         </div>
       ) : null}
-      <Wallet
-        available={view.available}
-        trayEnabled={pokerTrayEnabled(view)}
-        dropSelector="[data-drop-pot]"
-        onTap={stageChip}
-        onDrop={(amount) => stageChip(amount)}
-      />
+      {!setup ? (
+        <Wallet
+          available={view.available}
+          trayEnabled={pokerTrayEnabled(view)}
+          dropSelector="[data-drop-pot]"
+          onTap={stageChip}
+          onDrop={(amount) => stageChip(amount)}
+          onHover={(target) => setDropHot(Boolean(target))}
+        />
+      ) : null}
     </>
   );
 
@@ -258,7 +273,7 @@ export function PokerBoard({
     });
   }
 
-  const pokerSafe = view.phase === "POKER_SETUP" || view.phase === "HAND_COMPLETE";
+  const pokerSafe = setup || view.phase === "HAND_COMPLETE";
   const badges = owner
     ? ownerChrome(view.isOwner, owner, "POKER", { changeDealer: view.isOwner && pokerSafe, changeGame: menuIds.includes("switchGame") && pokerSafe }, () => {
         setMenuView("dealer");
@@ -272,6 +287,7 @@ export function PokerBoard({
   return (
     <Shell
       hideBrand
+      showRail={false}
       badges={badges}
       onMenu={owner || showCardMenu ? () => setMenuOpen(true) : undefined}
       rail={rail}
@@ -281,11 +297,26 @@ export function PokerBoard({
         "data-card-editor": cards ? "open" : "closed",
         "data-seat-count": view.seats.length,
         "data-poker-phase": view.phase,
+        "data-centre-divider": "absent",
+        "data-guest-join-url": guestJoinUrl ?? undefined,
+        "data-verified-join-url": verifiedJoinUrl ?? undefined,
+        "data-join-url": verifiedJoinUrl ?? undefined,
       }}
       overlay={
         <>
           {owner ? (
-            <OwnerMenu
+            <>
+              <InviteMask
+                open={inviteOpen}
+                onClose={() => setInviteOpen(false)}
+                guestJoinUrl={guestJoinUrl}
+                verifiedJoinUrl={verifiedJoinUrl}
+                emailConfigured
+                startingJetons={view.available.label}
+                members={members}
+                onCommand={onCommand}
+              />
+              <OwnerMenu
               open={menuOpen}
               onClose={() => {
                 setMenuOpen(false);
@@ -296,7 +327,7 @@ export function PokerBoard({
               onCommand={onCommand}
               game="POKER"
               items={menuItems}
-              addPlayer={menuIds.includes("addPlayer") ? "full" : false}
+              addPlayer={menuIds.includes("addPlayer") || setup ? "invite" : false}
               giveJetons={menuIds.includes("giveJetons")}
               changeDealer
               switchGame={menuIds.includes("switchGame")}
@@ -305,7 +336,12 @@ export function PokerBoard({
               closeCopy={`Save each Player’s remaining jetons to their personal ledger and close ${view.tableName}?`}
               gameSession={view.gameSession}
               startView={menuView}
+              onInvite={() => {
+                setMenuOpen(false);
+                setInviteOpen(true);
+              }}
             />
+            </>
           ) : showCardMenu ? (
             <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} labelledBy="tt-poker-tools-title" className="invite-mask">
               <header className="tt-sheet-head">
@@ -340,9 +376,6 @@ export function PokerBoard({
                     + BOARD CARDS
                   </button>
                 ) : null}
-                {!view.canEditHole && !view.canEditCommunity ? (
-                  <p className="tt-muted">Card Assist stays off the felt. Open this menu during a live hand to enter optional ranks.</p>
-                ) : null}
               </div>
             </Sheet>
           ) : null}
@@ -368,21 +401,32 @@ export function PokerBoard({
       }
     >
       <div className="tt-poker-top">
-        <PhaseDisplay label={phaseHeading(view.phase, view.phaseLabel)} />
-        {turn && showActions ? (
-          <span className={`tt-turn${turn.you ? " is-you" : ""}`} data-turn-state={turn.you ? "you" : "other"}>
-            {turn.label}
-          </span>
-        ) : null}
+        <PhaseDisplay label={phaseCopy.primary} instruction={setup ? phaseCopy.instruction : undefined} />
         <PokerStreet view={view} />
       </div>
-      <div className="tt-poker-table" data-seat-layout={view.seats.length <= 2 ? "heads-up" : view.seats.length <= 4 ? "mid" : "full"}>
-        <div className="tt-poker-oval" aria-hidden="true" />
+      <div
+        className={`tt-poker-table${dropHot ? " is-drop-hot" : ""}`}
+        data-seat-layout={view.seats.length <= 2 ? "heads-up" : view.seats.length <= 4 ? "mid" : "full"}
+        data-drop-zone={dropHot ? "active" : "idle"}
+      >
+        <div className="tt-poker-oval" aria-hidden="true" data-poker-rail="oval" />
+        <div className="tt-poker-rim" aria-hidden="true" />
         <div className="tt-poker-felt-name">
           <TableName name={view.tableName} />
         </div>
-        <PokerPot view={view} />
+        <PokerPot view={view} dropHot={dropHot} />
         <PokerHandComplete view={view} />
+        {setup && view.seats.length === 0
+          ? [0, 1].map((index) => (
+              <div
+                key={`empty-${index}`}
+                className="tt-poker-empty"
+                style={pokerSeatPosition(index, 2, 0)}
+                data-empty-seat={index + 1}
+                aria-hidden="true"
+              />
+            ))
+          : null}
         {view.seats.map((seat, index) => (
           <PokerSeat
             key={seat.userId}

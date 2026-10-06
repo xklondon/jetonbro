@@ -146,7 +146,7 @@ test("Poker Owner and Player boards stay distinct", () => {
       poker: { phase: "POKER_SETUP" },
       setup: { setupCompleted: true },
     }),
-  ).toBe("PHASE_ZERO_DEALER");
+  ).toBe("POKER_DEALER");
   expect(
     selectTableBoard({
       isOwner: true,

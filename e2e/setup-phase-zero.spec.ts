@@ -42,7 +42,7 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   expect(joinUrl).toBeTruthy();
   expect(joinUrl).not.toMatch(/localhost|railway\.internal/i);
   await page.getByRole("button", { name: "START TABLE" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
   await expect(page.locator("[data-seat-status=empty]")).toHaveCount(0);
   await expect(page.locator("[data-empty-waiting]")).toBeVisible();
@@ -65,15 +65,29 @@ test("create table setup, Phase 0 join, then Open Betting", async ({ page, conte
   await samContext.close();
 });
 
-test("poker Phase 0 enables Start Hand after required Players join", async ({ page, context, browser }) => {
+test("poker Phase 0 oval table; START HAND seat hint only after failed attempt", async ({ page, context, browser }) => {
   test.setTimeout(180_000);
   const ownerEmail = uniqueEmail("p6-pk");
   await openAs(context, page, ownerEmail, "Alex");
   await createPokerTable(page, "Phase Zero Poker", { starting: "100" });
-  await expect(page.getByRole("button", { name: "START HAND" })).toBeDisabled();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
+  await expect(page.getByRole("button", { name: "START HAND" })).toBeEnabled();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
+  await expect(page.locator('[data-poker-rail="oval"]')).toBeVisible();
+  await expect(page.locator('[data-centre-divider="absent"]')).toBeAttached();
+  await expect(page.getByText(/Add at least two Players/i)).toHaveCount(0);
   await shot(page, "11-phase0-poker-waiting-390x844.png");
-  const joinUrl = await page.locator("main[data-join-url]").getAttribute("data-join-url");
+
+  await page.getByRole("button", { name: "START HAND" }).click();
+  await expect(page.locator("[data-poker-seat-hint=true]")).toHaveText(/Add at least two Players to start a Poker hand/i, {
+    timeout: 10_000,
+  });
+  await expect(page.locator(".tt-error")).toHaveCount(0);
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
+
+  const snap = (await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((r) => r.json())) as {
+    setup?: { joinUrl: string | null };
+  };
+  const joinUrl = snap.setup?.joinUrl;
   expect(joinUrl).toBeTruthy();
 
   const samContext = await browser.newContext();
@@ -81,7 +95,7 @@ test("poker Phase 0 enables Start Hand after required Players join", async ({ pa
   await openAs(samContext, samPage, uniqueEmail("p6-pk-sam"), "Sam");
   await samPage.goto(new URL(joinUrl!).pathname);
   await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "START HAND" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.locator("[data-poker-seat-hint=true]")).toHaveCount(0, { timeout: 20_000 });
   await shot(page, "12-phase0-poker-ready-390x844.png");
   await shot(page, "13-phase0-dealer-390x844.png");
   await page.getByRole("button", { name: "START HAND" }).click();

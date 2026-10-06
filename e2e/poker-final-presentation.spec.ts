@@ -108,8 +108,17 @@ test("tabletop poker-final screenshot matrix and role/overflow checks", async ({
   await page.reload();
   await samPage.reload();
   await expect(page.getByRole("button", { name: "START HAND" })).toBeEnabled({ timeout: 20_000 });
+  await expect(page.locator('[data-poker-rail="oval"]')).toBeVisible();
+  await expect(page.locator('[data-centre-divider="absent"]')).toBeAttached();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
+  await expect(page.getByText(/STREET\s+\d/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "BLACKJACK" })).toBeVisible();
   await shot(page, "01-poker-setup-owner");
+  await shot(page, "02-poker-dealer-phase0-two-players");
   await shot(samPage, "02-poker-phase0-player");
+  await expect(samPage.locator('[data-poker-rail="oval"]')).toBeVisible();
+  await expect(samPage.getByRole("button", { name: "START HAND" })).toHaveCount(0);
+  await expect(samPage.getByRole("button", { name: "BLACKJACK" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "START HAND" }).click();
   await expectPokerPhase(page, "PRE-FLOP");

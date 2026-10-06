@@ -10,11 +10,25 @@ export function PokerDealer({
   members,
   onCommand,
   notice,
+  guestJoinUrl,
+  verifiedJoinUrl,
 }: {
   view: PokerTableView;
   members: MemberView[];
   onCommand: CommandHandler;
   notice?: string | null;
+  guestJoinUrl?: string | null;
+  verifiedJoinUrl?: string | null;
 }) {
-  return <PokerBoard view={view} members={members} onCommand={onCommand} notice={notice} owner />;
+  return (
+    <PokerBoard
+      view={view}
+      members={members}
+      onCommand={onCommand}
+      notice={notice}
+      owner
+      guestJoinUrl={guestJoinUrl}
+      verifiedJoinUrl={verifiedJoinUrl}
+    />
+  );
 }

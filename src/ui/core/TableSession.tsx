@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ClientSnapshot } from "@/application/queries/views";
 import { getSkin } from "@/ui/skins/registry";
 import { shouldApplySnapshot } from "@/ui/core/snapshot-revision";
+import { pokerStartHandNotice } from "@/ui/core/phase-copy";
 import { selectTableBoard } from "@/ui/core/table-board";
 
 async function sendCommand(tableId: string, command: string, payload: Record<string, string> = {}) {
@@ -97,6 +98,16 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     setSelectedBoxId(snapshot.player?.boxes[0]?.id ?? null);
   }, [snapshot.player?.boxes, selectedBoxId]);
 
+  useEffect(() => {
+    // Clear stale START HAND seat notice once enough Players are seated or the board left poker setup.
+    if (!notice) return;
+    const seats = snapshot.poker?.seats?.length ?? 0;
+    const pokerSetup = snapshot.game === "POKER" && (snapshot.poker?.phase === "POKER_SETUP" || snapshot.phase === "TABLE_SETUP");
+    if (/Add at least two Players/i.test(notice) && (seats >= 2 || !pokerSetup)) {
+      setNotice(null);
+    }
+  }, [notice, snapshot.game, snapshot.phase, snapshot.poker?.phase, snapshot.poker?.seats?.length]);
+
   const onCommand = async (command: string, payload: Record<string, string> = {}) => {
     const seq = ++commandSeq.current;
     const silent = command === "updateSettings" || command === "assignBank" || command === "setBankFunding";
@@ -123,7 +134,8 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     } catch (error) {
       if (seq !== commandSeq.current) return false;
       const code = error instanceof Error ? error.name : "";
-      setNotice(code === "TURN_CONFLICT" ? "TURN_CONFLICT" : error instanceof Error ? error.message : "Something went wrong.");
+      const message = error instanceof Error ? error.message : "Something went wrong.";
+      setNotice(code === "TURN_CONFLICT" ? "TURN_CONFLICT" : pokerStartHandNotice(message) ?? message);
       try {
         await refreshSnapshot();
       } catch (refreshError) {
@@ -196,7 +208,16 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     );
   }
   if (board === "POKER_DEALER" && snapshot.poker) {
-    return <skin.PokerDealer view={snapshot.poker} members={playerMembers} onCommand={onCommand} notice={status} />;
+    return (
+      <skin.PokerDealer
+        view={snapshot.poker}
+        members={playerMembers}
+        onCommand={onCommand}
+        notice={status}
+        guestJoinUrl={snapshot.setup?.guestJoinUrl ?? snapshot.bank?.guestJoinUrl ?? null}
+        verifiedJoinUrl={snapshot.setup?.verifiedJoinUrl ?? snapshot.setup?.joinUrl ?? snapshot.bank?.verifiedJoinUrl ?? null}
+      />
+    );
   }
   if (board === "POKER_PLAYER" && snapshot.poker) {
     return <skin.PokerPlayer view={snapshot.poker} onCommand={onCommand} notice={status} />;

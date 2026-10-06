@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import type { BankTableView, BoxView, MemberView } from "@/application/queries/views";
 import type { BoxOutcome } from "@/domain/blackjack/payouts";
+import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import { blackjackDealerControls, blackjackOwnerMenu } from "@/ui/core/blackjack-phase-controls";
 import type { CommandHandler } from "@/ui/skins/types";
 import { Shell } from "./Shell";
@@ -61,15 +62,11 @@ export function BankTable({
     setMenuView("session");
     setMenuOpen(true);
   });
-  const phaseDisplay =
-    view.insurance.window === "OPEN" && view.phase === "PLAYING"
-      ? "INSURANCE"
-      : view.phase === "TABLE_SETUP"
-        ? "SETUP"
-        : view.phase === "ROUND_COMPLETE"
-          ? "PAYOUT"
-          : view.phase;
-
+  const phaseCopy = blackjackPhaseCopy({
+    role: "DEALER",
+    phase: view.phase,
+    insuranceOpen: view.insurance.window === "OPEN",
+  });
   const boxes = activeBoxes(view);
   const showDealerHand =
     view.phase === "PLAYING" || view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE" || view.phase === "BETTING";
@@ -198,7 +195,7 @@ export function BankTable({
         data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
         data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
       />
-      <PhaseDisplay display={phaseDisplay} label={controls.phaseLabel} instruction={controls.instruction || undefined} />
+      <PhaseDisplay label={phaseCopy.primary} instruction={controls.instruction || undefined} />
       <TableName name={view.tableName} />
       {view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
         <div className="tt-timers">

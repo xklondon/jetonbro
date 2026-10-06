@@ -121,7 +121,8 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
       layer: "owner",
       surface: "dock",
       label: "START HAND",
-      enabled: view.seats.length >= 2,
+      // Always pressable in setup; server validates seated count and the UI maps the notice.
+      enabled: true,
     });
   }
   if (view.isOwner && view.nextStreetLabel && !["POKER_SETUP", "SHOWDOWN", "HAND_COMPLETE"].includes(view.phase)) {
