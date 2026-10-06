@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SetupTableView } from "@/application/queries/views";
 import { BLACKJACK_TABLE_DEFAULTS } from "@/domain/blackjack/settings";
 import { GAME_CATALOG } from "@/domain/games";
@@ -71,6 +71,8 @@ export function CreateTable({
   const [startingDirty, setStartingDirty] = useState(false);
   const [inviteMethod, setInviteMethod] = useState<InviteTab | null>(null);
   const [stake, setStake] = useState<StakeModeValue>(DEFAULT_STAKE_MODE);
+  const stakeRef = useRef(stake);
+  stakeRef.current = stake;
 
   useEffect(() => {
     if (!view) return;
@@ -108,7 +110,7 @@ export function CreateTable({
           setPending(true);
           try {
             if (onCommand && view) {
-              await persist(stakeModeToPayload(stake, startingJetonsPerPlayer));
+              await persist(stakeModeToPayload(stakeRef.current, startingJetonsPerPlayer));
               await onCommand("finalizeSetup", {
                 name,
                 startingJetonsPerPlayer,

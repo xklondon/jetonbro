@@ -79,6 +79,7 @@ test("prompt 7 compact stakes fun/money/custom + ledger", async ({ page, context
   await shot(page, "05-create-dinner-390x844");
 
   await page.getByRole("button", { name: "Fun only" }).click();
+  await expect(page.getByRole("button", { name: "Fun only" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup", { timeout: 20_000 });
 
