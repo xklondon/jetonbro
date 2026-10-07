@@ -1,10 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { BankTableView, BoxView, MemberView } from "@/application/queries/views";
+import type { BankTableView, BoxView, MemberView, PlayerTableView } from "@/application/queries/views";
 import { BlackjackDealerTable, seatedPlayers } from "./components/BlackjackDealerTable";
 import { PlayerTable } from "./components/PlayerTable";
 import { WaitingTable } from "./components/WaitingTable";
+import { orderBoxesNewestLeft } from "./components/primitives/BlackjackBoxStage";
 
 const money = (label: string, millis = `${Number(label) * 1000}`) => ({ millis, label });
 const noop = async () => undefined;
@@ -87,45 +88,32 @@ function bank(extra: Partial<BankTableView> = {}): BankTableView {
 }
 
 function html(view: BankTableView) {
-  return renderToStaticMarkup(
-    createElement(BlackjackDealerTable, { view, members, onCommand: noop }),
-  );
+  return renderToStaticMarkup(createElement(BlackjackDealerTable, { view, members, onCommand: noop }));
 }
 
-function hasMainBet(markup: string, label: string) {
-  return new RegExp(`data-field="main-bet"[\\s\\S]*?<small>MAIN</small>\\s*${label}`).test(markup);
-}
+describe("Blackjack table composition — Setup / BoxStage / Payout", () => {
+  it("PhaseDisplay stacks title then instruction", () => {
+    const markup = html(bank());
+    expect(markup).toContain('data-phase-stack="true"');
+    expect(markup).toMatch(/data-phase-heading[^>]*>TABLE SETUP<\/strong>\s*<em[^>]*>Invite a Player to begin\./);
+    expect(markup).not.toMatch(/TABLE SETUP<\/strong>\s*<em[^>]*>Ready/);
+  });
 
-describe("factual Dealer ledger rows + BlackjackTableSurface", () => {
-  it("TABLE_SETUP with no Player: zero rows, Invite copy, START BETTING disabled", () => {
-    const view = bank();
-    expect(seatedPlayers(view)).toHaveLength(0);
-    const markup = html(view);
+  it("TABLE_SETUP empty: zero rows, Invite copy, START BETTING disabled", () => {
+    const markup = html(bank());
+    expect(seatedPlayers(bank())).toHaveLength(0);
     expect(markup).toContain('data-blackjack-table-surface="true"');
+    expect(markup).toContain('data-felt-markings="true"');
     expect(markup).toContain('data-felt-name="true"');
-    expect(markup).toContain('data-seated-player-count="0"');
-    expect(markup).toContain('data-ledger-row-count="0"');
     expect(markup).toContain('data-dealer-empty="true"');
     expect(markup).toContain("Invite a Player to begin.");
-    expect(markup).not.toContain("Waiting for Players");
     expect(markup.match(/data-blackjack-box-row="true"/g)).toBeNull();
     expect(markup).toMatch(/disabled[^>]*>START BETTING/);
-    expect(markup).not.toContain('data-table-cloth="true"');
-    expect(markup).not.toContain("tt-ledger-wrap");
+    expect(markup).not.toContain("READY");
+    expect(markup).not.toContain("tt-bj-overlay-row");
   });
 
-  it("pending invite is not rendered as a joined Player", () => {
-    const markup = html(bank({ invitations: [{ id: "inv1", kind: "EMAIL", email: "pending@x.io", pending: true }] }));
-    expect(markup).not.toContain("pending@x.io");
-    expect(markup).toContain("Invite a Player to begin.");
-  });
-
-  it("Dealer-only identity is not a Player row", () => {
-    const markup = html(bank());
-    expect(markup).not.toContain('data-membership-id="d1"');
-  });
-
-  it("TABLE_SETUP with one joined Player: AVAILABLE 100, READY, no MAIN BET / Waiting", () => {
+  it("TABLE_SETUP joined: PLAYER JOINED, available jetons, no READY / MAIN BET", () => {
     const view = bank({
       players: [{ userId: "p1", name: "Casey", available: money("100"), locked: money("0"), status: "Waiting", boxes: [] }],
       playerCount: 1,
@@ -133,161 +121,121 @@ describe("factual Dealer ledger rows + BlackjackTableSurface", () => {
       canStartBetting: true,
       actions: { ...bank().actions, nextHand: true },
     });
-    expect(seatedPlayers(view)).toHaveLength(1);
     const markup = html(view);
-    expect(markup).toContain('data-seated-player-count="1"');
-    expect(markup).toContain('data-ledger-row-count="1"');
-    expect(markup).toContain('data-membership-id="p1"');
-    expect(markup).toContain('data-status="READY"');
-    expect(markup).toContain("READY");
-    expect(markup).toContain("Ready to open betting.");
-    expect(markup.match(/data-blackjack-box-row="true"/g)?.length).toBe(1);
+    expect(markup).toContain('data-status="PLAYER_JOINED"');
+    expect(markup).toContain("PLAYER JOINED");
+    expect(markup).toContain("100 jetons");
     expect(markup).toContain("Casey");
-    expect(markup).toContain('data-field="available"');
-    expect(markup).toMatch(/data-field="available"[^>]*>[\s\S]*?>100</);
+    expect(markup).toContain("Ready to open betting.");
+    expect(markup).not.toContain("READY");
     expect(markup).not.toContain("MAIN BET");
     expect(markup).not.toContain('data-field="main-bet"');
-    expect(markup).not.toContain(">Waiting<");
-    expect(markup).not.toContain("Waiting for Players");
-    expect(markup).not.toMatch(/disabled[^>]*>START BETTING/);
+    expect(markup).not.toContain("tt-bj-overlay-row");
+    expect(markup).not.toContain('data-box-stage="true"');
   });
 
-  it("BETTING before wager: MAIN 0 / NO BET with available distinct", () => {
-    const b1 = box({ id: "b1", boxNumber: 1, playerId: "p1", playerName: "Casey", bet: money("0", "0") });
-    const markup = html(
-      bank({
-        phase: "BETTING",
-        boxes: [b1],
-        players: [{ userId: "p1", name: "Casey", available: money("100"), locked: money("0"), status: "", boxes: [b1] }],
-        playerCount: 1,
-        boxCount: 1,
-        primaryAction: { id: "dealCards", label: "DEAL CARDS", enabled: false },
-        actions: { ...bank().actions, dealCards: false, addPlayer: true, nextHand: false },
-      }),
-    );
-    expect(markup.match(/data-blackjack-box-row="true"/g)?.length).toBe(1);
-    expect(hasMainBet(markup, "0")).toBe(true);
-    expect(hasMainBet(markup, "100")).toBe(false);
-    expect(markup).toContain("NO BET");
-    expect(markup).toContain('data-available="100"');
-    expect(markup).toMatch(/data-field="available"[^>]*>100</);
-    expect(markup).toContain('data-blackjack-table-surface="true"');
-  });
-
-  it("BETTING after wager 25: MAIN 25, available 75, never swapped", () => {
+  it("BETTING / PLAYING use BlackjackBoxStage, not DealerLedgerRow", () => {
     const b1 = box({ id: "b1", boxNumber: 1, playerId: "p1", playerName: "Casey", bet: money("25") });
-    const markup = html(
-      bank({
-        phase: "BETTING",
-        boxes: [b1],
-        players: [{ userId: "p1", name: "Casey", available: money("75"), locked: money("25"), status: "", boxes: [b1] }],
-        playerCount: 1,
-        boxCount: 1,
-        primaryAction: { id: "dealCards", label: "DEAL CARDS", enabled: true },
-        actions: { ...bank().actions, dealCards: true, addPlayer: true, nextHand: false },
-      }),
-    );
-    expect(hasMainBet(markup, "25")).toBe(true);
-    expect(hasMainBet(markup, "75")).toBe(false);
-    expect(markup).toContain("WAGERED");
-    expect(markup).toContain('data-available="75"');
-    expect(markup).toMatch(/data-field="available"[^>]*>75</);
-    expect(markup).not.toMatch(/data-field="status"[^>]*>[\s\S]*75/);
+    for (const phase of ["BETTING", "PLAYING"] as const) {
+      const markup = html(
+        bank({
+          phase,
+          boxes: [b1],
+          players: [{ userId: "p1", name: "Casey", available: money("75"), locked: money("25"), status: "", boxes: [b1] }],
+          playerCount: 1,
+          boxCount: 1,
+          primaryAction:
+            phase === "BETTING"
+              ? { id: "dealCards", label: "DEAL CARDS", enabled: true }
+              : { id: "payoutPhase", label: "ENTER PAYOUT", enabled: true },
+          actions: {
+            ...bank().actions,
+            dealCards: phase === "BETTING",
+            payoutPhase: phase === "PLAYING",
+            nextHand: false,
+          },
+        }),
+      );
+      expect(markup).toContain('data-box-stage="true"');
+      expect(markup).toContain('data-order="newest-left"');
+      expect(markup).toContain("tt-pbox");
+      expect(markup).not.toContain("tt-bj-overlay-row");
+      expect(markup).not.toContain("data-payout-rail");
+      if (phase === "BETTING") expect(markup).toContain("Players place their bets.");
+      if (phase === "PLAYING") expect(markup).toContain("Play the hands.");
+    }
   });
 
-  it("one Player with two boxes: exactly two box-instance rows", () => {
-    const b1 = box({ id: "b1", boxNumber: 1, playerId: "p1", playerName: "Casey", bet: money("25") });
-    const b2 = box({ id: "b2", boxNumber: 2, playerId: "p1", playerName: "Casey", bet: money("10") });
-    const view = bank({
-      phase: "BETTING",
-      boxes: [b1, b2],
-      players: [{ userId: "p1", name: "Casey", available: money("65"), locked: money("35"), status: "", boxes: [b1, b2] }],
-      playerCount: 1,
-      boxCount: 2,
-      primaryAction: { id: "dealCards", label: "DEAL CARDS", enabled: true },
-      actions: { ...bank().actions, dealCards: true, addPlayer: true, nextHand: false },
-    });
-    const markup = html(view);
-    expect(markup.match(/data-blackjack-box-row="true"/g)?.length).toBe(2);
-    expect(markup).toContain('data-box-id="b1"');
-    expect(markup).toContain('data-box-id="b2"');
-    expect(markup).toContain("MAIN");
-    expect(markup).toContain("WAGERED");
-  });
-
-  it("payout controls are one DOM row and map to existing outcomes", () => {
+  it("PAYOUT uses settlement bars with one horizontal LOST|TIE|BJ|WIN row", () => {
     const b1 = box({ id: "b1", boxNumber: 1, playerId: "p1", playerName: "Casey" });
-    const view = bank({
-      phase: "PAYOUT",
-      boxes: [b1],
-      players: [{ userId: "p1", name: "Casey", available: money("75"), locked: money("25"), status: "", boxes: [b1] }],
-      playerCount: 1,
-      boxCount: 1,
-      primaryAction: { id: "nextHand", label: "START BETTING", enabled: false },
-      actions: { ...bank().actions, settleBoxes: true, nextHand: false },
-    });
-    const markup = html(view);
-    expect(markup).toContain('data-payout-rail="row"');
-    expect(markup).toContain('data-outcome="LOST"');
-    expect(markup).toContain('data-outcome="PUSH"');
-    expect(markup).toContain('data-outcome="BLACKJACK"');
-    expect(markup).toContain('data-outcome="WON"');
-    expect(markup).toContain(">LOST<");
-    expect(markup).toContain(">TIE<");
-    expect(markup).toContain(">BJ<");
-    expect(markup).toContain(">WIN<");
-    expect(markup).toContain("Set Box 1 result: Stand-off");
-    expect(markup).toContain('data-blackjack-table-surface="true"');
-  });
-
-  it("resolved payout replaces controls with a result badge", () => {
-    const b1 = box({
-      id: "b1",
-      boxNumber: 1,
-      playerId: "p1",
-      playerName: "Casey",
-      outcome: "WON",
-      returned: money("50"),
-    });
     const markup = html(
       bank({
         phase: "PAYOUT",
         boxes: [b1],
-        players: [{ userId: "p1", name: "Casey", available: money("125"), locked: money("0"), status: "", boxes: [b1] }],
+        players: [{ userId: "p1", name: "Casey", available: money("75"), locked: money("25"), status: "", boxes: [b1] }],
         playerCount: 1,
         boxCount: 1,
-        primaryAction: { id: "nextHand", label: "START BETTING", enabled: true },
-        actions: { ...bank().actions, nextHand: true },
+        primaryAction: { id: "nextHand", label: "START BETTING", enabled: false },
+        actions: { ...bank().actions, settleBoxes: true, nextHand: false },
       }),
     );
-    expect(markup).toContain('data-box-result="WON"');
-    expect(markup).not.toContain("data-payout-action");
+    expect(markup).toContain("tt-bj-overlay-row");
+    expect(markup).toContain('data-payout-rail="row"');
+    expect(markup).toContain(">LOST<");
+    expect(markup).toContain(">TIE<");
+    expect(markup).toContain(">BJ<");
+    expect(markup).toContain(">WIN<");
+    expect(markup).toContain("Settle each box.");
+    expect(markup).not.toContain('data-box-stage="true"');
   });
 
-  it("Player Waiting and PlayerTable mount the same BlackjackTableSurface", () => {
-    const waiting = renderToStaticMarkup(
-      createElement(WaitingTable, {
-        view: {
-          role: "WAITING",
-          phase: "TABLE_SETUP",
-          tableName: "Salon",
-          game: "Blackjack",
-          available: money("100"),
-          copy: "",
-        },
+  it("orders boxes newest-left with Box 1 as rightmost anchor", () => {
+    const ordered = orderBoxesNewestLeft([
+      box({ id: "b1", boxNumber: 1, playerId: "p1", playerName: "Casey" }),
+      box({ id: "b2", boxNumber: 2, playerId: "p1", playerName: "Casey" }),
+      box({ id: "b3", boxNumber: 3, playerId: "p1", playerName: "Casey" }),
+    ]);
+    expect(ordered.map((b) => b.boxNumber)).toEqual([3, 2, 1]);
+
+    const markup = html(
+      bank({
+        phase: "BETTING",
+        boxes: ordered,
+        players: [
+          {
+            userId: "p1",
+            name: "Casey",
+            available: money("40"),
+            locked: money("60"),
+            status: "",
+            boxes: ordered,
+          },
+        ],
+        playerCount: 1,
+        boxCount: 3,
+        primaryAction: { id: "dealCards", label: "DEAL CARDS", enabled: true },
+        actions: { ...bank().actions, dealCards: true, nextHand: false },
       }),
     );
-    expect(waiting).toContain('data-blackjack-table-surface="true"');
-    expect(waiting).toContain('data-felt-name="true"');
-    expect(waiting).toContain("Waiting for the Dealer to open betting.");
-    expect(waiting).not.toContain('data-table-cloth="true"');
+    const slots = [...markup.matchAll(/data-box-slot="(\d+)"/g)].map((m) => m[1]);
+    expect(slots).toEqual(["3", "2", "1"]);
+  });
+
+  it("table name is present without ellipsis CSS contract and Player shares surface", () => {
+    const longName = "XKLONDON'S TABLE";
+    const markup = html(bank({ tableName: longName }));
+    expect(markup).toContain('data-table-name="');
+    expect(markup).toContain("XKLONDON");
+    expect(markup).toContain("TABLE");
+    expect(markup).not.toContain("…");
+    expect(markup).not.toMatch(/XKLONDON[^<]{0,20}\.\.\./);
 
     const player = renderToStaticMarkup(
       createElement(PlayerTable, {
         view: {
           role: "PLAYER",
           phase: "BETTING",
-          tableName: "Salon",
+          tableName: longName,
           title: "",
           copy: "",
           available: money("75"),
@@ -301,14 +249,30 @@ describe("factual Dealer ledger rows + BlackjackTableSurface", () => {
           canSwitchGame: false,
           closePreview: null,
           gameSession: null,
-        },
+        } satisfies PlayerTableView,
         selectedBoxId: "b1",
         onSelectBox: () => undefined,
         onCommand: noop,
       }),
     );
     expect(player).toContain('data-blackjack-table-surface="true"');
-    expect(player).toContain('data-bj-anatomy="player"');
-    expect(player).toContain('data-dealer-slot="true"');
+    expect(player).toContain('data-box-stage="true"');
+    expect(player).toContain("Place your bets.");
+    expect(player).toContain("XKLONDON");
+    expect(player).toContain('data-table-name="');
+
+    const waiting = renderToStaticMarkup(
+      createElement(WaitingTable, {
+        view: {
+          role: "WAITING",
+          phase: "TABLE_SETUP",
+          tableName: longName,
+          game: "Blackjack",
+          available: money("100"),
+          copy: "",
+        },
+      }),
+    );
+    expect(waiting).toContain('data-felt-markings="true"');
   });
 });

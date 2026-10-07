@@ -11,6 +11,7 @@ import { RankPadSheet } from "./primitives/HandCards";
 import { PlayerBox } from "./primitives/PlayerBox";
 import { TableButton } from "./primitives/TableButton";
 import { BlackjackTableSurface } from "./primitives/BlackjackTableSurface";
+import { BlackjackBoxStage, orderBoxesNewestLeft } from "./primitives/BlackjackBoxStage";
 import { ownerChrome } from "./owner-chrome";
 import { Wallet } from "./primitives/JetonTray";
 
@@ -58,7 +59,7 @@ export function PlayerTable({
         setMenuOpen(true);
       })
     : undefined;
-  const sorted = view.boxes.slice().sort((a, b) => a.boxNumber - b.boxNumber);
+  const staged = orderBoxesNewestLeft(view.boxes);
   const phaseCopy = blackjackPhaseCopy({
     role: view.isOwner ? "DEALER" : "PLAYER",
     phase: view.phase,
@@ -235,9 +236,7 @@ export function PlayerTable({
         tableName={view.tableName}
         anatomy="player"
         phaseLabel={phaseCopy.primary}
-        phaseInstruction={
-          controls.instruction && controls.instruction !== "Round complete" ? controls.instruction : undefined
-        }
+        phaseInstruction={phaseCopy.instruction}
         dealer={
           <header className="tt-bj-dealer-band-head">
             <span>DEALER</span>
@@ -245,52 +244,54 @@ export function PlayerTable({
           </header>
         }
       >
-        <div className="tt-stage">
-          <div className="tt-boxes" data-box-stage="true" data-count={Math.min(sorted.length, 4)}>
-            {sorted.map((box) => {
-              const isSelected = box.id === selected?.id;
-              const showInsure = Boolean(view.insuranceWindowOpen && isSelected);
-              return (
-                <PlayerBox
-                  key={box.id}
-                  box={box}
-                  selected={isSelected}
-                  dropHighlight={hoverBoxId === box.id}
-                  onSelect={() => onSelectBox(box.id)}
-                  showCards={playing || payout}
-                  chipSize="lg"
-                  onRetract={
-                    view.phase === "BETTING" && view.actions.retract
-                      ? () => void retractBox(box.id, box.bet.label)
-                      : undefined
-                  }
-                  retractBusy={retractBusy === box.id}
-                  insurancePanel={
-                    showInsure ? (
-                      <div className="tt-insure" data-insurance-panel="true" data-for-box={box.id}>
-                        <span>
-                          <small>MAX 50%</small> <strong>{box.insurance?.label ?? box.insuranceMax.label}</strong>
-                        </span>
-                        <TableButton
-                          variant="compact"
-                          disabled={!controls.insurance}
-                          onClick={() => void onCommand("buyInsurance", { boxId: box.id, amount: box.insuranceMax.label })}
-                        >
-                          {box.insurance ? "PLACED" : "PLACE"}
-                        </TableButton>
-                      </div>
-                    ) : null
-                  }
-                />
-              );
-            })}
-          </div>
-          {controls.addBox ? (
-            <TableButton variant="ghost" className="tt-addbox" onClick={() => void onCommand("addBox")}>
-              ADD BOX
-            </TableButton>
-          ) : null}
-        </div>
+        <BlackjackBoxStage
+          boxes={staged}
+          footer={
+            controls.addBox ? (
+              <TableButton variant="ghost" className="tt-addbox" onClick={() => void onCommand("addBox")}>
+                ADD BOX
+              </TableButton>
+            ) : null
+          }
+        >
+          {staged.map((box) => {
+            const isSelected = box.id === selected?.id;
+            const showInsure = Boolean(view.insuranceWindowOpen && isSelected);
+            return (
+              <PlayerBox
+                key={box.id}
+                box={box}
+                selected={isSelected}
+                dropHighlight={hoverBoxId === box.id}
+                onSelect={() => onSelectBox(box.id)}
+                showCards={playing || payout}
+                chipSize="lg"
+                onRetract={
+                  view.phase === "BETTING" && view.actions.retract
+                    ? () => void retractBox(box.id, box.bet.label)
+                    : undefined
+                }
+                retractBusy={retractBusy === box.id}
+                insurancePanel={
+                  showInsure ? (
+                    <div className="tt-insure" data-insurance-panel="true" data-for-box={box.id}>
+                      <span>
+                        <small>MAX 50%</small> <strong>{box.insurance?.label ?? box.insuranceMax.label}</strong>
+                      </span>
+                      <TableButton
+                        variant="compact"
+                        disabled={!controls.insurance}
+                        onClick={() => void onCommand("buyInsurance", { boxId: box.id, amount: box.insuranceMax.label })}
+                      >
+                        {box.insurance ? "PLACED" : "PLACE"}
+                      </TableButton>
+                    </div>
+                  ) : null
+                }
+              />
+            );
+          })}
+        </BlackjackBoxStage>
       </BlackjackTableSurface>
     </Shell>
   );

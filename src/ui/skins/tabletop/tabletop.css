@@ -634,46 +634,47 @@
 
 .tabletop-skin .tt-phase {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px 8px;
-  margin-top: 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  margin-top: 6px;
+  min-height: 40px;
   text-align: center;
 }
 
-.tabletop-skin .tt-phase-display {
-  border: 1px solid var(--tt-gold-soft);
-  border-radius: 999px;
-  padding: 1px 8px;
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  color: var(--tt-gold);
-}
-
 .tabletop-skin .tt-phase strong {
-  font: 600 15px/1.2 var(--tt-serif);
+  display: block;
+  font: 600 clamp(15px, 4.2vw, 18px)/1.15 var(--tt-serif);
   color: var(--tt-ivory);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .tabletop-skin .tt-phase em {
-  font-size: 11px;
+  display: block;
+  min-height: 1.2em;
+  font: 500 11px/1.25 var(--tt-sans);
   font-style: normal;
-  color: rgba(244, 234, 213, 0.7);
+  letter-spacing: 0.02em;
+  color: rgba(244, 234, 213, 0.72);
 }
 
 .tabletop-skin .tt-table-name {
   margin: 10px auto 0;
-  max-width: 90%;
+  max-width: min(92%, 22rem);
   text-align: center;
-  font: 500 13px/1.2 var(--tt-serif);
-  letter-spacing: 0.18em;
+  font: 500 clamp(13px, 3.8vw, 18px)/1.25 var(--tt-serif);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(223, 189, 105, 0.42);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: rgba(223, 189, 105, 0.55);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   pointer-events: none;
 }
 
@@ -2436,17 +2437,16 @@
   width: 100%;
 }
 
-/* ========== BLACKJACK TABLE SURFACE — felt base + overlays (all phases) ========== */
+/* ========== BLACKJACK TABLE — shared felt geometry (all phases) ========== */
 .tabletop-skin .tt-bj-dealer .tt-surface-body,
 .tabletop-skin .tt-bj-player .tt-surface-body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding-top: 28px;
+  padding-top: 22px;
   overflow: hidden;
 }
 
-/* Canonical felt owner: one surface for Dealer and Player, every phase. */
 .tabletop-skin .tt-bj-table {
   position: relative;
   flex: 1 1 auto;
@@ -2455,7 +2455,49 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 0 0 18px 18px;
+}
+
+.tabletop-skin .tt-bj-markings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-bj-mark-text {
+  font-family: var(--tt-sans);
+  letter-spacing: 0.14em;
+}
+
+.tabletop-skin .tt-bj-mark-text.is-arc {
+  font-size: 9px;
+}
+
+.tabletop-skin .tt-bj-mark-text.is-bj {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  fill: rgba(223, 189, 105, 0.62);
+}
+
+.tabletop-skin .tt-bj-mark-text.is-rule {
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  fill: rgba(244, 234, 213, 0.38);
+}
+
+.tabletop-skin .tt-bj-table-chrome {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
 }
 
 .tabletop-skin .tt-bj-table .tt-ins-pot {
@@ -2484,33 +2526,38 @@
 
 .tabletop-skin .tt-bj-table-body {
   position: relative;
+  z-index: 2;
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  /* Empty body chrome must not steal hits from absolute player-layer boxes. */
+  pointer-events: none;
 }
 
-/* Compact bank position — curved overlay on felt, reserved height. */
+.tabletop-skin .tt-bj-table-body > * {
+  pointer-events: auto;
+}
+
 .tabletop-skin .tt-bj-dealer-position {
   flex: 0 0 auto;
-  width: min(100%, 420px);
+  width: min(100%, 280px);
   align-self: center;
-  min-height: 48px;
-  max-height: 72px;
+  margin-top: 4px;
+  min-height: 46px;
+  max-height: 70px;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 10px;
-  padding: 6px 18px;
-  border: 1px solid rgba(223, 189, 105, 0.22);
+  gap: 8px;
+  padding: 5px 14px;
+  border: 1px solid rgba(223, 189, 105, 0.26);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(6, 36, 28, 0.42), rgba(2, 18, 14, 0.28));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(180deg, rgba(8, 42, 34, 0.5), rgba(2, 18, 14, 0.32));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
-  z-index: 2;
 }
 
 .tabletop-skin .tt-bj-dealer-position.is-quiet {
@@ -2540,7 +2587,7 @@
 }
 
 .tabletop-skin .tt-bj-dealer-band-body {
-  min-height: 36px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -2551,7 +2598,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  min-height: 36px;
+  min-height: 34px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -2569,19 +2616,163 @@
   opacity: 0.35;
 }
 
-/* Player overlay layer — bars/boxes sit on felt; height follows content. */
 .tabletop-skin .tt-bj-player-layer {
-  flex: 0 1 auto;
-  min-height: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Stage begins ~62–68% down the felt; give boxes enough height to remain hittable. */
+  top: 58%;
+  bottom: 6%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  padding: 0 6px;
+  pointer-events: auto;
+}
+
+.tabletop-skin .tt-bj-setup-layer {
   width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabletop-skin .tt-bj-joined-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.tabletop-skin .tt-bj-joined {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  min-width: 132px;
+  max-width: 180px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(4, 28, 22, 0.55), rgba(2, 14, 12, 0.4));
+  border: 1px solid rgba(223, 189, 105, 0.28);
+  animation: tt-bj-joined-in 420ms ease-out;
+}
+
+@keyframes tt-bj-joined-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabletop-skin .tt-bj-joined {
+    animation: none;
+  }
+}
+
+.tabletop-skin .tt-bj-joined-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35), transparent 45%),
+    linear-gradient(160deg, #1f7a58, #0a3d2e);
+  border: 2px solid rgba(223, 189, 105, 0.7);
+  box-shadow: inset 0 0 0 2px rgba(2, 18, 14, 0.45);
+}
+
+.tabletop-skin .tt-bj-joined-chip-face {
+  font: 700 13px/1 var(--tt-serif);
+  color: var(--tt-ivory);
+}
+
+.tabletop-skin .tt-bj-joined-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tabletop-skin .tt-bj-joined-name {
+  font: 600 13px/1.1 var(--tt-sans);
+  color: var(--tt-ivory);
   overflow: hidden;
-  z-index: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabletop-skin .tt-bj-joined-stack {
+  font-size: 11px;
+  color: rgba(244, 234, 213, 0.78);
+}
+
+.tabletop-skin .tt-bj-joined-badge {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--tt-gold);
+}
+
+.tabletop-skin .tt-bj-box-stage {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.tabletop-skin .tt-bj-box-stage .tt-pbox {
+  min-height: clamp(102px, 17dvh, 148px);
+}
+
+.tabletop-skin .tt-bj-box-track {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  padding: 2px 4px 4px;
+  pointer-events: auto;
+}
+
+.tabletop-skin .tt-bj-box-track::-webkit-scrollbar {
+  display: none;
+}
+
+.tabletop-skin .tt-bj-box-track .tt-box-wrap {
+  flex: 0 0 auto;
+  width: min(46vw, 168px);
+}
+
+.tabletop-skin .tt-bj-box-track[data-count="1"] .tt-box-wrap {
+  width: min(54vw, 196px);
 }
 
 .tabletop-skin .tt-bj-overlay-list {
   width: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2606,7 +2797,7 @@
 
 .tabletop-skin .tt-bj-overlay-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(64px, 0.85fr) minmax(72px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(56px, 0.75fr) minmax(72px, 0.95fr) minmax(96px, 1.2fr);
   gap: 6px;
   align-items: center;
   width: 100%;
@@ -2614,17 +2805,8 @@
   padding: 8px 10px;
   border: 0;
   border-bottom: 1px solid rgba(223, 189, 105, 0.18);
-  border-radius: 0;
   background: linear-gradient(180deg, rgba(2, 18, 14, 0.62), rgba(1, 12, 10, 0.48));
   box-sizing: border-box;
-}
-
-.tabletop-skin .tt-bj-overlays.is-payout .tt-bj-overlay-row {
-  grid-template-columns: minmax(0, 1fr) minmax(56px, 0.75fr) minmax(72px, 0.95fr) minmax(96px, 1.2fr);
-}
-
-.tabletop-skin .tt-bj-overlay-row.is-setup {
-  grid-template-columns: minmax(0, 1.2fr) minmax(72px, 0.9fr) minmax(64px, 0.7fr);
 }
 
 .tabletop-skin .tt-bj-overlay-row.is-unresolved.is-payout {
@@ -2657,23 +2839,6 @@
   font-size: 10px;
 }
 
-.tabletop-skin .tt-ledger-available {
-  display: grid;
-  gap: 2px;
-  justify-items: start;
-}
-
-.tabletop-skin .tt-ledger-available strong {
-  font: 600 13px/1.1 var(--tt-sans);
-  color: var(--tt-ivory);
-}
-
-.tabletop-skin .tt-ledger-available small {
-  font-size: 8px;
-  letter-spacing: 0.12em;
-  color: rgba(244, 234, 213, 0.55);
-}
-
 .tabletop-skin .tt-bj-empty {
   margin: 12px;
   text-align: center;
@@ -2681,28 +2846,30 @@
   color: rgba(244, 234, 213, 0.72);
 }
 
-/* Table name printed/embroidered into the shared felt — not a bottom plaque. */
 .tabletop-skin .tt-bj-felt-name {
   position: absolute;
   left: 50%;
-  bottom: 8%;
+  bottom: 3%;
   transform: translateX(-50%);
   z-index: 1;
-  pointer-events: none;
+  width: min(92%, 22rem);
+  pointer-events: none !important;
   text-align: center;
 }
 
 .tabletop-skin .tt-bj-felt-name .tt-table-name {
   margin: 0;
-  font-size: clamp(16px, 4.6vw, 22px);
-  letter-spacing: 0.14em;
-  color: rgba(223, 189, 105, 0.42);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  font-size: clamp(14px, 4.2vw, 20px);
+  letter-spacing: 0.12em;
+  color: rgba(223, 189, 105, 0.58);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
-/* Phase modifiers must not redefine felt geometry — content only */
 .tabletop-skin .tt-bj-dealer[data-bj-phase] .tt-bj-table {
-  /* structural geometry owned above; phase attrs are hooks for tests */
+  /* geometry owned above; phase attrs are test hooks only */
 }
 
 .tabletop-skin .tt-pbox-player {

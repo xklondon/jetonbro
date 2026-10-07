@@ -271,13 +271,15 @@ describe("tabletop skin renders", () => {
     expect(betting).toContain('data-dealer-slot="true"');
     expect(betting).toContain('data-bj-felt="true"');
     expect(betting).toContain('data-dealer-boxes="true"');
+    expect(betting).toContain('data-box-stage="true"');
     expect(betting).toContain("Alex");
     expect(betting).toContain("Jo");
     expect(betting).not.toContain("Mia");
     expect(betting).toContain("DEALER");
     expect(betting).not.toContain("tt-setup-ledger");
-    expect(betting).toContain("data-blackjack-box-row");
+    expect(betting).not.toContain("tt-bj-overlay-row");
     expect(betting).not.toContain("data-payout-action");
+    expect(betting).toContain("Players place their bets.");
 
     const payout = render(createElement(tabletopSkin.BankTable, { view: bank("PAYOUT"), members, onCommand: noop }));
     for (const label of ["LOST", "TIE", "BJ", "WIN"]) expect(payout).toContain(label);
@@ -289,6 +291,8 @@ describe("tabletop skin renders", () => {
     expect(payout).toContain("data-payout-action");
     expect(payout).toContain("START BETTING");
     expect(payout).toContain('data-dealer-slot="true"');
+    expect(payout).toContain("tt-bj-overlay-row");
+    expect(payout).not.toContain('data-box-stage="true"');
 
     const playing = render(
       createElement(tabletopSkin.BankTable, {
@@ -379,8 +383,11 @@ describe("tabletop skin renders", () => {
     expect(dealerSetup).toContain('data-dealer-slot="true"');
     expect(dealerSetup).toContain("TABLE SETUP");
     expect(dealerSetup).toContain("Ready to open betting.");
+    expect(dealerSetup).toContain("PLAYER JOINED");
     expect(dealerSetup).toContain('data-blackjack-table-surface="true"');
+    expect(dealerSetup).toContain('data-phase-stack="true"');
     expect(dealerSetup).not.toContain("Waiting for Players");
+    expect(dealerSetup).not.toContain(">READY<");
     expect(dealerSetup).toContain("START BETTING");
     expect(dealerSetup).toContain("ADD PLAYER");
     expect(dealerSetup).not.toContain("tt-setup-ledger");

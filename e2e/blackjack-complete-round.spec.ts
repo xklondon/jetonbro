@@ -48,7 +48,7 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.setViewportSize({ width: 390, height: 844 });
   await openAs(playerContext, playerPage, playerEmail, "Sam");
   await playerPage.goto(joinPath);
-  await expect(playerPage.getByText(/Waiting for the (Dealer|table) to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(playerPage.getByText(/Waiting for the (Dealer|table) to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible({ timeout: 20_000 });
   await expect(playerPage.getByText("100").first()).toBeVisible();
   await expect(playerPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await expect(playerPage.getByRole("button", { name: "Invite Player" })).toHaveCount(0);

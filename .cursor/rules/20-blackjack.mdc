@@ -1,6 +1,6 @@
 ---
 description: Blackjack phases, roles, boxes, Dealer Tabletop anatomy and Player betting controls
-globs: src/domain/blackjack/**/*,src/application/services/blackjack*.ts,src/application/services/deal-countdown*.ts,src/application/queries/snapshot.ts,src/application/queries/views.ts,src/ui/core/blackjack-*,src/ui/core/table-board.ts,src/ui/core/TableSession.tsx,src/ui/skins/tabletop/components/BlackjackDealerTable.tsx,src/ui/skins/tabletop/components/BankTable.tsx,src/ui/skins/tabletop/components/PlayerTable.tsx,src/ui/skins/tabletop/components/PhaseZero.tsx,src/ui/skins/tabletop/components/WaitingTable.tsx,src/ui/skins/tabletop/components/primitives/PlayerBox.tsx,src/ui/skins/tabletop/components/primitives/DealerLedger.tsx,src/ui/skins/tabletop/components/primitives/BlackjackTableSurface.tsx,e2e/blackjack*.spec.ts,e2e/cards-and-limited-bank.spec.ts,src/ui/core/blackjack-*.test.*,src/ui/skins/tabletop/blackjack*.test.*,src/ui/skins/tabletop/factual-dealer.test.tsx,src/ui/skins/tabletop/render.test.tsx
+globs: src/domain/blackjack/**/*,src/application/services/blackjack*.ts,src/application/services/deal-countdown*.ts,src/application/queries/snapshot.ts,src/application/queries/views.ts,src/ui/core/blackjack-*,src/ui/core/table-board.ts,src/ui/core/TableSession.tsx,src/ui/skins/tabletop/components/BlackjackDealerTable.tsx,src/ui/skins/tabletop/components/BankTable.tsx,src/ui/skins/tabletop/components/PlayerTable.tsx,src/ui/skins/tabletop/components/PhaseZero.tsx,src/ui/skins/tabletop/components/WaitingTable.tsx,src/ui/skins/tabletop/components/primitives/PlayerBox.tsx,src/ui/skins/tabletop/components/primitives/DealerLedger.tsx,src/ui/skins/tabletop/components/primitives/BlackjackTableSurface.tsx,src/ui/skins/tabletop/components/primitives/BlackjackBoxStage.tsx,e2e/blackjack*.spec.ts,e2e/cards-and-limited-bank.spec.ts,src/ui/core/blackjack-*.test.*,src/ui/skins/tabletop/blackjack*.test.*,src/ui/skins/tabletop/factual-dealer.test.tsx,src/ui/skins/tabletop/render.test.tsx
 alwaysApply: false
 ---
 
@@ -28,28 +28,33 @@ No backward transitions and no phase skipping. Insurance is a Bank-triggered win
 - One felt box instance per active engine box; never aggregate by Player
 - Split maps to existing engine boxes (`isSplit` / offshoot); UI never fabricates hands
 - Do not invent empty seated Players as active wager boxes
+- `BlackjackBoxStage` ordering: highest box number on the LEFT; Box 1 is the rightmost centre anchor (`[BOX 3] [BOX 2] [BOX 1]`)
 
 ## Canonical Dealer Tabletop
 
-- `BlackjackTableSurface` is the shared felt base for Dealer and Player in **every** Blackjack phase
-- Felt/table is the permanent base layer; Dealer bank position and Player rows/boxes are overlays on that same felt
-- Table name is printed directly on the shared felt (`data-felt-name`) — never a separate bottom plaque or nested cloth panel
-- No giant containing ledger panel, no bordered spreadsheet wrapper, no nested “felt inside felt”
+- `BlackjackTableSurface` is the shared physical felt for Dealer and Player in **every** Blackjack phase (CSS/SVG markings — never a screenshot background)
+- Felt/table is the permanent base; Dealer bank, Setup joined marks, box stage, and Payout bars overlay it
+- Table name is printed on the felt (`data-felt-name`) — full name visible, never ellipsised on ordinary names
+- PhaseDisplay stacks title then instruction (never side-by-side)
 - `BlackjackDealerTable` mounts `BlackjackTableSurface` for **every** phase including `TABLE_SETUP`
 - `BankTable` is a thin adapter that mounts `BlackjackDealerTable`
 - Owner/Dealer at BJ `TABLE_SETUP` selects `BLACKJACK_DEALER` — **not** `PHASE_ZERO_DEALER` / PhaseZero ledger
-- **Factual rows only**: render one `DealerLedgerRow` per real active box, or per seated non-bank membership during `TABLE_SETUP` before boxes exist — never pad “Open seat”, fake Players, or minimum-row placeholders
-- Zero seated Players → zero overlay rows + compact empty copy `No players have joined yet.` + phase instruction `Invite a Player to begin.`
-- One or more joined Players → `READY` status, AVAILABLE/stack (never MAIN BET), phase instruction `Ready to open betting.` — never per-row `Waiting`
+
+### Phase presentation matrix (Dealer)
+
+| Phase | Presentation |
+|---|---|
+| TABLE_SETUP | Compact `JoinedPlayerMark` indicators (`PLAYER JOINED` + available jetons) — never READY, never MAIN BET, never spreadsheet rows |
+| BETTING / PLAYING / INSURANCE | `BlackjackBoxStage` physical box positions (shared with Player) — never full-width ledger bars |
+| PAYOUT / ROUND_COMPLETE | Full-width `DealerLedgerRow` settlement bars only |
+
+- Zero seated Players → zero joined marks + empty copy `No players have joined yet.` + `Invite a Player to begin.`
 - Invited/pending identities are not seated Players; Bank/Dealer membership is not a Player row
 - Never put available balance under MAIN BET; never show MAIN BET until a real box wager exists
-- Active boxes render as full-width horizontal overlay bars on the felt (one real box each) — not spatial PlayerBox cards on the Dealer board
-- Player Blackjack uses the same `BlackjackTableSurface` with casino betting boxes on the Player layer
-- Stable vertical composition: header → phase → Dealer position → Player overlay layer → embroidered table name on felt → dock
-- Phase changes may alter labels, instruction, row values, legal controls, and badges — not felt geometry
-- Compact Dealer position always present (quiet reserved height when no cards); Card Assist expands inside that band
-- Unresolved payout: one horizontal four-action group `LOST | TIE | BJ | WIN` (maps to LOST / PUSH / BLACKJACK / WON; accessible Lost / Stand-off / Blackjack / Won); never a 2×2 grid and never wrap at 360–430px
+- Compact Dealer position always present (quiet reserved height when no cards)
+- Unresolved payout: one horizontal four-action group `LOST | TIE | BJ | WIN` (accessible Lost / Stand-off / Blackjack / Won); never a 2×2 grid
 - Insurance settle stays separate: `INS LOST | INS WON`
+- Phase changes may alter labels, instruction, values, and legal controls — not felt / box-stage / Dealer geometry
 
 ## Dock matrix (product labels)
 
@@ -66,11 +71,13 @@ Do not show `CLOSE BETTING` or `START NEXT ROUND` as normal UI wording. Controls
 
 ## Player Betting presentation
 
+- Same `BlackjackTableSurface` + `BlackjackBoxStage` as Dealer during Betting / Playing / Insurance
 - Permanent bottom AVAILABLE + jeton tray in every phase
 - Per-box retract × during BETTING when MAIN > 0 (`placeBet` mode `RETRACT`); accessible name `Retract Box {n} wager`
 - No second full-width dock RETRACT when × is canonical
 - Primary wager chips use shared `ChipStack` lg (~46–56px at 390×844); Insurance secondary smaller
 - Doubled boxes show `2×` without inventing another box
+- Box stage Y stays in the lower ~62–68% of the felt; do not move Box 1 upward between phases
 
 ## Card Assist
 

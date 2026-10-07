@@ -30,8 +30,8 @@ export function WaitingTable({ view }: { view: WaitingTableView }) {
           </header>
         }
       >
-        <div className="tt-stage">
-          <div className="tt-boxes" data-box-stage="true" data-box-count="1" data-count="1">
+        <div className="tt-bj-box-stage" data-box-stage="true" data-box-stage-y="lower">
+          <div className="tt-bj-box-track" data-box-track="true" data-count="1" data-order="newest-left">
             <PlayerBox empty />
           </div>
         </div>

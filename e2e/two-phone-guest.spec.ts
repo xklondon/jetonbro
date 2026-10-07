@@ -114,8 +114,8 @@ test("guest QR: second device joins by play name and enables OPEN BETTING", asyn
   await expect(guestPage.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
   await guestPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(guestPage.locator("[data-player-wallet]")).toContainText("75", { timeout: 20_000 });
-  await expect(guestPage.locator(".player-box, .box, [data-box-stage], .tt-box").first()).toContainText("25");
-  await expect(page.locator('[data-blackjack-box-row="true"]:not([data-dealer-box="true"])')).toContainText("25", {
+  await expect(guestPage.locator(".player-box, .box, [data-box-stage], .tt-box, .tt-pbox").first()).toContainText("25");
+  await expect(page.locator("[data-box-stage=true] [data-box-id]").first()).toContainText("25", {
     timeout: 20_000,
   });
   await shot(page, "08-bj-dealer-betting-390x844.png");

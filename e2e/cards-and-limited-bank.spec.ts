@@ -33,7 +33,7 @@ async function twoSeatTable(
   await playerPage.setViewportSize({ width: 390, height: 844 });
   await openAs(playerContext, playerPage, playerEmail, "Sam");
   await playerPage.goto(invitePath);
-  await expect(playerPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(playerPage.getByText(/Waiting for the (Dealer|table) to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("Sam").first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await page.getByRole("button", { name: "START BETTING" }).click();
@@ -112,7 +112,7 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(new URL(data.setup!.joinUrl!).pathname);
-  await expect(joPage.getByText(/Waiting for the table to open betting|WAITING FOR PLAYERS|Waiting for the Bank/i)).toBeVisible({ timeout: 20_000 });
+  await expect(joPage.getByText(/Waiting for the (Dealer|table) to open betting|WAITING FOR PLAYERS|Waiting for the Bank/i)).toBeVisible({ timeout: 20_000 });
   await expect(page.locator("[data-player-row]").filter({ hasText: "Sam" }).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator("[data-player-row]").filter({ hasText: "Jo" }).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });

@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { blackjackPhaseCopy, pokerPhaseCopy, pokerStartHandNotice } from "./phase-copy";
 import { blackjackPhaseInstruction, blackjackPhaseLabel } from "./blackjack-phase-controls";
 
-test("Blackjack dealer/player phase copy is single primary with optional instruction", () => {
+test("Blackjack dealer/player phase copy is stacked primary + instruction matrix", () => {
   expect(blackjackPhaseCopy({ role: "DEALER", phase: "TABLE_SETUP", seatedPlayerCount: 0 })).toEqual({
     primary: "TABLE SETUP",
     instruction: "Invite a Player to begin.",
@@ -15,13 +15,26 @@ test("Blackjack dealer/player phase copy is single primary with optional instruc
     primary: "TABLE SETUP",
     instruction: "Waiting for the Dealer to open betting.",
   });
-  expect(blackjackPhaseCopy({ role: "DEALER", phase: "BETTING" })).toEqual({ primary: "BETTING" });
-  expect(blackjackPhaseCopy({ role: "PLAYER", phase: "BETTING" })).toEqual({ primary: "BETTING" });
-  expect(blackjackPhaseCopy({ role: "DEALER", phase: "PLAYING" })).toEqual({ primary: "PLAYING" });
+  expect(blackjackPhaseCopy({ role: "DEALER", phase: "BETTING" })).toEqual({
+    primary: "BETTING",
+    instruction: "Players place their bets.",
+  });
+  expect(blackjackPhaseCopy({ role: "PLAYER", phase: "BETTING" })).toEqual({
+    primary: "BETTING",
+    instruction: "Place your bets.",
+  });
+  expect(blackjackPhaseCopy({ role: "DEALER", phase: "PLAYING" })).toEqual({
+    primary: "PLAYING",
+    instruction: "Play the hands.",
+  });
   expect(blackjackPhaseCopy({ role: "DEALER", phase: "PLAYING", insuranceOpen: true })).toEqual({
     primary: "INSURANCE",
+    instruction: "Insurance is open.",
   });
-  expect(blackjackPhaseCopy({ role: "DEALER", phase: "PAYOUT" })).toEqual({ primary: "PAYOUT" });
+  expect(blackjackPhaseCopy({ role: "DEALER", phase: "PAYOUT" })).toEqual({
+    primary: "PAYOUT",
+    instruction: "Settle each box.",
+  });
 });
 
 test("Blackjack never restores Betting open", () => {

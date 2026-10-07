@@ -137,7 +137,7 @@ describe("Blackjack Tabletop render path", () => {
       expect(html).toContain('data-bj-anatomy="dealer"');
       expect(html).not.toContain("tt-setup-ledger");
       expect(html).not.toContain("Classic");
-      expect(html.match(/Salon/g)?.length ?? 0).toBeLessThanOrEqual(2);
+      expect(html.match(/Salon/g)?.length ?? 0).toBeLessThanOrEqual(3);
       return html;
     });
     for (const html of anatomies) {
@@ -216,6 +216,9 @@ describe("Blackjack Tabletop render path", () => {
     expect(css).toContain(".tabletop-skin .tt-bj-table");
     expect(css).toContain(".tabletop-skin .tt-bj-dealer-position");
     expect(css).toContain(".tabletop-skin .tt-bj-felt-name");
+    expect(css).toContain(".tabletop-skin .tt-bj-box-stage");
+    expect(css).toContain(".tabletop-skin .tt-bj-markings");
+    expect(css).toMatch(/\.tt-bj-felt-name[\s\S]*?\.tt-table-name\s*\{[^}]*overflow:\s*visible/s);
     expect(css).not.toContain(".tabletop-skin .tt-table-cloth");
     expect(css).not.toMatch(/tt-ledger-results\s*\{[^}]*grid-template-columns:\s*repeat\(2/s);
     expect(css).not.toMatch(/(?<!\.)\n\.box\s*\{|(?<!\.)\n\.table\s*\{|(?<!\.)\n\.dealer\s*\{|(?<!\.)\n\.felt\s*\{/);

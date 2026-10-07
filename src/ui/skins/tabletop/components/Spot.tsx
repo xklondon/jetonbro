@@ -35,8 +35,8 @@ export function Countdown({ deadline, label }: { deadline: string | null; label:
 }
 
 /** @deprecated Prefer PhaseDisplay. */
-export function PhasePill({ display, label, instruction }: { display?: string; label: string; instruction?: string }) {
-  return <PhaseDisplay display={display} label={label} instruction={instruction} />;
+export function PhasePill({ label, instruction }: { display?: string; label: string; instruction?: string }) {
+  return <PhaseDisplay label={label} instruction={instruction} />;
 }
 
 export function DealerMark({ name }: { name?: string }) {

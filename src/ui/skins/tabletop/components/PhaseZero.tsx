@@ -11,7 +11,7 @@ import { OwnerMenu } from "./OwnerMenu";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import { ownerChrome } from "./owner-chrome";
 import { ActionDock } from "./primitives/ActionDock";
-import { DealerLedgerRow } from "./primitives/DealerLedger";
+import { JoinedPlayerMark } from "./primitives/JoinedPlayerMark";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { TableName } from "./primitives/TableName";
 
@@ -157,7 +157,12 @@ export function PhaseZero({
           data-empty-waiting={rows.length === 0 && invited.length === 0 ? "true" : undefined}
         >
           {rows.map((row) => (
-            <DealerLedgerRow key={row.userId} empty playerName={row.name} availableLabel={row.available?.label ?? "0"} />
+            <JoinedPlayerMark
+              key={row.userId}
+              name={row.name}
+              availableLabel={row.available?.label ?? "0"}
+              membershipId={row.userId}
+            />
           ))}
           {invited.map((invite) => (
             <div className="tt-ledger-row is-idle is-invited" key={invite.id} data-seat-status="Invited">

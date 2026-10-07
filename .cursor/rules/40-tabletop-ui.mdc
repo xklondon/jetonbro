@@ -32,21 +32,22 @@ Full visual authority order and anatomy details: `docs/DESIGN_AUTHORITY.md`.
 
 - Phone composition: `100dvh`, max width ~480px, **no document scroll**
 - Minimum interactive target 44×44px
-- `BlackjackTableSurface` owns Blackjack table geometry: emerald felt base, curved gold rail (Shell `TableRail`), embroidered table name on the cloth (`data-felt-name` / `data-table-name`), Dealer position overlay, Player overlay layer
-- Felt/table is the permanent base; Dealer and Players overlay it — never a panel containing the table, never a separate bottom table-name plaque, never a giant bordered ledger container
-- Table Setup Player rows use AVAILABLE/READY — never MAIN BET / Waiting for a joined Player
-- Dealer and Player devices are two viewpoints onto the same physical table (same rail, felt, name, Dealer position, vertical proportions)
-- No title-card name, no duplicated name, no giant empty bordered rectangle, no yellow centre divider
-- Stable anatomy across phase transitions: same felt/rail/header/dock allocation; phases change labels, values, and legal controls — never replace the table furniture
+- `BlackjackTableSurface` owns Blackjack table geometry: emerald cloth + fabric texture + vignette, curved double gold rail, insurance/BJ rule arcs (CSS/SVG), embroidered table name, Dealer position, player layer
+- Felt/table is the permanent base; overlays never replace it with an admin panel
+- PhaseDisplay: title on line 1, instruction on line 2 — never side-by-side; reserve stable height
+- Setup joined Players use compact `JoinedPlayerMark` (`PLAYER JOINED`) — never READY / MAIN BET / spreadsheet rows
+- Betting / Playing / Insurance use shared `BlackjackBoxStage` physical positions for Dealer and Player
+- Full-width `DealerLedgerRow` bars are **Payout only**
+- Table name printed on felt: complete name visible, `clamp()` sizing, up to two centred lines, no ellipsis on ordinary names
+- Dealer and Player devices are two viewpoints onto the same physical table
+- Stable anatomy across phase transitions: same felt/rail/Dealer/box-stage Y; phases change labels, values, and legal controls
 - `prefers-reduced-motion` must not rely on motion for meaning
 - One canonical visible component per screen/role; adapters only when they mount that component
 - One stylesheet (`tabletop.css`) owns Blackjack table geometry; no Classic CSS in the active bundle
 
 ## Rejected presentation (do not restore)
 
-CSS diamond-hatch wallpaper felt, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques on the Dealer board, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path, padded “Open seat” / minimum-row Dealer placeholders, 2×2 Blackjack payout button grids, separate `TableCloth` bottom plaque, nested felt panels, giant bordered Player-list spreadsheet.
-
-Dealer Blackjack uses full-width per-box overlay bars (`DealerLedgerRow`) on `BlackjackTableSurface`. Player Blackjack keeps betting boxes on the same surface.
+CSS diamond-hatch wallpaper felt, plain single-colour felt gradient as finished anatomy, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path, padded “Open seat” / minimum-row placeholders, 2×2 Blackjack payout button grids, separate `TableCloth` bottom plaque, nested felt panels, giant bordered Player-list spreadsheet, full-width ledger bars outside Payout, Setup `READY` rows, side-by-side phase title+instruction, ellipsised table names.
 
 ## Tests
 

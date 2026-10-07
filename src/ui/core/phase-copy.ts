@@ -1,6 +1,6 @@
 /**
  * Shared phase copy: one primary label, at most one short supporting instruction.
- * Role badges are never phase labels.
+ * Role badges are never phase labels. Title and instruction are always stacked.
  */
 
 export type PhaseCopy = {
@@ -16,8 +16,10 @@ export function blackjackPhaseCopy(input: {
   seatedPlayerCount?: number;
 }): PhaseCopy {
   const phase = input.phase;
+  const role = input.role === "BANK" ? "DEALER" : input.role;
+
   if (phase === "TABLE_SETUP") {
-    if (input.role === "PLAYER") {
+    if (role === "PLAYER") {
       return { primary: "TABLE SETUP", instruction: "Waiting for the Dealer to open betting." };
     }
     const seated = input.seatedPlayerCount ?? 0;
@@ -26,10 +28,26 @@ export function blackjackPhaseCopy(input: {
     }
     return { primary: "TABLE SETUP", instruction: "Ready to open betting." };
   }
-  if (phase === "BETTING") return { primary: "BETTING" };
-  if (phase === "PLAYING" && input.insuranceOpen) return { primary: "INSURANCE" };
-  if (phase === "PLAYING") return { primary: "PLAYING" };
-  if (phase === "PAYOUT" || phase === "ROUND_COMPLETE") return { primary: "PAYOUT" };
+
+  if (phase === "BETTING") {
+    return {
+      primary: "BETTING",
+      instruction: role === "PLAYER" ? "Place your bets." : "Players place their bets.",
+    };
+  }
+
+  if (phase === "PLAYING" && input.insuranceOpen) {
+    return { primary: "INSURANCE", instruction: "Insurance is open." };
+  }
+
+  if (phase === "PLAYING") {
+    return { primary: "PLAYING", instruction: "Play the hands." };
+  }
+
+  if (phase === "PAYOUT" || phase === "ROUND_COMPLETE") {
+    return { primary: "PAYOUT", instruction: "Settle each box." };
+  }
+
   return { primary: phase.replaceAll("_", " ") };
 }
 

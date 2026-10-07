@@ -1,22 +1,20 @@
 "use client";
 
-/** Compact phase title + optional instruction. Avoids repeating the same phase word twice. */
+/**
+ * Shared Blackjack/Poker phase display: title on line 1, instruction on line 2.
+ * Never side-by-side. Reserves stable height so the table does not jump.
+ */
 export function PhaseDisplay({
-  display,
   label,
   instruction,
 }: {
-  display?: string;
   label: string;
   instruction?: string;
 }) {
-  const heading = label || display || "";
-  const showPill = Boolean(display && heading && display.toUpperCase() !== heading.toUpperCase());
   return (
-    <div className="tt-phase">
-      {showPill ? <span className="tt-phase-display">{display}</span> : null}
-      <strong data-phase-heading>{heading}</strong>
-      {instruction ? <em>{instruction}</em> : null}
+    <div className="tt-phase" data-phase-stack="true">
+      <strong data-phase-heading>{label}</strong>
+      <em data-phase-instruction={instruction ? "true" : "false"}>{instruction || "\u00a0"}</em>
     </div>
   );
 }

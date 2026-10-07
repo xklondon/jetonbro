@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { BankTableView, BoxView, MemberView } from "@/application/queries/views";
 import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
@@ -15,6 +15,9 @@ import { ActionDock } from "./primitives/ActionDock";
 import { DealerHandPanel } from "./primitives/HandCards";
 import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
 import { BlackjackTableSurface } from "./primitives/BlackjackTableSurface";
+import { BlackjackBoxStage, orderBoxesNewestLeft } from "./primitives/BlackjackBoxStage";
+import { JoinedPlayerMark } from "./primitives/JoinedPlayerMark";
+import { PlayerBox } from "./primitives/PlayerBox";
 
 /** Collect every active box instance — one felt box each; never aggregate by Player. */
 export function activeDealerBoxes(view: BankTableView): BoxView[] {
@@ -36,7 +39,8 @@ function boxesReady(view: BankTableView) {
 
 /**
  * Canonical Tabletop Blackjack Dealer surface for every phase including TABLE_SETUP.
- * Felt is the base; Dealer and Player bars are overlays. Phase changes content only.
+ * Felt is the base. Setup uses joined marks; Betting/Playing/Insurance use BlackjackBoxStage;
+ * Payout alone uses full-width settlement bars.
  */
 export function BlackjackDealerTable({
   view,
@@ -81,7 +85,9 @@ export function BlackjackDealerTable({
   });
   const dealerCanEdit = Boolean(view.dealerHand?.canEdit);
   const payoutPhase = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const playPhase = view.phase === "BETTING" || view.phase === "PLAYING";
   const showCards = view.phase === "PLAYING" || payoutPhase;
+  const staged = orderBoxesNewestLeft(boxes);
 
   const settle = (box: BoxView) => (outcome: BoxOutcome) => void onCommand("settleBox", { boxId: box.id, outcome });
 
@@ -155,6 +161,80 @@ export function BlackjackDealerTable({
         <Countdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
       </div>
     ) : null;
+
+  let layer: ReactNode;
+  if (setup) {
+    layer = (
+      <div
+        className="tt-bj-setup-layer"
+        data-seated-player-count={seatedPlayerCount}
+        data-ledger-row-count={seatedPlayerCount}
+        data-empty-state={seatedPlayerCount === 0 ? "true" : "false"}
+      >
+        {seatedPlayerCount > 0 ? (
+          <div className="tt-bj-joined-row" data-joined-marks="true">
+            {joined.map((player) => (
+              <JoinedPlayerMark
+                key={player.userId}
+                name={player.name}
+                availableLabel={player.available.label}
+                membershipId={player.userId}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="tt-bj-empty" data-dealer-empty="true" role="status">
+            No players have joined yet.
+          </p>
+        )}
+      </div>
+    );
+  } else if (playPhase && boxes.length > 0) {
+    layer = (
+      <div data-seated-player-count={seatedPlayerCount} data-ledger-row-count={boxes.length} data-empty-state="false">
+        <BlackjackBoxStage boxes={staged}>
+          {staged.map((box) => (
+            <PlayerBox
+              key={box.id}
+              box={box}
+              showPlayerName
+              showCards={showCards}
+              chipSize="lg"
+            />
+          ))}
+        </BlackjackBoxStage>
+      </div>
+    );
+  } else if (payoutPhase && boxes.length > 0) {
+    layer = (
+      <div data-seated-player-count={seatedPlayerCount} data-ledger-row-count={boxes.length} data-empty-state="false">
+        <DealerLedger playerCount={seatedPlayerCount} boxCount={boxes.length} showRules={false} payoutMode>
+          {boxes.map((box) => (
+            <DealerLedgerRow
+              key={box.id}
+              box={box}
+              phase={view.phase}
+              payoutEnabled={controls.showPayoutResults}
+              insuranceSettleEnabled={controls.showInsuranceSettle}
+              onSettle={settle(box)}
+              onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
+              onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
+              onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
+              dealerMayCorrect={Boolean(view.dealerHand?.canEdit || showCards)}
+            />
+          ))}
+        </DealerLedger>
+      </div>
+    );
+  } else {
+    layer = (
+      <div data-seated-player-count={seatedPlayerCount} data-ledger-row-count={0} data-empty-state="true">
+        <p className="tt-bj-empty" data-dealer-empty="true" role="status">
+          Waiting for the first wager.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Shell
@@ -233,59 +313,12 @@ export function BlackjackDealerTable({
         tableName={view.tableName}
         anatomy="dealer"
         phaseLabel={phaseCopy.primary}
-        phaseInstruction={setup ? phaseCopy.instruction : controls.instruction || undefined}
+        phaseInstruction={phaseCopy.instruction}
         dealer={dealerSlot}
         insurance={insurance}
         timers={timers}
       >
-        <div
-          data-seated-player-count={seatedPlayerCount}
-          data-ledger-row-count={boxes.length > 0 ? boxes.length : setup ? seatedPlayerCount : 0}
-          data-empty-state={setup && seatedPlayerCount === 0 && boxes.length === 0 ? "true" : "false"}
-        >
-          <DealerLedger
-            playerCount={seatedPlayerCount}
-            boxCount={boxes.length}
-            showRules={false}
-            payoutMode={payoutPhase}
-            setupMode={setup && boxes.length === 0}
-          >
-            {boxes.length > 0 ? (
-              boxes.map((box) => (
-                <DealerLedgerRow
-                  key={box.id}
-                  box={box}
-                  phase={view.phase}
-                  payoutEnabled={controls.showPayoutResults}
-                  insuranceSettleEnabled={controls.showInsuranceSettle}
-                  onSettle={settle(box)}
-                  onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
-                  onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
-                  onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
-                  dealerMayCorrect={Boolean(view.dealerHand?.canEdit || showCards)}
-                  availableLabel={
-                    view.players.find((player) => player.userId === box.playerId)?.available.label
-                  }
-                />
-              ))
-            ) : setup && seatedPlayerCount > 0 ? (
-              joined.map((player) => (
-                <DealerLedgerRow
-                  key={player.userId}
-                  empty
-                  phase={view.phase}
-                  playerName={player.name}
-                  availableLabel={player.available.label}
-                  membershipId={player.userId}
-                />
-              ))
-            ) : (
-              <p className="tt-bj-empty" data-dealer-empty="true" role="status">
-                No players have joined yet.
-              </p>
-            )}
-          </DealerLedger>
-        </div>
+        {layer}
       </BlackjackTableSurface>
     </Shell>
   );
