@@ -2447,6 +2447,8 @@
   overflow: hidden;
 }
 
+/* ========== BLACKJACK TABLE — fixed non-overlapping zones ========== */
+/* Shell TableRail is the only outer rail. This surface owns cloth zones only. */
 .tabletop-skin .tt-bj-table {
   position: relative;
   flex: 1 1 auto;
@@ -2454,57 +2456,129 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 0 0 18px 18px;
-}
-
-.tabletop-skin .tt-bj-markings {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  /* Empty cloth must not steal hits from zone controls. */
   pointer-events: none;
 }
 
-.tabletop-skin .tt-bj-mark-text {
-  font-family: var(--tt-sans);
-  letter-spacing: 0.14em;
-}
-
-.tabletop-skin .tt-bj-mark-text.is-arc {
-  font-size: 9px;
-}
-
-.tabletop-skin .tt-bj-mark-text.is-bj {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  fill: rgba(223, 189, 105, 0.62);
-}
-
-.tabletop-skin .tt-bj-mark-text.is-rule {
-  font-size: 7.5px;
-  letter-spacing: 0.08em;
-  fill: rgba(244, 234, 213, 0.38);
-}
-
-.tabletop-skin .tt-bj-table-chrome {
+.tabletop-skin .tt-bj-zones {
   position: relative;
-  z-index: 2;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* Phase · Dealer · Rules · Identity · Boxes (~two-thirds) · Clear edge */
+  grid-template-rows:
+    minmax(48px, 11%)
+    minmax(44px, 10%)
+    minmax(36px, 9%)
+    minmax(34px, 9%)
+    minmax(140px, 36%)
+    minmax(12px, 12%);
+  align-content: stretch;
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-bj-zone {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-bj-zone.is-phase,
+.tabletop-skin .tt-bj-zone.is-dealer,
+.tabletop-skin .tt-bj-zone.is-boxes {
+  pointer-events: auto;
+}
+
+.tabletop-skin .tt-bj-zone.is-phase {
+  justify-content: flex-start;
   padding: 0 8px;
+  z-index: 3;
+}
+
+.tabletop-skin .tt-bj-zone.is-dealer {
+  z-index: 3;
+  padding: 0 12px;
+}
+
+.tabletop-skin .tt-bj-zone.is-rules {
+  z-index: 1;
+  pointer-events: none;
+  padding: 0 16px;
+}
+
+.tabletop-skin .tt-bj-zone.is-identity {
+  z-index: 1;
+  pointer-events: none;
+  padding: 0 14px;
+}
+
+.tabletop-skin .tt-bj-zone.is-boxes {
+  z-index: 3;
+  justify-content: flex-start;
+  overflow: hidden;
+  padding: 2px 6px 0;
+  /* Ensure nested PlayerBox / retract controls receive hits inside the track. */
+  touch-action: manipulation;
+}
+
+.tabletop-skin .tt-bj-zone.is-boxes .tt-bj-box-track,
+.tabletop-skin .tt-bj-zone.is-boxes .tt-pbox,
+.tabletop-skin .tt-bj-zone.is-boxes .tt-pbox-retract,
+.tabletop-skin .tt-bj-zone.is-boxes .tt-box-wrap {
+  pointer-events: auto;
+}
+
+.tabletop-skin .tt-bj-zone.is-clear {
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-bj-rules {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.tabletop-skin .tt-bj-rules-arc {
+  width: min(78%, 280px);
+  height: 22px;
+  display: block;
+}
+
+.tabletop-skin .tt-bj-rules-ins {
+  margin: 0;
+  font: 600 10px/1.2 var(--tt-sans);
+  letter-spacing: 0.16em;
+  color: rgba(223, 189, 105, 0.5);
+  text-align: center;
+}
+
+.tabletop-skin .tt-bj-rules-bj {
+  margin: 0;
+  font: 500 9px/1.25 var(--tt-sans);
+  letter-spacing: 0.08em;
+  color: rgba(244, 234, 213, 0.34);
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .tabletop-skin .tt-bj-table .tt-ins-pot {
   flex: 0 0 22px;
   min-height: 22px;
   max-height: 22px;
-  margin: 0;
+  margin: 2px 0 0;
   display: grid;
   place-items: center;
   box-sizing: border-box;
@@ -2518,45 +2592,28 @@
 
 .tabletop-skin .tt-bj-table .tt-timers {
   position: absolute;
-  top: 4px;
-  right: 8px;
-  z-index: 3;
+  top: 0;
+  right: 4px;
+  z-index: 4;
   margin: 0;
-}
-
-.tabletop-skin .tt-bj-table-body {
-  position: relative;
-  z-index: 2;
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  /* Empty body chrome must not steal hits from absolute player-layer boxes. */
-  pointer-events: none;
-}
-
-.tabletop-skin .tt-bj-table-body > * {
-  pointer-events: auto;
 }
 
 .tabletop-skin .tt-bj-dealer-position {
   flex: 0 0 auto;
-  width: min(100%, 280px);
+  width: min(68%, 260px);
+  min-width: min(55%, 200px);
   align-self: center;
-  margin-top: 4px;
-  min-height: 46px;
-  max-height: 70px;
+  min-height: 42px;
+  max-height: 64px;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
-  padding: 5px 14px;
-  border: 1px solid rgba(223, 189, 105, 0.26);
+  padding: 4px 12px;
+  border: 1px solid rgba(223, 189, 105, 0.22);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(8, 42, 34, 0.5), rgba(2, 18, 14, 0.32));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: rgba(4, 32, 26, 0.38);
+  box-shadow: none;
   box-sizing: border-box;
 }
 
@@ -2616,20 +2673,13 @@
   opacity: 0.35;
 }
 
-.tabletop-skin .tt-bj-player-layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  /* Stage begins ~62–68% down the felt; give boxes enough height to remain hittable. */
-  top: 58%;
-  bottom: 6%;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  overflow: hidden;
-  padding: 0 6px;
-  pointer-events: auto;
+.tabletop-skin .tt-bj-zone.is-boxes .tt-bj-box-stage,
+.tabletop-skin .tt-bj-zone.is-boxes .tt-bj-setup-layer,
+.tabletop-skin .tt-bj-zone.is-boxes .tt-bj-overlay-list,
+.tabletop-skin .tt-bj-zone.is-boxes > * {
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 .tabletop-skin .tt-bj-setup-layer {
@@ -2846,74 +2896,28 @@
   color: rgba(244, 234, 213, 0.72);
 }
 
-.tabletop-skin .tt-bj-felt-name {
-  position: absolute;
-  left: 50%;
-  bottom: 3%;
-  transform: translateX(-50%);
-  z-index: 1;
-  width: min(92%, 22rem);
-  pointer-events: none !important;
-  text-align: center;
-}
-
-.tabletop-skin .tt-bj-felt-name .tt-table-name {
+.tabletop-skin .tt-bj-zone.is-identity .tt-table-name {
   margin: 0;
-  font-size: clamp(14px, 4.2vw, 20px);
-  letter-spacing: 0.12em;
-  color: rgba(223, 189, 105, 0.58);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 20rem;
+  font-size: clamp(13px, 3.6vw, 17px);
+  letter-spacing: 0.14em;
+  color: rgba(223, 189, 105, 0.62);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  text-align: center;
+  text-transform: uppercase;
 }
 
-/*
- * Payout-only: grid places embroidered name between dealer and settlement region
- * so full-width bars never cover the name. Non-payout BoxStage geometry unchanged.
- */
-.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-table-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
-  grid-template-areas:
-    "dealer"
-    "name"
-    "settle";
-  gap: 10px 0;
-  align-content: stretch;
-}
-
-.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-dealer-position {
-  grid-area: dealer;
-  margin-top: 2px;
-}
-
-.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-felt-name {
-  grid-area: name;
-  position: relative;
-  left: auto;
-  bottom: auto;
-  transform: none;
-  z-index: 2;
-  width: min(92%, 22rem);
-  margin: 0 auto;
-  padding: 2px 8px 6px;
-  justify-self: center;
-}
-
-.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-player-layer {
-  grid-area: settle;
-  position: relative;
-  inset: auto;
-  top: auto;
-  left: auto;
-  right: auto;
-  bottom: auto;
-  z-index: 2;
-  overflow: hidden;
-  padding: 8px 6px 4px;
-  margin-top: 0;
+.tabletop-skin .tt-bj-zone.is-boxes:has([data-box-stage="true"]) .tt-bj-box-ghost,
+.tabletop-skin .tt-bj-zone.is-boxes:has(.tt-bj-overlay-row) .tt-bj-box-ghost {
+  display: none;
 }
 
 .tabletop-skin .tt-bj-dealer[data-bj-phase] .tt-bj-table {

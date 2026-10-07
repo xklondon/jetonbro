@@ -9,6 +9,7 @@ export function TableRail({ className }: { className?: string }) {
       preserveAspectRatio="none"
       aria-hidden="true"
       focusable="false"
+      data-table-outer-rail="true"
     >
       <defs>
         <linearGradient id="tt-rail-gold" x1="0%" y1="0%" x2="100%" y2="0%">

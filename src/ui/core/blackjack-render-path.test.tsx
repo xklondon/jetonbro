@@ -215,10 +215,13 @@ describe("Blackjack Tabletop render path", () => {
     const css = readFileSync(join(process.cwd(), "src/ui/skins/tabletop/tabletop.css"), "utf8");
     expect(css).toContain(".tabletop-skin .tt-bj-table");
     expect(css).toContain(".tabletop-skin .tt-bj-dealer-position");
-    expect(css).toContain(".tabletop-skin .tt-bj-felt-name");
+    expect(css).toContain(".tabletop-skin .tt-bj-zones");
     expect(css).toContain(".tabletop-skin .tt-bj-box-stage");
-    expect(css).toContain(".tabletop-skin .tt-bj-markings");
-    expect(css).toMatch(/\.tt-bj-felt-name[\s\S]*?\.tt-table-name\s*\{[^}]*overflow:\s*visible/s);
+    expect(css).toContain(".tabletop-skin .tt-bj-rules");
+    expect(css).toContain(".tabletop-skin .tt-bj-zone.is-phase");
+    expect(css).toContain(".tabletop-skin .tt-bj-zone.is-identity");
+    expect(css).toMatch(/\.tt-bj-zone\.is-identity[\s\S]*?\.tt-table-name\s*\{[^}]*overflow:\s*visible/s);
+    expect(css).not.toContain(".tabletop-skin .tt-bj-markings");
     expect(css).not.toContain(".tabletop-skin .tt-table-cloth");
     expect(css).not.toMatch(/tt-ledger-results\s*\{[^}]*grid-template-columns:\s*repeat\(2/s);
     expect(css).not.toMatch(/(?<!\.)\n\.box\s*\{|(?<!\.)\n\.table\s*\{|(?<!\.)\n\.dealer\s*\{|(?<!\.)\n\.felt\s*\{/);

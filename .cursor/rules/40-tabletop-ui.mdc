@@ -32,22 +32,25 @@ Full visual authority order and anatomy details: `docs/DESIGN_AUTHORITY.md`.
 
 - Phone composition: `100dvh`, max width ~480px, **no document scroll**
 - Minimum interactive target 44×44px
-- `BlackjackTableSurface` owns Blackjack table geometry: emerald cloth + fabric texture + vignette, curved double gold rail, insurance/BJ rule arcs (CSS/SVG), embroidered table name, Dealer position, player layer
-- Felt/table is the permanent base; overlays never replace it with an admin panel
-- PhaseDisplay: title on line 1, instruction on line 2 — never side-by-side; reserve stable height
+- Three visual layers only: (1) Shell outer rail via `data-table-outer-rail`, (2) uninterrupted emerald cloth, (3) markings + game objects
+- `BlackjackTableSurface` owns fixed non-overlapping zones: phase → dealer → rules → identity → boxes → clear (`data-table-zone`)
+- One outer rail only — never duplicate rails, nested table outlines, or giant internal dark ovals/side wedges
+- Restrained markings: one insurance arc + muted copy; one secondary BJ/stand rule; no orphan lower arcs; no SVG text behind Phase/Dealer
+- Real `BlackjackBoxStage` / joined marks provide box positions — decorative spots do not invent Players
+- PhaseDisplay: title on line 1, instruction on line 2 — never side-by-side; stays entirely above markings
 - Setup joined Players use compact `JoinedPlayerMark` (`PLAYER JOINED`) — never READY / MAIN BET / spreadsheet rows
 - Betting / Playing / Insurance use shared `BlackjackBoxStage` physical positions for Dealer and Player
-- Full-width `DealerLedgerRow` bars are **Payout only**
-- Table name printed on felt: complete name visible, `clamp()` sizing, up to two centred lines, no ellipsis on ordinary names
+- Full-width `DealerLedgerRow` bars are **Payout only**; table name stays in the identity zone above them
+- Table name embroidered mid-felt: complete name visible, `clamp()` sizing, up to two centred lines, no ellipsis on ordinary names; never at the bottom edge
 - Dealer and Player devices are two viewpoints onto the same physical table
-- Stable anatomy across phase transitions: same felt/rail/Dealer/box-stage Y; phases change labels, values, and legal controls
+- Stable anatomy across phase transitions: same zone grid; phases change labels, values, and legal controls
 - `prefers-reduced-motion` must not rely on motion for meaning
 - One canonical visible component per screen/role; adapters only when they mount that component
 - One stylesheet (`tabletop.css`) owns Blackjack table geometry; no Classic CSS in the active bundle
 
 ## Rejected presentation (do not restore)
 
-CSS diamond-hatch wallpaper felt, plain single-colour felt gradient as finished anatomy, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path, padded “Open seat” / minimum-row placeholders, 2×2 Blackjack payout button grids, separate `TableCloth` bottom plaque, nested felt panels, giant bordered Player-list spreadsheet, full-width ledger bars outside Payout, Setup `READY` rows, side-by-side phase title+instruction, ellipsised table names.
+CSS diamond-hatch wallpaper felt, plain single-colour felt gradient as finished anatomy, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path, padded “Open seat” / minimum-row placeholders, 2×2 Blackjack payout button grids, separate `TableCloth` bottom plaque, nested felt panels, giant bordered Player-list spreadsheet, full-width ledger bars outside Payout, Setup `READY` rows, side-by-side phase title+instruction, ellipsised table names, duplicate top rails inside `BlackjackTableSurface`, giant dark internal oval / side wedges, disconnected lower orphan arcs, SVG rule text behind PhaseDisplay or DealerPosition.
 
 ## Tests
 

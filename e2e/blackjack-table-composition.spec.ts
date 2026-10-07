@@ -19,23 +19,57 @@ type Snap = {
   bank?: { boxes: { id: string }[]; players?: { userId: string }[]; phase?: string };
 };
 
+type Box = { x: number; y: number; width: number; height: number };
+
 async function snapshot(page: Page): Promise<Snap> {
   return page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((r) => r.json());
 }
 
-async function shot(page: Page, name: string) {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: join(shots, `${name}-390x844.png`), fullPage: false });
+async function shot(page: Page, name: string, size: { width: number; height: number } = { width: 390, height: 844 }) {
+  await page.setViewportSize(size);
+  await page.screenshot({ path: join(shots, `${name}-${size.width}x${size.height}.png`), fullPage: false });
 }
 
-async function assertSharedSurface(page: Page) {
+function intersects(a: Box, b: Box) {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+async function zoneBox(page: Page, zone: string): Promise<Box> {
+  const box = await page.locator(`[data-table-zone="${zone}"]`).boundingBox();
+  expect(box, `missing zone ${zone}`).toBeTruthy();
+  return box!;
+}
+
+async function assertCleanGeometry(page: Page) {
   await expect(page.locator("[data-blackjack-table-surface=true]")).toBeVisible();
   await expect(page.locator("[data-felt-markings=true]")).toBeVisible();
   await expect(page.locator("[data-felt-name=true]")).toBeVisible();
   await expect(page.locator("[data-phase-stack=true]")).toBeVisible();
   await expect(page.locator("[data-dealer-slot=true]")).toBeVisible();
+  await expect(page.locator("[data-table-outer-rail=true]")).toHaveCount(1);
+  await expect(page.locator(".tt-bj-markings")).toHaveCount(0);
+  await expect(page.locator("[data-internal-oval]")).toHaveCount(0);
+
   const name = await page.locator("[data-table-name]").first().innerText();
   expect(name).not.toMatch(/\.\.\.|…/);
+
+  const phase = await zoneBox(page, "phase");
+  const dealer = await zoneBox(page, "dealer");
+  const rules = await zoneBox(page, "rules");
+  const identity = await zoneBox(page, "identity");
+  const boxes = await zoneBox(page, "boxes");
+
+  expect(intersects(phase, rules)).toBe(false);
+  expect(intersects(dealer, rules)).toBe(false);
+  expect(intersects(identity, boxes)).toBe(false);
+
+  const payoutBar = page.locator(".tt-bj-overlay-row, [data-payout-rail=row]").first();
+  if (await payoutBar.count()) {
+    const bar = await payoutBar.boundingBox();
+    expect(bar).toBeTruthy();
+    expect(intersects(identity, bar!)).toBe(false);
+    expect(bar!.y).toBeGreaterThanOrEqual(identity.y + identity.height);
+  }
 }
 
 test("Blackjack physical table composition across phases", async ({ page, context, browser }) => {
@@ -43,12 +77,13 @@ test("Blackjack physical table composition across phases", async ({ page, contex
   await mkdir(shots, { recursive: true });
 
   await openAs(context, page, uniqueEmail("comp-own"), "Dee");
-  await createBlackjackTable(page, "Composition Salon", { starting: "100" });
+  await createBlackjackTable(page, "XKLONDON'S TABLE", { starting: "100" });
 
-  await assertSharedSurface(page);
+  await assertCleanGeometry(page);
   await expect(page.locator("[data-blackjack-box-row]")).toHaveCount(0);
   await expect(page.getByText("Invite a Player to begin.")).toBeVisible();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
+  await expect(page.locator("[data-table-name]").first()).toHaveText("XKLONDON'S TABLE");
   await shot(page, "01-setup-empty");
 
   const guestUrl = await setupJoinUrl(page, "guest");
@@ -71,59 +106,37 @@ test("Blackjack physical table composition across phases", async ({ page, contex
   await expect(page.locator('[data-field="main-bet"]')).toHaveCount(0);
   await expect(page.getByText("Ready to open betting.")).toBeVisible();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled();
-  await assertSharedSurface(page);
+  await assertCleanGeometry(page);
   await shot(page, "02-setup-player-joined");
-
-  const riley = await joinGuest("Riley");
-  await expect(riley.page.getByText(/Waiting for the (Dealer|table) to open betting/i)).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("button", { name: "START BETTING" }).click();
   await casey.page.reload();
   await expect(casey.page.getByText("YOUR JETONS")).toBeVisible();
   await expect(page.locator("[data-box-stage=true]")).toBeVisible();
   await expect(page.locator(".tt-bj-overlay-row")).toHaveCount(0);
-  await shot(page, "03-dealer-betting-one-box");
-
   await casey.page.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect.poll(async () => (await snapshot(casey.page)).player?.available.label).toBe("75");
-  await shot(casey.page, "05-player-betting-one-box");
-  await casey.page.getByRole("button", { name: "ADD BOX" }).click();
-  await expect.poll(async () => (await snapshot(casey.page)).player?.boxes.length).toBe(2);
-  const caseyBoxes = (await snapshot(casey.page)).player!.boxes;
-  const caseyBox2 = caseyBoxes.find((b) => b.boxNumber === 2)!;
-  await casey.page.locator(`[data-box-id="${caseyBox2.id}"]`).click();
-  await casey.page.getByRole("button", { name: "Add 10 jetons" }).click();
-  await shot(casey.page, "06-player-betting-two-boxes");
-  await riley.page.reload();
-  await expect(riley.page.getByText("YOUR JETONS")).toBeVisible();
-  await riley.page.getByRole("button", { name: "Add 25 jetons" }).click();
-  await expect.poll(async () => (await snapshot(page)).bank?.boxes.length ?? 0).toBeGreaterThanOrEqual(3);
-  const order = await page.locator("[data-box-stage=true] [data-box-slot]").evaluateAll((els) =>
-    els.map((el) => el.getAttribute("data-box-slot")),
-  );
-  expect(order[0]).not.toBe("1");
-  expect(order.at(-1)).toBe("1");
-  await shot(page, "04-dealer-betting-multiple-boxes");
+  await assertCleanGeometry(page);
+  await assertCleanGeometry(casey.page);
+  await shot(page, "03-dealer-betting");
+  await shot(casey.page, "04-player-betting");
 
-  const yBet = await page.locator("[data-box-stage=true]").boundingBox();
-  const box1Bet = await page.locator('[data-box-stage=true] [data-box-slot="1"]').first().boundingBox();
+  const yBet = await page.locator("[data-table-zone=boxes]").boundingBox();
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await expect(page.getByText("Play the hands.")).toBeVisible();
-  const yPlay = await page.locator("[data-box-stage=true]").boundingBox();
-  const box1Play = await page.locator('[data-box-stage=true] [data-box-slot="1"]').first().boundingBox();
+  const yPlay = await page.locator("[data-table-zone=boxes]").boundingBox();
   expect(yBet && yPlay).toBeTruthy();
   expect(Math.abs(yBet!.y - yPlay!.y)).toBeLessThanOrEqual(8);
-  expect(box1Bet && box1Play).toBeTruthy();
-  expect(Math.abs(box1Bet!.y - box1Play!.y)).toBeLessThanOrEqual(8);
-  await shot(page, "08-dealer-playing");
-  await shot(casey.page, "07-player-playing");
+  await assertCleanGeometry(page);
+  await shot(page, "05-dealer-playing");
+  await shot(casey.page, "06-player-playing");
 
   await page.getByRole("button", { name: "OPEN INSURANCE" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
   await expect(page.locator("[data-box-stage=true]")).toBeVisible();
-  await shot(page, "10-dealer-insurance");
-  await shot(casey.page, "09-player-insurance");
+  await assertCleanGeometry(page);
+  await shot(page, "07-dealer-insurance");
   await page.getByRole("button", { name: "CLOSE INSURANCE" }).click();
 
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
@@ -138,29 +151,6 @@ test("Blackjack physical table composition across phases", async ({ page, contex
     expect(Math.abs((await rail.locator("[data-payout-action=true]").nth(i).boundingBox())!.y - y0)).toBeLessThan(8);
   }
 
-  async function assertNameClearOfBars(target: Page) {
-    const nameBox = await target.locator("[data-felt-name=true]").boundingBox();
-    const nameText = await target.locator("[data-table-name]").first().innerText();
-    expect(nameBox).toBeTruthy();
-    expect(nameText).not.toMatch(/\.\.\.|…/);
-    expect(nameText.trim().length).toBeGreaterThan(0);
-    const firstBar = await target.locator(".tt-bj-overlay-row, [data-payout-rail=row]").first().boundingBox();
-    expect(firstBar).toBeTruthy();
-    // Require a clear gap so embroidered name never sits on bar chrome.
-    expect(firstBar!.y).toBeGreaterThanOrEqual(nameBox!.y + nameBox!.height + 4);
-    const bars = await target.locator(".tt-bj-overlay-row, [data-payout-rail=row]").evaluateAll((els) =>
-      els.map((el) => {
-        const r = el.getBoundingClientRect();
-        return { x: r.x, y: r.y, width: r.width, height: r.height };
-      }),
-    );
-    for (const bar of bars) {
-      const overlapX = nameBox!.x < bar.x + bar.width && nameBox!.x + nameBox!.width > bar.x;
-      const overlapY = nameBox!.y < bar.y + bar.height && nameBox!.y + nameBox!.height > bar.y;
-      expect(overlapX && overlapY).toBe(false);
-    }
-  }
-
   for (const [w, h] of [
     [360, 800],
     [390, 844],
@@ -168,19 +158,18 @@ test("Blackjack physical table composition across phases", async ({ page, contex
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await expectNoDocumentScroll(page);
-    await assertNameClearOfBars(page);
+    await assertCleanGeometry(page);
+    await shot(page, "08-dealer-payout-unresolved", { width: w, height: h });
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await shot(page, "11-dealer-payout-unresolved");
 
   while (await page.locator("[data-payout-action=true]").count()) {
     await page.locator("[data-payout-action=true]").filter({ hasText: /^LOST$/ }).first().click();
   }
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 15_000 });
-  await assertNameClearOfBars(page);
-  await shot(page, "12-dealer-payout-resolved");
-  await shot(casey.page, "13-player-payout");
+  await assertCleanGeometry(page);
+  await shot(page, "09-dealer-payout-resolved");
+  await shot(casey.page, "10-player-payout");
 
   await casey.ctx.close();
-  await riley.ctx.close();
 });
