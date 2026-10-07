@@ -984,7 +984,13 @@ export async function distributeJetons(input: {
     throw new DomainError("INVALID_AMOUNT", "Enter a jeton amount greater than zero.");
   }
   return withIdempotency(input.actorId, input.idempotencyKey, "distributeJetons", input, async () => {
-    const table = await requireOwnerOrBank(input.tableId, input.actorId);
+    // Poker buy-ins are Owner-only between hands; Blackjack still allows Owner or Bank/Dealer.
+    const peek = await prisma.table.findUnique({ where: { id: input.tableId } });
+    if (!peek) throw new NotFoundError("Table not found.");
+    const table =
+      peek.game === "POKER"
+        ? await requireOwner(input.tableId, input.actorId)
+        : await requireOwnerOrBank(input.tableId, input.actorId);
     if (table.game === "POKER") {
       const hand = table.currentPokerHandId
         ? await prisma.pokerHand.findUnique({ where: { id: table.currentPokerHandId } })

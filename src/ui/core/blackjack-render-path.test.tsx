@@ -214,7 +214,9 @@ describe("Blackjack Tabletop render path", () => {
     expect(bankAdapter).toContain("BlackjackDealerTable");
     const css = readFileSync(join(process.cwd(), "src/ui/skins/tabletop/tabletop.css"), "utf8");
     expect(css).toContain(".tabletop-skin .tt-bj-felt");
-    expect(css).toContain(".tabletop-skin .tt-bj-dealer-slot");
+    expect(css).toContain(".tabletop-skin .tt-bj-dealer-band");
+    expect(css).toContain(".tabletop-skin .tt-table-cloth");
+    expect(css).not.toMatch(/tt-ledger-results\s*\{[^}]*grid-template-columns:\s*repeat\(2/s);
     expect(css).not.toMatch(/(?<!\.)\n\.box\s*\{|(?<!\.)\n\.table\s*\{|(?<!\.)\n\.dealer\s*\{|(?<!\.)\n\.felt\s*\{/);
     expect(css).not.toMatch(/classic-skin|classic\/board/);
     // Phase modifiers must not redefine felt structural geometry

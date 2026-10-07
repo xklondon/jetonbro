@@ -52,7 +52,7 @@ export function PokerBoard({
   verifiedJoinUrl?: string | null;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
+  const [menuView, setMenuView] = useState<"menu" | "dealer" | "session" | "jetons">("menu");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
   const [winners, setWinners] = useState<Record<number, string[]>>({});
@@ -190,6 +190,19 @@ export function PokerBoard({
             {canAddBesideStart ? (
               <button type="button" className="tt-btn" data-add-player-dock="true" onClick={() => setInviteOpen(true)}>
                 ADD PLAYER
+              </button>
+            ) : null}
+            {menuIds.includes("giveJetons") ? (
+              <button
+                type="button"
+                className="tt-btn"
+                data-poker-buy-in="true"
+                onClick={() => {
+                  setMenuView("jetons");
+                  setMenuOpen(true);
+                }}
+              >
+                BUY-IN
               </button>
             ) : null}
           </div>

@@ -50,6 +50,13 @@ Owner advances physical-card streets only after the betting round is matched. Bl
 - Phase copy: one primary label + optional instruction (`phase-copy.ts`)
 - START HAND stays pressable; server `POKER_SEATS` stays authoritative; map failures to one compact dock hint
 
+## Owner buy-in (before a live hand)
+
+- Reuse existing `giveJetons` → `distributeJetons` (ledger `BANK_DISTRIBUTION` / `INITIAL_ALLOCATION`) — no second funding path
+- **Owner only** (`canGiveJetons`); Dealer-not-Owner and Players are rejected
+- Available only during `POKER_SETUP` and `HAND_COMPLETE` (between hands); never while a hand has cards, actions, or a live pot
+- Compact `BUY-IN` dock/menu control opens the existing player+amount sheet; refresh shows the new AVAILABLE balance
+
 ## Accounting reminders
 
 - AVAILABLE → LOCKED_POKER only; no Bank reserve path for Poker wagers

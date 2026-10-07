@@ -32,14 +32,15 @@ Full visual authority order and anatomy details: `docs/DESIGN_AUTHORITY.md`.
 
 - Phone composition: `100dvh`, max width ~480px, **no document scroll**
 - Minimum interactive target 44×44px
-- One cloth table name (`data-table-name`) — not a giant page heading and not duplicated
-- Stable anatomy across phase transitions: same felt/rail/header/dock allocation; phases change labels, values, and legal controls
+- Shared `TableCloth` under Dealer rows / Player boxes: deep emerald felt, restrained gold rail, table name once (`data-table-name`) — Dealer and Player are opposite views of the same table
+- No title-card name, no duplicated name, no giant empty bordered rectangle, no yellow centre divider
+- Stable anatomy across phase transitions: same felt/rail/header/dock allocation; phases change labels, values, and legal controls — never replace the table furniture
 - `prefers-reduced-motion` must not rely on motion for meaning
 - One canonical visible component per screen/role; adapters only when they mount that component
 
 ## Rejected presentation (do not restore)
 
-CSS diamond-hatch wallpaper felt, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques on the Dealer board, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path.
+CSS diamond-hatch wallpaper felt, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques on the Dealer board, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path, padded “Open seat” / minimum-row Dealer placeholders, 2×2 Blackjack payout button grids.
 
 Dealer Blackjack uses full-width per-box rows (`DealerLedgerRow`). Player Blackjack keeps betting boxes.
 

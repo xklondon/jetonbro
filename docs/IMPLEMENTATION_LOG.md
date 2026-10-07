@@ -1,3 +1,14 @@
+# Factual Dealer rows + shared cloth + Poker buy-in
+
+Date: 2026-10-07
+
+- Branch `fix/blackjack-stable-anatomy-v1` from `1cc4049`.
+- Removed padded "Open seat" Dealer rows; empty state is factual only.
+- Compact Dealer band + shared `TableCloth`; payout `LOST | TIE | BJ | WIN` one row.
+- Poker Owner `BUY-IN` reuses `distributeJetons` (Owner-only between hands).
+- Not pushed / not deployed.
+
+---
 # Admin global wipe + Dealer box rows
 
 Date: 2026-10-07

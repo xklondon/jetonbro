@@ -9,16 +9,16 @@ import { TableButton } from "./TableButton";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
   LOST: "LOST",
-  PUSH: "DRAW",
-  BLACKJACK: "BLACKJACK",
-  WON: "WON",
+  PUSH: "TIE",
+  BLACKJACK: "BJ",
+  WON: "WIN",
 };
 
 const COMPACT_LABEL: Record<BoxOutcome, string> = {
   LOST: "LOST",
-  PUSH: "DRAW",
-  BLACKJACK: "BLACKJACK",
-  WON: "WON",
+  PUSH: "TIE",
+  BLACKJACK: "BJ",
+  WON: "WIN",
 };
 
 const ACCESS_NAME: Record<BoxOutcome, string> = {
@@ -61,20 +61,21 @@ export function ResultControls({
   if (submitted || box.outcome) return null;
   const title = `${box.playerName || "Player"} · BOX ${box.boxNumber}`;
   return (
-    <span className="tt-ledger-results" role="group" aria-label={`Settle ${title}`}>
+    <span className="tt-ledger-results" role="group" aria-label={`Settle ${title}`} data-payout-rail="row">
       {PAYOUT_RAIL_ORDER.map((outcome) => (
           <TableButton
             key={outcome}
             variant="result"
             result={RESULT_KIND[outcome]}
             data-payout-action="true"
+            data-outcome={outcome}
             aria-label={`Set Box ${box.boxNumber} result: ${ACCESS_NAME[outcome]}`}
             onClick={() => {
               setSubmitted(true);
               onSettle(outcome);
             }}
           >
-            {COMPACT_LABEL[outcome] === "BJ" ? "BJ" : COMPACT_LABEL[outcome]}
+            {COMPACT_LABEL[outcome]}
           </TableButton>
       ))}
     </span>
@@ -116,6 +117,7 @@ export function DealerLedgerRow({
   playerName,
   availableLabel,
   empty,
+  membershipId,
 }: {
   box?: BoxView;
   phase?: string;
@@ -129,6 +131,7 @@ export function DealerLedgerRow({
   playerName?: string;
   availableLabel?: string;
   empty?: boolean;
+  membershipId?: string;
 }) {
   if (empty || !box) {
     return (
@@ -136,6 +139,7 @@ export function DealerLedgerRow({
         className="tt-ledger-row is-idle is-empty"
         data-blackjack-box-row="true"
         data-player-row="true"
+        data-membership-id={membershipId}
         data-box-phase={phase}
       >
         <span className="tt-ledger-who">

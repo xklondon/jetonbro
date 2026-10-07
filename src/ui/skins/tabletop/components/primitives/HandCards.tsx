@@ -97,21 +97,36 @@ export function DealerHandPanel({
   canEdit,
   onAdd,
   onUndo,
+  quietEmpty = false,
 }: {
   hand?: HandView | null;
   canEdit: boolean;
   onAdd: (rank: string) => void;
   onUndo: () => void;
+  /** Compact Dealer band: reserve height without a giant “No cards” label. */
+  quietEmpty?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ranks = hand?.ranks ?? [];
+  const empty = ranks.length === 0;
 
   return (
-    <div className="tt-dealer-hand" data-dealer-hand="true" data-dealer-row="true">
+    <div
+      className={`tt-dealer-hand${quietEmpty && empty ? " is-quiet-empty" : ""}`}
+      data-dealer-hand="true"
+      data-dealer-row="true"
+      data-hand-empty={empty ? "true" : "false"}
+    >
       <div className="tt-dealer-hand-head">
         <small>DEALER HAND</small>
       </div>
-      <HandTiles hand={hand} emptyLabel="No cards" />
+      {quietEmpty && empty && !canEdit ? (
+        <span className="tt-hand-tiles is-empty is-quiet" data-box-cards="true" data-hand-empty="true" aria-hidden="true">
+          {"\u00a0"}
+        </span>
+      ) : (
+        <HandTiles hand={hand} emptyLabel={quietEmpty ? "—" : "No cards"} />
+      )}
       {canEdit ? (
         <div className="tt-dealer-hand-actions">
           <TableButton variant="compact" data-card-action="add" onClick={() => setOpen(true)}>

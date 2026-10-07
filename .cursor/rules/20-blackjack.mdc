@@ -34,12 +34,15 @@ No backward transitions and no phase skipping. Insurance is a Bank-triggered win
 - `BlackjackDealerTable` is the canonical Dealer surface for **every** phase including `TABLE_SETUP`
 - `BankTable` is a thin adapter that mounts `BlackjackDealerTable`
 - Owner/Dealer at BJ `TABLE_SETUP` selects `BLACKJACK_DEALER` — **not** `PHASE_ZERO_DEALER` / PhaseZero ledger
+- **Factual rows only**: render one `DealerLedgerRow` per real active box, or per seated non-bank membership during `TABLE_SETUP` before boxes exist — never pad “Open seat”, fake Players, or minimum-row placeholders
+- Zero seated Players → zero ledger rows + compact empty copy `No players have joined yet.`
+- Invited/pending identities are not seated Players; Bank/Dealer membership is not a Player row
 - Active boxes render as full-width horizontal `DealerLedgerRow` instances (one real box each) — not spatial PlayerBox cards on the Dealer board
 - Player Blackjack continues to use casino betting boxes; Dealer and Player anatomies intentionally differ
-- Same shell, felt dimensions, table-name position, Dealer slot, and row-list region across Setup / Betting / Playing / Insurance / Payout
+- Stable vertical composition: header → phase → compact Dealer band → factual box rows → shared `TableCloth` (table name once) → dock
 - Phase changes may alter labels, instruction, row values, legal controls, and badges — not felt geometry
-- Dealer position is always present (quiet empty state when no cards); Card Assist expands inside the reserved region
-- Unresolved payout: one horizontal four-action group `LOST | DRAW | BLACKJACK | WON` (DRAW maps to domain PUSH / Stand-off); never a 2×2 grid
+- Compact Dealer band always present (quiet reserved height when no cards); Card Assist expands inside that band
+- Unresolved payout: one horizontal four-action group `LOST | TIE | BJ | WIN` (maps to LOST / PUSH / BLACKJACK / WON; accessible Lost / Stand-off / Blackjack / Won); never a 2×2 grid and never wrap at 360–430px
 - Insurance settle stays separate: `INS LOST | INS WON`
 
 ## Dock matrix (product labels)

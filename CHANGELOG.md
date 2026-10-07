@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Factual Dealer rows + shared cloth + Poker buy-in
+
+- Dealer Table Setup no longer pads fake “Open seat” rows; empty state is factual only.
+- Compact Dealer band + shared `TableCloth`; payout controls `LOST | TIE | BJ | WIN` on one row.
+- Poker Owner `BUY-IN` reuses `giveJetons` / `distributeJetons` before a live hand (Owner-only).
+
 ### Admin global wipe + Dealer box rows
 
 - One admin-only Home action `WIPE ALL TABLES` (`JETONBRO_ADMIN_EMAIL`, exact phrase). Physically deletes every Table across owners/statuses after FK detach; users and personal ledger history remain. Owner `DELETE ALL MY TABLES` product path removed.

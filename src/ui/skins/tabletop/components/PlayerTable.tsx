@@ -12,7 +12,7 @@ import { RankPadSheet } from "./primitives/HandCards";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { PlayerBox } from "./primitives/PlayerBox";
 import { TableButton } from "./primitives/TableButton";
-import { TableName } from "./primitives/TableName";
+import { TableCloth } from "./primitives/TableCloth";
 import { ownerChrome } from "./owner-chrome";
 import { Wallet } from "./primitives/JetonTray";
 
@@ -238,7 +238,7 @@ export function PlayerTable({
         label={phaseCopy.primary}
         instruction={controls.instruction && controls.instruction !== "Round complete" ? controls.instruction : undefined}
       />
-      <TableName name={view.tableName} />
+      <div className="tt-bj-player-felt" data-bj-felt="true" data-bj-anatomy="player">
       <div className="tt-stage">
         <div className="tt-boxes" data-box-stage="true" data-count={Math.min(sorted.length, 4)}>
           {sorted.map((box) => {
@@ -284,6 +284,8 @@ export function PlayerTable({
             ADD BOX
           </TableButton>
         ) : null}
+      </div>
+      <TableCloth name={view.tableName} />
       </div>
     </Shell>
   );

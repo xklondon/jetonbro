@@ -129,7 +129,7 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expectNoDocumentScroll(page);
   await page.screenshot({ path: join(shots, "payout-unresolved-dealer-390x844.png") });
 
-  await page.locator(`[data-settle-box="${box1.id}"] [data-payout-action="true"]`).filter({ hasText: /^WON$/ }).click();
+  await page.locator(`[data-settle-box="${box1.id}"] [data-payout-action="true"]`).filter({ hasText: /^WIN$/ }).click();
   await page.locator(`[data-settle-box="${box2.id}"] [data-payout-action="true"]`).filter({ hasText: /^LOST$/ }).click();
   const insLost = page.locator(`[data-settle-box="${box1.id}"] [data-insurance-action="lost"]`);
   if (await insLost.count()) await insLost.click();

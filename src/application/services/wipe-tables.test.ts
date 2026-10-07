@@ -38,7 +38,9 @@ describeDb("global WIPE ALL TABLES", () => {
     else process.env.JETONBRO_ADMIN_EMAIL = prevAdmin;
   });
 
-  test("admin phrase removes every table across owners; ledger and users survive; retry is idempotent", async () => {
+  test(
+    "admin phrase removes every table across owners; ledger and users survive; retry is idempotent",
+    async () => {
     // Global wipe touches every table in the shared DB; allow a long window.
 
     const admin = await user(`wipe-admin-${randomUUID()}@jetonbro.test`, "Admin");
@@ -190,5 +192,7 @@ describeDb("global WIPE ALL TABLES", () => {
       idempotencyKey: randomUUID(),
     });
     expect(again.deleted).toBe(0);
-  });
+  },
+  180_000,
+  );
 });

@@ -15,13 +15,18 @@ import { ActionDock } from "./primitives/ActionDock";
 import { DealerHandPanel } from "./primitives/HandCards";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
-import { TableName } from "./primitives/TableName";
+import { TableCloth } from "./primitives/TableCloth";
 
 /** Collect every active box instance — one felt box each; never aggregate by Player. */
 export function activeDealerBoxes(view: BankTableView): BoxView[] {
   const fromPlayers = view.players.flatMap((player) => player.boxes);
   if (fromPlayers.length > 0) return fromPlayers;
   return view.boxes;
+}
+
+/** Active non-bank seated memberships only — never invites, never fabricated seats. */
+export function seatedPlayers(view: BankTableView) {
+  return view.players.filter((player) => Boolean(player.userId));
 }
 
 function boxesReady(view: BankTableView) {
@@ -72,9 +77,8 @@ export function BlackjackDealerTable({
     insuranceOpen: view.insurance.window === "OPEN",
   });
   const boxes = activeDealerBoxes(view);
-  const waitingPlayers = setup
-    ? view.players.filter((player) => player.boxes.length === 0)
-    : [];
+  const joined = seatedPlayers(view);
+  const seatedPlayerCount = joined.length;
   const dealerCanEdit = Boolean(view.dealerHand?.canEdit);
   const payoutPhase = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const showCards = view.phase === "PLAYING" || payoutPhase;
@@ -115,9 +119,6 @@ export function BlackjackDealerTable({
     />
   );
 
-  const emptySlots = setup && boxes.length === 0 && waitingPlayers.length === 0 ? 2 : 0;
-  void showCards;
-
   return (
     <Shell
       hideBrand
@@ -131,6 +132,8 @@ export function BlackjackDealerTable({
         "data-guest-join-url": view.guestJoinUrl ?? undefined,
         "data-verified-join-url": view.verifiedJoinUrl ?? undefined,
         "data-box-count": boxes.length,
+        "data-seated-player-count": seatedPlayerCount,
+        "data-ledger-row-count": boxes.length > 0 ? boxes.length : setup ? seatedPlayerCount : 0,
         "data-centre-divider": "absent",
       }}
       overlay={
@@ -198,7 +201,6 @@ export function BlackjackDealerTable({
         }
       />
       <div className="tt-bj-felt" data-bj-felt="true" data-bj-anatomy="dealer">
-        <TableName name={view.tableName} />
         {view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
           <div className="tt-timers">
             <Countdown deadline={view.bettingCloseDeadlineAt} label="Cards in" />
@@ -214,63 +216,69 @@ export function BlackjackDealerTable({
             ? `INSURANCE · ${view.insurance.total.label} · ${view.insurance.count} ${view.insurance.count === 1 ? "bet" : "bets"}`
             : "\u00a0"}
         </div>
-        <section className="tt-bj-dealer-slot" data-dealer-slot="true" aria-label="Dealer">
-          <header className="tt-bj-dealer-slot-head">
+        <section className="tt-bj-dealer-band" data-dealer-slot="true" aria-label="Dealer">
+          <header className="tt-bj-dealer-band-head">
             <span>DEALER</span>
             <strong>{view.dealerName || "Dealer"}</strong>
           </header>
-          <div className="tt-bj-dealer-slot-body">
+          <div className="tt-bj-dealer-band-body">
             <DealerHandPanel
               hand={view.dealerHand}
               canEdit={dealerCanEdit}
+              quietEmpty
               onAdd={(rank) => void onCommand("addCard", { dealer: "true", rank })}
               onUndo={() => void onCommand("removeCard", { dealer: "true" })}
             />
           </div>
         </section>
-        <div className="tt-bj-box-list" data-dealer-boxes="true" data-box-count={boxes.length}>
+        <div
+          className="tt-bj-box-list"
+          data-dealer-boxes="true"
+          data-box-count={boxes.length}
+          data-seated-player-count={seatedPlayerCount}
+          data-ledger-row-count={boxes.length > 0 ? boxes.length : setup ? seatedPlayerCount : 0}
+          data-empty-state={setup && seatedPlayerCount === 0 && boxes.length === 0 ? "true" : "false"}
+        >
           <DealerLedger
-            playerCount={view.playerCount}
+            playerCount={seatedPlayerCount}
             boxCount={boxes.length}
             showRules={false}
             payoutMode={payoutPhase}
           >
-            {boxes.length > 0
-              ? boxes.map((box) => (
-                  <DealerLedgerRow
-                    key={box.id}
-                    box={box}
-                    phase={view.phase}
-                    payoutEnabled={controls.showPayoutResults}
-                    insuranceSettleEnabled={controls.showInsuranceSettle}
-                    onSettle={settle(box)}
-                    onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
-                    onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
-                    onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
-                    dealerMayCorrect={Boolean(view.dealerHand?.canEdit || showCards)}
-                  />
-                ))
-              : waitingPlayers.length > 0
-                ? waitingPlayers.map((player) => (
-                    <DealerLedgerRow
-                      key={player.userId}
-                      empty
-                      phase={view.phase}
-                      playerName={player.name}
-                      availableLabel={player.available.label}
-                    />
-                  ))
-                : Array.from({ length: emptySlots }, (_, index) => (
-                    <DealerLedgerRow
-                      key={`open-${index}`}
-                      empty
-                      phase={view.phase}
-                      playerName="Open seat"
-                      availableLabel="—"
-                    />
-                  ))}
+            {boxes.length > 0 ? (
+              boxes.map((box) => (
+                <DealerLedgerRow
+                  key={box.id}
+                  box={box}
+                  phase={view.phase}
+                  payoutEnabled={controls.showPayoutResults}
+                  insuranceSettleEnabled={controls.showInsuranceSettle}
+                  onSettle={settle(box)}
+                  onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
+                  onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
+                  onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
+                  dealerMayCorrect={Boolean(view.dealerHand?.canEdit || showCards)}
+                />
+              ))
+            ) : setup && seatedPlayerCount > 0 ? (
+              joined.map((player) => (
+                <DealerLedgerRow
+                  key={player.userId}
+                  empty
+                  phase={view.phase}
+                  playerName={player.name}
+                  availableLabel={player.available.label}
+                  membershipId={player.userId}
+                />
+              ))
+            ) : (
+              <p className="tt-bj-empty" data-dealer-empty="true" role="status">
+                No players have joined yet.
+              </p>
+            )}
           </DealerLedger>
         </div>
+        <TableCloth name={view.tableName} />
       </div>
     </Shell>
   );

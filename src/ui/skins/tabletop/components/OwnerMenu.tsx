@@ -152,8 +152,8 @@ export function OwnerMenu({
               </button>
             ) : null}
             {giveJetons ? (
-              <button type="button" className="tt-btn" onClick={() => setView("jetons")}>
-                GIVE JETONS
+              <button type="button" className="tt-btn" data-give-jetons="true" onClick={() => setView("jetons")}>
+                {game === "POKER" ? "BUY-IN" : "GIVE JETONS"}
               </button>
             ) : null}
             {rename ? (
@@ -419,7 +419,7 @@ export function OwnerMenu({
 
       {current === "jetons" || current === "player" ? (
         <>
-          <h3>{current === "jetons" ? "Give jetons" : "Add player"}</h3>
+          <h3>{current === "jetons" ? (game === "POKER" ? "Buy-in" : "Give jetons") : "Add player"}</h3>
           {current === "jetons" ? (
             <>
               <select className="tt-input" value={memberId} onChange={(event) => setMemberId(event.target.value)} aria-label="Player">

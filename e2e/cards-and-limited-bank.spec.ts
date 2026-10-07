@@ -63,7 +63,7 @@ test("optional manual flow still deals and pays without cards", async ({ page, c
   await expect(playerPage.locator(".add-cards")).toHaveCount(0);
   await page.screenshot({ path: join(out, "app-playing-optional-cards-390x844.png") });
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
-  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
+  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WIN$/ }).first().click();
   await expect(playerPage.getByText(/Won|YOUR JETONS/i).first()).toBeVisible();
   await playerContext.close();
 });
@@ -77,7 +77,7 @@ test("card-assist stays in the menu and does not block play", async ({ page, con
   await expect(page.locator(".add-cards")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "HAND COMPLETE" })).toHaveCount(0);
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
-  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
+  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WIN$/ }).first().click();
   await expect(playerPage.getByText(/Won|YOUR JETONS/i).first()).toBeVisible();
   await playerContext.close();
 });
@@ -146,7 +146,7 @@ test("Limited Bank win then next round keeps mode and balance", async ({ page, c
   await page.screenshot({ path: join(out, "app-limited-bank-betting-390x844.png") });
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
-  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
+  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WIN$/ }).first().click();
   await page.getByRole("button", { name: /START (NEXT ROUND|BETTING)/ }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await openTableMenu(page);

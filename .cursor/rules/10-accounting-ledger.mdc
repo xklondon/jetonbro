@@ -42,6 +42,8 @@ Canonical services/domains: `src/domain/ledger/`, `src/application/services/blac
 ## Commands and sessions
 
 - Value-changing commands require an idempotency key and write ≥1 ledger entry in the same transaction
+- Extra jetons use the existing `giveJetons` → `distributeJetons` path (`INITIAL_ALLOCATION` / `BANK_DISTRIBUTION`) — no second funding command
+- Poker buy-ins via that path are **Owner-only** and only during `POKER_SETUP` / `HAND_COMPLETE`
 - Tables host sequential `GameSession` records (`SETUP | ACTIVE | COMPLETED | ABANDONED`)
 - Closing a session writes `GAME_SESSION_CLOSE` (remaining AVAILABLE → 0); opening writes `GAME_SESSION_OPEN` for selected participants — fresh allocation, no leftover AVAILABLE across games
 - First-table join uses `INITIAL_ALLOCATION` once per membership (`starting-jetons:{tableId}:{userId}`)

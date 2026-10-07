@@ -114,7 +114,7 @@ test("Dealer box rows + admin WIPE ALL TABLES screenshots", async ({ page, conte
   await page.getByRole("button", { name: "CLOSE INSURANCE" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.getByRole("button", { name: /Set Box .* result: Stand-off/ }).first()).toBeVisible();
-  await expect(page.locator("[data-payout-action=true]").filter({ hasText: /^DRAW$/ }).first()).toBeVisible();
+  await expect(page.locator("[data-payout-action=true]").filter({ hasText: /^TIE$/ }).first()).toBeVisible();
   await shot(page, "07-dealer-payout-unresolved");
 
   await page.locator("[data-payout-action=true]").filter({ hasText: /^LOST$/ }).first().click();
