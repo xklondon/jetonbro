@@ -213,9 +213,10 @@ describe("Blackjack Tabletop render path", () => {
     const bankAdapter = readFileSync(join(process.cwd(), "src/ui/skins/tabletop/components/BankTable.tsx"), "utf8");
     expect(bankAdapter).toContain("BlackjackDealerTable");
     const css = readFileSync(join(process.cwd(), "src/ui/skins/tabletop/tabletop.css"), "utf8");
-    expect(css).toContain(".tabletop-skin .tt-bj-felt");
-    expect(css).toContain(".tabletop-skin .tt-bj-dealer-band");
-    expect(css).toContain(".tabletop-skin .tt-table-cloth");
+    expect(css).toContain(".tabletop-skin .tt-bj-table");
+    expect(css).toContain(".tabletop-skin .tt-bj-dealer-position");
+    expect(css).toContain(".tabletop-skin .tt-bj-felt-name");
+    expect(css).not.toContain(".tabletop-skin .tt-table-cloth");
     expect(css).not.toMatch(/tt-ledger-results\s*\{[^}]*grid-template-columns:\s*repeat\(2/s);
     expect(css).not.toMatch(/(?<!\.)\n\.box\s*\{|(?<!\.)\n\.table\s*\{|(?<!\.)\n\.dealer\s*\{|(?<!\.)\n\.felt\s*\{/);
     expect(css).not.toMatch(/classic-skin|classic\/board/);

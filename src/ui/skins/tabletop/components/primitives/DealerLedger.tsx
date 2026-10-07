@@ -49,7 +49,15 @@ function insuranceCopy(result: string | null): string | null {
   return result;
 }
 
-/** Per-box main result controls. */
+function wagerState(box: BoxView): "WAGERED" | "NO BET" {
+  try {
+    return BigInt(box.bet.millis || "0") > 0n ? "WAGERED" : "NO BET";
+  } catch {
+    return box.bet.label !== "0" ? "WAGERED" : "NO BET";
+  }
+}
+
+/** Per-box main result controls — one horizontal row only. */
 export function ResultControls({
   box,
   onSettle,
@@ -63,20 +71,20 @@ export function ResultControls({
   return (
     <span className="tt-ledger-results" role="group" aria-label={`Settle ${title}`} data-payout-rail="row">
       {PAYOUT_RAIL_ORDER.map((outcome) => (
-          <TableButton
-            key={outcome}
-            variant="result"
-            result={RESULT_KIND[outcome]}
-            data-payout-action="true"
-            data-outcome={outcome}
-            aria-label={`Set Box ${box.boxNumber} result: ${ACCESS_NAME[outcome]}`}
-            onClick={() => {
-              setSubmitted(true);
-              onSettle(outcome);
-            }}
-          >
-            {COMPACT_LABEL[outcome]}
-          </TableButton>
+        <TableButton
+          key={outcome}
+          variant="result"
+          result={RESULT_KIND[outcome]}
+          data-payout-action="true"
+          data-outcome={outcome}
+          aria-label={`Set Box ${box.boxNumber} result: ${ACCESS_NAME[outcome]}`}
+          onClick={() => {
+            setSubmitted(true);
+            onSettle(outcome);
+          }}
+        >
+          {COMPACT_LABEL[outcome]}
+        </TableButton>
       ))}
     </span>
   );
@@ -103,7 +111,10 @@ export function BoxResultBadge({
   );
 }
 
-/** Dense row for one real box instance — never aggregates by Player. */
+/**
+ * One full-width overlay bar for a real membership (Setup) or box instance.
+ * Setup never maps AVAILABLE into MAIN BET and never shows Waiting for a joined Player.
+ */
 export function DealerLedgerRow({
   box,
   phase,
@@ -136,20 +147,24 @@ export function DealerLedgerRow({
   if (empty || !box) {
     return (
       <div
-        className="tt-ledger-row is-idle is-empty"
+        className="tt-bj-overlay-row is-setup"
         data-blackjack-box-row="true"
         data-player-row="true"
         data-membership-id={membershipId}
         data-box-phase={phase}
+        data-row-kind="membership"
+        data-status="READY"
       >
         <span className="tt-ledger-who">
           <strong>{playerName || "Player"}</strong>
-          <small>{phase === "TABLE_SETUP" ? "Joined" : "AVAILABLE"}</small>
         </span>
-        <span className="tt-ledger-stake">
+        <span className="tt-ledger-available" data-field="available">
           <strong>{availableLabel ?? "0"}</strong>
+          <small>AVAILABLE</small>
         </span>
-        <span className="tt-ledger-action">{phase === "TABLE_SETUP" ? "Waiting" : "—"}</span>
+        <span className="tt-ledger-action" data-field="status">
+          READY
+        </span>
       </div>
     );
   }
@@ -163,10 +178,11 @@ export function DealerLedgerRow({
   const canCorrect = Boolean(dealerMayCorrect && hand?.canEdit && onAddCard && onUndoCard);
   const showInsSettle = Boolean(insuranceSettleEnabled && box.insurance && !box.insuranceResult && onSettleInsurance);
   const settled = Boolean(box.outcome);
+  const wager = wagerState(box);
 
   return (
     <div
-      className={`tt-ledger-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : settled ? " is-settled" : " is-idle"}${showCards ? " has-cards" : ""}${payoutPhase ? " is-payout" : ""}`}
+      className={`tt-bj-overlay-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : settled ? " is-settled" : " is-idle"}${showCards ? " has-cards" : ""}${payoutPhase ? " is-payout" : ""}`}
       data-box-id={box.id}
       data-settle-box={box.id}
       data-blackjack-box-row="true"
@@ -174,9 +190,12 @@ export function DealerLedgerRow({
       data-player-row="true"
       data-player-group={box.playerId}
       data-box-number={box.boxNumber}
+      data-row-kind="box"
       data-doubled={doubled ? "true" : undefined}
       data-split={split ? "true" : undefined}
       data-payout-row={unresolved || settled ? "true" : undefined}
+      data-wager-state={phase === "BETTING" ? wager : undefined}
+      data-available={phase === "BETTING" ? availableLabel : undefined}
     >
       <span className="tt-ledger-who">
         <strong>{box.playerName || "Player"}</strong>
@@ -186,7 +205,7 @@ export function DealerLedgerRow({
           {split ? " · SPLIT" : ""}
         </small>
       </span>
-      <span className="tt-ledger-stake">
+      <span className="tt-ledger-stake" data-field="main-bet">
         <ChipStack millis={box.bet.millis} max={4} size="lg" className="tt-ledger-chips" />
         <strong>
           <small>MAIN</small> {box.bet.label}
@@ -194,6 +213,11 @@ export function DealerLedgerRow({
         </strong>
         {box.insurance ? <small className="tt-ledger-ins">INS {box.insurance.label}</small> : null}
       </span>
+      {phase === "BETTING" && availableLabel != null ? (
+        <span data-field="available" hidden>
+          {availableLabel}
+        </span>
+      ) : null}
       <span className={`tt-ledger-action${payoutPhase ? " is-cards" : ""}`}>
         {showCards ? (
           canCorrect ? (
@@ -209,22 +233,8 @@ export function DealerLedgerRow({
             <HandTiles hand={hand} />
           )
         ) : unresolved && onSettle ? null : (
-          <span className="tt-ledger-slot">
-            {phase === "TABLE_SETUP"
-              ? "Waiting"
-              : phase === "BETTING"
-                ? (() => {
-                    try {
-                      return BigInt(box.bet.millis || "0") > 0n ? "Wagered" : "No wager";
-                    } catch {
-                      return box.bet.label !== "0" ? "Wagered" : "No wager";
-                    }
-                  })()
-                : doubled
-                  ? "2×"
-                  : split
-                    ? "SPLIT"
-                    : "—"}
+          <span className="tt-ledger-slot" data-field="status">
+            {phase === "BETTING" ? wager : doubled ? "2×" : split ? "SPLIT" : "—"}
           </span>
         )}
       </span>
@@ -233,7 +243,11 @@ export function DealerLedgerRow({
           <BoxResultBadge outcome={box.outcome} returnedLabel={box.returned?.label} insuranceResult={box.insuranceResult} />
         </span>
       ) : null}
-      {payoutPhase && !settled ? <span className="tt-ledger-result-col"><span className="tt-ledger-slot">—</span></span> : null}
+      {payoutPhase && !settled ? (
+        <span className="tt-ledger-result-col">
+          <span className="tt-ledger-slot">—</span>
+        </span>
+      ) : null}
       {payoutPhase && unresolved && onSettle ? (
         <span className="tt-ledger-settle is-full">
           <ResultControls box={box} onSettle={onSettle} />
@@ -263,7 +277,7 @@ export function DealerLedgerRow({
   );
 }
 
-/** Dense ledger for real box instances only. Optional compact rules strip. */
+/** Overlay list of real box/membership bars — not a giant spreadsheet panel. */
 export function DealerLedger({
   children,
   playerCount,
@@ -271,6 +285,7 @@ export function DealerLedger({
   showRules = true,
   summary,
   payoutMode = false,
+  setupMode = false,
 }: {
   children: ReactNode;
   playerCount?: number;
@@ -278,9 +293,11 @@ export function DealerLedger({
   showRules?: boolean;
   summary?: ReactNode;
   payoutMode?: boolean;
+  /** TABLE_SETUP: no MAIN BET column headers. */
+  setupMode?: boolean;
 }) {
   return (
-    <div className="tt-ledger-wrap">
+    <div className="tt-bj-overlay-list" data-overlay-list="true">
       {summary}
       {showRules ? (
         <p className="tt-dealer-rules" data-dealer-rules="true">
@@ -288,18 +305,12 @@ export function DealerLedger({
         </p>
       ) : null}
       <div
-        className={`tt-ledger${payoutMode ? " is-payout" : ""}`}
+        className={`tt-bj-overlays${payoutMode ? " is-payout" : ""}${setupMode ? " is-setup" : ""}`}
         data-player-count={playerCount}
         data-box-count={boxCount}
         data-ledger="true"
-        data-ledger-mode={payoutMode ? "payout" : "play"}
+        data-ledger-mode={setupMode ? "setup" : payoutMode ? "payout" : "play"}
       >
-        <div className="tt-ledger-head">
-          <span>PLAYER</span>
-          <span>MAIN BET</span>
-          <span>{payoutMode ? "CARDS" : "ACTION"}</span>
-          {payoutMode ? <span>RESULT</span> : null}
-        </div>
         {children}
       </div>
     </div>

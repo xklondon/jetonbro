@@ -77,7 +77,7 @@ describe("tabletop approved primitives gallery", () => {
         }),
       }),
     );
-    expect(ledger).toContain("tt-ledger");
+    expect(ledger).toContain("tt-bj-overlay-list");
     expect(ledger).toContain("Casey");
     expect(ledger).not.toContain("data-dealer-positions");
 

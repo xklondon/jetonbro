@@ -180,8 +180,9 @@ describe("Blackjack polish — Dealer payout results", () => {
         onCommand: noop,
       }),
     );
-    expect(html).toContain("CARDS");
-    expect(html).toContain("RESULT");
+    expect(html).toContain('data-ledger-mode="payout"');
+    expect(html).toContain("data-box-cards");
+    expect(html).toContain("tt-ledger-result-col");
     expect(html).not.toMatch(/data-ledger-mode="payout"[\s\S]*?>ACTION</);
     expect(html).toContain('data-box-result="WON"');
     expect(html).toContain('data-box-result="LOST"');

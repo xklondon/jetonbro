@@ -42,7 +42,10 @@ test("factual Dealer anatomy + Poker Owner buy-in screenshots", async ({ page, c
   await expect(page.locator("[data-blackjack-box-row]")).toHaveCount(0);
   await expect(page.getByText("No players have joined yet.")).toBeVisible();
   await expect(page.getByText("Open seat")).toHaveCount(0);
-  await expect(page.locator("[data-table-cloth=true]")).toBeVisible();
+  await expect(page.locator("[data-blackjack-table-surface=true]")).toBeVisible();
+  await expect(page.locator("[data-felt-name=true]")).toBeVisible();
+  await expect(page.locator("[data-table-cloth=true]")).toHaveCount(0);
+  await expect(page.getByText("Invite a Player to begin.")).toBeVisible();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
   await shot(page, "01-empty-dealer-setup");
 
@@ -58,14 +61,20 @@ test("factual Dealer anatomy + Poker Owner buy-in screenshots", async ({ page, c
   }
 
   const casey = await joinGuest("Casey");
-  await expect(casey.page.getByText(/Waiting for the table to open betting/i)).toBeVisible({ timeout: 20_000 });
+  await expect(casey.page.getByText(/Waiting for the (Dealer|table) to open betting/i)).toBeVisible({ timeout: 20_000 });
   await expect(page.locator("[data-blackjack-box-row]")).toHaveCount(1);
   await expect(page.locator("[data-membership-id]")).toHaveCount(1);
+  await expect(page.locator('[data-status="READY"]')).toHaveCount(1);
+  await expect(page.getByText("READY", { exact: true })).toBeVisible();
+  await expect(page.getByText("Waiting", { exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-field="available"]')).toContainText("100");
+  await expect(page.locator('[data-field="main-bet"]')).toHaveCount(0);
   await expect(page.getByText("No players have joined yet.")).toHaveCount(0);
+  await expect(page.getByText("Ready to open betting.")).toBeVisible();
   await shot(page, "02-joined-player-setup");
 
   const riley = await joinGuest("Riley");
-  await expect(riley.page.getByText(/Waiting for the table to open betting/i)).toBeVisible({ timeout: 20_000 });
+  await expect(riley.page.getByText(/Waiting for the (Dealer|table) to open betting/i)).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "START BETTING" }).click();
 
   await casey.page.reload();
@@ -88,7 +97,9 @@ test("factual Dealer anatomy + Poker Owner buy-in screenshots", async ({ page, c
   await expect.poll(async () => (await snapshot(page)).bank?.boxes.length ?? 0).toBeGreaterThanOrEqual(3);
   await shot(page, "04-dealer-betting-multiple-boxes");
   await shot(casey.page, "09-player-view-shared-cloth");
-  await expect(casey.page.locator("[data-table-cloth=true]")).toBeVisible();
+  await expect(casey.page.locator("[data-blackjack-table-surface=true]")).toBeVisible();
+  await expect(casey.page.locator("[data-felt-name=true]")).toBeVisible();
+  await expect(casey.page.locator("[data-table-cloth=true]")).toHaveCount(0);
 
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");

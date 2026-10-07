@@ -3,11 +3,18 @@ import { blackjackPhaseCopy, pokerPhaseCopy, pokerStartHandNotice } from "./phas
 import { blackjackPhaseInstruction, blackjackPhaseLabel } from "./blackjack-phase-controls";
 
 test("Blackjack dealer/player phase copy is single primary with optional instruction", () => {
-  expect(blackjackPhaseCopy({ role: "DEALER", phase: "TABLE_SETUP" })).toEqual({
+  expect(blackjackPhaseCopy({ role: "DEALER", phase: "TABLE_SETUP", seatedPlayerCount: 0 })).toEqual({
     primary: "TABLE SETUP",
-    instruction: "Waiting for Players",
+    instruction: "Invite a Player to begin.",
   });
-  expect(blackjackPhaseCopy({ role: "PLAYER", phase: "TABLE_SETUP" }).primary).toBe("TABLE SETUP");
+  expect(blackjackPhaseCopy({ role: "DEALER", phase: "TABLE_SETUP", seatedPlayerCount: 1 })).toEqual({
+    primary: "TABLE SETUP",
+    instruction: "Ready to open betting.",
+  });
+  expect(blackjackPhaseCopy({ role: "PLAYER", phase: "TABLE_SETUP" })).toEqual({
+    primary: "TABLE SETUP",
+    instruction: "Waiting for the Dealer to open betting.",
+  });
   expect(blackjackPhaseCopy({ role: "DEALER", phase: "BETTING" })).toEqual({ primary: "BETTING" });
   expect(blackjackPhaseCopy({ role: "PLAYER", phase: "BETTING" })).toEqual({ primary: "BETTING" });
   expect(blackjackPhaseCopy({ role: "DEALER", phase: "PLAYING" })).toEqual({ primary: "PLAYING" });

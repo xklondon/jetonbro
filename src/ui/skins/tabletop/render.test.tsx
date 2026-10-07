@@ -283,7 +283,9 @@ describe("tabletop skin renders", () => {
     for (const label of ["LOST", "TIE", "BJ", "WIN"]) expect(payout).toContain(label);
     expect(payout).toContain("Set Box 1 result: Stand-off");
     expect(payout).toContain('data-payout-rail="row"');
-    expect(payout).toContain('data-table-cloth="true"');
+    expect(payout).toContain('data-blackjack-table-surface="true"');
+    expect(payout).toContain('data-felt-name="true"');
+    expect(payout).not.toContain('data-table-cloth="true"');
     expect(payout).toContain("data-payout-action");
     expect(payout).toContain("START BETTING");
     expect(payout).toContain('data-dealer-slot="true"');
@@ -376,7 +378,9 @@ describe("tabletop skin renders", () => {
     expect(dealerSetup).toContain('data-bj-felt="true"');
     expect(dealerSetup).toContain('data-dealer-slot="true"');
     expect(dealerSetup).toContain("TABLE SETUP");
-    expect(dealerSetup).toContain("Waiting for Players");
+    expect(dealerSetup).toContain("Ready to open betting.");
+    expect(dealerSetup).toContain('data-blackjack-table-surface="true"');
+    expect(dealerSetup).not.toContain("Waiting for Players");
     expect(dealerSetup).toContain("START BETTING");
     expect(dealerSetup).toContain("ADD PLAYER");
     expect(dealerSetup).not.toContain("tt-setup-ledger");

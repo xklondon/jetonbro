@@ -1,15 +1,15 @@
 "use client";
 
 import type { WaitingTableView } from "@/application/queries/views";
+import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import { Shell } from "./Shell";
-import { DealerMark } from "./Spot";
-import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { PlayerBox } from "./primitives/PlayerBox";
-import { TableName } from "./primitives/TableName";
+import { BlackjackTableSurface } from "./primitives/BlackjackTableSurface";
 import { Wallet } from "./primitives/JetonTray";
 
-/** Player Phase 0: empty betting box on the felt and the permanent wallet below. */
+/** Player Phase 0: same BlackjackTableSurface as Dealer; empty box on the felt. */
 export function WaitingTable({ view }: { view: WaitingTableView }) {
+  const phaseCopy = blackjackPhaseCopy({ role: "PLAYER", phase: "TABLE_SETUP" });
   return (
     <Shell
       hideBrand
@@ -18,14 +18,24 @@ export function WaitingTable({ view }: { view: WaitingTableView }) {
       feltClassName="tt-bj-player"
       feltProps={{ "data-table-board": "PHASE_ZERO_PLAYER", "data-box-count": 1 }}
     >
-      <DealerMark />
-      <PhaseDisplay label="Waiting for the table to open betting." />
-      <TableName name={view.tableName} />
-      <div className="tt-stage">
-        <div className="tt-boxes" data-box-stage="true" data-box-count="1" data-count="1">
-          <PlayerBox empty />
+      <BlackjackTableSurface
+        tableName={view.tableName}
+        anatomy="player"
+        phaseLabel={phaseCopy.primary}
+        phaseInstruction={phaseCopy.instruction}
+        dealer={
+          <header className="tt-bj-dealer-band-head">
+            <span>DEALER</span>
+            <strong>Dealer</strong>
+          </header>
+        }
+      >
+        <div className="tt-stage">
+          <div className="tt-boxes" data-box-stage="true" data-box-count="1" data-count="1">
+            <PlayerBox empty />
+          </div>
         </div>
-      </div>
+      </BlackjackTableSurface>
     </Shell>
   );
 }

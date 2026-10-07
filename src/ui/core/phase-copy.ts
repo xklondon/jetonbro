@@ -12,13 +12,19 @@ export function blackjackPhaseCopy(input: {
   role: "DEALER" | "PLAYER" | "BANK";
   phase: string;
   insuranceOpen?: boolean;
+  /** Seated non-bank Players — drives Setup instruction only. */
+  seatedPlayerCount?: number;
 }): PhaseCopy {
   const phase = input.phase;
   if (phase === "TABLE_SETUP") {
-    return {
-      primary: "TABLE SETUP",
-      instruction: input.role === "PLAYER" ? "Waiting for the table to open betting." : "Waiting for Players",
-    };
+    if (input.role === "PLAYER") {
+      return { primary: "TABLE SETUP", instruction: "Waiting for the Dealer to open betting." };
+    }
+    const seated = input.seatedPlayerCount ?? 0;
+    if (seated === 0) {
+      return { primary: "TABLE SETUP", instruction: "Invite a Player to begin." };
+    }
+    return { primary: "TABLE SETUP", instruction: "Ready to open betting." };
   }
   if (phase === "BETTING") return { primary: "BETTING" };
   if (phase === "PLAYING" && input.insuranceOpen) return { primary: "INSURANCE" };

@@ -66,7 +66,7 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await expect(page.locator('[data-dealer-slot="true"]')).toBeVisible();
   await expect(page.locator("[data-dealer-boxes]")).toBeVisible();
   await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
-  await expect(page.getByText("Waiting for Players")).toBeVisible();
+  await expect(page.getByText("Invite a Player to begin.")).toBeVisible();
   await expect(page.locator("[data-table-name]")).toHaveCount(1);
   await expect(page.locator(".tt-setup-ledger")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeDisabled();
@@ -88,9 +88,9 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   }
 
   const casey = await joinGuest("Casey");
-  await expect(casey.page.getByText(/Waiting for the table to open betting/i)).toBeVisible({ timeout: 20_000 });
+  await expect(casey.page.getByText(/Waiting for the (Dealer|table) to open betting/i)).toBeVisible({ timeout: 20_000 });
   const riley = await joinGuest("Riley");
-  await expect(riley.page.getByText(/Waiting for the table to open betting/i)).toBeVisible({ timeout: 20_000 });
+  await expect(riley.page.getByText(/Waiting for the (Dealer|table) to open betting/i)).toBeVisible({ timeout: 20_000 });
 
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 20_000 });
   await expect(page.getByText("Casey")).toBeVisible();

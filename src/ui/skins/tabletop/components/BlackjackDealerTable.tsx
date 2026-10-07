@@ -13,9 +13,8 @@ import { ownerChrome } from "./owner-chrome";
 import { Countdown } from "./Spot";
 import { ActionDock } from "./primitives/ActionDock";
 import { DealerHandPanel } from "./primitives/HandCards";
-import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
-import { TableCloth } from "./primitives/TableCloth";
+import { BlackjackTableSurface } from "./primitives/BlackjackTableSurface";
 
 /** Collect every active box instance — one felt box each; never aggregate by Player. */
 export function activeDealerBoxes(view: BankTableView): BoxView[] {
@@ -37,7 +36,7 @@ function boxesReady(view: BankTableView) {
 
 /**
  * Canonical Tabletop Blackjack Dealer surface for every phase including TABLE_SETUP.
- * Phase changes alter labels/values/controls — not felt geometry or Dealer slot presence.
+ * Felt is the base; Dealer and Player bars are overlays. Phase changes content only.
  */
 export function BlackjackDealerTable({
   view,
@@ -71,14 +70,15 @@ export function BlackjackDealerTable({
     setMenuView("session");
     setMenuOpen(true);
   });
+  const boxes = activeDealerBoxes(view);
+  const joined = seatedPlayers(view);
+  const seatedPlayerCount = joined.length;
   const phaseCopy = blackjackPhaseCopy({
     role: "DEALER",
     phase: view.phase,
     insuranceOpen: view.insurance.window === "OPEN",
+    seatedPlayerCount,
   });
-  const boxes = activeDealerBoxes(view);
-  const joined = seatedPlayers(view);
-  const seatedPlayerCount = joined.length;
   const dealerCanEdit = Boolean(view.dealerHand?.canEdit);
   const payoutPhase = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const showCards = view.phase === "PLAYING" || payoutPhase;
@@ -118,6 +118,43 @@ export function BlackjackDealerTable({
       }
     />
   );
+
+  const dealerSlot = (
+    <>
+      <header className="tt-bj-dealer-band-head">
+        <span>DEALER</span>
+        <strong>{view.dealerName || "Dealer"}</strong>
+      </header>
+      <div className="tt-bj-dealer-band-body">
+        <DealerHandPanel
+          hand={view.dealerHand}
+          canEdit={dealerCanEdit}
+          quietEmpty
+          onAdd={(rank) => void onCommand("addCard", { dealer: "true", rank })}
+          onUndo={() => void onCommand("removeCard", { dealer: "true" })}
+        />
+      </div>
+    </>
+  );
+
+  const insurance =
+    view.insurance.window === "OPEN" || view.insurance.count > 0 ? (
+      <div className="tt-ins-pot is-active" data-insurance-pot="true">
+        {`INSURANCE · ${view.insurance.total.label} · ${view.insurance.count} ${view.insurance.count === 1 ? "bet" : "bets"}`}
+      </div>
+    ) : (
+      <div className="tt-ins-pot is-quiet" data-insurance-pot="reserved" aria-hidden="true">
+        {"\u00a0"}
+      </div>
+    );
+
+  const timers =
+    view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
+      <div className="tt-timers">
+        <Countdown deadline={view.bettingCloseDeadlineAt} label="Cards in" />
+        <Countdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
+      </div>
+    ) : null;
 
   return (
     <Shell
@@ -192,49 +229,16 @@ export function BlackjackDealerTable({
         data-owner-change-dealer={ownerMenu.changeDealer ? "true" : "false"}
         data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
       />
-      <PhaseDisplay
-        label={phaseCopy.primary}
-        instruction={
-          setup
-            ? phaseCopy.instruction
-            : controls.instruction || undefined
-        }
-      />
-      <div className="tt-bj-felt" data-bj-felt="true" data-bj-anatomy="dealer">
-        {view.bettingCloseDeadlineAt || view.nextRoundDeadlineAt ? (
-          <div className="tt-timers">
-            <Countdown deadline={view.bettingCloseDeadlineAt} label="Cards in" />
-            <Countdown deadline={view.nextRoundDeadlineAt} label="Next round in" />
-          </div>
-        ) : null}
+      <BlackjackTableSurface
+        tableName={view.tableName}
+        anatomy="dealer"
+        phaseLabel={phaseCopy.primary}
+        phaseInstruction={setup ? phaseCopy.instruction : controls.instruction || undefined}
+        dealer={dealerSlot}
+        insurance={insurance}
+        timers={timers}
+      >
         <div
-          className={`tt-ins-pot${view.insurance.window === "OPEN" || view.insurance.count > 0 ? " is-active" : " is-quiet"}`}
-          data-insurance-pot={view.insurance.window === "OPEN" || view.insurance.count > 0 ? "true" : "reserved"}
-          aria-hidden={view.insurance.window === "OPEN" || view.insurance.count > 0 ? undefined : true}
-        >
-          {view.insurance.window === "OPEN" || view.insurance.count > 0
-            ? `INSURANCE · ${view.insurance.total.label} · ${view.insurance.count} ${view.insurance.count === 1 ? "bet" : "bets"}`
-            : "\u00a0"}
-        </div>
-        <section className="tt-bj-dealer-band" data-dealer-slot="true" aria-label="Dealer">
-          <header className="tt-bj-dealer-band-head">
-            <span>DEALER</span>
-            <strong>{view.dealerName || "Dealer"}</strong>
-          </header>
-          <div className="tt-bj-dealer-band-body">
-            <DealerHandPanel
-              hand={view.dealerHand}
-              canEdit={dealerCanEdit}
-              quietEmpty
-              onAdd={(rank) => void onCommand("addCard", { dealer: "true", rank })}
-              onUndo={() => void onCommand("removeCard", { dealer: "true" })}
-            />
-          </div>
-        </section>
-        <div
-          className="tt-bj-box-list"
-          data-dealer-boxes="true"
-          data-box-count={boxes.length}
           data-seated-player-count={seatedPlayerCount}
           data-ledger-row-count={boxes.length > 0 ? boxes.length : setup ? seatedPlayerCount : 0}
           data-empty-state={setup && seatedPlayerCount === 0 && boxes.length === 0 ? "true" : "false"}
@@ -244,6 +248,7 @@ export function BlackjackDealerTable({
             boxCount={boxes.length}
             showRules={false}
             payoutMode={payoutPhase}
+            setupMode={setup && boxes.length === 0}
           >
             {boxes.length > 0 ? (
               boxes.map((box) => (
@@ -258,6 +263,9 @@ export function BlackjackDealerTable({
                   onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
                   onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
                   dealerMayCorrect={Boolean(view.dealerHand?.canEdit || showCards)}
+                  availableLabel={
+                    view.players.find((player) => player.userId === box.playerId)?.available.label
+                  }
                 />
               ))
             ) : setup && seatedPlayerCount > 0 ? (
@@ -278,8 +286,7 @@ export function BlackjackDealerTable({
             )}
           </DealerLedger>
         </div>
-        <TableCloth name={view.tableName} />
-      </div>
+      </BlackjackTableSurface>
     </Shell>
   );
 }
