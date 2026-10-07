@@ -469,9 +469,9 @@
 }
 
 .tabletop-skin .tt-jeton-lg {
-  width: 46px;
-  height: 46px;
-  font-size: 12px;
+  width: 52px;
+  height: 52px;
+  font-size: 13px;
 }
 
 .tabletop-skin .tt-jeton-edge {
@@ -2430,6 +2430,211 @@
 .tabletop-skin .tt-bj-player .tt-surface-body,
 .tabletop-skin .tt-phase-zero .tt-surface-body {
   width: 100%;
+}
+
+/* ========== BLACKJACK DEALER — stable felt anatomy (all phases) ========== */
+.tabletop-skin .tt-bj-dealer .tt-surface-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 28px;
+  overflow: hidden;
+}
+
+.tabletop-skin .tt-bj-felt {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tabletop-skin .tt-bj-felt .tt-table-name {
+  margin: 0;
+  order: 0;
+}
+
+.tabletop-skin .tt-bj-felt .tt-ins-pot {
+  flex: 0 0 26px;
+  min-height: 26px;
+  max-height: 26px;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.tabletop-skin .tt-bj-felt .tt-ins-pot.is-quiet {
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+.tabletop-skin .tt-bj-felt .tt-timers {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  z-index: 3;
+  margin: 0;
+}
+
+.tabletop-skin .tt-bj-dealer-slot {
+  flex: 0 0 auto;
+  width: min(100%, 280px);
+  min-height: 108px;
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(223, 189, 105, 0.35);
+  border-radius: 14px;
+  background: rgba(2, 23, 18, 0.35);
+  z-index: 2;
+}
+
+.tabletop-skin .tt-bj-dealer-slot-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--tt-gold);
+}
+
+.tabletop-skin .tt-bj-dealer-slot-head strong {
+  font: 600 12px/1.2 var(--tt-sans);
+  letter-spacing: 0.04em;
+  color: var(--tt-ivory);
+  text-transform: none;
+}
+
+.tabletop-skin .tt-bj-dealer-slot-body {
+  min-height: 64px;
+}
+
+.tabletop-skin .tt-bj-dealer-slot .tt-dealer-hand {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 64px;
+}
+
+.tabletop-skin .tt-bj-dealer-slot .tt-dealer-hand-head {
+  display: none;
+}
+
+.tabletop-skin .tt-bj-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.tabletop-skin .tt-bj-box-slot {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tabletop-skin .tt-bj-box-settle {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+}
+
+.tabletop-skin .tt-pbox-player {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: rgba(244, 234, 213, 0.75);
+}
+
+.tabletop-skin .tt-pbox-retract {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tt-ivory);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tabletop-skin .tt-pbox-retract span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(223, 189, 105, 0.55);
+  background: rgba(2, 23, 18, 0.65);
+  font-size: 16px;
+}
+
+.tabletop-skin .tt-pbox-retract:disabled {
+  opacity: var(--tt-disabled);
+}
+
+.tabletop-skin .tt-pbox-chips {
+  min-height: 52px;
+}
+
+.tabletop-skin .tt-pbox-chips .tt-jeton-lg {
+  width: 52px;
+  height: 52px;
+  font-size: 13px;
+}
+
+.tabletop-skin .tt-pbox-ins-chips {
+  display: inline-flex;
+  min-height: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.tabletop-skin .tt-pbox-ins-chips .tt-jeton-sm {
+  width: 34px;
+  height: 34px;
+  font-size: 10px;
+}
+
+.tabletop-skin .tt-pbox-stake small {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: rgba(244, 234, 213, 0.55);
+}
+
+.tabletop-skin .tt-chip-stack.tt-pbox-chips .tt-jeton {
+  margin-left: -14px;
+}
+
+.tabletop-skin .tt-chip-stack.tt-pbox-chips .tt-jeton:first-child {
+  margin-left: 0;
+}
+
+/* Phase modifiers must not redefine felt grid — content only */
+.tabletop-skin .tt-bj-dealer[data-bj-phase] .tt-bj-felt {
+  /* structural geometry owned above; phase attrs are hooks for tests */
 }
 
 /* ========== RESPONSIVE ========== */

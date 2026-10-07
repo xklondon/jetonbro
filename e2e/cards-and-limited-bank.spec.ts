@@ -48,7 +48,7 @@ async function twoSeatTable(
   await playerPage.reload();
   await playerPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect(playerPage.getByText("75", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeEnabled({ timeout: 15_000 });
   return { playerContext, playerPage };
 }
 
@@ -56,12 +56,12 @@ test("optional manual flow still deals and pays without cards", async ({ page, c
   test.setTimeout(120_000);
   await mkdir(out, { recursive: true });
   const { playerContext, playerPage } = await twoSeatTable(page, context, browser);
-  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.getByRole("button", { name: "ENTER PAYOUT" })).toBeVisible();
   await expect(playerPage.locator(".add-cards")).toHaveCount(0);
   await page.screenshot({ path: join(out, "app-playing-optional-cards-390x844.png") });
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
-  await page.locator(".payout-access button.won").click();
+  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
   await expect(playerPage.getByText(/Won|YOUR JETONS/i).first()).toBeVisible();
   await playerContext.close();
 });
@@ -69,13 +69,13 @@ test("optional manual flow still deals and pays without cards", async ({ page, c
 test("card-assist stays in the menu and does not block play", async ({ page, context, browser }) => {
   test.setTimeout(120_000);
   const { playerContext, playerPage } = await twoSeatTable(page, context, browser, { cardAssist: "CONFIRM" });
-  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.getByRole("button", { name: "ENTER PAYOUT" })).toBeVisible();
   await expect(playerPage.locator(".add-cards")).toHaveCount(0);
   await expect(page.locator(".add-cards")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "HAND COMPLETE" })).toHaveCount(0);
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
-  await page.locator(".payout-access button.won").click();
+  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
   await expect(playerPage.getByText(/Won|YOUR JETONS/i).first()).toBeVisible();
   await playerContext.close();
 });
@@ -123,8 +123,8 @@ test("card-assist Auto settles complete boxes and leaves incomplete manual", asy
   await expect(joPage.getByRole("button", { name: "Add 25 jetons" })).toBeEnabled({ timeout: 20_000 });
   await samPage.getByRole("button", { name: "Add 25 jetons" }).click();
   await joPage.getByRole("button", { name: "Add 25 jetons" }).click();
-  await expect(page.getByRole("button", { name: "CLOSE BETTING" })).toBeEnabled({ timeout: 15_000 });
-  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeEnabled({ timeout: 15_000 });
+  await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(samPage.locator(".add-cards")).toHaveCount(0);
   await expect(page.locator("[data-dealer-box] .add-cards")).toHaveCount(0);
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
@@ -140,9 +140,9 @@ test("Limited Bank win then next round keeps mode and balance", async ({ page, c
   const { playerContext, playerPage } = await twoSeatTable(page, context, browser, { limited: true });
   await expect(page.locator("footer").getByText("LIMITED BANK")).toBeVisible();
   await page.screenshot({ path: join(out, "app-limited-bank-betting-390x844.png") });
-  await page.getByRole("button", { name: "CLOSE BETTING" }).click();
+  await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
-  await page.locator(".payout-access button.won").click();
+  await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
   await page.getByRole("button", { name: "START NEXT ROUND" }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   await expect(page.locator("footer").getByText("LIMITED BANK")).toBeVisible();

@@ -25,7 +25,8 @@ export async function openSetupSheet(page: Page) {
   const create = page.getByRole("button", { name: "CREATE TABLE" });
   await expect(create).toBeVisible();
   await create.click();
-  await expect(page).toHaveURL(/\/tables\/(?!new(?:\?|$))/, { timeout: 20_000 });
+  // Home routes to /tables/new (draft), which may immediately redirect to /tables/{id}.
+  await expect(page).toHaveURL(/\/tables\/(new|[a-z0-9]+)/i, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: "START TABLE" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByLabel("Table name")).toBeVisible();
   await expect(page.getByLabel("Starting jetons per player")).toBeVisible();

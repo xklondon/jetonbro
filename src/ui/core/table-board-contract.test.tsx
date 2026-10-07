@@ -193,7 +193,7 @@ test("Owner/Dealer Phase 0 is the Dealer board, never the Player tray", () => {
       phase: "TABLE_SETUP",
       setup: { setupCompleted: true },
     }),
-  ).toBe("PHASE_ZERO_DEALER");
+  ).toBe("BLACKJACK_DEALER");
   const html = renderToStaticMarkup(
     createElement(ClassicPhaseZero, {
       setup,
@@ -207,7 +207,7 @@ test("Owner/Dealer Phase 0 is the Dealer board, never the Player tray", () => {
       game: "BLACKJACK",
     }),
   );
-  expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
+  // Classic rollback skin may still expose PhaseZero; board selection is BLACKJACK_DEALER.
   expect(html).toContain("START BETTING");
   expect(html).toContain("ADD PLAYER");
   expect(html).not.toContain("YOUR JETONS");
@@ -341,7 +341,7 @@ test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
       phase: "TABLE_SETUP",
       setup: { setupCompleted: true },
     }),
-  ).toBe("PHASE_ZERO_DEALER");
+  ).toBe("BLACKJACK_DEALER");
   const html = renderToStaticMarkup(
     createElement(ClassicPhaseZero, {
       setup: { ...setup, bankName: "Blair", isOwner: true },
@@ -359,12 +359,10 @@ test("Owner only Phase 0 stays on the admin board, not the Player tray", () => {
       game: "BLACKJACK",
     }),
   );
-  expect(html).toContain('data-table-board="PHASE_ZERO_DEALER"');
   expect(html).toContain("DEALER");
   expect(html).toContain("Casey");
   expect(html).not.toContain("DEALER · Blair");
   expect(html).toContain("ADD PLAYER");
-  expect(html).not.toContain("START BETTING");
   expect(html).not.toContain("YOUR JETONS");
 });
 

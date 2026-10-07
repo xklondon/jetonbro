@@ -73,8 +73,9 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await playerPage.locator(`[data-box-id="${box2.id}"]`).click();
   await playerPage.getByRole("button", { name: "Add 10 jetons" }).click();
   await expect.poll(async () => (await snapshot(playerPage)).player?.available.label).toBe("65");
-  await playerPage.getByRole("button", { name: /^RETRACT$/i }).click();
+  await playerPage.getByRole("button", { name: "Retract Box 2 wager" }).click();
   await expect.poll(async () => (await snapshot(playerPage)).player?.available.label).toBe("75");
+  await expect(playerPage.getByRole("button", { name: "Retract Box 2 wager" })).toHaveCount(0);
   await playerPage.getByRole("button", { name: "Add 10 jetons" }).click();
   await expect.poll(async () => (await snapshot(playerPage)).player?.available.label).toBe("65");
   const box1Bet = playerPage.locator(`[data-box-id="${box1.id}"]`);
@@ -83,8 +84,8 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expectNoDocumentScroll(playerPage);
   await playerPage.screenshot({ path: join(shots, "betting-player-390x844.png") });
 
-  await expect(page.locator(`[data-box-id="${box1.id}"]`)).toBeVisible();
-  await expect(page.locator(`[data-box-id="${box2.id}"]`)).toBeVisible();
+  await expect(page.locator(`[data-box-id="${box1.id}"]`).first()).toBeVisible();
+  await expect(page.locator(`[data-box-id="${box2.id}"]`).first()).toBeVisible();
   await page.screenshot({ path: join(shots, "betting-dealer-390x844.png") });
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
@@ -128,9 +129,9 @@ test("complete Blackjack round through the real UI", async ({ page, context, bro
   await expectNoDocumentScroll(page);
   await page.screenshot({ path: join(shots, "payout-unresolved-dealer-390x844.png") });
 
-  await page.locator(`[data-box-id="${box1.id}"] [data-payout-action="true"]`).filter({ hasText: /^WON$/ }).click();
-  await page.locator(`[data-box-id="${box2.id}"] [data-payout-action="true"]`).filter({ hasText: /^LOST$/ }).click();
-  await page.locator(`[data-box-id="${box1.id}"] [data-insurance-action="lost"]`).click();
+  await page.locator(`[data-settle-box="${box1.id}"] [data-payout-action="true"]`).filter({ hasText: /^WON$/ }).click();
+  await page.locator(`[data-settle-box="${box2.id}"] [data-payout-action="true"]`).filter({ hasText: /^LOST$/ }).click();
+  await page.locator(`[data-settle-box="${box1.id}"] [data-insurance-action="lost"]`).click();
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 10_000 });
   await expectNoDocumentScroll(page);
   await page.screenshot({ path: join(shots, "payout-dealer-390x844.png") });

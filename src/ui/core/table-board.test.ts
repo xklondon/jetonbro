@@ -21,7 +21,7 @@ test("Owner/Dealer not seated uses Create Table then Dealer Phase 0 and Dealer l
       phase: "TABLE_SETUP",
       setup: { setupCompleted: true },
     }),
-  ).toBe("PHASE_ZERO_DEALER");
+  ).toBe("BLACKJACK_DEALER");
   expect(
     selectTableBoard({
       isOwner: true,
@@ -87,7 +87,7 @@ test("Guest and Verified seated Players use Player boards", () => {
   ).toBe("BLACKJACK_PLAYER");
 });
 
-test("Owner who assigned away Dealer still sees the Phase 0 admin board", () => {
+test("Owner who assigned away Dealer still sees the Dealer Blackjack surface in Phase 0", () => {
   expect(
     selectTableBoard({
       isOwner: true,
@@ -97,7 +97,7 @@ test("Owner who assigned away Dealer still sees the Phase 0 admin board", () => 
       phase: "TABLE_SETUP",
       setup: { setupCompleted: true },
     }),
-  ).toBe("PHASE_ZERO_DEALER");
+  ).toBe("BLACKJACK_DEALER");
 });
 
 test("Owner only is not inferred as Player or Dealer", () => {

@@ -37,6 +37,7 @@ export function PlayerTable({
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuView, setMenuView] = useState<"menu" | "dealer" | "session">("menu");
   const [cardPadOpen, setCardPadOpen] = useState(false);
+  const [retractBusy, setRetractBusy] = useState<string | null>(null);
 
   const selected = view.boxes.find((box) => box.id === selectedBoxId) ?? view.boxes[0];
   const controls = blackjackPlayerControls(view, selected);
@@ -72,6 +73,16 @@ export function PlayerTable({
     void onCommand("placeBet", { boxId, amount, mode: "ADD" });
   }
 
+  async function retractBox(boxId: string, amount: string) {
+    if (retractBusy || view.phase !== "BETTING" || !view.actions.retract) return;
+    setRetractBusy(boxId);
+    try {
+      await onCommand("placeBet", { boxId, amount, mode: "RETRACT" });
+    } finally {
+      setRetractBusy(null);
+    }
+  }
+
   const rail = (
     <>
       <div className="tt-controls" data-game-controls="true">
@@ -88,13 +99,6 @@ export function PlayerTable({
               onChange={(event) => setExact(event.target.value)}
               aria-label="Exact bet amount"
             />
-            <TableButton
-              variant="secondary"
-              disabled={!controls.retract || !selected}
-              onClick={() => selected && void onCommand("placeBet", { boxId: selected.id, amount: selected.bet.label, mode: "RETRACT" })}
-            >
-              RETRACT
-            </TableButton>
             <TableButton
               variant="primary"
               disabled={!selected || !exact || selected.coverage?.bet === false}
@@ -229,7 +233,7 @@ export function PlayerTable({
           data-owner-change-game={ownerMenu.changeGame ? "true" : "false"}
         />
       ) : null}
-      <DealerMark />
+      <DealerMark name={undefined} />
       <PhaseDisplay
         label={phaseCopy.primary}
         instruction={controls.instruction && controls.instruction !== "Round complete" ? controls.instruction : undefined}
@@ -248,6 +252,13 @@ export function PlayerTable({
                 dropHighlight={hoverBoxId === box.id}
                 onSelect={() => onSelectBox(box.id)}
                 showCards={playing || payout}
+                chipSize="lg"
+                onRetract={
+                  view.phase === "BETTING" && view.actions.retract
+                    ? () => void retractBox(box.id, box.bet.label)
+                    : undefined
+                }
+                retractBusy={retractBusy === box.id}
                 insurancePanel={
                   showInsure ? (
                     <div className="tt-insure" data-insurance-panel="true" data-for-box={box.id}>

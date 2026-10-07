@@ -33,7 +33,8 @@ export function selectTableBoard(snapshot: TableBoardSnapshot): TableBoardId {
   }
 
   if (snapshot.game === "BLACKJACK" && snapshot.phase === "TABLE_SETUP") {
-    if (owner || dealer) return "PHASE_ZERO_DEALER";
+    // Same canonical Dealer Blackjack surface as live phases (not a separate admin ledger).
+    if (owner || dealer) return "BLACKJACK_DEALER";
     if (seated) return "PHASE_ZERO_PLAYER";
     return "WAITING";
   }

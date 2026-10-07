@@ -236,7 +236,8 @@ describe("tabletop skin renders", () => {
     expect(html).toContain('data-table-board="BLACKJACK_PLAYER"');
     expect(html).toContain("ADD BOX");
     expect(html).toContain("PLACE BET");
-    expect(html).toContain("RETRACT");
+    expect(html).toContain("data-retract-box");
+    expect(html).not.toContain(">RETRACT<");
     expect(html).toContain("data-player-wallet");
     expect(html).toContain("data-jeton-tray");
     expect(html).toContain("YOUR JETONS");
@@ -261,21 +262,21 @@ describe("tabletop skin renders", () => {
     expect(playing).not.toContain("ADD BOX");
   });
 
-  it("Blackjack Dealer: ledger, docks, payout labels, rules strip allowed", () => {
+  it("Blackjack Dealer: felt boxes, docks, persistent dealer slot, payout controls", () => {
     const betting = render(createElement(tabletopSkin.BankTable, { view: bank("BETTING"), members, onCommand: noop }));
     expect(betting).toContain('data-skin="tabletop"');
     expect(betting).toContain('data-table-board="BLACKJACK_DEALER"');
     expect(betting).toContain("DEAL CARDS");
     expect(betting).toContain("ADD PLAYER");
-    expect(betting).toContain("data-blackjack-box-row");
+    expect(betting).toContain('data-dealer-slot="true"');
+    expect(betting).toContain('data-bj-felt="true"');
+    expect(betting).toContain('data-dealer-boxes="true"');
     expect(betting).toContain("Alex");
     expect(betting).toContain("Jo");
     expect(betting).not.toContain("Mia");
-    expect(betting).toContain("Blackjack pays 3 to 2");
-    expect(betting).toContain("Insurance pays 2 to 1");
-    expect(betting).toContain("DEALER HAND");
-    expect(betting).not.toContain("tt-dealer-summary");
-    expect(betting).not.toContain("data-dealer-positions");
+    expect(betting).toContain("DEALER");
+    expect(betting).not.toContain("tt-setup-ledger");
+    expect(betting).not.toContain("data-blackjack-box-row");
     expect(betting).not.toContain("data-payout-action");
 
     const payout = render(createElement(tabletopSkin.BankTable, { view: bank("PAYOUT"), members, onCommand: noop }));
@@ -283,7 +284,7 @@ describe("tabletop skin renders", () => {
     expect(payout).toContain("Set Box 1 result: Stand-off");
     expect(payout).toContain("data-payout-action");
     expect(payout).toContain("START BETTING");
-    expect(payout).toContain("DEALER HAND");
+    expect(payout).toContain('data-dealer-slot="true"');
 
     const playing = render(
       createElement(tabletopSkin.BankTable, {
@@ -308,7 +309,7 @@ describe("tabletop skin renders", () => {
     );
     expect(playing).toContain("ENTER PAYOUT");
     expect(playing).toContain("OPEN INSURANCE");
-    expect(playing).toContain("DEALER HAND");
+    expect(playing).toContain('data-dealer-slot="true"');
     expect(playing).toContain("+ CARD");
     expect(playing).toContain('data-dealer-hand="true"');
     expect(playing).not.toContain('class="tt-dealer-summary');
@@ -338,13 +339,46 @@ describe("tabletop skin renders", () => {
   });
 
   it("Phase 0, setup, waiting, entry, home and create render", () => {
-    const phaseZero = render(
-      createElement(tabletopSkin.PhaseZero, { setup: setup(), waiting: null, poker: null, members, onCommand: noop, isOwner: true, isBank: true, viewerId: "d1", game: "BLACKJACK" }),
+    const dealerSetup = render(
+      createElement(tabletopSkin.BankTable, {
+        view: bank("TABLE_SETUP", {
+          players: [{ userId: "p1", name: "Alex", available: money("100"), locked: money("0", "0"), status: "Waiting", boxes: [] }],
+          boxes: [],
+          boxCount: 0,
+          canStartBetting: false,
+          primaryAction: { id: "nextHand", label: "START BETTING", enabled: false },
+          actions: {
+            dealCards: false,
+            scheduleDeal: false,
+            payoutPhase: false,
+            nextHand: false,
+            scheduleNextRound: false,
+            openInsurance: false,
+            closeInsurance: false,
+            settleBoxes: false,
+            settleDealerWon: false,
+            settleInsurance: false,
+            addPlayer: true,
+            giveJetons: false,
+            changeBank: true,
+            saveTable: true,
+            closeTable: true,
+            switchGame: true,
+          },
+        }),
+        members,
+        onCommand: noop,
+      }),
     );
-    expect(phaseZero).toContain('data-table-board="PHASE_ZERO_DEALER"');
-    expect(phaseZero).toContain("START BETTING");
-    expect(phaseZero).toContain("ADD PLAYER");
-    expect(phaseZero).not.toContain("data-dealer-positions");
+    expect(dealerSetup).toContain('data-table-board="BLACKJACK_DEALER"');
+    expect(dealerSetup).toContain('data-bj-felt="true"');
+    expect(dealerSetup).toContain('data-dealer-slot="true"');
+    expect(dealerSetup).toContain("TABLE SETUP");
+    expect(dealerSetup).toContain("Waiting for Players");
+    expect(dealerSetup).toContain("START BETTING");
+    expect(dealerSetup).toContain("ADD PLAYER");
+    expect(dealerSetup).not.toContain("tt-setup-ledger");
+    expect(dealerSetup).not.toContain("data-dealer-positions");
 
     expect(render(createElement(tabletopSkin.SetupTable, { view: setup({ setupCompleted: false }), onCommand: noop }))).toContain("START TABLE");
     expect(render(createElement(tabletopSkin.SetupTable, { view: setup(), onCommand: noop }))).toContain("START BETTING");

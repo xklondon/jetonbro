@@ -135,7 +135,7 @@ describeDb("guest vs verified invitations", () => {
     const before = await loadSnapshot(created.tableId, owner.id);
     expect(before.canStartBetting).toBe(false);
     expect(before.seatedPlayerCount).toBe(0);
-    expect(selectTableBoard(before)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(before)).toBe("BLACKJACK_DEALER");
 
     const joined = await joinAsGuest({ token: guestInvite.token, playName: "Casey" });
     const guestActor = resolveActorFromIdentities({
@@ -165,7 +165,7 @@ describeDb("guest vs verified invitations", () => {
     expect(ownerAfterGuest.isSeatedPlayer).toBe(false);
     expect(guestSnap.isSeatedPlayer).toBe(true);
     expect(guestSnap.isDealer).toBe(false);
-    expect(selectTableBoard(ownerAfterGuest)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(ownerAfterGuest)).toBe("BLACKJACK_DEALER");
     expect(selectTableBoard(guestSnap)).toBe("PHASE_ZERO_PLAYER");
 
     await startBetting({ actorId: owner.id, tableId: created.tableId, idempotencyKey: randomUUID() });
@@ -240,8 +240,8 @@ describeDb("guest vs verified invitations", () => {
     expect(ownerSnap.player).toBeNull();
     expect(ownerSnap.setup).toBeTruthy();
     expect(playerSnap.waiting).toBeTruthy();
-    expect(selectTableBoard(ownerSnap)).toBe("PHASE_ZERO_DEALER");
-    expect(selectTableBoard(dealerSnap)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(ownerSnap)).toBe("BLACKJACK_DEALER");
+    expect(selectTableBoard(dealerSnap)).toBe("BLACKJACK_DEALER");
     expect(selectTableBoard(playerSnap)).toBe("PHASE_ZERO_PLAYER");
   });
 

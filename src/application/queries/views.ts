@@ -196,6 +196,8 @@ export type BankTableView = {
   emailConfigured?: boolean;
   startingJetons?: MoneyView;
   gameSession?: GameSessionView | null;
+  /** TABLE_SETUP only — drives START BETTING dock legality. */
+  canStartBetting?: boolean;
 };
 
 export type SetupSeatStatus = "Bank / Dealer" | "Invited" | "Joined" | "Ready";

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { HandTiles } from "./HandCards";
-import { ChipStack } from "./Jeton";
+import { ChipStack, type JetonSize } from "./Jeton";
 import { nextCelebrateClass } from "./result-celebrate";
 
 function resultCopy(box: BoxView): { kind: string; text: string; label: string } | null {
@@ -22,6 +22,14 @@ function insuranceCopy(result: string | null): string | null {
     return returned ? `INS WON +${returned}` : "INS WON";
   }
   return result;
+}
+
+function stakePresent(box: BoxView) {
+  try {
+    return BigInt(box.bet.millis || "0") > 0n;
+  } catch {
+    return box.bet.label !== "0";
+  }
 }
 
 /** One-shot celebrate class when outcome newly arrives; refresh mounts stay static. */
@@ -49,28 +57,40 @@ export function PlayerBox({
   selected = false,
   dropHighlight = false,
   empty = false,
+  emptySlot = 1,
+  emptyLabel,
   onSelect,
   status,
   insurancePanel,
   showCards = false,
+  showPlayerName = false,
+  chipSize = "lg",
+  onRetract,
+  retractBusy = false,
 }: {
   box?: BoxView;
   selected?: boolean;
   dropHighlight?: boolean;
   empty?: boolean;
+  emptySlot?: number;
+  emptyLabel?: string;
   onSelect?: () => void;
   status?: string | null;
   insurancePanel?: ReactNode;
   showCards?: boolean;
+  showPlayerName?: boolean;
+  chipSize?: JetonSize;
+  onRetract?: () => void;
+  retractBusy?: boolean;
 }) {
   const celebrate = useResultCelebrate(box?.id ?? "empty", box?.outcome);
 
   if (empty || !box) {
     return (
-      <div className="tt-box-wrap" data-slot="1">
-        <div className="tt-pbox is-empty" data-empty-slot={1} data-box-slot={1} aria-hidden="true">
-          <span className="tt-pbox-name">BOX 1</span>
-          <span className="tt-pbox-stake">0</span>
+      <div className="tt-box-wrap" data-slot={emptySlot}>
+        <div className="tt-pbox is-empty" data-empty-slot={emptySlot} data-box-slot={emptySlot} aria-hidden="true">
+          <span className="tt-pbox-name">{emptyLabel ? emptyLabel : `BOX ${emptySlot}`}</span>
+          <span className="tt-pbox-stake">—</span>
         </div>
       </div>
     );
@@ -81,6 +101,7 @@ export function PlayerBox({
   const commitment = result ? null : box.isDoubled ? "2×" : box.isSplit ? "Split" : status ?? null;
   const insured = box.insurance || box.insuranceResult;
   const cardsVisible = showCards || Boolean(box.hand?.ranks?.length) || Boolean(result);
+  const showRetract = Boolean(onRetract && stakePresent(box) && !result);
 
   function onKey(event: KeyboardEvent<HTMLDivElement>) {
     if (!onSelect) return;
@@ -108,7 +129,23 @@ export function PlayerBox({
         onKeyDown={onSelect ? onKey : undefined}
       >
         <span className="tt-pbox-inlay" aria-hidden="true" />
+        {showPlayerName ? <span className="tt-pbox-player">{box.playerName}</span> : null}
         <span className="tt-pbox-name">BOX {box.boxNumber}</span>
+        {showRetract ? (
+          <button
+            type="button"
+            className="tt-pbox-retract"
+            data-retract-box={box.id}
+            aria-label={`Retract Box ${box.boxNumber} wager`}
+            disabled={retractBusy}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!retractBusy) onRetract?.();
+            }}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        ) : null}
         {result ? (
           <span className="tt-pbox-payout" data-payout-main="true">
             <em className={`tt-pbox-result is-${result.kind}`} data-payout-state={box.outcome ?? ""}>
@@ -118,15 +155,16 @@ export function PlayerBox({
           </span>
         ) : (
           <>
-            <ChipStack millis={box.bet.millis} />
+            <ChipStack millis={box.bet.millis} max={4} size={chipSize} className="tt-pbox-chips" />
             <span className="tt-pbox-stake">
-              {box.bet.label}
+              <small>MAIN</small> {box.bet.label}
               {box.isDoubled ? <em className="tt-pbox-2x"> 2×</em> : null}
             </span>
           </>
         )}
         {insured ? (
           <span className="tt-pbox-ins" data-payout-insurance={box.insuranceResult ? "true" : undefined} data-insurance-result={box.insuranceResult ?? ""}>
+            <ChipStack millis={box.insurance?.millis ?? "0"} max={2} size="sm" className="tt-pbox-ins-chips" />
             INS {box.insurance?.label ?? "—"}
             {box.insuranceResult ? ` · ${insuranceCopy(box.insuranceResult)}` : ""}
           </span>

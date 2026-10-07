@@ -43,16 +43,26 @@ export function Jeton({
 }
 
 /** Stack of jetons derived from a stake (display only). */
-export function ChipStack({ millis, max = 5 }: { millis: string; max?: number }) {
+export function ChipStack({
+  millis,
+  max = 5,
+  size = "sm",
+  className,
+}: {
+  millis: string;
+  max?: number;
+  size?: JetonSize;
+  className?: string;
+}) {
   const chips = chipsFromMillis(millis);
   const shown = chips.slice(0, max);
   return (
-    <span className={`tt-chip-stack${shown.length === 0 ? " is-empty" : ""}`} aria-hidden="true">
+    <span className={`tt-chip-stack${shown.length === 0 ? " is-empty" : ""}${className ? ` ${className}` : ""}`} aria-hidden="true">
       {shown.length === 0 ? (
-        <Jeton denomination="0" size="sm" label="0" disabled />
+        <Jeton denomination="0" size={size === "lg" ? "md" : "sm"} label="0" disabled />
       ) : (
         shown.map((chip, index) => (
-          <Jeton key={`${chip.label}-${index}`} denomination={chip.label} size="sm" label={chip.label} />
+          <Jeton key={`${chip.label}-${index}`} denomination={chip.label} size={size} label={chip.label} />
         ))
       )}
     </span>

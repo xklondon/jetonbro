@@ -92,7 +92,7 @@ describeDb("production cookie/header actor wrappers", () => {
     expect(ownerBefore.body.isSeatedPlayer).toBe(false);
     expect(ownerBefore.body.canStartBetting).toBe(false);
     expect(ownerBefore.body.seatedPlayerCount).toBe(0);
-    expect(selectTableBoard(ownerBefore.body as never)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(ownerBefore.body as never)).toBe("BLACKJACK_DEALER");
 
     authMock.mockResolvedValue(null);
     const joined = await guestJoinPost(
@@ -137,7 +137,7 @@ describeDb("production cookie/header actor wrappers", () => {
     expect(ownerAfter.body.isSeatedPlayer).toBe(false);
     expect(ownerAfter.body.canStartBetting).toBe(true);
     expect(ownerAfter.body.seatedPlayerCount).toBe(1);
-    expect(selectTableBoard(ownerAfter.body as never)).toBe("PHASE_ZERO_DEALER");
+    expect(selectTableBoard(ownerAfter.body as never)).toBe("BLACKJACK_DEALER");
 
     const start = await commandPost(
       new NextRequest(`http://127.0.0.1:3000/api/tables/${created.tableId}/commands`, {

@@ -158,7 +158,7 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
     };
   }
   if (view.phase === "TABLE_SETUP") {
-    return blackjackDealerSetupControls(false);
+    return blackjackDealerSetupControls(Boolean(view.canStartBetting));
   }
   return {
     phaseLabel,

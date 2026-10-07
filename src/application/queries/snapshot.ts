@@ -454,8 +454,81 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       table.currentRound.bettingCloseDeadlineAt.getTime() > Date.now(),
   );
 
-  const bank: BankTableView | null = isBank && table.currentPhase !== "TABLE_SETUP"
-    ? {
+  const bank: BankTableView | null =
+    table.game === "BLACKJACK" && (isBank || (isOwner && table.currentPhase === "TABLE_SETUP"))
+      ? table.currentPhase === "TABLE_SETUP"
+        ? {
+            role: "BANK",
+            phase: "TABLE_SETUP",
+            tableName: table.name,
+            title: "Table setup",
+            copy: "Waiting for Players",
+            phaseLabel: "TABLE SETUP",
+            primaryAction: {
+              id: "nextHand",
+              label: "START BETTING",
+              enabled: Boolean(table.bankDealerId) && hasReadyPlayer && isBank && !tableClosed,
+            },
+            boxes: [],
+            players: table.members
+              .filter((member) => !member.isBankDealer)
+              .map((member) => ({
+                userId: member.userId,
+                name: displayName(member.user),
+                available: money(member.availableMillis),
+                locked: money(0n),
+                status: "Waiting",
+                boxes: [],
+              })),
+            playerCount: table.members.filter((member) => !member.isBankDealer).length,
+            boxCount: 0,
+            lockedOrdinary: money(0n),
+            insurance: { window: "CLOSED", total: money(0n), count: 0, resolution: null },
+            actions: {
+              dealCards: false,
+              scheduleDeal: false,
+              payoutPhase: false,
+              nextHand: Boolean(table.bankDealerId) && hasReadyPlayer && isBank && !tableClosed,
+              scheduleNextRound: false,
+              openInsurance: false,
+              closeInsurance: false,
+              settleBoxes: false,
+              settleDealerWon: false,
+              settleInsurance: false,
+              addPlayer: (isOwner || isBank) && !tableClosed,
+              giveJetons: false,
+              changeBank: isOwner && !tableClosed,
+              saveTable: isOwner && !tableClosed,
+              closeTable: isOwner && !tableClosed,
+              switchGame: isOwner && !tableClosed,
+            },
+            insuranceSettleActions: [],
+            bettingCloseDeadlineAt: null,
+            nextRoundDeadlineAt: null,
+            hasValidBet: false,
+            isOwner,
+            tableStatus: table.status,
+            paused: table.pausedAt !== null,
+            closePreview: isOwner ? closePreview : null,
+            cardAssist: table.cardAssist,
+            dealerName: table.bankDealer ? displayName(table.bankDealer) : displayName(table.owner),
+            canSwitchGame: isOwner && !tableClosed,
+            guestJoinUrl: guestUrl,
+            verifiedJoinUrl: verifiedUrl,
+            invitations: table.invitations
+              .filter((invite) => invite.kind === "EMAIL")
+              .map((invite) => ({
+                id: invite.id,
+                kind: invite.kind,
+                email: invite.email,
+                pending: !invite.usedAt && !invite.revokedAt,
+              })),
+            emailConfigured: isEmailDeliveryConfigured(),
+            startingJetons: money(table.startingJetonsPerPlayerMillis),
+            canStartBetting: Boolean(table.bankDealerId) && hasReadyPlayer && isBank && !tableClosed,
+          }
+        : isBank
+          ? {
         role: "BANK",
         phase: table.currentPhase,
         tableName: table.name,
@@ -559,7 +632,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         emailConfigured: isEmailDeliveryConfigured(),
         startingJetons: money(table.startingJetonsPerPlayerMillis),
       }
-    : null;
+          : null
+      : null;
 
   if (isBank && table.currentPhase === "ROUND_COMPLETE" && bank) {
     bank.primaryAction = { id: "nextHand", label: "START NEXT ROUND", enabled: canNextHand && !tableClosed };
