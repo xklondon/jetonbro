@@ -1,0 +1,26 @@
+---
+description: Prisma schema and migration safety for JetonBro
+globs: prisma/**/*,**/migrations/**/*
+alwaysApply: false
+---
+
+# Database and migrations
+
+## Allowed operations
+
+- Local development may use the project’s documented migrate workflow
+- Release environments use **`prisma migrate deploy`** (also via `npm start` / Railway `preDeployCommand`)
+- Migration tests must exercise a clean, representative upgrade path
+
+## Forbidden without explicit authorisation
+
+- `prisma db push` against production or shared staging data
+- `prisma migrate reset` on production or shared staging
+- Destructive SQL that drops ledger, audit, or personal Game Ledger history
+- Inventing schema changes during visual-only or presentation tasks
+
+## Data preservation
+
+- Preserve immutable ledger entries and wipe/audit trails
+- Admin wipe and END & DELETE must follow product rules: hide/archive or null FKs as designed — not ad-hoc physical ledger deletion
+- Prefer additive, forward-only migrations

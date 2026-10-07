@@ -1,0 +1,46 @@
+---
+description: Tabletop skin isolation, visual authority, anatomy stability and presentation CSS rules
+globs: src/ui/skins/tabletop/**/*,src/ui/skins/registry.ts,src/ui/core/TableSession.tsx,src/ui/core/table-board.ts,src/ui/core/phase-copy.ts,src/ui/core/blackjack-phase-controls.ts,e2e/blackjack-stable-anatomy.spec.ts,e2e/poker-prompt8-surface.spec.ts,e2e/poker-final-presentation.spec.ts,src/ui/skins/tabletop/**/*.test.*
+alwaysApply: false
+---
+
+# Tabletop UI
+
+Tabletop is the **default** production skin. Classic is rollback-only.
+
+Full visual authority order and anatomy details: `docs/DESIGN_AUTHORITY.md`.
+
+## Isolation
+
+- Import only `./tabletop.css` from the Tabletop skin entry
+- Never import Classic components, helpers, or Classic stylesheets into the active Tabletop graph
+- Registry may register Classic via `./classic/skin` (components only); Classic CSS lives under `./classic/styles` and must not load while `ACTIVE_SKIN_ID` is `tabletop`
+- Every rule scoped under `.tabletop-skin` / `[data-skin="tabletop"]`
+- No global generic selectors (`.box`, `.table`, `.dealer`, `.felt` without skin scope)
+- No `!important` cascade fixes for architectural conflicts
+- Remove obsolete selectors instead of layering overrides
+
+## Visual authority
+
+1. Original approved PNGs under `design/reference/classic/approved/`
+2. Product phase/control/role contracts
+3. Tabletop implementation
+4. HTML prototype as secondary token colour reference only
+5. Historical/implementation screenshots are never design authority
+
+## Composition contract
+
+- Phone composition: `100dvh`, max width ~480px, **no document scroll**
+- Minimum interactive target 44×44px
+- One cloth table name (`data-table-name`) — not a giant page heading and not duplicated
+- Stable anatomy across phase transitions: same felt/rail/header/dock allocation; phases change labels, values, and legal controls
+- `prefers-reduced-motion` must not rely on motion for meaning
+- One canonical visible component per screen/role; adapters only when they mount that component
+
+## Rejected presentation (do not restore)
+
+CSS diamond-hatch wallpaper felt, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, spreadsheet PhaseZero ledger for live Dealer BJ.
+
+## Tests
+
+Behavioural tests protect commands, legal actions, balances, roles, overflow, and accessibility. They must **not** freeze rejected DOM/class names or Classic-only selectors as Tabletop requirements.

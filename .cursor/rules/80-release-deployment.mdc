@@ -1,0 +1,37 @@
+---
+description: Manual Railway release checklist — invoke with @80-release-deployment
+alwaysApply: false
+---
+
+# Release and deployment
+
+Invoke this rule explicitly with `@80-release-deployment`. Do not push, merge, tag, or deploy unless the user explicitly requests it in the current message.
+
+Current deployment IDs and live SHAs belong in `CHANGELOG.md` and `docs/IMPLEMENTATION_LOG.md`, not here.
+
+## Preflight
+
+1. Confirm repository path, branch name, and exact HEAD SHA
+2. Confirm a clean worktree (or only the files intended for this release)
+3. Confirm the user named this environment/target (Railway staging vs production) — never guess another project
+4. Run the required gate: guardrails, relevant tests, production build
+
+## Railway target
+
+- One Next.js app, one PostgreSQL database
+- Exactly **one** application replica (in-process SSE is single-instance)
+- `preDeployCommand`: `npx prisma migrate deploy`
+- Start: `npx next start` (or `npm start` which runs migrate deploy then next start)
+- Health check: `GET /api/health` (DB connectivity; no secrets)
+- `AUTH_URL` must be the public origin
+- `ALLOW_DEV_MAILBOX` must not enable production mailbox behaviour
+
+## After deploy
+
+1. Verify health endpoint
+2. Smoke the changed flow on the deployed origin
+3. Record branch/SHA/result in `CHANGELOG.md` / `docs/IMPLEMENTATION_LOG.md` when the user wants release notes updated
+
+## Report
+
+Return: repository, branch, SHA, target, migrate result, health result, smoke result, and any honest limitations. Never claim another project was deployed.

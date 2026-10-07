@@ -1,0 +1,39 @@
+---
+description: JetonBro change discipline, focused verification and acceptance workflow
+alwaysApply: false
+---
+
+# Testing and change discipline
+
+Implement only the requested change. Do not redesign visuals during protocol/accounting fixes. Do not expand Card Assist, Zilch, or unrelated swipe behaviour unless asked.
+
+## Lightweight (default)
+
+Use for visual/copy/layout and isolated presentation work:
+
+1. Inspect Git state and applicable scoped rules
+2. Change one vertical slice
+3. Run `npm run guardrails`
+4. Run **affected** unit/component tests
+5. Capture/check responsive UI at **360×800**, **390×844**, and **430×932** when mobile UI changes
+6. Run production build when UI or shared shell is touched
+7. Do **not** run the historical full Playwright catalogue for isolated visual work unless asked or a focused test shows a cross-cutting regression
+8. Commit / push / deploy only when explicitly requested
+
+## Full acceptance
+
+Required for accounting/ledger, authentication/invitations, phase machines, database migrations, and Railway releases:
+
+1. Read applicable rules and the files/tests directly affected
+2. State the invariant or behaviour being changed
+3. Keep the change within one vertical slice
+4. Run focused tests during development
+5. Run guardrails, the full Vitest suite, production build, and the Playwright coverage that proves the changed flow
+6. Update `CHANGELOG.md` / `docs/IMPLEMENTATION_LOG.md` when architectural facts or release status change (not the compatibility `.cursorfile`)
+
+## Reporting
+
+- Do not claim success from code inspection alone
+- Report exact commands and pass/fail results
+- Report honest remaining visual or behavioural mismatches
+- Prefer exact test names over vague “all tests passed”

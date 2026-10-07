@@ -1,0 +1,58 @@
+---
+description: Texas Hold’em phases, roles, shared PokerBoard oval presentation and pot accounting
+globs: src/domain/poker/**/*,src/application/services/poker*.ts,src/application/queries/poker-controls.ts,src/ui/skins/tabletop/components/Poker*.tsx,src/ui/skins/tabletop/components/primitives/Poker*.tsx,src/ui/core/phase-copy.ts,e2e/poker*.spec.ts,src/ui/skins/tabletop/poker*.test.*,src/application/services/poker*.test.*,src/domain/poker/**/*.test.*
+alwaysApply: false
+---
+
+# Texas Hold’em
+
+Physical cards stay offline. No shuffling, dealing, digital deck, or automatic hand evaluation. Optional community/hole-card records are display-only and never advance a street or settle a pot.
+
+## Phase sequence
+
+`POKER_SETUP → PRE_FLOP → FLOP → TURN → RIVER → SHOWDOWN → HAND_COMPLETE → PRE_FLOP`
+
+Owner advances physical-card streets only after the betting round is matched. Blinds post automatically once per hand. One remaining Player awards the pot without Showdown and clears actor / to-call / waiting. If everyone remaining is All-In, Owner still deals remaining streets then Showdown. Next hand rotates the button once and posts blinds once.
+
+## Distinct roles
+
+- **Table Owner** (`isOwner`): table management and street buttons — never the rotating Button chrome
+- **Dealer/Button** (`seat.isDealer`): rotating seated Player; posts blinds; acts normally; no Owner street controls
+- **Current actor**: only seat that may Fold / Check or Call / Bet or Raise / All-In
+- Others see whose turn it is; Folded/All-In keep seat status + wallet without tray actions
+
+`pokerControls()` is the UI acceptance contract. Clients follow snapshot/SSE.
+
+## Legal action matrix (summary)
+
+| Phase | Owner (not acting) | Current actor | Others |
+|---|---|---|---|
+| POKER_SETUP | START HAND; menu invite/jetons/switch | — | Felt + wallet |
+| PRE_FLOP…RIVER | Street button disabled until matched, then enabled | Actor actions + tray | Felt + whose turn + wallet |
+| SHOWDOWN | AWARD POT | No actor actions | Results + wallet |
+| HAND_COMPLETE | NEXT HAND | Wallet + result | Wallet + result |
+
+- CALL stays available when chips are owed; never show `CALL 0` or `TO CALL 0`
+- CHECK never while `toCall > 0`
+- BET/RAISE opens a local composer; tray taps/drags stage only; CONFIRM commits once via existing `pokerAct` (idempotent)
+- Stale actions return `TURN_CONFLICT` and refresh
+
+## Canonical Tabletop surface
+
+- Shared `PokerBoard` via `PokerDealer` / `PokerPlayer` for **all** phases including Phase 0
+- `selectTableBoard` → `POKER_DEALER` / `POKER_PLAYER` at `POKER_SETUP` / table setup — never the Blackjack PhaseZero ledger
+- Oval rail + cloth table name once (`data-table-name`)
+- Inward street-wager chip stacks; **never** visible `STREET N` labels
+- Centre pot shows committed total; side-pot lines only when side pots exist
+- After HAND_COMPLETE: `POT PAID` / winners — no lingering TO CALL, actor, or Waiting seat
+- Owner street controls in the phase dock, separated from actor actions above the tray
+- Pulsing actor outline; `prefers-reduced-motion` uses a static strong outline
+- Phase copy: one primary label + optional instruction (`phase-copy.ts`)
+- START HAND stays pressable; server `POKER_SEATS` stays authoritative; map failures to one compact dock hint
+
+## Accounting reminders
+
+- AVAILABLE → LOCKED_POKER only; no Bank reserve path for Poker wagers
+- Side pots by all-in levels; equal splits with remainder left of button
+- Game change closes the session and opens a fresh allocation — no leftover AVAILABLE into Poker
+- New-session first deal requires a seated funded Poker Dealer (`assertFundedPokerDealer` when `sessionStarting`)

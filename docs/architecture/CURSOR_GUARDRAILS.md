@@ -1,23 +1,30 @@
 # Cursor bootstrap guardrails
 
-Add the following instruction to Cursor project rules as the first mandatory rule:
+Canonical agent instructions:
 
-> Before planning, editing, running commands, or responding to any implementation request, read the root `.cursorfile` completely. Treat it as the repository's living operating contract. After each accepted change, update `.cursorfile` whenever architecture, invariants, state transitions, accounting, permissions, deployment commands, or implementation status changed. Never bypass or silently contradict it.
+1. Root `AGENTS.md`
+2. Scoped rules in `.cursor/rules/*.mdc` (permanent invariants in `00-core-product.mdc`)
+3. Compatibility pointer `.cursorfile` (must remain present and non-empty for existing guardrails/Docker)
+4. Detailed docs: `docs/DESIGN_AUTHORITY.md`, `docs/MVP_FILE_MAP.md`, `docs/IMPLEMENTATION_LOG.md`, `CHANGELOG.md`
+
+Do not treat `.cursorfile` as a second full contract. After accepted architectural changes, update the applicable `.mdc` rule and/or docs — not a monolithic copy in `.cursorfile`.
 
 ## Repository requirements
 
-- Commit `.cursorfile` at repository root in the first commit.
-- Add a test or CI check that fails if `.cursorfile` is missing.
+- Keep `AGENTS.md`, `.cursorfile`, and `.cursor/rules/*.mdc` version-controlled.
+- Add a test or CI check that fails if `.cursorfile` is missing (existing guardrails).
 - Add `npm run guardrails` to validate required project files, prohibited dependencies, and architectural boundaries.
 - Run `npm run guardrails` before tests and build in CI.
-- Keep `classic` as a replaceable visual skin, not a fork of the application.
-- Required initial structure includes `src/domain/poker/` for Texas Hold’em.
-- No new game, action, balance mutation, phase, or payout type may be added without updating `.cursorfile` first.
+- Keep Classic as a replaceable rollback skin, not a fork of the application. Tabletop is the default skin.
+- Required structure includes `src/domain/poker/` for Texas Hold’em.
+- No new game, action, balance mutation, phase, or payout type may be added without updating the applicable scoped rule (and docs when release status changes).
 
 ## Required initial structure
 
 ```text
+AGENTS.md
 .cursorfile
+.cursor/rules/
 CHANGELOG.md
 docs/architecture/
 design/reference/classic/
@@ -26,6 +33,7 @@ src/domain/ledger/
 src/domain/tables/
 src/ui/core/
 src/ui/skins/classic/
+src/ui/skins/tabletop/
 src/ui/skins/registry.ts
 scripts/check-guardrails.mjs
 ```

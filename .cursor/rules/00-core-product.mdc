@@ -1,0 +1,33 @@
+---
+description: Permanent JetonBro product invariants (always applied)
+alwaysApply: true
+---
+
+# Core product invariants
+
+JetonBro is a virtual-jeton ledger for **physical-table** games. Physical cards, dealing, shuffling, randomness, player decisions, and winner determination stay offline. The dealer owns physical play; the **server owns balances, phases, and permissions**.
+
+## In scope / out of scope
+
+In scope: balances, locked commitments, Blackjack boxes, Poker blinds/pots, phase progression, dealer-declared outcomes, ledger persistence.
+
+Out of scope: digital decks, hand evaluation, automatic winners, game strategy, card simulations, autonomous casino play, payment processing.
+
+Every feature must answer: “Is this necessary to replace physical jetons?” If not, stop.
+
+## Permanent rules
+
+1. The server is authoritative for every balance and phase.
+2. Every balance mutation creates an immutable ledger entry.
+3. Every value-changing command is transactional and idempotent.
+4. Do not implement a digital deck, randomness source, or automatic winner determination.
+5. Blackjack and Texas Hold’em are separate domain modules. Never fold Poker into the Blackjack engine.
+6. Optional Card Assist is display-only rank records. It never evaluates hands, chooses winners, advances phases/streets, settles pots, or blocks play.
+7. Do not push, merge, tag, migrate production data, or deploy unless the user explicitly asks.
+8. Do not leave numbered-copy source files (`* (1).ts`, `* (1).tsx`).
+9. Inspect existing code before creating parallel `V2` / `Fixed` / `New` implementations.
+10. One canonical visible component per screen/role. Adapters may remain only when they mount that same canonical component.
+
+Game/domain logic must not import skin components or CSS. Skins must not contain permissions, accounting, phase rules, or payout calculations.
+
+Detailed contracts live in `.cursor/rules/` (scoped) and `docs/DESIGN_AUTHORITY.md`, `docs/MVP_FILE_MAP.md`, `docs/IMPLEMENTATION_LOG.md`, `CHANGELOG.md`.

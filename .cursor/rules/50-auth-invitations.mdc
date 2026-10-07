@@ -1,0 +1,44 @@
+---
+description: Guest vs Verified identity, invitations, join routes, actor resolution and mailbox constraints
+globs: src/application/actor*.ts,src/application/services/invitations.ts,src/application/services/guest-join*.ts,src/application/request-actor*.ts,src/app/api/auth/**/*,src/app/api/join/**/*,src/app/api/dev/**/*,src/app/join/**/*,src/app/api/tables/**/snapshot/**/*,src/app/api/tables/**/stream/**/*,src/app/api/tables/**/commands/**/*,src/auth*.ts,e2e/live-identity.spec.ts,e2e/setup-phase-zero.spec.ts,src/application/services/guest-join.test.ts,src/application/request-actor.test.ts
+alwaysApply: false
+---
+
+# Auth and invitations
+
+## Identities
+
+- **Verified**: Auth.js magic-link / email path; may have personal Game Ledger
+- **Guest**: table-scoped play name + `jetonbro.guest` cookie; no email; no cross-table ledger; cannot create tables
+- Roles come from snapshot flags (`isOwner`, `isDealer`, `isSeatedPlayer`) — never from name or email
+
+## Cookies and requests
+
+- On a table-scoped request, a **matching guest cookie wins** over Auth.js (`resolveActorFromIdentities`)
+- Table page, snapshot, stream, and command routes must forward the request `Cookie` header into `getActor`
+- Guest join sets the cookie and navigates with a full document load so the cookie is sent
+- `GET /api/tables/{id}/snapshot` is `Cache-Control: no-store`
+
+## Join intents
+
+Two reusable QR join URLs with different intents:
+
+- Guest: `/join/guest/{token}` — play name, table-scoped cookie, starting jetons once
+- Verified: `/join/verified/{token}` — Auth.js magic link; multiple verified users may redeem; one membership each
+- Email invitations use the verified path
+- Guest QR and Verified QR are never shown as the same simultaneous primary method without exclusivity
+- Join/membership changes bump `Table.updatedAt` so Owner/Dealer snapshots refresh
+
+## Credits and idempotency
+
+- Starting jetons credit once per membership (`starting-jetons:{tableId}:{userId}` + `startingJetonsCredited`)
+- Redeem/join retries must not create a second membership or double-credit
+- First-table join uses `INITIAL_ALLOCATION`
+
+## Production constraints
+
+- `ALLOW_DEV_MAILBOX` is local/CI only and ignored when `NODE_ENV=production`
+- `/api/dev/*` always 404s in production
+- Real email uses Resend HTTP API (`RESEND_API_KEY` + `EMAIL_FROM`); API key never in a URL
+- Development mailbox only when `NODE_ENV !== "production"` and `ALLOW_DEV_MAILBOX=true`
+- `AUTH_URL` is the public origin for magic links and invites — never `localhost` or `*.railway.internal` in production redirects

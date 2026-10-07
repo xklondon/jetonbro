@@ -1,0 +1,61 @@
+---
+description: JetonBro accounting, balances, locked funds, payouts, Game Sessions and personal ledger invariants
+alwaysApply: false
+---
+
+# Accounting and ledger
+
+Canonical services/domains: `src/domain/ledger/`, `src/application/services/blackjack-round.ts`, `src/application/services/poker-hand.ts`, `src/application/services/tables.ts`, Prisma models under `prisma/`. Prefer those over inventing new money paths.
+
+## Units and buckets
+
+- Unit: millijetons (`bigint`, 1000 = 1 jeton). No floating-point balance math.
+- AVAILABLE = `TableMember.availableMillis`
+- LOCKED_BET = `BettingBox.lockedBetMillis`
+- LOCKED_INSURANCE = `InsuranceBet.amountMillis` until settled
+- LOCKED_POKER = `PokerParticipant.lockedMillis` until awarded
+- Ordinary bets and Insurance are separate locked accounts and settle independently
+- A round cannot complete while any box or Insurance stake remains unresolved
+
+## Bank modes
+
+- Open Bank: `BANK_VIRTUAL_RESERVE` is unlimited (not stored). Source of minted jetons / payout profit; sink of lost stakes.
+- Limited Bank: table-specific `BANK_AVAILABLE` and `BANK_LOCKED_EXPOSURE`. Reserve max box profit before accepting stakes (1.5× for 3:2, 1.2× for 6:5). Insurance reserves 2× independently. Bank-side ledger legs never double-credit the Player.
+- Open/Limited toggle is Bank/Owner menu only during unstaked BETTING; Players never see it.
+
+## Blackjack payouts
+
+- Win: profit 1× / return 2×
+- Push: profit 0 / return 1×
+- Loss: return 0
+- Blackjack 3:2: profit 1.5× / return 2.5×
+- Blackjack 6:5: profit 1.2× / return 2.2×
+- Insurance 2:1: profit 2× / return 3× Insurance stake; never settled by ordinary box settlement (or vice versa)
+
+## Poker pots
+
+- Wagers move AVAILABLE → LOCKED_POKER only; never debit/credit `BANK_VIRTUAL_RESERVE`
+- Side pots follow all-in contribution levels
+- Split pots divide equally; millijeton remainder left of the dealer button
+- Fold-out awards the complete pot once, including the winner’s committed blinds
+
+## Commands and sessions
+
+- Value-changing commands require an idempotency key and write ≥1 ledger entry in the same transaction
+- Tables host sequential `GameSession` records (`SETUP | ACTIVE | COMPLETED | ABANDONED`)
+- Closing a session writes `GAME_SESSION_CLOSE` (remaining AVAILABLE → 0); opening writes `GAME_SESSION_OPEN` for selected participants — fresh allocation, no leftover AVAILABLE across games
+- First-table join uses `INITIAL_ALLOCATION` once per membership (`starting-jetons:{tableId}:{userId}`)
+
+## Stake presentation
+
+- `FUN_ONLY` (default): jetons only, no owe/owed
+- `MONEY`: currency + rate (default USD 1:1) with optional buy-in; conversion is presentation-only
+- `CUSTOM`: label + integer jetons per unit
+- Do not represent Fun only as Money with a zero rate
+
+## Personal ledger and wipe
+
+- Verified players may save session nets to a personal Game Ledger (idempotent)
+- Guests have no cross-table ledger
+- Admin wipe (`JETONBRO_ADMIN_EMAIL`) deletes owned tables only; personal session rows and ledger audit survive with table FKs nulled
+- Normal CLOSE TABLE / END & DELETE hide or archive; they do not physically wipe ledger history unless explicitly authorised

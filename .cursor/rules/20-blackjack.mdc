@@ -1,0 +1,65 @@
+---
+description: Blackjack phases, roles, boxes, Dealer Tabletop anatomy and Player betting controls
+globs: src/domain/blackjack/**/*,src/application/services/blackjack*.ts,src/application/services/deal-countdown*.ts,src/application/queries/snapshot.ts,src/application/queries/views.ts,src/ui/core/blackjack-*,src/ui/core/table-board.ts,src/ui/core/TableSession.tsx,src/ui/skins/tabletop/components/BlackjackDealerTable.tsx,src/ui/skins/tabletop/components/BankTable.tsx,src/ui/skins/tabletop/components/PlayerTable.tsx,src/ui/skins/tabletop/components/PhaseZero.tsx,src/ui/skins/tabletop/components/WaitingTable.tsx,src/ui/skins/tabletop/components/primitives/PlayerBox.tsx,src/ui/skins/tabletop/components/primitives/DealerLedger.tsx,e2e/blackjack*.spec.ts,e2e/cards-and-limited-bank.spec.ts,src/ui/core/blackjack-*.test.*,src/ui/skins/tabletop/blackjack*.test.*,src/ui/skins/tabletop/render.test.tsx
+alwaysApply: false
+---
+
+# Blackjack
+
+Blackjack **engine and accounting are frozen**. Presentation may change only when explicitly requested, using the canonical Tabletop components.
+
+## Phase sequence
+
+`TABLE_SETUP → BETTING → PLAYING → PAYOUT → ROUND_COMPLETE → BETTING`
+
+No backward transitions and no phase skipping. Insurance is a Bank-triggered window during PLAYING (not a phase) and settles independently during PAYOUT.
+
+## Roles and privacy
+
+- Owner: invite, assign Bank/Dealer, rename, distribute jetons, save/close, switch games at safe boundaries
+- Bank/Dealer: start betting, deal, Insurance window, enter payout, settle boxes/Insurance, next round; optional Card Assist on Dealer hand and Player boxes
+- Player: own boxes only; bet/retract in BETTING; Double/Split in PLAYING; Insurance while window open; Card Assist only on own selected box
+- Player never sees another Player’s boxes or the Dealer Open/Limited toggle
+- Bank sees all active boxes
+- Screen choice is `selectTableBoard()` from snapshot flags only (`isDealer`, `isSeatedPlayer`, `isOwner`, game, phase)
+
+## Boxes
+
+- One felt box instance per active engine box; never aggregate by Player
+- Split maps to existing engine boxes (`isSplit` / offshoot); UI never fabricates hands
+- Do not invent empty seated Players as active wager boxes
+
+## Canonical Dealer Tabletop
+
+- `BlackjackDealerTable` is the canonical Dealer surface for **every** phase including `TABLE_SETUP`
+- `BankTable` is a thin adapter that mounts `BlackjackDealerTable`
+- Owner/Dealer at BJ `TABLE_SETUP` selects `BLACKJACK_DEALER` — **not** `PHASE_ZERO_DEALER` / PhaseZero ledger
+- Same shell, felt dimensions, table-name position, Dealer slot, and Player-box grid across Setup / Betting / Playing / Insurance / Payout
+- Phase changes may alter labels, instruction, box values, legal controls, and badges — not felt geometry
+- Dealer position is always present (quiet empty state when no cards); Card Assist expands inside the reserved region
+- Payout controls stay attached to the same box positions (no spreadsheet ledger swap)
+
+## Dock matrix (product labels)
+
+| Phase | Primary | Secondary |
+|---|---|---|
+| TABLE_SETUP | START BETTING | ADD PLAYER |
+| BETTING | DEAL CARDS | ADD PLAYER |
+| PLAYING | ENTER PAYOUT | OPEN INSURANCE |
+| Insurance open | ENTER PAYOUT | CLOSE INSURANCE |
+| Payout unresolved | START BETTING (disabled) + result controls | — |
+| Payout resolved | START BETTING | — |
+
+Do not show `CLOSE BETTING` or `START NEXT ROUND` as normal UI wording. Controls derive from `blackjack-phase-controls.ts`. Use existing commands only.
+
+## Player Betting presentation
+
+- Permanent bottom AVAILABLE + jeton tray in every phase
+- Per-box retract × during BETTING when MAIN > 0 (`placeBet` mode `RETRACT`); accessible name `Retract Box {n} wager`
+- No second full-width dock RETRACT when × is canonical
+- Primary wager chips use shared `ChipStack` lg (~46–56px at 390×844); Insurance secondary smaller
+- Doubled boxes show `2×` without inventing another box
+
+## Card Assist
+
+Display-only. Player edits own selected box; Dealer edits Dealer hand and may correct Player boxes. Never settles, chooses winners, changes balances, or advances phases.
