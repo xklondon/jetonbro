@@ -237,6 +237,7 @@ export function PlayerTable({
         anatomy="player"
         phaseLabel={phaseCopy.primary}
         phaseInstruction={phaseCopy.instruction}
+        layout={view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE" ? "payout" : "play"}
         dealer={
           <header className="tt-bj-dealer-band-head">
             <span>DEALER</span>

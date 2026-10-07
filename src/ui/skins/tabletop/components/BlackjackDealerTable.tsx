@@ -314,6 +314,7 @@ export function BlackjackDealerTable({
         anatomy="dealer"
         phaseLabel={phaseCopy.primary}
         phaseInstruction={phaseCopy.instruction}
+        layout={payoutPhase ? "payout" : "play"}
         dealer={dealerSlot}
         insurance={insurance}
         timers={timers}

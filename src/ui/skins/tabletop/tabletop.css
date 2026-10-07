@@ -2868,6 +2868,54 @@
   white-space: normal;
 }
 
+/*
+ * Payout-only: grid places embroidered name between dealer and settlement region
+ * so full-width bars never cover the name. Non-payout BoxStage geometry unchanged.
+ */
+.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-table-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "dealer"
+    "name"
+    "settle";
+  gap: 10px 0;
+  align-content: stretch;
+}
+
+.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-dealer-position {
+  grid-area: dealer;
+  margin-top: 2px;
+}
+
+.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-felt-name {
+  grid-area: name;
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  z-index: 2;
+  width: min(92%, 22rem);
+  margin: 0 auto;
+  padding: 2px 8px 6px;
+  justify-self: center;
+}
+
+.tabletop-skin .tt-bj-table[data-bj-layout="payout"] .tt-bj-player-layer {
+  grid-area: settle;
+  position: relative;
+  inset: auto;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: 2;
+  overflow: hidden;
+  padding: 8px 6px 4px;
+  margin-top: 0;
+}
+
 .tabletop-skin .tt-bj-dealer[data-bj-phase] .tt-bj-table {
   /* geometry owned above; phase attrs are test hooks only */
 }

@@ -179,6 +179,7 @@ describe("Blackjack table composition — Setup / BoxStage / Payout", () => {
         actions: { ...bank().actions, settleBoxes: true, nextHand: false },
       }),
     );
+    expect(markup).toContain('data-bj-layout="payout"');
     expect(markup).toContain("tt-bj-overlay-row");
     expect(markup).toContain('data-payout-rail="row"');
     expect(markup).toContain(">LOST<");

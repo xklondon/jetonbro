@@ -106,12 +106,16 @@ test("Blackjack physical table composition across phases", async ({ page, contex
   await shot(page, "04-dealer-betting-multiple-boxes");
 
   const yBet = await page.locator("[data-box-stage=true]").boundingBox();
+  const box1Bet = await page.locator('[data-box-stage=true] [data-box-slot="1"]').first().boundingBox();
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await expect(page.getByText("Play the hands.")).toBeVisible();
   const yPlay = await page.locator("[data-box-stage=true]").boundingBox();
+  const box1Play = await page.locator('[data-box-stage=true] [data-box-slot="1"]').first().boundingBox();
   expect(yBet && yPlay).toBeTruthy();
   expect(Math.abs(yBet!.y - yPlay!.y)).toBeLessThanOrEqual(8);
+  expect(box1Bet && box1Play).toBeTruthy();
+  expect(Math.abs(box1Bet!.y - box1Play!.y)).toBeLessThanOrEqual(8);
   await shot(page, "08-dealer-playing");
   await shot(casey.page, "07-player-playing");
 
@@ -124,6 +128,7 @@ test("Blackjack physical table composition across phases", async ({ page, contex
 
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PAYOUT");
+  await expect(page.locator("[data-bj-layout=payout]")).toBeVisible();
   await expect(page.locator("[data-box-stage=true]")).toHaveCount(0);
   await expect(page.locator(".tt-bj-overlay-row").first()).toBeVisible();
   const rail = page.locator("[data-payout-rail=row]").first();
@@ -132,14 +137,29 @@ test("Blackjack physical table composition across phases", async ({ page, contex
   for (let i = 1; i < 4; i += 1) {
     expect(Math.abs((await rail.locator("[data-payout-action=true]").nth(i).boundingBox())!.y - y0)).toBeLessThan(8);
   }
-  await shot(page, "11-dealer-payout-unresolved");
 
-  while (await page.locator("[data-payout-action=true]").count()) {
-    await page.locator("[data-payout-action=true]").filter({ hasText: /^LOST$/ }).first().click();
+  async function assertNameClearOfBars(target: Page) {
+    const nameBox = await target.locator("[data-felt-name=true]").boundingBox();
+    const nameText = await target.locator("[data-table-name]").first().innerText();
+    expect(nameBox).toBeTruthy();
+    expect(nameText).not.toMatch(/\.\.\.|…/);
+    expect(nameText.trim().length).toBeGreaterThan(0);
+    const firstBar = await target.locator(".tt-bj-overlay-row, [data-payout-rail=row]").first().boundingBox();
+    expect(firstBar).toBeTruthy();
+    // Require a clear gap so embroidered name never sits on bar chrome.
+    expect(firstBar!.y).toBeGreaterThanOrEqual(nameBox!.y + nameBox!.height + 4);
+    const bars = await target.locator(".tt-bj-overlay-row, [data-payout-rail=row]").evaluateAll((els) =>
+      els.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      }),
+    );
+    for (const bar of bars) {
+      const overlapX = nameBox!.x < bar.x + bar.width && nameBox!.x + nameBox!.width > bar.x;
+      const overlapY = nameBox!.y < bar.y + bar.height && nameBox!.y + nameBox!.height > bar.y;
+      expect(overlapX && overlapY).toBe(false);
+    }
   }
-  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 15_000 });
-  await shot(page, "12-dealer-payout-resolved");
-  await shot(casey.page, "13-player-payout");
 
   for (const [w, h] of [
     [360, 800],
@@ -148,7 +168,18 @@ test("Blackjack physical table composition across phases", async ({ page, contex
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await expectNoDocumentScroll(page);
+    await assertNameClearOfBars(page);
   }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "11-dealer-payout-unresolved");
+
+  while (await page.locator("[data-payout-action=true]").count()) {
+    await page.locator("[data-payout-action=true]").filter({ hasText: /^LOST$/ }).first().click();
+  }
+  await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 15_000 });
+  await assertNameClearOfBars(page);
+  await shot(page, "12-dealer-payout-resolved");
+  await shot(casey.page, "13-player-payout");
 
   await casey.ctx.close();
   await riley.ctx.close();

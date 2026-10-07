@@ -75,6 +75,7 @@ export function BlackjackTableSurface({
   anatomy,
   phaseLabel,
   phaseInstruction,
+  layout = "play",
   dealer,
   insurance,
   timers,
@@ -84,6 +85,8 @@ export function BlackjackTableSurface({
   anatomy: "dealer" | "player";
   phaseLabel: string;
   phaseInstruction?: string;
+  /** Payout reserves a settlement region so embroidered name never overlaps bars. */
+  layout?: "play" | "payout";
   dealer?: ReactNode;
   insurance?: ReactNode;
   timers?: ReactNode;
@@ -94,6 +97,7 @@ export function BlackjackTableSurface({
       className="tt-bj-table"
       data-bj-felt="true"
       data-bj-anatomy={anatomy}
+      data-bj-layout={layout}
       data-blackjack-table-surface="true"
       data-felt-markings="true"
     >
