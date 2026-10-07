@@ -17,7 +17,10 @@ export function ClassicHome({
   onJoinTable,
   onOpenTable,
   onTableCommand,
-  onDeleteAllMyTables,
+  onWipeAllTables,
+  canWipeAllTables,
+  tableCount,
+  showPersonalLedger = true,
 }: {
   displayName: string;
   defaultTableName: string;
@@ -27,10 +30,9 @@ export function ClassicHome({
   onJoinTable: (destination: string) => void;
   onOpenTable: (tableId: string) => void;
   onTableCommand?: (tableId: string, command: OwnerCommand) => Promise<void>;
-  onDeleteAllMyTables?: (confirmation: string) => Promise<void>;
-  onWipeAllMyTables?: (confirmation: string) => Promise<void>;
+  onWipeAllTables?: (confirmation: string) => Promise<void>;
   canWipeAllTables?: boolean;
-  ownedTableCount?: number;
+  tableCount?: number;
   showPersonalLedger?: boolean;
 }) {
   const empty = tables.length === 0;
@@ -46,11 +48,10 @@ export function ClassicHome({
     command: "closeTable" | "deleteTable" | "endAndDelete";
     title: string;
   } | null>(null);
-  const [deleteAllPhrase, setDeleteAllPhrase] = useState("");
-  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [wipeOpen, setWipeOpen] = useState(false);
+  const [wipePhrase, setWipePhrase] = useState("");
   const drag = useRef<{ id: string; x: number; active: boolean } | null>(null);
-  const ownsAny = tables.some((table) => table.isOwner);
-
+  
   function submitJoin() {
     const destination = parseJoinDestination(joinValue);
     if (!destination) {
@@ -130,18 +131,23 @@ export function ClassicHome({
           <button className="gold-button home-create" type="button" disabled={creating} onClick={() => void createTable()}>
             {creating ? "Opening table" : "CREATE TABLE"}
           </button>
-          {ownsAny ? (
+          {canWipeAllTables ? (
             <button
               className="text-link"
               type="button"
-              data-delete-all-tables="true"
+              data-wipe-all-tables="true"
               onClick={() => {
-                setDeleteAllPhrase("");
-                setDeleteAllOpen(true);
+                setWipePhrase("");
+                setWipeOpen(true);
               }}
             >
-              DELETE ALL MY TABLES
+              WIPE ALL TABLES
             </button>
+          ) : null}
+          {showPersonalLedger ? (
+            <a className="text-link" href="/ledger">
+              GAME LEDGER
+            </a>
           ) : null}
         </div>
         {empty ? (
@@ -223,37 +229,48 @@ export function ClassicHome({
           </div>
         )}
         <SheetOverlay
-          open={joinOpen || Boolean(confirm) || deleteAllOpen}
+          open={joinOpen || Boolean(confirm) || wipeOpen}
           onClose={() => {
             setJoinOpen(false);
             setConfirm(null);
-            setDeleteAllOpen(false);
-            setDeleteAllPhrase("");
+            setWipeOpen(false);
+            setWipePhrase("");
           }}
         >
-          {deleteAllOpen ? (
+          {wipeOpen ? (
             <>
-              <h3>DELETE ALL MY TABLES</h3>
-              <p>Every table you own will be ended and hidden. Current hands are abandoned. Ledger history is kept. Other owners are not affected.</p>
-              <p className="muted">Type DELETE ALL to confirm.</p>
+              <h3>WIPE ALL TABLES</h3>
+              <p>
+                This permanently removes every JetonBro table, including tables owned by other users. Users and personal
+                ledger history are retained.
+              </p>
+              <p className="muted">{tableCount ?? 0} tables will be affected. Type WIPE ALL TABLES to confirm.</p>
               <input
-                aria-label="Type DELETE ALL"
-                value={deleteAllPhrase}
-                onChange={(event) => setDeleteAllPhrase(event.target.value)}
+                aria-label="Type WIPE ALL TABLES"
+                value={wipePhrase}
+                onChange={(event) => setWipePhrase(event.target.value)}
               />
               <button
                 className="gold-button"
                 type="button"
-                disabled={deleteAllPhrase !== "DELETE ALL"}
+                data-wipe-confirm="true"
+                disabled={wipePhrase !== "WIPE ALL TABLES"}
                 onClick={() => {
-                  setDeleteAllOpen(false);
-                  setDeleteAllPhrase("");
-                  void onDeleteAllMyTables?.("DELETE ALL");
+                  setWipeOpen(false);
+                  setWipePhrase("");
+                  void onWipeAllTables?.("WIPE ALL TABLES");
                 }}
               >
-                Confirm
+                Confirm wipe
               </button>
-              <button className="text-link" type="button" onClick={() => { setDeleteAllOpen(false); setDeleteAllPhrase(""); }}>
+              <button
+                className="text-link"
+                type="button"
+                onClick={() => {
+                  setWipeOpen(false);
+                  setWipePhrase("");
+                }}
+              >
                 Cancel
               </button>
             </>

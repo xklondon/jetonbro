@@ -127,7 +127,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
   await page.getByRole("button", { name: "CANCEL" }).click();
   await expect(page.getByRole("button", { name: "SAVE" })).toHaveCount(0);
   await samPage.reload();
-  await expect(samPage.locator("[data-turn-state=other]").first()).toBeVisible();
+  await expectPokerPhase(samPage, "PRE-FLOP");
   await shot(samPage, "app-poker-player-preflop-390x844.png");
   await openTableMenu(samPage);
   const samHole = samPage.locator(".sheet.open").getByRole("button", { name: "+ HOLE CARDS" });
@@ -148,7 +148,7 @@ test("Blackjack waits for the first bet, then switches to Hold’em with the sam
     await command(actor, tableId, "pokerAct", { type: "FOLD" });
   }
   await page.reload();
-  await expect(page.getByText("HAND COMPLETE", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("[data-phase-heading]")).toHaveText("HAND COMPLETE", { timeout: 15_000 });
   await shot(page, "app-poker-dealer-complete-390x844.png");
   await samPage.reload();
   await shot(samPage, "app-poker-player-complete-390x844.png");
@@ -242,7 +242,7 @@ test("three-player showdown split pot and street screenshots", async ({ page, co
   });
   await page.reload();
   await samPage.reload();
-  await expect(page.getByText("HAND COMPLETE", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("HAND COMPLETE");
   await shot(page, "app-poker-dealer-awarded-390x844.png");
   await shot(samPage, "app-poker-player-awarded-390x844.png");
   await samContext.close();
@@ -310,7 +310,7 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
     browser,
   );
   await expect(page.getByRole("button", { name: "START BETTING" })).toHaveCount(0);
-  await expect(page.locator("[data-phase-heading]")).toHaveText("Table setup");
+  await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await page.getByRole("button", { name: "Menu" }).click();
   await page.getByRole("button", { name: "SEAT ORDER" }).click();
   if (joId && samId) {
@@ -350,7 +350,7 @@ test("direct Poker creation, seat reorder, actor highlight, side pots, and next-
     await command(actor, tableId, "pokerAct", { type: "FOLD" });
   }
   await page.reload();
-  await expect(page.getByText("HAND COMPLETE", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("HAND COMPLETE");
   await openTableMenu(page);
   await page.locator(".sheet.open").getByRole("button", { name: "NEXT HAND IN 7 SECONDS" }).click();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.nextHandDeadlineAt).toBeTruthy();
@@ -424,7 +424,7 @@ test("browser All-In side-pot settlement conserves balances", async ({ page, con
     ]),
   });
   await page.reload();
-  await expect(page.getByText("HAND COMPLETE", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-phase-heading]")).toHaveText("HAND COMPLETE");
   const done = await tableSnapshot(page);
   expect(done.poker?.phase).toBe("HAND_COMPLETE");
   const samAfter = done.members.find((member) => member.userId === samId)?.available?.label;

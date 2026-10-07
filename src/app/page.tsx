@@ -2,7 +2,7 @@ import { getActor } from "@/application/actor";
 import { listHomeTables } from "@/application/queries/home";
 import { defaultTableName, firstName } from "@/application/auth-urls";
 import { redirect } from "next/navigation";
-import { isAdminEmail, ownedTableCount } from "@/application/services/wipe-tables";
+import { isAdminEmail, totalTableCount } from "@/application/services/wipe-tables";
 import { HomeClient } from "./home-client";
 
 export default async function HomePage() {
@@ -16,14 +16,14 @@ export default async function HomePage() {
   const tables = await listHomeTables(actor.id);
   const displayName = firstName(actor.name || actor.email || "Player");
   const canWipe = !actor.isGuest && isAdminEmail(actor.email);
-  const wipeCount = canWipe ? await ownedTableCount(actor.id) : 0;
+  const wipeCount = canWipe ? await totalTableCount() : 0;
   return (
     <HomeClient
       displayName={displayName}
       defaultTableName={defaultTableName(displayName)}
       tables={tables}
       canWipeAllTables={canWipe}
-      ownedTableCount={wipeCount}
+      tableCount={wipeCount}
       showPersonalLedger={!actor.isGuest}
     />
   );

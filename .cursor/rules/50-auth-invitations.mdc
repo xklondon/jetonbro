@@ -42,3 +42,4 @@ Two reusable QR join URLs with different intents:
 - Real email uses Resend HTTP API (`RESEND_API_KEY` + `EMAIL_FROM`); API key never in a URL
 - Development mailbox only when `NODE_ENV !== "production"` and `ALLOW_DEV_MAILBOX=true`
 - `AUTH_URL` is the public origin for magic links and invites — never `localhost` or `*.railway.internal` in production redirects
+- Admin Home `WIPE ALL TABLES` is gated by exact match of verified email to server-side `JETONBRO_ADMIN_EMAIL` (never expose that email to the client)

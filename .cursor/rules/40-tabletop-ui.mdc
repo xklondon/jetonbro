@@ -39,7 +39,9 @@ Full visual authority order and anatomy details: `docs/DESIGN_AUTHORITY.md`.
 
 ## Rejected presentation (do not restore)
 
-CSS diamond-hatch wallpaper felt, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, spreadsheet PhaseZero ledger for live Dealer BJ.
+CSS diamond-hatch wallpaper felt, decorative 2px ellipse rail as finished anatomy, dashed-circle chips, kidney/spatial Dealer plaques on the Dealer board, `data-arc` / `data-dealer-positions` as visual contracts, duplicated Dealer identity in header and felt, PhaseZero admin ledger as a second Dealer screen path.
+
+Dealer Blackjack uses full-width per-box rows (`DealerLedgerRow`). Player Blackjack keeps betting boxes.
 
 ## Tests
 

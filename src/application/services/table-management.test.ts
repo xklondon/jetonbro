@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
 import { listHomeTables } from "@/application/queries/home";
-import { closeTable, createTable, deleteTable, deleteAllMyTables, endAndDelete } from "@/application/services/tables";
+import { closeTable, createTable, deleteTable, endAndDelete } from "@/application/services/tables";
 import { joinWithToken } from "@/application/services/invitations";
 import { loadSnapshot } from "@/application/queries/snapshot";
 import {
@@ -291,44 +291,5 @@ describeDb("home cards and table delete/archive", () => {
     expect(otherTable.id).toBe(other.tableId);
   });
 
-  test("owner can delete all owned tables in one confirmed operation", async () => {
-    const { owner, sam, tableId } = await fundedTable();
-    const draft = await createTable({
-      actorId: owner.id,
-      idempotencyKey: randomUUID(),
-      name: "Draft pile",
-      startingJetonsPerPlayer: "40",
-    });
-    const stranger = await user(`stranger-${randomUUID()}@jetonbro.test`, "Stranger");
-    const keep = await createTable({
-      actorId: stranger.id,
-      idempotencyKey: randomUUID(),
-      name: "Not yours",
-      startingJetonsPerPlayer: "40",
-    });
-    const ledgerBefore = await prisma.ledgerEntry.count({ where: { tableId } });
-    await expect(
-      deleteAllMyTables({ actorId: sam.id, idempotencyKey: randomUUID(), confirmation: "DELETE ALL" }),
-    ).rejects.toBeInstanceOf(ForbiddenError);
-    await expect(
-      deleteAllMyTables({ actorId: owner.id, idempotencyKey: randomUUID(), confirmation: "delete all" }),
-    ).rejects.toMatchObject({ code: "INVALID_CONFIRMATION" });
-    const first = await deleteAllMyTables({
-      actorId: owner.id,
-      idempotencyKey: "delete-all-owner-key-1",
-      confirmation: "DELETE ALL",
-    });
-    expect(first.ended).toBe(true);
-    const again = await deleteAllMyTables({
-      actorId: owner.id,
-      idempotencyKey: "delete-all-owner-key-1",
-      confirmation: "DELETE ALL",
-    });
-    expect(again.ended).toBe(true);
-    expect((await prisma.table.findUniqueOrThrow({ where: { id: tableId } })).status).toBe("ARCHIVED");
-    expect((await prisma.table.findUniqueOrThrow({ where: { id: draft.tableId } })).status).toBe("ARCHIVED");
-    expect(await prisma.ledgerEntry.count({ where: { tableId } })).toBe(ledgerBefore);
-    expect((await listHomeTables(owner.id)).length).toBe(0);
-    expect((await prisma.table.findUniqueOrThrow({ where: { id: keep.tableId } })).status).not.toBe("ARCHIVED");
-  });
 });
+

@@ -40,10 +40,12 @@ async function twoSeatTable(
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
   if (options?.limited) {
     await openTableMenu(page);
-    await page.getByRole("switch").click();
+    await page.locator(".sheet.open").getByRole("button", { name: "LIMITED BANK" }).click();
     await page.getByLabel("Starting Bank jetons").fill("500");
     await page.getByRole("button", { name: "Confirm Limited Bank" }).click();
-    await expect(page.locator("footer").getByText("LIMITED BANK")).toBeVisible();
+    await openTableMenu(page);
+    await expect(page.locator(".sheet.open").getByRole("button", { name: "LIMITED BANK" })).toHaveClass(/active/);
+    await page.keyboard.press("Escape");
   }
   await playerPage.reload();
   await playerPage.getByRole("button", { name: "Add 25 jetons" }).click();
@@ -138,15 +140,21 @@ test("Limited Bank win then next round keeps mode and balance", async ({ page, c
   test.setTimeout(120_000);
   await mkdir(out, { recursive: true });
   const { playerContext, playerPage } = await twoSeatTable(page, context, browser, { limited: true });
-  await expect(page.locator("footer").getByText("LIMITED BANK")).toBeVisible();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByRole("button", { name: "LIMITED BANK" })).toHaveClass(/active/);
+  await page.keyboard.press("Escape");
   await page.screenshot({ path: join(out, "app-limited-bank-betting-390x844.png") });
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await page.locator('[data-payout-action="true"]').filter({ hasText: /^WON$/ }).first().click();
-  await page.getByRole("button", { name: "START NEXT ROUND" }).click();
+  await page.getByRole("button", { name: /START (NEXT ROUND|BETTING)/ }).click();
   await expect(page.getByText("BETTING", { exact: true })).toBeVisible();
-  await expect(page.locator("footer").getByText("LIMITED BANK")).toBeVisible();
-  await expect(page.locator("footer").getByText("475")).toBeVisible();
+  await openTableMenu(page);
+  await expect(page.locator(".sheet.open").getByRole("button", { name: "LIMITED BANK" })).toHaveClass(/active/);
+  const snap = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((r) => r.json());
+  expect(snap.bank?.bankroll?.mode).toBe("LIMITED");
+  expect(snap.bank?.bankroll?.available?.label).toBe("475");
+  await page.keyboard.press("Escape");
   await page.screenshot({ path: join(out, "app-limited-bank-next-round-390x844.png") });
   await playerContext.close();
   void playerPage;

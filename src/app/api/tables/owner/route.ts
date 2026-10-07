@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { assertVerifiedActor, getActor } from "@/application/actor";
 import { DomainError } from "@/domain/errors";
-import { deleteAllMyTables } from "@/application/services/tables";
-import { wipeAllMyTables } from "@/application/services/wipe-tables";
+import { wipeAllTables } from "@/application/services/wipe-tables";
 
 const schema = z.object({
-  command: z.enum(["deleteAllMyTables", "wipeAllMyTables"]),
+  command: z.enum(["wipeAllTables"]),
   confirmation: z.string(),
   idempotencyKey: z.string().min(8),
 });
@@ -32,17 +31,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid command." }, { status: 400 });
   }
   try {
-    if (parsed.data.command === "wipeAllMyTables") {
-      const result = await wipeAllMyTables({
-        actorId: actor!.id,
-        actorEmail: actor!.email ?? "",
-        idempotencyKey: parsed.data.idempotencyKey,
-        confirmation: parsed.data.confirmation,
-      });
-      return NextResponse.json(result);
-    }
-    const result = await deleteAllMyTables({
+    const result = await wipeAllTables({
       actorId: actor!.id,
+      actorEmail: actor!.email ?? "",
       idempotencyKey: parsed.data.idempotencyKey,
       confirmation: parsed.data.confirmation,
     });

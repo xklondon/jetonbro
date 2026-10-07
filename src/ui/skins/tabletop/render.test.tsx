@@ -276,11 +276,11 @@ describe("tabletop skin renders", () => {
     expect(betting).not.toContain("Mia");
     expect(betting).toContain("DEALER");
     expect(betting).not.toContain("tt-setup-ledger");
-    expect(betting).not.toContain("data-blackjack-box-row");
+    expect(betting).toContain("data-blackjack-box-row");
     expect(betting).not.toContain("data-payout-action");
 
     const payout = render(createElement(tabletopSkin.BankTable, { view: bank("PAYOUT"), members, onCommand: noop }));
-    for (const label of ["LOST", "PUSH", "BLACKJACK", "WON"]) expect(payout).toContain(label);
+    for (const label of ["LOST", "DRAW", "BLACKJACK", "WON"]) expect(payout).toContain(label);
     expect(payout).toContain("Set Box 1 result: Stand-off");
     expect(payout).toContain("data-payout-action");
     expect(payout).toContain("START BETTING");

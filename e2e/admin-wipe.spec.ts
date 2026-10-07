@@ -11,7 +11,8 @@ test("admin wipe is hidden from ordinary users and guests, and requires the exac
   const otherEmail = uniqueEmail("p6-other");
   await openAs(context, page, otherEmail, "Drew");
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "WIPE ALL MY TABLES" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "WIPE ALL TABLES" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "DELETE ALL MY TABLES" })).toHaveCount(0);
 
   const adminContext = await browser.newContext();
   const adminPage = await adminContext.newPage();
@@ -19,9 +20,11 @@ test("admin wipe is hidden from ordinary users and guests, and requires the exac
   await createBlackjackTable(adminPage, "Wipe fixture", { starting: "100" });
   const guestUrl = await setupJoinUrl(adminPage, "guest");
   await adminPage.goto("/");
-  await expect(adminPage.getByRole("button", { name: "WIPE ALL MY TABLES" })).toBeVisible();
-  await adminPage.getByRole("button", { name: "WIPE ALL MY TABLES" }).click();
-  await expect(adminPage.getByRole("heading", { name: "WIPE ALL MY TABLES" })).toBeVisible();
+  await expect(adminPage.getByRole("button", { name: "WIPE ALL TABLES" })).toBeVisible();
+  await expect(adminPage.getByRole("button", { name: "DELETE ALL MY TABLES" })).toHaveCount(0);
+  await adminPage.getByRole("button", { name: "WIPE ALL TABLES" }).click();
+  await expect(adminPage.getByRole("heading", { name: "WIPE ALL TABLES" })).toBeVisible();
+  await expect(adminPage.getByText(/including tables owned by other users/i)).toBeVisible();
   await mkdir(out, { recursive: true });
   await adminPage.setViewportSize({ width: 390, height: 844 });
   await adminPage.screenshot({ path: join(out, "13-admin-wipe-confirmation-390x844.png"), fullPage: false });
@@ -38,7 +41,8 @@ test("admin wipe is hidden from ordinary users and guests, and requires the exac
   await guestPage.getByRole("button", { name: "Join table" }).click();
   await expect(guestPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
   await guestPage.goto("/");
-  await expect(guestPage.getByRole("button", { name: "WIPE ALL MY TABLES" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "WIPE ALL TABLES" })).toHaveCount(0);
+  await expect(guestPage.getByRole("button", { name: "DELETE ALL MY TABLES" })).toHaveCount(0);
 
   await guestContext.close();
   await adminContext.close();

@@ -7,7 +7,7 @@ import { startBetting, placeOrRetractBet } from "@/application/services/blackjac
 import { switchGame } from "@/application/services/switch-game";
 import { startTexasHoldem } from "@/application/services/poker-hand";
 import { saveGameSessionResults, listPersonalLedger } from "@/application/services/game-session";
-import { wipeAllMyTables } from "@/application/services/wipe-tables";
+import { wipeAllTables } from "@/application/services/wipe-tables";
 import { DomainError, ForbiddenError } from "@/domain/errors";
 
 let hasDb = Boolean(process.env.DATABASE_URL);
@@ -94,38 +94,22 @@ describeDb("game sessions, fresh allocation, ledger, wipe", () => {
     expect(mine.filter((row) => row.tableName === "Ledger table")).toHaveLength(1);
   });
 
-  test("wipe requires admin email and exact phrase", async () => {
+  test("wipe rejects non-admin and wrong phrase", async () => {
     const owner = await user(`p5-wipe-${randomUUID()}@jetonbro.test`, "Alex");
     await createTable({
       actorId: owner.id,
       idempotencyKey: randomUUID(),
-      name: "Wipe me",
+      name: "Wipe gate",
       game: "BLACKJACK",
       emails: [],
     });
     await expect(
-      wipeAllMyTables({ actorId: owner.id, actorEmail: owner.email, confirmation: "WIPE ALL TABLES", idempotencyKey: randomUUID() }),
+      wipeAllTables({ actorId: owner.id, actorEmail: owner.email, confirmation: "WIPE ALL TABLES", idempotencyKey: randomUUID() }),
     ).rejects.toBeInstanceOf(ForbiddenError);
     process.env.JETONBRO_ADMIN_EMAIL = owner.email;
     await expect(
-      wipeAllMyTables({ actorId: owner.id, actorEmail: owner.email, confirmation: "DELETE ALL", idempotencyKey: randomUUID() }),
+      wipeAllTables({ actorId: owner.id, actorEmail: owner.email, confirmation: "DELETE ALL", idempotencyKey: randomUUID() }),
     ).rejects.toBeInstanceOf(DomainError);
-    const other = await user(`p5-other-${randomUUID()}@jetonbro.test`, "Blair");
-    const otherTable = await createTable({
-      actorId: other.id,
-      idempotencyKey: randomUUID(),
-      name: "Keep me",
-      game: "BLACKJACK",
-      emails: [],
-    });
-    const wiped = await wipeAllMyTables({
-      actorId: owner.id,
-      actorEmail: owner.email,
-      confirmation: "WIPE ALL TABLES",
-      idempotencyKey: randomUUID(),
-    });
-    expect(wiped.wiped).toBeGreaterThan(0);
-    expect(await prisma.table.findUnique({ where: { id: otherTable.tableId } })).toBeTruthy();
     delete process.env.JETONBRO_ADMIN_EMAIL;
   });
 });

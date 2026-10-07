@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Admin global wipe + Dealer box rows
+
+- One admin-only Home action `WIPE ALL TABLES` (`JETONBRO_ADMIN_EMAIL`, exact phrase). Physically deletes every Table across owners/statuses after FK detach; users and personal ledger history remain. Owner `DELETE ALL MY TABLES` product path removed.
+- Blackjack Dealer felt uses full-width per-box `DealerLedgerRow` list in every phase (no spatial PlayerBox cards). Player Blackjack and Poker unchanged.
+
 ### Prompt 7 — FUN ONLY default, compact stakes, money buy-in
 
 - Stake modes: `FUN_ONLY` (default) | `MONEY` | `CUSTOM`. Fun only never implies owe/owed.
@@ -17,7 +22,7 @@
 - Unresolved Dealer payout is one horizontal result row. Betting copy is `BETTING` only.
 - Owner top-right DEALER / game badges open existing sheets at safe boundaries.
 - Persisted Game Session + participants; switch-game closes the session and opens a fresh allocation. Poker Dealer must be seated and funded at session start.
-- Verified GAME LEDGER. Admin-only `WIPE ALL MY TABLES` (`JETONBRO_ADMIN_EMAIL`, phrase `WIPE ALL TABLES`). Local Table Mode documented, not implemented.
+- Verified GAME LEDGER. Admin-only global `WIPE ALL TABLES` (`JETONBRO_ADMIN_EMAIL`, phrase `WIPE ALL TABLES`). Local Table Mode documented, not implemented.
 
 ### RC3 live acceptance candidate (JetBro II Web)
 
@@ -47,7 +52,7 @@
 ### Blackjack PNG composition and owner delete-all
 
 - Approved Player and Dealer PNGs are literal composition. Canonical markup lives in `ClassicPlayerTable` / `ClassicBankTable` with `blackjack-classic.css`. Plaques, 3-slot grids, and giant Dealer cards are gone.
-- Owner-only `DELETE ALL MY TABLES` archives and hides every table the verified user owns after typing `DELETE ALL`. Ledger is kept. Other owners are untouched.
+- Historical Owner-only soft archive bulk-delete was removed; admin global `WIPE ALL TABLES` is the only bulk table-deletion path.
 
 ### Classic visual rebuild and owner table cleanup
 

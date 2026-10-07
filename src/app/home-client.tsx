@@ -2,7 +2,7 @@
 
 import { getSkin } from "@/ui/skins/registry";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { HomeTableCard } from "@/application/queries/home";
 
 export function HomeClient({
@@ -10,19 +10,22 @@ export function HomeClient({
   defaultTableName,
   tables,
   canWipeAllTables,
-  ownedTableCount,
+  tableCount,
   showPersonalLedger,
 }: {
   displayName: string;
   defaultTableName: string;
   tables: HomeTableCard[];
   canWipeAllTables?: boolean;
-  ownedTableCount?: number;
+  tableCount?: number;
   showPersonalLedger?: boolean;
 }) {
   const skin = getSkin();
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
+  const wipeKey = useRef<string | null>(null);
+  const wipeBusy = useRef(false);
+
   async function onCreateTable() {
     router.replace("/tables/new");
   }
@@ -55,44 +58,34 @@ export function HomeClient({
       onJoinTable={(destination) => router.push(destination)}
       onOpenTable={(tableId) => router.push(`/tables/${tableId}`)}
       onTableCommand={onTableCommand}
-      onDeleteAllMyTables={async (confirmation) => {
-        const response = await fetch("/api/tables/owner", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            command: "deleteAllMyTables",
-            confirmation,
-            idempotencyKey: crypto.randomUUID(),
-          }),
-        });
-        const data = (await response.json()) as { error?: string };
-        if (!response.ok) {
-          setNotice(data.error ?? "This action could not be completed.");
-          return;
-        }
-        setNotice(null);
-        router.refresh();
-      }}
       canWipeAllTables={canWipeAllTables}
-      ownedTableCount={ownedTableCount}
+      tableCount={tableCount}
       showPersonalLedger={showPersonalLedger}
-      onWipeAllMyTables={async (confirmation) => {
-        const response = await fetch("/api/tables/owner", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            command: "wipeAllMyTables",
-            confirmation,
-            idempotencyKey: crypto.randomUUID(),
-          }),
-        });
-        const data = (await response.json()) as { error?: string };
-        if (!response.ok) {
-          setNotice(data.error ?? "This action could not be completed.");
-          return;
+      onWipeAllTables={async (confirmation) => {
+        if (wipeBusy.current) return;
+        wipeBusy.current = true;
+        if (!wipeKey.current) wipeKey.current = crypto.randomUUID();
+        try {
+          const response = await fetch("/api/tables/owner", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              command: "wipeAllTables",
+              confirmation,
+              idempotencyKey: wipeKey.current,
+            }),
+          });
+          const data = (await response.json()) as { error?: string; wiped?: number };
+          if (!response.ok) {
+            setNotice(data.error ?? "This action could not be completed.");
+            return;
+          }
+          wipeKey.current = null;
+          setNotice("All tables wiped");
+          router.refresh();
+        } finally {
+          wipeBusy.current = false;
         }
-        setNotice(null);
-        router.refresh();
       }}
     />
   );

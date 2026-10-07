@@ -793,58 +793,6 @@ export async function endAndDelete(input: {
   });
 }
 
-export async function deleteAllMyTables(input: {
-  actorId: string;
-  idempotencyKey: string;
-  confirmation: string;
-}) {
-  if (input.confirmation !== "DELETE ALL") {
-    throw new DomainError("INVALID_CONFIRMATION", "Type DELETE ALL to confirm.");
-  }
-  return withIdempotency(input.actorId, input.idempotencyKey, "deleteAllMyTables", input, async () => {
-    const user = await prisma.user.findUnique({ where: { id: input.actorId } });
-    if (!user || user.isGuest) {
-      throw new ForbiddenError("Only a verified table owner can do that.");
-    }
-    const tables = await prisma.table.findMany({
-      where: { ownerId: input.actorId },
-      include: { members: true },
-    });
-    if (tables.length === 0) {
-      throw new ForbiddenError("Only a verified table owner can do that.");
-    }
-    const touched: string[] = [];
-    await prisma.$transaction(async (tx) => {
-      for (const table of tables) {
-        const ownerHidden = table.members.some(
-          (member) => member.userId === input.actorId && member.leftAt !== null,
-        );
-        if (table.status === "ARCHIVED" && ownerHidden) continue;
-        await tx.invitation.updateMany({
-          where: { tableId: table.id, revokedAt: null },
-          data: { revokedAt: new Date() },
-        });
-        await tx.table.update({
-          where: { id: table.id },
-          data: {
-            status: "ARCHIVED",
-            closedAt: table.closedAt ?? new Date(),
-            pausedAt: null,
-            joinEnabled: false,
-          },
-        });
-        await tx.tableMember.updateMany({
-          where: { tableId: table.id, leftAt: null },
-          data: { leftAt: new Date() },
-        });
-        touched.push(table.id);
-      }
-    });
-    for (const tableId of touched) publishTable(tableId);
-    return { ok: true, ended: true, hidden: true, count: touched.length };
-  });
-}
-
 export async function updateTableSettings(input: {
   actorId: string;
   tableId: string;

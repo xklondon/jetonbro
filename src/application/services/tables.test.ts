@@ -57,7 +57,9 @@ describeDb("create table home journey", () => {
 
     const snapshot = await loadSnapshot(created.tableId, owner.id);
     expect(snapshot.phase).toBe("TABLE_SETUP");
-    expect(snapshot.bank).toBeNull();
+    // Owner at TABLE_SETUP gets bank view for the stable Dealer anatomy (header/felt/dock).
+    expect(snapshot.bank?.role).toBe("BANK");
+    expect(snapshot.bank?.phase).toBe("TABLE_SETUP");
     expect(snapshot.setup?.joinUrl).toContain("/join/");
     expect(snapshot.setup?.canStartBetting).toBe(false);
     expect(snapshot.setup?.seats.some((seat) => seat.status === "Bank / Dealer")).toBe(true);
@@ -292,7 +294,9 @@ describeDb("create table home journey", () => {
     expect(snapshot.setup?.setupCompleted).toBe(false);
     expect(snapshot.setup?.joinUrl).toContain("/join/");
     expect(snapshot.waiting).toBeNull();
-    expect(snapshot.bank).toBeNull();
+    // Owner at TABLE_SETUP gets bank view for the stable Dealer anatomy (header/felt/dock).
+    expect(snapshot.bank?.role).toBe("BANK");
+    expect(snapshot.bank?.phase).toBe("TABLE_SETUP");
 
     const qrBefore = snapshot.setup?.joinUrl;
     await finalizeSetup({

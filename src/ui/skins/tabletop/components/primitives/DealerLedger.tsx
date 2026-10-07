@@ -9,14 +9,14 @@ import { TableButton } from "./TableButton";
 
 const RAIL_TITLE: Record<BoxOutcome, string> = {
   LOST: "LOST",
-  PUSH: "STAND OFF",
+  PUSH: "DRAW",
   BLACKJACK: "BLACKJACK",
   WON: "WON",
 };
 
 const COMPACT_LABEL: Record<BoxOutcome, string> = {
   LOST: "LOST",
-  PUSH: "PUSH",
+  PUSH: "DRAW",
   BLACKJACK: "BLACKJACK",
   WON: "WON",
 };
@@ -132,15 +132,20 @@ export function DealerLedgerRow({
 }) {
   if (empty || !box) {
     return (
-      <div className="tt-ledger-row is-idle is-empty" data-player-row="true">
+      <div
+        className="tt-ledger-row is-idle is-empty"
+        data-blackjack-box-row="true"
+        data-player-row="true"
+        data-box-phase={phase}
+      >
         <span className="tt-ledger-who">
           <strong>{playerName || "Player"}</strong>
-          <small>AVAILABLE</small>
+          <small>{phase === "TABLE_SETUP" ? "Joined" : "AVAILABLE"}</small>
         </span>
         <span className="tt-ledger-stake">
           <strong>{availableLabel ?? "0"}</strong>
         </span>
-        <span className="tt-ledger-action">—</span>
+        <span className="tt-ledger-action">{phase === "TABLE_SETUP" ? "Waiting" : "—"}</span>
       </div>
     );
   }
@@ -159,6 +164,7 @@ export function DealerLedgerRow({
     <div
       className={`tt-ledger-row${box.outcome ? ` is-${box.outcome.toLowerCase()}` : ""}${unresolved ? " is-unresolved" : settled ? " is-settled" : " is-idle"}${showCards ? " has-cards" : ""}${payoutPhase ? " is-payout" : ""}`}
       data-box-id={box.id}
+      data-settle-box={box.id}
       data-blackjack-box-row="true"
       data-box-phase={phase}
       data-player-row="true"
@@ -177,9 +183,9 @@ export function DealerLedgerRow({
         </small>
       </span>
       <span className="tt-ledger-stake">
-        <ChipStack millis={box.bet.millis} max={4} />
+        <ChipStack millis={box.bet.millis} max={4} size="lg" className="tt-ledger-chips" />
         <strong>
-          {box.bet.label}
+          <small>MAIN</small> {box.bet.label}
           {doubled ? <em className="tt-ledger-2x"> 2×</em> : null}
         </strong>
         {box.insurance ? <small className="tt-ledger-ins">INS {box.insurance.label}</small> : null}
@@ -199,7 +205,23 @@ export function DealerLedgerRow({
             <HandTiles hand={hand} />
           )
         ) : unresolved && onSettle ? null : (
-          <span className="tt-ledger-slot">{doubled ? "2×" : split ? "SPLIT" : "—"}</span>
+          <span className="tt-ledger-slot">
+            {phase === "TABLE_SETUP"
+              ? "Waiting"
+              : phase === "BETTING"
+                ? (() => {
+                    try {
+                      return BigInt(box.bet.millis || "0") > 0n ? "Wagered" : "No wager";
+                    } catch {
+                      return box.bet.label !== "0" ? "Wagered" : "No wager";
+                    }
+                  })()
+                : doubled
+                  ? "2×"
+                  : split
+                    ? "SPLIT"
+                    : "—"}
+          </span>
         )}
       </span>
       {payoutPhase && settled && box.outcome ? (

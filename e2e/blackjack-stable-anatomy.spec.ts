@@ -64,6 +64,7 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await expect(page.locator('[data-table-board="BLACKJACK_DEALER"]')).toBeVisible();
   await expect(page.locator('[data-bj-felt="true"]')).toBeVisible();
   await expect(page.locator('[data-dealer-slot="true"]')).toBeVisible();
+  await expect(page.locator("[data-dealer-boxes]")).toBeVisible();
   await expect(page.locator("[data-phase-heading]")).toHaveText("TABLE SETUP");
   await expect(page.getByText("Waiting for Players")).toBeVisible();
   await expect(page.locator("[data-table-name]")).toHaveCount(1);

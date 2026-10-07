@@ -18,10 +18,9 @@ export function Home({
   onJoinTable,
   onOpenTable,
   onTableCommand,
-  onDeleteAllMyTables,
-  onWipeAllMyTables,
+  onWipeAllTables,
   canWipeAllTables,
-  ownedTableCount,
+  tableCount,
   showPersonalLedger = true,
 }: {
   displayName: string;
@@ -32,10 +31,9 @@ export function Home({
   onJoinTable: (destination: string) => void;
   onOpenTable: (tableId: string) => void;
   onTableCommand?: (tableId: string, command: OwnerCommand) => Promise<void>;
-  onDeleteAllMyTables?: (confirmation: string) => Promise<void>;
-  onWipeAllMyTables?: (confirmation: string) => Promise<void>;
+  onWipeAllTables?: (confirmation: string) => Promise<void>;
   canWipeAllTables?: boolean;
-  ownedTableCount?: number;
+  tableCount?: number;
   showPersonalLedger?: boolean;
 }) {
   const empty = tables.length === 0;
@@ -46,12 +44,9 @@ export function Home({
   const [menuId, setMenuId] = useState<string | null>(null);
   const [revealId, setRevealId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
-  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
-  const [deleteAllPhrase, setDeleteAllPhrase] = useState("");
   const [wipeOpen, setWipeOpen] = useState(false);
   const [wipePhrase, setWipePhrase] = useState("");
   const drag = useRef<{ id: string; x: number } | null>(null);
-  const ownsAny = tables.some((table) => table.isOwner);
   const confirmCard = confirm ? tables.find((table) => table.id === confirm.tableId) : null;
 
   function submitJoin() {
@@ -83,8 +78,6 @@ export function Home({
   function closeSheet() {
     setJoinOpen(false);
     setConfirm(null);
-    setDeleteAllOpen(false);
-    setDeleteAllPhrase("");
     setWipeOpen(false);
     setWipePhrase("");
   }
@@ -130,19 +123,6 @@ export function Home({
       <button className="tt-btn gold tt-home-create" type="button" disabled={creating} onClick={() => void createTable()}>
         {creating ? "Opening table" : "CREATE TABLE"}
       </button>
-      {ownsAny ? (
-        <button
-          className="tt-link"
-          type="button"
-          data-delete-all-tables="true"
-          onClick={() => {
-            setDeleteAllPhrase("");
-            setDeleteAllOpen(true);
-          }}
-        >
-          DELETE ALL MY TABLES
-        </button>
-      ) : null}
       {showPersonalLedger ? (
         <a className="tt-link" href="/ledger">
           GAME LEDGER
@@ -158,7 +138,7 @@ export function Home({
             setWipeOpen(true);
           }}
         >
-          WIPE ALL MY TABLES
+          WIPE ALL TABLES
         </button>
       ) : null}
     </div>
@@ -169,16 +149,15 @@ export function Home({
       rail={rail}
       feltClassName="tt-home"
       overlay={
-        <Sheet open={joinOpen || Boolean(confirm) || deleteAllOpen || wipeOpen} onClose={closeSheet}>
+        <Sheet open={joinOpen || Boolean(confirm) || wipeOpen} onClose={closeSheet}>
           {wipeOpen ? (
             <>
-              <h3>WIPE ALL MY TABLES</h3>
+              <h3>WIPE ALL TABLES</h3>
               <p>
-                All tables owned by this account, including active tables, will be permanently removed. Invitations are
-                revoked. Game-session results already saved to personal ledgers are kept.
+                This permanently removes every JetonBro table, including tables owned by other users. Users and personal
+                ledger history are retained.
               </p>
-              <p>All tables owned by this account, including active tables, will be permanently removed. Invitations are revoked. Operational table records are deleted. Your user account is not deleted.</p>
-              <p className="tt-muted">{ownedTableCount ?? 0} owned tables will be affected. Type WIPE ALL TABLES to confirm.</p>
+              <p className="tt-muted">{tableCount ?? 0} tables will be affected. Type WIPE ALL TABLES to confirm.</p>
               <input className="tt-input" aria-label="Type WIPE ALL TABLES" value={wipePhrase} onChange={(event) => setWipePhrase(event.target.value)} />
               <button
                 className="tt-btn gold"
@@ -188,32 +167,10 @@ export function Home({
                 onClick={() => {
                   setWipeOpen(false);
                   setWipePhrase("");
-                  void onWipeAllMyTables?.("WIPE ALL TABLES");
+                  void onWipeAllTables?.("WIPE ALL TABLES");
                 }}
               >
                 Confirm wipe
-              </button>
-              <button className="tt-link" type="button" onClick={closeSheet}>
-                Cancel
-              </button>
-            </>
-          ) : deleteAllOpen ? (
-            <>
-              <h3>DELETE ALL MY TABLES</h3>
-              <p>Every table you own will be ended and hidden. Current hands are abandoned. Ledger history is kept. Other owners are not affected.</p>
-              <p className="tt-muted">Type DELETE ALL to confirm.</p>
-              <input className="tt-input" aria-label="Type DELETE ALL" value={deleteAllPhrase} onChange={(event) => setDeleteAllPhrase(event.target.value)} />
-              <button
-                className="tt-btn gold"
-                type="button"
-                disabled={deleteAllPhrase !== "DELETE ALL"}
-                onClick={() => {
-                  setDeleteAllOpen(false);
-                  setDeleteAllPhrase("");
-                  void onDeleteAllMyTables?.("DELETE ALL");
-                }}
-              >
-                Confirm
               </button>
               <button className="tt-link" type="button" onClick={closeSheet}>
                 Cancel

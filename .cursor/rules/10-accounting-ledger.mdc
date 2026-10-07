@@ -57,5 +57,6 @@ Canonical services/domains: `src/domain/ledger/`, `src/application/services/blac
 
 - Verified players may save session nets to a personal Game Ledger (idempotent)
 - Guests have no cross-table ledger
-- Admin wipe (`JETONBRO_ADMIN_EMAIL`) deletes owned tables only; personal session rows and ledger audit survive with table FKs nulled
+- Admin-only global `WIPE ALL TABLES` (`JETONBRO_ADMIN_EMAIL`, exact phrase): physically deletes **every** Table (all owners/statuses) after detaching ledger/session FKs; users and personal ledger history are retained
+- There is no Owner `DELETE ALL MY TABLES` product path
 - Normal CLOSE TABLE / END & DELETE hide or archive; they do not physically wipe ledger history unless explicitly authorised

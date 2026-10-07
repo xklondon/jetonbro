@@ -34,10 +34,13 @@ No backward transitions and no phase skipping. Insurance is a Bank-triggered win
 - `BlackjackDealerTable` is the canonical Dealer surface for **every** phase including `TABLE_SETUP`
 - `BankTable` is a thin adapter that mounts `BlackjackDealerTable`
 - Owner/Dealer at BJ `TABLE_SETUP` selects `BLACKJACK_DEALER` — **not** `PHASE_ZERO_DEALER` / PhaseZero ledger
-- Same shell, felt dimensions, table-name position, Dealer slot, and Player-box grid across Setup / Betting / Playing / Insurance / Payout
-- Phase changes may alter labels, instruction, box values, legal controls, and badges — not felt geometry
+- Active boxes render as full-width horizontal `DealerLedgerRow` instances (one real box each) — not spatial PlayerBox cards on the Dealer board
+- Player Blackjack continues to use casino betting boxes; Dealer and Player anatomies intentionally differ
+- Same shell, felt dimensions, table-name position, Dealer slot, and row-list region across Setup / Betting / Playing / Insurance / Payout
+- Phase changes may alter labels, instruction, row values, legal controls, and badges — not felt geometry
 - Dealer position is always present (quiet empty state when no cards); Card Assist expands inside the reserved region
-- Payout controls stay attached to the same box positions (no spreadsheet ledger swap)
+- Unresolved payout: one horizontal four-action group `LOST | DRAW | BLACKJACK | WON` (DRAW maps to domain PUSH / Stand-off); never a 2×2 grid
+- Insurance settle stays separate: `INS LOST | INS WON`
 
 ## Dock matrix (product labels)
 

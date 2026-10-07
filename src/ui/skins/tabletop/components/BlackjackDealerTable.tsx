@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { BankTableView, BoxView, MemberView } from "@/application/queries/views";
 import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
@@ -14,9 +14,7 @@ import { Countdown } from "./Spot";
 import { ActionDock } from "./primitives/ActionDock";
 import { DealerHandPanel } from "./primitives/HandCards";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
-import { PlayerBox } from "./primitives/PlayerBox";
-import { ResultControls } from "./primitives/DealerLedger";
-import { TableButton } from "./primitives/TableButton";
+import { DealerLedger, DealerLedgerRow } from "./primitives/DealerLedger";
 import { TableName } from "./primitives/TableName";
 
 /** Collect every active box instance — one felt box each; never aggregate by Player. */
@@ -118,65 +116,7 @@ export function BlackjackDealerTable({
   );
 
   const emptySlots = setup && boxes.length === 0 && waitingPlayers.length === 0 ? 2 : 0;
-  const stageCount = Math.min(Math.max(boxes.length || waitingPlayers.length || emptySlots, 1), 4);
-
-  const boxNodes: ReactNode[] =
-    boxes.length > 0
-      ? boxes.map((box) => {
-          const unresolved = Boolean(controls.showPayoutResults && !box.outcome);
-          const showInsSettle = Boolean(
-            controls.showInsuranceSettle && box.insurance && !box.insuranceResult,
-          );
-          return (
-            <div key={box.id} className="tt-bj-box-slot" data-dealer-box-slot={box.boxNumber} data-settle-box={box.id}>
-              <PlayerBox
-                box={box}
-                showCards={showCards}
-                showPlayerName
-                chipSize="lg"
-                status={box.isDoubled ? "2×" : box.isSplit ? "Split" : null}
-              />
-              {unresolved ? (
-                <div className="tt-bj-box-settle" data-payout-controls="true">
-                  <ResultControls box={box} onSettle={settle(box)} />
-                  {showInsSettle ? (
-                    <span className="tt-ledger-ins-results" role="group" aria-label={`Settle insurance · Box ${box.boxNumber}`}>
-                      <TableButton
-                        variant="compact"
-                        className="ins-win"
-                        data-insurance-action="won"
-                        onClick={() => void onCommand("settleInsurance", { resolution: "DEALER_BLACKJACK" })}
-                      >
-                        INS WON
-                      </TableButton>
-                      <TableButton
-                        variant="compact"
-                        className="ins-lose"
-                        data-insurance-action="lost"
-                        onClick={() => void onCommand("settleInsurance", { resolution: "NO_DEALER_BLACKJACK" })}
-                      >
-                        INS LOST
-                      </TableButton>
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          );
-        })
-      : waitingPlayers.length > 0
-        ? waitingPlayers.map((player, index) => (
-            <PlayerBox
-              key={player.userId}
-              empty
-              emptyLabel={player.name}
-              emptySlot={index + 1}
-              showPlayerName
-            />
-          ))
-        : Array.from({ length: emptySlots }, (_, index) => (
-            <PlayerBox key={`empty-${index}`} empty emptySlot={index + 1} emptyLabel="Open seat" />
-          ));
+  void showCards;
 
   return (
     <Shell
@@ -288,10 +228,48 @@ export function BlackjackDealerTable({
             />
           </div>
         </section>
-        <div className="tt-stage tt-bj-stage">
-          <div className="tt-boxes" data-box-stage="true" data-count={stageCount} data-dealer-boxes="true">
-            {boxNodes}
-          </div>
+        <div className="tt-bj-box-list" data-dealer-boxes="true" data-box-count={boxes.length}>
+          <DealerLedger
+            playerCount={view.playerCount}
+            boxCount={boxes.length}
+            showRules={false}
+            payoutMode={payoutPhase}
+          >
+            {boxes.length > 0
+              ? boxes.map((box) => (
+                  <DealerLedgerRow
+                    key={box.id}
+                    box={box}
+                    phase={view.phase}
+                    payoutEnabled={controls.showPayoutResults}
+                    insuranceSettleEnabled={controls.showInsuranceSettle}
+                    onSettle={settle(box)}
+                    onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
+                    onAddCard={(boxId, rank) => void onCommand("addCard", { boxId, rank })}
+                    onUndoCard={(boxId) => void onCommand("removeCard", { boxId })}
+                    dealerMayCorrect={Boolean(view.dealerHand?.canEdit || showCards)}
+                  />
+                ))
+              : waitingPlayers.length > 0
+                ? waitingPlayers.map((player) => (
+                    <DealerLedgerRow
+                      key={player.userId}
+                      empty
+                      phase={view.phase}
+                      playerName={player.name}
+                      availableLabel={player.available.label}
+                    />
+                  ))
+                : Array.from({ length: emptySlots }, (_, index) => (
+                    <DealerLedgerRow
+                      key={`open-${index}`}
+                      empty
+                      phase={view.phase}
+                      playerName="Open seat"
+                      availableLabel="—"
+                    />
+                  ))}
+          </DealerLedger>
         </div>
       </div>
     </Shell>

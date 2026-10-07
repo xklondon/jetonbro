@@ -1,3 +1,14 @@
+# Admin global wipe + Dealer box rows
+
+Date: 2026-10-07
+
+- Branch `fix/blackjack-stable-anatomy-v1` from `fb0beae`.
+- Removed Owner `DELETE ALL MY TABLES`; single admin-only `WIPE ALL TABLES` (all owners/statuses, users + personal ledger retained).
+- Blackjack Dealer uses full-width `DealerLedgerRow` list in every phase (`BlackjackDealerTable`); Player BJ and Poker unchanged.
+- Focused Playwright + serial wipe Vitest + full Vitest + guardrails + production build green. Not pushed / not deployed.
+
+---
+
 # Prompt 5 — acceptance repairs + Game Sessions
 
 Date: 2026-10-06
@@ -19,7 +30,7 @@ Date: 2026-10-05
 - Live Playwright (`e2e/prompt4-live-railway.spec.ts` @ mobile-390 against Railway): pass — Alex/Casey/Blair isolated contexts, Guest+Verified QR, Blair as Dealer (Owner retains controls; Blair `switchGame` FORBIDDEN), BJ two-box settle to 85, Poker through SHOWDOWN award + NEXT HAND rotate + SAVE TABLE.
 - Screenshots: `docs/screenshots/production-live/*-390x844.png` (18 files).
 - Not merged. Not tagged. Other Railway projects untouched.
-- Deferred for human two-phone: side-pot smoke, BJ Double/Split/Insurance, reduced-motion, full END & DELETE / DELETE ALL MY TABLES phrase path.
+- Deferred for human two-phone: side-pot smoke, BJ Double/Split/Insurance, reduced-motion, full END & DELETE phrase path. Bulk table wipe is admin-only `WIPE ALL TABLES` (not Owner DELETE ALL).
 
 ---
 

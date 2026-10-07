@@ -66,10 +66,9 @@ export type JetonBroSkin = {
       tableId: string,
       command: "saveTable" | "closeTable" | "deleteTable" | "endAndDelete",
     ) => Promise<void>;
-    onDeleteAllMyTables?: (confirmation: string) => Promise<void>;
-    onWipeAllMyTables?: (confirmation: string) => Promise<void>;
+    onWipeAllTables?: (confirmation: string) => Promise<void>;
     canWipeAllTables?: boolean;
-    ownedTableCount?: number;
+    tableCount?: number;
     showPersonalLedger?: boolean;
   }>;
   CreateTable: ComponentType<{
