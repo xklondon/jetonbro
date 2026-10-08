@@ -151,13 +151,8 @@ export function PokerBoard({
             {ownerDock.map((control) => {
               if (control.id === "assignWinners") return null;
               if (control.id === "dealStreet") {
-                if (!control.enabled) {
-                  return (
-                    <p key={control.id} className="tt-owner-street-idle" data-street-ready="false" data-owner-controls="street-idle">
-                      {control.label}
-                    </p>
-                  );
-                }
+                // Street control only when actionable — never a large idle DEAL block.
+                if (!control.enabled) return null;
                 return (
                   <div key={control.id} className="tt-owner-street" data-street-ready="true">
                     <button
@@ -423,58 +418,59 @@ export function PokerBoard({
         </>
       }
     >
-      <div className="tt-poker-top">
-        <PhaseDisplay label={phaseCopy.primary} instruction={setup ? phaseCopy.instruction : undefined} />
-      </div>
+      {/* Street name lives on the felt journey — no duplicated page-level PRE-FLOP title. */}
+      {setup || view.phase === "HAND_COMPLETE" || view.phase === "SHOWDOWN" ? (
+        <div className="tt-poker-top">
+          <PhaseDisplay label={phaseCopy.primary} instruction={setup ? phaseCopy.instruction : undefined} />
+        </div>
+      ) : null}
       <div
         className={`tt-poker-table${dropHot ? " is-drop-hot" : ""}`}
         data-seat-layout={view.seats.length <= 2 ? "heads-up" : view.seats.length <= 4 ? "mid" : "full"}
         data-drop-zone={dropHot ? "active" : "idle"}
         data-poker-rail="oval"
         data-poker-surface="racetrack"
+        data-poker-base="raster"
       >
         <div className="tt-poker-stage" data-poker-stage="true">
-          <div className="tt-poker-racetrack" aria-hidden="true" data-poker-racetrack="true">
-            <div className="tt-poker-wood" />
-            <div className="tt-poker-cups">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="tt-poker-leather" />
-            <div className="tt-poker-gold-line" />
-            <div className="tt-poker-felt-disk" data-poker-felt="true" />
-            <span className="tt-poker-club" />
-          </div>
-          <div className="tt-poker-centre" data-poker-centre="true">
-            <div className="tt-poker-felt-name" data-poker-zone="name">
-              <TableName name={view.tableName} />
-            </div>
-            <PokerPot view={view} dropHot={dropHot} />
-            <PokerStreet view={view} />
-            <PokerHandComplete view={view} />
-          </div>
-          {setup && view.seats.length === 0
-            ? [0, 1].map((index) => (
-                <div
-                  key={`empty-${index}`}
-                  className="tt-poker-empty"
-                  style={pokerSeatPosition(index, 2, 0)}
-                  data-empty-seat={index + 1}
-                  aria-hidden="true"
-                />
-              ))
-            : null}
-          {view.seats.map((seat, index) => (
-            <PokerSeat
-              key={seat.userId}
-              seat={seat}
-              view={view}
-              index={index}
-            style={pokerSeatPosition(index, view.seats.length, viewerIndex)}
+          <img
+            className="tt-poker-base"
+            src="/skins/tabletop/poker-premium-racetrack-base.png"
+            alt=""
+            draggable={false}
+            data-poker-base-img="true"
+            data-poker-racetrack="true"
           />
-        ))}
+          <div className="tt-poker-overlay" data-poker-overlay="true">
+            <div className="tt-poker-centre" data-poker-centre="true" data-centre-divider="absent">
+              <div className="tt-poker-felt-name" data-poker-zone="name">
+                <TableName name={view.tableName} />
+              </div>
+              <PokerPot view={view} dropHot={dropHot} />
+              <PokerStreet view={view} />
+              <PokerHandComplete view={view} />
+            </div>
+            {setup && view.seats.length === 0
+              ? [0, 1].map((index) => (
+                  <div
+                    key={`empty-${index}`}
+                    className="tt-poker-empty"
+                    style={pokerSeatPosition(index, 2, 0)}
+                    data-empty-seat={index + 1}
+                    aria-hidden="true"
+                  />
+                ))
+              : null}
+            {view.seats.map((seat, index) => (
+              <PokerSeat
+                key={seat.userId}
+                seat={seat}
+                view={view}
+                index={index}
+                style={pokerSeatPosition(index, view.seats.length, viewerIndex)}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </Shell>

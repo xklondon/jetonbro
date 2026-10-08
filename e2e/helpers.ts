@@ -160,18 +160,25 @@ export async function invitePlayerFromLobby(page: Page, email: string) {
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
-  await expect(page.locator("[data-phase-heading]")).toHaveText(label, { timeout: options?.timeout ?? 15_000 });
-  const rail: Record<string, string> = {
-    "PRE-FLOP": "PRE-FLOP",
-    FLOP: "FLOP",
-    TURN: "TURN",
-    RIVER: "RIVER",
-    SHOWDOWN: "SHOWDOWN",
-  };
-  const stop = rail[label];
-  if (stop) {
-    await expect(page.locator(`[data-rail="${stop}"][data-rail-state="current"]`)).toBeVisible();
+  const timeout = options?.timeout ?? 15_000;
+  const railLabel =
+    label === "PRE-FLOP" || label === "PRE_FLOP"
+      ? "PRE-FLOP"
+      : label === "HAND COMPLETE" || label === "HAND_COMPLETE"
+        ? null
+        : label === "TABLE SETUP" || label === "POKER_SETUP"
+          ? null
+          : label.replaceAll("_", "-");
+  // Live streets: phase lives on the felt journey (no duplicated page-level PRE-FLOP title).
+  if (railLabel && ["SHUFFLE", "PRE-FLOP", "FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(railLabel)) {
+    await expect(page.locator(`[data-rail-label="${railLabel}"][data-rail-state="current"]`)).toBeVisible({
+      timeout,
+    });
+    return;
   }
+  await expect(page.locator("[data-phase-heading]")).toHaveText(label.replaceAll("_", " ").replace("POKER SETUP", "TABLE SETUP"), {
+    timeout,
+  });
 }
 
 export async function expectNoPageScroll(page: Page) {

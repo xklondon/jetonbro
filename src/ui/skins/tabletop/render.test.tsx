@@ -435,7 +435,10 @@ describe("tabletop skin renders", () => {
     expect(player).toContain(">You<");
     expect(player).toContain('data-poker-surface="racetrack"');
     expect(player).toContain('data-poker-track="felt"');
-    expect(player).not.toContain("<img");
+    expect(player).toContain('data-poker-base="raster"');
+    expect(player).toContain('data-poker-base-img="true"');
+    expect(player).toContain("poker-premium-racetrack-base.png");
+    expect(player).not.toContain("tt-poker-wood");
     expect(player).not.toContain("DEAL FLOP");
     expect(player).not.toContain("POKER CLOTH");
 
@@ -443,9 +446,20 @@ describe("tabletop skin renders", () => {
       createElement(tabletopSkin.PokerDealer, { view: poker({ role: "POKER_DEALER", isOwner: true }), members, onCommand: noop }),
     );
     expect(owner).toContain('data-table-board="POKER_DEALER"');
-    expect(owner).toContain("DEAL FLOP");
-    expect(owner).toContain("Waiting for bets to match");
+    // Street control omitted while not actionable — no giant idle DEAL block.
+    expect(owner).not.toContain("DEAL FLOP");
+    expect(owner).not.toContain("Waiting for bets to match");
     expect(owner).toContain("OWNER");
+
+    const streetReady = render(
+      createElement(tabletopSkin.PokerDealer, {
+        view: poker({ role: "POKER_DEALER", isOwner: true, canDealStreet: true, nextStreetLabel: "DEAL FLOP" }),
+        members,
+        onCommand: noop,
+      }),
+    );
+    expect(streetReady).toContain("DEAL FLOP");
+    expect(streetReady).toContain('data-street-ready="true"');
 
     const setup = render(
       createElement(tabletopSkin.PokerDealer, {

@@ -1905,14 +1905,13 @@
 }
 
 /* ========== POKER (scoped — do not alter Blackjack surfaces) ========== */
-/* ========== POKER PREMIUM RACETRACK ========== */
+/* ========== POKER PREMIUM RACETRACK (raster base) ========== */
 /* Authority: design/reference/tabletop/approved/poker-premium-racetrack.png */
-/* One ownership section: portrait stage coordinate system — no leftover oval geometry. */
+/* Base: design/reference/tabletop/approved/poker-premium-racetrack-base.png */
+/* Physical table is the photographic asset — CSS only positions overlays. */
 .tabletop-skin .tt-poker {
   padding-top: 0;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% 12%, rgba(48, 32, 18, 0.4), transparent 65%),
-    linear-gradient(180deg, #14100c 0%, #080604 100%);
+  background: #0a0806;
 }
 
 .tabletop-skin .tt-poker .tt-surface-body {
@@ -1928,8 +1927,8 @@
   position: relative;
   z-index: 2;
   flex: 0 0 auto;
-  min-height: 28px;
-  max-height: 36px;
+  min-height: 22px;
+  max-height: 30px;
 }
 
 .tabletop-skin .tt-poker .tt-phase {
@@ -1938,14 +1937,14 @@
 }
 
 .tabletop-skin .tt-poker .tt-phase strong {
-  font: 700 11px/1.1 var(--tt-serif);
-  letter-spacing: 0.14em;
-  color: rgba(244, 220, 150, 0.92);
+  font: 600 10px/1.1 var(--tt-serif);
+  letter-spacing: 0.12em;
+  color: rgba(212, 184, 130, 0.7);
 }
 
 .tabletop-skin .tt-poker .tt-phase em {
-  color: rgba(244, 234, 213, 0.72);
-  font-size: 10px;
+  color: rgba(244, 234, 213, 0.65);
+  font-size: 9px;
 }
 
 .tabletop-skin .tt-turn {
@@ -1987,177 +1986,84 @@
   min-height: 0;
   width: 100%;
   margin: 0;
-  overflow: visible;
+  overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   --poker-w: 100%;
   --poker-h: 100%;
-  --poker-seat: clamp(2.35rem, 10.5cqi, 3rem);
-  --poker-safe-x: 30%;
-  --poker-safe-y: 26%;
+  --poker-seat: clamp(2.6rem, 11cqi, 3.25rem);
+  --poker-safe-x: 26%;
+  --poker-safe-y: 24%;
   --poker-champagne: rgba(212, 184, 130, 0.72);
 }
 
 .tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] {
-  --poker-safe-x: 20%;
-  --poker-safe-y: 28%;
+  --poker-safe-x: 24%;
+  --poker-safe-y: 26%;
 }
 
-.tabletop-skin .tt-poker-table[data-seat-layout="full"] {
-  overflow: hidden;
-}
-
-/* Portrait stage: aspect locked; seats/centre use this box only */
+/* Portrait stage matches the photographic base (1090×1443) */
 .tabletop-skin .tt-poker-stage {
   position: relative;
   container-type: size;
   container-name: poker-stage;
-  aspect-ratio: 68 / 100;
-  width: min(100%, 22rem);
+  aspect-ratio: 1090 / 1443;
+  width: min(100%, 26rem);
   height: auto;
   max-height: 100%;
   margin: 0 auto;
-  overflow: visible;
-  flex: 0 1 auto;
-  align-self: center;
+  overflow: hidden;
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
-.tabletop-skin .tt-poker-racetrack {
+.tabletop-skin .tt-poker-base {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
   pointer-events: none;
+  user-select: none;
   z-index: 0;
 }
 
-.tabletop-skin .tt-poker-wood {
+.tabletop-skin .tt-poker-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  background:
-    repeating-linear-gradient(
-      112deg,
-      rgba(70, 44, 24, 0.18) 0 1px,
-      transparent 1px 5px
-    ),
-    repeating-linear-gradient(
-      28deg,
-      rgba(40, 24, 12, 0.12) 0 1px,
-      transparent 1px 9px
-    ),
-    radial-gradient(ellipse at 30% 16%, rgba(110, 74, 42, 0.28), transparent 52%),
-    linear-gradient(150deg, #463018 0%, #2a180e 36%, #1a1008 70%, #100806 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 220, 160, 0.1),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.5),
-    0 8px 20px rgba(0, 0, 0, 0.38);
-}
-
-.tabletop-skin .tt-poker-cups {
-  position: absolute;
-  inset: 3.2% 5%;
   z-index: 1;
-}
-
-.tabletop-skin .tt-poker-cups span {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 35% 28%, rgba(255, 236, 190, 0.95), rgba(186, 148, 88, 0.88) 48%, rgba(70, 48, 22, 0.95));
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.35),
-    0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.tabletop-skin .tt-poker-cups span:nth-child(1) { left: 50%; top: 1.2%; transform: translateX(-50%); }
-.tabletop-skin .tt-poker-cups span:nth-child(2) { right: 1.5%; top: 48%; }
-.tabletop-skin .tt-poker-cups span:nth-child(3) { left: 50%; bottom: 1.2%; transform: translateX(-50%); }
-.tabletop-skin .tt-poker-cups span:nth-child(4) { left: 1.5%; top: 48%; }
-
-.tabletop-skin .tt-poker-leather {
-  position: absolute;
-  inset: 5.2% 6.8%;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse at 50% 18%, rgba(40, 40, 40, 0.45), transparent 48%),
-    linear-gradient(180deg, #141414 0%, #050505 50%, #0e0e0e 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 12px 22px rgba(0, 0, 0, 0.62),
-    inset 0 -3px 5px rgba(255, 255, 255, 0.03);
-}
-
-.tabletop-skin .tt-poker-leather::after {
-  content: "";
-  position: absolute;
-  inset: 10% 12%;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.06);
-  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.15);
   pointer-events: none;
 }
 
-.tabletop-skin .tt-poker-gold-line {
-  position: absolute;
-  inset: 11% 12%;
-  border-radius: 50%;
-  border: 1px solid rgba(212, 184, 130, 0.62);
-  box-shadow:
-    0 0 0 0.5px rgba(70, 52, 28, 0.4),
-    inset 0 0 0 0.5px rgba(255, 228, 175, 0.18);
+.tabletop-skin .tt-poker-overlay .tt-seat,
+.tabletop-skin .tt-poker-overlay .tt-seat-wager,
+.tabletop-skin .tt-poker-overlay .tt-pot,
+.tabletop-skin .tt-poker-overlay [data-poker-centre="true"] {
+  pointer-events: auto;
 }
 
-.tabletop-skin .tt-poker-felt-disk {
-  position: absolute;
-  inset: 12.5% 13.5%;
-  border-radius: 50%;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 50% 32%, rgba(14, 88, 64, 0.38), transparent 60%),
-    linear-gradient(180deg, #08523e 0%, #053a2c 50%, #021e18 100%);
-  background-blend-mode: soft-light, normal, normal;
-  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.36);
-}
-
-.tabletop-skin .tt-poker-club {
-  position: absolute;
-  left: 50%;
-  bottom: 6.5%;
-  transform: translateX(-50%);
-  z-index: 2;
-  font-size: 11px;
-  line-height: 1;
-  color: rgba(212, 184, 130, 0.7);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
-}
-
-.tabletop-skin .tt-poker-club::before {
-  content: "♣";
-}
-
-/* Centre: name → chips → POT → phase journey (TO CALL is in the dock) */
+/* Centre overlay on photographic felt: name → chips → POT → phase journey */
 .tabletop-skin .tt-poker-centre {
   position: absolute;
   left: var(--poker-safe-x);
   right: var(--poker-safe-x);
-  top: 22%;
-  bottom: 26%;
+  top: 20%;
+  bottom: 24%;
   z-index: 1;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
   align-items: center;
   justify-items: center;
-  gap: 6px;
+  gap: 5px;
   pointer-events: none;
 }
 
 .tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] .tt-poker-centre {
-  top: 26%;
-  bottom: 28%;
-  gap: 8px;
+  top: 22%;
+  bottom: 26%;
+  gap: 7px;
 }
 
 .tabletop-skin .tt-poker-felt-name {
@@ -2198,12 +2104,15 @@
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 9px 2px 2px;
-  border-top: 1px solid rgba(212, 184, 130, 0.42);
-  border-bottom: 1px solid rgba(212, 184, 130, 0.42);
+  padding: 8px 2px 2px;
+  border-top: 1px solid rgba(212, 184, 130, 0.38);
+  border-bottom: 1px solid rgba(212, 184, 130, 0.28);
+  background: transparent;
   pointer-events: none;
   align-self: end;
   grid-row: 4;
+  /* Printed into the felt — no card/chrome chrome */
+  box-shadow: none;
 }
 
 .tabletop-skin .tt-streets-arc li:nth-child(1) { transform: translateY(6px); }
@@ -2507,12 +2416,12 @@
 .tabletop-skin .tt-seat {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: calc(var(--poker-seat, 2.75rem) + 1.6rem);
+  width: calc(var(--poker-seat, 2.75rem) + 1.8rem);
   min-width: 0;
-  max-width: 5.6rem;
+  max-width: 6rem;
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 0;
   padding: 0;
   text-align: center;
   border: 0;
@@ -2523,13 +2432,13 @@
   z-index: 2;
 }
 
-/* Hang ledgers outward onto the rail — keep plates out of the felt centre */
+/* Keep medallion on the photographic rail; plaque hangs just clear of felt centre */
 .tabletop-skin .tt-seat[data-seat-edge="south"] {
-  transform: translate(-50%, -22%);
+  transform: translate(-50%, -55%);
 }
 
 .tabletop-skin .tt-seat[data-seat-edge="north"] {
-  transform: translate(-50%, -78%);
+  transform: translate(-50%, -38%);
 }
 
 .tabletop-skin .tt-seat[data-seat-edge="east"],
@@ -2538,11 +2447,11 @@
 }
 
 .tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] .tt-seat[data-seat-edge="south"] {
-  transform: translate(-50%, -42%);
+  transform: translate(-50%, -58%);
 }
 
 .tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] .tt-seat[data-seat-edge="north"] {
-  transform: translate(-50%, -78%);
+  transform: translate(-50%, -35%);
 }
 
 .tabletop-skin .tt-seat.is-you {
@@ -2567,41 +2476,28 @@
   width: var(--poker-seat, 3rem);
   height: var(--poker-seat, 3rem);
   border-radius: 999px;
-  border: 1.75px solid rgba(212, 184, 130, 0.82);
+  border: 2px solid rgba(212, 184, 130, 0.88);
   background:
-    radial-gradient(circle at 34% 26%, rgba(255, 236, 180, 0.16), transparent 46%),
-    linear-gradient(165deg, #241c14 0%, #0e0c0a 100%);
+    radial-gradient(circle at 32% 24%, rgba(255, 236, 180, 0.14), transparent 42%),
+    radial-gradient(circle at 50% 55%, #1a1410 0%, #080706 100%);
   box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 3px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.45);
   display: grid;
   place-items: center;
-  font: 700 clamp(10px, 3.5cqi, 12px)/1 var(--tt-serif);
+  font: 700 clamp(11px, 3.8cqi, 13px)/1 var(--tt-serif);
   letter-spacing: 0.04em;
   color: #e8d4a8;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .tabletop-skin .tt-seat.is-actor .tt-seat-medal {
-  border-color: rgba(244, 220, 150, 0.95);
+  border-color: rgba(244, 226, 170, 0.98);
   box-shadow:
-    0 0 0 2px rgba(212, 184, 130, 0.35),
+    0 0 0 2px rgba(212, 184, 130, 0.4),
+    0 0 10px rgba(212, 184, 130, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  animation: tt-actor-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes tt-actor-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(223, 189, 105, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  }
-  50% {
-    box-shadow:
-      0 0 0 3px rgba(223, 189, 105, 0.38),
-      inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  }
 }
 
 .tabletop-skin .tt-seat-markers {
@@ -2653,13 +2549,14 @@
   display: grid;
   gap: 0;
   justify-items: center;
-  min-width: 4.2rem;
+  min-width: 4.4rem;
   max-width: 100%;
-  padding: 3px 7px;
-  border-radius: 4px;
-  border: 1px solid rgba(212, 184, 130, 0.35);
-  background: linear-gradient(180deg, rgba(18, 14, 10, 0.88), rgba(8, 8, 8, 0.9));
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  margin-top: -2px;
+  padding: 4px 8px 3px;
+  border-radius: 5px;
+  border: 1px solid rgba(212, 184, 130, 0.45);
+  background: linear-gradient(180deg, rgba(12, 10, 8, 0.94), rgba(4, 4, 4, 0.95));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .tabletop-skin .tt-seat-name {
@@ -2739,16 +2636,6 @@
   border-radius: 10px;
   border-color: rgba(212, 184, 130, 0.35);
   background: linear-gradient(180deg, #1a1814, #0e0c0a);
-}
-
-.tabletop-skin .tt-poker .tt-owner-street-idle {
-  margin: 0 auto;
-  padding: 0;
-  text-align: center;
-  font: 500 10px/1.2 var(--tt-sans);
-  letter-spacing: 0.1em;
-  color: rgba(212, 184, 130, 0.42);
-  text-transform: uppercase;
 }
 
 .tabletop-skin .tt-poker .tt-owner-street small {

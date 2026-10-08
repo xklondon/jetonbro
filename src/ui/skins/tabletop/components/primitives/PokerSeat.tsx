@@ -36,8 +36,11 @@ function seatAngleDeg(index: number, count: number, viewerIndex: number): number
   const relative = (index - start + count) % Math.max(count, 1);
   if (count <= 1) return 90;
   if (count === 2) return relative === 0 ? 90 : -90;
-  if (count === 3) return [90, 215, 325][relative]!;
+  // Three: viewer bottom, companions on mid-left / mid-right rails.
+  if (count === 3) return [90, 205, 335][relative]!;
   if (count === 4) return [90, 0, -90, 180][relative]!;
+  // Six: even along the photographic rail, viewer at bottom.
+  if (count === 6) return [90, 30, -30, -90, -150, 150][relative]!;
   return 90 + (relative * 360) / count;
 }
 
@@ -50,17 +53,19 @@ export function pokerSeatEdge(index: number, count: number, viewerIndex: number)
 }
 
 /**
- * Perimeter anchors on the portrait racetrack stage.
- * Viewer at bottom rail; radii keep seats outside the centre safe zone.
- * Coordinates are % of `.tt-poker-stage`, not the viewport.
+ * Anchors on the photographic leather rail (%.tt-poker-stage overlay space).
+ * Viewer nearest bottom; radii keep seats out of pot / phase zones.
  */
 export function pokerSeatPosition(index: number, count: number, viewerIndex: number): CSSProperties {
+  const start = viewerIndex >= 0 ? viewerIndex : 0;
+  const relative = (index - start + count) % Math.max(count, 1);
+  if (count <= 2) {
+    return relative === 0 ? { left: "50%", top: "86%" } : { left: "50%", top: "11%" };
+  }
   const angleDeg = seatAngleDeg(index, count, viewerIndex);
   const angle = (angleDeg * Math.PI) / 180;
-  // HU sits on the rails; multi-seat keeps a clearer centre safe zone.
-  // Keep HU south seat high enough that the ledger is never clipped by the dock.
-  const radiusX = count <= 2 ? 34 : count <= 4 ? 42 : 43;
-  const radiusY = count <= 2 ? 44.5 : count <= 4 ? 41.5 : 42;
+  const radiusX = count === 3 ? 38 : count <= 4 ? 40 : 41;
+  const radiusY = count === 3 ? 36 : count <= 4 ? 38 : 39;
   return {
     left: `${50 + radiusX * Math.cos(angle)}%`,
     top: `${50 + radiusY * Math.sin(angle)}%`,
@@ -72,7 +77,7 @@ export function pokerWagerPosition(index: number, count: number, viewerIndex: nu
   const seat = pokerSeatPosition(index, count, viewerIndex) as { left: string; top: string };
   const left = Number.parseFloat(seat.left);
   const top = Number.parseFloat(seat.top);
-  const inward = count <= 2 ? 0.78 : 0.72;
+  const inward = count <= 2 ? 0.72 : 0.7;
   return {
     left: `${50 + (left - 50) * inward}%`,
     top: `${50 + (top - 50) * inward}%`,

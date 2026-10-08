@@ -153,14 +153,21 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
     for (const html of [dealer, player]) {
       expect(html).toContain('data-poker-rail="oval"');
       expect(html).toContain('data-poker-surface="racetrack"');
+      expect(html).toContain('data-poker-base="raster"');
+      expect(html).toContain('data-poker-base-img="true"');
+      expect(html).toContain("poker-premium-racetrack-base.png");
       expect(html).toContain('data-poker-track="felt"');
       expect(html).toContain("SHUFFLE");
       expect(html).toContain("PRE-FLOP");
       expect(html).toContain("SHOWDOWN");
-      expect(html).toContain("tt-poker-racetrack");
       expect(html).toContain('data-poker-stage="true"');
       expect(html).toContain('data-poker-centre="true"');
+      expect(html).toContain('data-poker-overlay="true"');
       expect(html).not.toContain("tt-poker-oval");
+      expect(html).not.toContain("tt-poker-wood");
+      expect(html).not.toContain("tt-poker-leather");
+      expect(html).not.toContain("tt-poker-felt-disk");
+      expect(html).not.toContain("tt-poker-cups");
       expect(html).toContain('data-centre-divider="absent"');
       expect(html).toContain("TABLE SETUP");
       expect(html).toContain("Waiting for Players");
@@ -181,7 +188,9 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
     expect(html).toContain("tt-seat-medal");
     expect(html).toContain(">OW<");
     expect(html).toContain(">SA<");
-    expect(html).not.toContain("<img");
+    // Only the photographic table base may be an <img> — never seat portraits.
+    expect(html).toContain('data-poker-base-img="true"');
+    expect(html).not.toMatch(/<img(?![^>]*data-poker-base-img)/);
     expect(html).not.toContain("portrait");
     expect(html).not.toContain("holeCards");
     expect(html).toContain('data-poker-track="felt"');
@@ -249,12 +258,20 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
 
   it("seat layout responds to player count with viewer near bottom", () => {
     const two = [pokerSeatPosition(0, 2, 0), pokerSeatPosition(1, 2, 0)];
-    expect(Number.parseFloat(String(two[0]!.top))).toBeGreaterThan(90);
-    expect(Number.parseFloat(String(two[1]!.top))).toBeLessThan(10);
+    expect(Number.parseFloat(String(two[0]!.top))).toBeGreaterThan(80);
+    expect(Number.parseFloat(String(two[1]!.top))).toBeLessThan(20);
     const four = [0, 1, 2, 3].map((i) => pokerSeatPosition(i, 4, 0));
     expect(four.map((p) => p.left).join("|")).not.toEqual(two.map((p) => p.left).join("|"));
     const wager = pokerWagerPosition(0, 2, 0);
     expect(Number.parseFloat(String(wager.top))).toBeLessThan(Number.parseFloat(String(two[0]!.top)));
+  });
+
+  it("live street phases omit the page-level PRE-FLOP title (journey owns the street)", () => {
+    const html = renderToStaticMarkup(createElement(tabletopSkin.PokerPlayer, { view: poker(), onCommand: noop }));
+    expect(html).toContain('data-poker-track="felt"');
+    expect(html).toContain('data-rail-label="PRE-FLOP"');
+    // PhaseDisplay primary is suppressed during live streets — dock may still say YOUR TURN.
+    expect(html).not.toMatch(/data-phase-heading[^>]*>PRE-FLOP</);
   });
 
   it("phase copy never duplicates primary street as a second heading", () => {

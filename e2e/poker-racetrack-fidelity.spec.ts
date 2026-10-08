@@ -229,7 +229,6 @@ test("Poker racetrack final visual fidelity", async ({ page, browser }) => {
   const actor = await actorPage(hu.ownerPage, hu.joined.map((g) => g.page));
   await expect(actor.getByRole("button", { name: /CALL|CHECK|FOLD/ }).first()).toBeVisible({ timeout: 20_000 });
   await shot(actor, "01-hu-preflop-viewer-acting");
-  await expect(hu.ownerPage.locator(".tt-owner-street-idle")).toBeVisible();
   await expect(hu.ownerPage.getByRole("button", { name: "DEAL FLOP" })).toHaveCount(0);
   await shot(hu.ownerPage, "07-owner-street");
 
