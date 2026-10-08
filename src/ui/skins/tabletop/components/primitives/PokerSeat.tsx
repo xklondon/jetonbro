@@ -23,6 +23,13 @@ export function pokerSeatStatus(seat: PokerSeatView, view: PokerTableView): stri
   return "Waiting";
 }
 
+export function pokerSeatInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+  const compact = (parts[0] ?? "P").replace(/[^a-zA-Z0-9]/g, "");
+  return (compact.slice(0, 2) || "P").toUpperCase();
+}
+
 /**
  * Seat angles around the oval. Viewer sits near the tray (bottom).
  * 2: top/bottom · 3: top, lower-left, lower-right · 4: NESW · 5–6: even ring.
@@ -43,9 +50,9 @@ export function pokerSeatPosition(index: number, count: number, viewerIndex: num
     angleDeg = 90 + (relative * 360) / count;
   }
   const angle = (angleDeg * Math.PI) / 180;
-  const radiusX = count <= 2 ? 34 : count <= 4 ? 38 : 41;
-  const radiusY = count <= 2 ? 36 : count <= 4 ? 39 : 42;
-  return { left: `${50 + radiusX * Math.cos(angle)}%`, top: `${48 + radiusY * Math.sin(angle)}%` };
+  const radiusX = count <= 2 ? 32 : count <= 4 ? 36 : 39;
+  const radiusY = count <= 2 ? 34 : count <= 4 ? 37 : 40;
+  return { left: `${50 + radiusX * Math.cos(angle)}%`, top: `${50 + radiusY * Math.sin(angle)}%` };
 }
 
 /** Chip stack sits inward from the seat toward the pot centre. */
@@ -53,10 +60,10 @@ export function pokerWagerPosition(index: number, count: number, viewerIndex: nu
   const seat = pokerSeatPosition(index, count, viewerIndex) as { left: string; top: string };
   const left = Number.parseFloat(seat.left);
   const top = Number.parseFloat(seat.top);
-  const inward = 0.55;
+  const inward = 0.52;
   return {
     left: `${50 + (left - 50) * inward}%`,
-    top: `${48 + (top - 48) * inward}%`,
+    top: `${50 + (top - 50) * inward}%`,
   };
 }
 
@@ -79,6 +86,7 @@ export function PokerSeat({
   const award = view.winners.find((winner) => winner.userId === seat.userId);
   const streetMillis = BigInt(seat.streetContribution.millis || "0");
   const showWager = !setup && streetMillis > 0n && view.phase !== "HAND_COMPLETE";
+  const displayName = isYou ? "You" : seat.name;
 
   return (
     <>
@@ -100,17 +108,34 @@ export function PokerSeat({
                 D
               </span>
             ) : null}
-            {seat.isSmallBlind ? <span className="tt-blind">SB</span> : null}
-            {seat.isBigBlind ? <span className="tt-blind">BB</span> : null}
+            {seat.isSmallBlind ? (
+              <span className="tt-blind is-sb" aria-label="Small Blind">
+                SB
+              </span>
+            ) : null}
+            {seat.isBigBlind ? (
+              <span className="tt-blind is-bb" aria-label="Big Blind">
+                BB
+              </span>
+            ) : null}
           </div>
         ) : null}
-        <strong className="tt-seat-name">{isYou ? `YOU · ${seat.name}` : seat.name}</strong>
-        <span className="tt-seat-line">
-          <small>AVAILABLE</small> {seat.available.label}
-        </span>
+        <div className="tt-seat-medal" aria-hidden="true" data-seat-initials="true">
+          <span>{pokerSeatInitials(seat.name)}</span>
+        </div>
+        <div className="tt-seat-ledger">
+          <strong className="tt-seat-name">{displayName}</strong>
+          <span className="tt-seat-line" data-seat-balance="true">
+            {seat.available.label}
+          </span>
+        </div>
         {award ? (
           <em className="tt-seat-status is-won" data-award="true">
             WON {award.amount.label}
+          </em>
+        ) : status === "YOUR TURN" || status === "TURN" ? (
+          <em className={`tt-seat-turn${status === "YOUR TURN" ? " is-you" : ""}`} data-turn-badge="true">
+            {status}
           </em>
         ) : status ? (
           <em className="tt-seat-status">{status}</em>

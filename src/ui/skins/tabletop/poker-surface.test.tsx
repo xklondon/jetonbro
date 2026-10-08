@@ -92,7 +92,8 @@ function poker(extra: Partial<PokerTableView> = {}): PokerTableView {
     canEditCommunity: false,
     canEditHole: false,
     streetRail: [
-      { id: "PRE_FLOP", state: "current" },
+      { id: "DEAL", state: "done" },
+      { id: "PRE-FLOP", state: "current" },
       { id: "FLOP", state: "next" },
       { id: "TURN", state: "next" },
       { id: "RIVER", state: "next" },
@@ -125,7 +126,7 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
     ).toBe("POKER_PLAYER");
   });
 
-  it("Dealer and Player Phase 0 share oval rail, felt name, no centre divider or STREET labels", () => {
+  it("Dealer and Player Phase 0 share racetrack rail, felt name, no centre divider or STREET labels", () => {
     const setupView = poker({
       role: "POKER_DEALER",
       isOwner: true,
@@ -151,18 +152,37 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
     );
     for (const html of [dealer, player]) {
       expect(html).toContain('data-poker-rail="oval"');
+      expect(html).toContain('data-poker-surface="racetrack"');
+      expect(html).toContain('data-poker-track="felt"');
+      expect(html).toContain("SHUFFLE");
+      expect(html).toContain("PRE-FLOP");
+      expect(html).toContain("SHOWDOWN");
+      expect(html).toContain("tt-poker-racetrack");
+      expect(html).not.toContain("tt-poker-oval");
       expect(html).toContain('data-centre-divider="absent"');
       expect(html).toContain("TABLE SETUP");
       expect(html).toContain("Waiting for Players");
       expect(html).not.toContain("POKER SETUP");
       expect(html).not.toMatch(/STREET\s+\d/i);
       expect(html).not.toContain("tt-setup-ledger");
-      expect(html.match(/Felt/g)?.length ?? 0).toBeLessThanOrEqual(2);
+      expect(html.match(/Felt/g)?.length ?? 0).toBeLessThanOrEqual(3);
     }
     expect(dealer).toContain("START HAND");
     expect(dealer).toContain("ADD PLAYER");
     expect(player).not.toContain("START HAND");
     expect(player).not.toContain("ADD PLAYER");
+  });
+
+  it("seats use initials medallions, never portraits or cards", () => {
+    const html = renderToStaticMarkup(createElement(tabletopSkin.PokerPlayer, { view: poker(), onCommand: noop }));
+    expect(html).toContain('data-seat-initials="true"');
+    expect(html).toContain("tt-seat-medal");
+    expect(html).toContain(">OW<");
+    expect(html).toContain(">SA<");
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("portrait");
+    expect(html).not.toContain("holeCards");
+    expect(html).toContain('data-poker-track="felt"');
   });
 
   it("START HAND seat notice is compact once near the dock", () => {
@@ -225,7 +245,7 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
   it("seat layout responds to player count with viewer near bottom", () => {
     const two = [pokerSeatPosition(0, 2, 0), pokerSeatPosition(1, 2, 0)];
     expect(two[0]!.top).toContain("84");
-    expect(two[1]!.top).toContain("12");
+    expect(two[1]!.top).toContain("16");
     const four = [0, 1, 2, 3].map((i) => pokerSeatPosition(i, 4, 0));
     expect(four.map((p) => p.left).join("|")).not.toEqual(two.map((p) => p.left).join("|"));
     const wager = pokerWagerPosition(0, 2, 0);

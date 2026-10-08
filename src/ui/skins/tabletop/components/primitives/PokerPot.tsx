@@ -3,7 +3,13 @@
 import type { PokerTableView } from "@/application/queries/views";
 import { ChipStack } from "./Jeton";
 
-/** Compact central pot / street / award on the cloth — not a rectangular card. */
+/** Display labels for the in-felt round track — DEAL presents as SHUFFLE. */
+export function pokerTrackLabel(id: string): string {
+  if (id === "DEAL") return "SHUFFLE";
+  return id.replaceAll("_", "-");
+}
+
+/** Compact central pot on the cloth — chips dominate; no competing street title. */
 export function PokerPot({ view, dropHot = false }: { view: PokerTableView; dropHot?: boolean }) {
   const setup = view.phase === "POKER_SETUP";
   const complete = view.phase === "HAND_COMPLETE";
@@ -14,7 +20,6 @@ export function PokerPot({ view, dropHot = false }: { view: PokerTableView; drop
   if (setup) {
     return (
       <div className="tt-pot tt-pot-cloth tt-blinds" data-poker-pot="setup">
-        <span className="tt-pot-street">TABLE SETUP</span>
         <span>
           SB <strong>{view.smallBlind.label}</strong>
         </span>
@@ -32,10 +37,9 @@ export function PokerPot({ view, dropHot = false }: { view: PokerTableView; drop
       data-pot-paid={view.potPaid ? "true" : "false"}
       data-poker-pot="live"
     >
-      <span className="tt-pot-street">{(view.phaseLabel || view.phase).replaceAll("_", " ")}</span>
+      {!view.potPaid && !complete && view.pot.millis !== "0" ? <ChipStack millis={view.pot.millis} max={5} /> : null}
       <small>{view.potPaid || complete ? "POT PAID" : "POT"}</small>
       {!view.potPaid && !complete ? <strong className="tt-pot-amount">{view.pot.label}</strong> : null}
-      {!view.potPaid && !complete && view.pot.millis !== "0" ? <ChipStack millis={view.pot.millis} max={4} /> : null}
       {owed ? (
         <span className="tt-to-call" data-to-call="true">
           TO CALL <strong>{view.toCall.label}</strong>
@@ -64,20 +68,31 @@ export function PokerPot({ view, dropHot = false }: { view: PokerTableView; drop
   );
 }
 
-/** Compact street rail — secondary to the phase heading. */
+const FALLBACK_TRACK = ["DEAL", "PRE-FLOP", "FLOP", "TURN", "RIVER", "SHOWDOWN"] as const;
+
+/** In-felt round track — SHUFFLE → PRE-FLOP → FLOP → TURN → RIVER → SHOWDOWN. */
 export function PokerStreet({ view }: { view: PokerTableView }) {
-  if (view.phase === "POKER_SETUP" || view.streetRail.length === 0) return null;
+  const stops =
+    view.streetRail.length > 0
+      ? view.streetRail
+      : FALLBACK_TRACK.map((id, index) => ({
+          id,
+          state: (view.phase === "POKER_SETUP" && index === 0 ? "current" : "next") as "done" | "current" | "next",
+        }));
+
   return (
-    <ol className="tt-streets" aria-label="Street" data-poker-street="true">
-      {view.streetRail.map((stop) => (
+    <ol className="tt-streets" aria-label="Round track" data-poker-street="true" data-poker-track="felt">
+      {stops.map((stop) => (
         <li
           key={stop.id}
           className={`is-${stop.state}`}
           data-rail={stop.id}
+          data-rail-label={pokerTrackLabel(stop.id)}
           data-rail-state={stop.state}
           aria-current={stop.state === "current" ? "step" : undefined}
         >
-          {stop.id.replaceAll("_", " ")}
+          <span className="tt-streets-node" aria-hidden="true" />
+          <span className="tt-streets-label">{pokerTrackLabel(stop.id)}</span>
         </li>
       ))}
     </ol>

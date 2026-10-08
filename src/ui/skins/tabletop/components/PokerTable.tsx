@@ -299,7 +299,6 @@ export function PokerBoard({
 
   return (
     <Shell
-      hideBrand
       showRail={false}
       badges={badges}
       onMenu={owner || showCardMenu ? () => setMenuOpen(true) : undefined}
@@ -415,19 +414,32 @@ export function PokerBoard({
     >
       <div className="tt-poker-top">
         <PhaseDisplay label={phaseCopy.primary} instruction={setup ? phaseCopy.instruction : undefined} />
-        <PokerStreet view={view} />
       </div>
       <div
         className={`tt-poker-table${dropHot ? " is-drop-hot" : ""}`}
         data-seat-layout={view.seats.length <= 2 ? "heads-up" : view.seats.length <= 4 ? "mid" : "full"}
         data-drop-zone={dropHot ? "active" : "idle"}
+        data-poker-rail="oval"
+        data-poker-surface="racetrack"
       >
-        <div className="tt-poker-oval" aria-hidden="true" data-poker-rail="oval" />
-        <div className="tt-poker-rim" aria-hidden="true" />
+        <div className="tt-poker-racetrack" aria-hidden="true">
+          <div className="tt-poker-wood" />
+          <div className="tt-poker-cups">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="tt-poker-leather" />
+          <div className="tt-poker-gold-line" />
+          <div className="tt-poker-felt-disk" />
+          <span className="tt-poker-club" />
+        </div>
         <div className="tt-poker-felt-name">
           <TableName name={view.tableName} />
         </div>
         <PokerPot view={view} dropHot={dropHot} />
+        <PokerStreet view={view} />
         <PokerHandComplete view={view} />
         {setup && view.seats.length === 0
           ? [0, 1].map((index) => (

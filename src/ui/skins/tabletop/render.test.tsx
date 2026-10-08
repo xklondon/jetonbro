@@ -431,7 +431,11 @@ describe("tabletop skin renders", () => {
     expect(player).toContain("SB");
     expect(player).toContain("BB");
     expect(player).toContain("data-player-wallet");
-    expect(player).toContain("YOU ·");
+    expect(player).toContain('data-seat-initials="true"');
+    expect(player).toContain(">You<");
+    expect(player).toContain('data-poker-surface="racetrack"');
+    expect(player).toContain('data-poker-track="felt"');
+    expect(player).not.toContain("<img");
     expect(player).not.toContain("DEAL FLOP");
     expect(player).not.toContain("POKER CLOTH");
 
@@ -465,6 +469,8 @@ describe("tabletop skin renders", () => {
     expect(setup).toContain("START HAND");
     expect(setup).toContain("ADD PLAYER");
     expect(setup).toContain('data-poker-rail="oval"');
+    expect(setup).toContain('data-poker-surface="racetrack"');
+    expect(setup).toContain("SHUFFLE");
     expect(setup).toContain('data-centre-divider="absent"');
     expect(setup).not.toContain("POKER SETUP");
     expect(setup).not.toContain("TO CALL");
