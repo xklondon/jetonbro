@@ -9,12 +9,22 @@ export function pokerTrackLabel(id: string): string {
   return id.replaceAll("_", "-");
 }
 
-/** Centre pot — chips, amount and TO CALL occupy reserved sub-zones (never stacked collide). */
+/** Whether TO CALL should appear near the Player action dock (never inside the pot stack). */
+export function pokerToCallVisible(view: PokerTableView): boolean {
+  return (
+    view.phase !== "POKER_SETUP" &&
+    view.phase !== "HAND_COMPLETE" &&
+    view.phase !== "SHOWDOWN" &&
+    !view.potPaid &&
+    view.toCall.millis !== "0"
+  );
+}
+
+/** Centre pot — chips and POT amount only; TO CALL lives by the action dock. */
 export function PokerPot({ view, dropHot = false }: { view: PokerTableView; dropHot?: boolean }) {
   const setup = view.phase === "POKER_SETUP";
   const complete = view.phase === "HAND_COMPLETE";
   const showdown = view.phase === "SHOWDOWN";
-  const owed = !view.potPaid && !complete && !showdown && view.toCall.millis !== "0";
   const sidePots = view.pots.length > 1 && (view.seats.some((seat) => seat.status === "ALL_IN") || showdown || complete);
 
   if (setup) {
@@ -45,13 +55,6 @@ export function PokerPot({ view, dropHot = false }: { view: PokerTableView; drop
         <small>{view.potPaid || complete ? "POT PAID" : "POT"}</small>
         {!view.potPaid && !complete ? <strong className="tt-pot-amount">{view.pot.label}</strong> : null}
       </div>
-      {owed ? (
-        <div className="tt-pot-call-zone" data-poker-zone="call">
-          <span className="tt-to-call" data-to-call="true">
-            TO CALL <strong>{view.toCall.label}</strong>
-          </span>
-        </div>
-      ) : null}
       {sidePots ? (
         <ul className="tt-pot-list" data-side-pots="true">
           {view.pots.map((pot) => (
@@ -88,20 +91,23 @@ export function PokerStreet({ view }: { view: PokerTableView }) {
         }));
 
   return (
-    <ol className="tt-streets" aria-label="Round track" data-poker-street="true" data-poker-track="felt" data-poker-zone="track">
-      {stops.map((stop) => (
-        <li
-          key={stop.id}
-          className={`is-${stop.state}`}
-          data-rail={stop.id}
-          data-rail-label={pokerTrackLabel(stop.id)}
-          data-rail-state={stop.state}
-          aria-current={stop.state === "current" ? "step" : undefined}
-        >
-          <span className="tt-streets-node" aria-hidden="true" />
-          <span className="tt-streets-label">{pokerTrackLabel(stop.id)}</span>
-        </li>
-      ))}
+    <ol className="tt-streets tt-streets-arc" aria-label="Round track" data-poker-street="true" data-poker-track="felt" data-poker-zone="track">
+      {stops.map((stop) => {
+        const label = pokerTrackLabel(stop.id);
+        return (
+          <li
+            key={stop.id}
+            className={`is-${stop.state}`}
+            data-rail={stop.id}
+            data-rail-label={label}
+            data-rail-state={stop.state}
+            aria-current={stop.state === "current" ? "step" : undefined}
+          >
+            <span className="tt-streets-node" aria-hidden="true" />
+            <span className="tt-streets-label">{label}</span>
+          </li>
+        );
+      })}
     </ol>
   );
 }

@@ -19,8 +19,7 @@ export function pokerSeatStatus(seat: PokerSeatView, view: PokerTableView): stri
   if (seat.status === "FOLDED") return "FOLDED";
   if (seat.status === "ALL_IN") return "ALL IN";
   if (seat.isActor) return seat.userId === view.viewerId ? "YOUR TURN" : "TURN";
-  if (view.phase === "POKER_SETUP") return "";
-  return "Waiting";
+  return "";
 }
 
 export function pokerSeatInitials(name: string): string {
@@ -58,8 +57,10 @@ export function pokerSeatEdge(index: number, count: number, viewerIndex: number)
 export function pokerSeatPosition(index: number, count: number, viewerIndex: number): CSSProperties {
   const angleDeg = seatAngleDeg(index, count, viewerIndex);
   const angle = (angleDeg * Math.PI) / 180;
-  const radiusX = count >= 6 ? 42.5 : 43;
-  const radiusY = count >= 6 ? 41 : 41.5;
+  // HU sits on the rails; multi-seat keeps a clearer centre safe zone.
+  // Keep HU south seat high enough that the ledger is never clipped by the dock.
+  const radiusX = count <= 2 ? 34 : count <= 4 ? 42 : 43;
+  const radiusY = count <= 2 ? 44.5 : count <= 4 ? 41.5 : 42;
   return {
     left: `${50 + radiusX * Math.cos(angle)}%`,
     top: `${50 + radiusY * Math.sin(angle)}%`,
@@ -71,7 +72,7 @@ export function pokerWagerPosition(index: number, count: number, viewerIndex: nu
   const seat = pokerSeatPosition(index, count, viewerIndex) as { left: string; top: string };
   const left = Number.parseFloat(seat.left);
   const top = Number.parseFloat(seat.top);
-  const inward = 0.7;
+  const inward = count <= 2 ? 0.78 : 0.72;
   return {
     left: `${50 + (left - 50) * inward}%`,
     top: `${50 + (top - 50) * inward}%`,

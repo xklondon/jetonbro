@@ -23,7 +23,7 @@ import { OwnerMenu, type OwnerMenuItem } from "./OwnerMenu";
 import { PokerCardSheet } from "./PokerCardSheet";
 import { PokerActionDock } from "./primitives/PokerActionDock";
 import { PokerAwardControl, PokerHandComplete } from "./primitives/PokerAward";
-import { PokerPot, PokerStreet } from "./primitives/PokerPot";
+import { PokerPot, PokerStreet, pokerToCallVisible } from "./primitives/PokerPot";
 import { PokerSeat, pokerSeatPosition } from "./primitives/PokerSeat";
 import { PhaseDisplay } from "./primitives/PhaseDisplay";
 import { TableName } from "./primitives/TableName";
@@ -151,12 +151,18 @@ export function PokerBoard({
             {ownerDock.map((control) => {
               if (control.id === "assignWinners") return null;
               if (control.id === "dealStreet") {
+                if (!control.enabled) {
+                  return (
+                    <p key={control.id} className="tt-owner-street-idle" data-street-ready="false" data-owner-controls="street-idle">
+                      {control.label}
+                    </p>
+                  );
+                }
                 return (
-                  <div key={control.id} className="tt-owner-street">
+                  <div key={control.id} className="tt-owner-street" data-street-ready="true">
                     <button
                       type="button"
-                      className={`tt-btn${control.enabled ? " gold" : ""}`}
-                      disabled={!control.enabled}
+                      className="tt-btn gold"
                       onClick={() => void onCommand("advancePokerStreet")}
                     >
                       {control.label}
@@ -218,9 +224,14 @@ export function PokerBoard({
           {seatNotice}
         </p>
       ) : null}
-      {!isSeatHint && (notice || showActions || phaseCopy.instruction) ? (
-        <div className="tt-controls" data-game-controls="true">
+      {!isSeatHint && (notice || showActions || phaseCopy.instruction || pokerToCallVisible(view)) ? (
+        <div className="tt-controls tt-poker-dock" data-game-controls="true">
           {notice && !isSeatHint ? <div className="tt-error">{notice}</div> : null}
+          {pokerToCallVisible(view) ? (
+            <div className="tt-dock-call" data-to-call="true" data-poker-zone="call">
+              TO CALL <strong>{view.toCall.label}</strong>
+            </div>
+          ) : null}
           {!showActions && phaseCopy.instruction && !setup ? (
             <div
               className={`tt-turn-banner${phaseCopy.instruction === "YOUR TURN" ? " is-you" : ""}`}

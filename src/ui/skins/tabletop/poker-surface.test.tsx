@@ -231,8 +231,11 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
     expect(html).toContain('data-wager-for="owner"');
     expect(html).not.toMatch(/STREET\s+\d/i);
     expect(html).toContain("TO CALL");
+    expect(html).toContain('data-poker-zone="call"');
     expect(html).not.toContain("TO CALL 0");
     expect(html).not.toContain("CALL 0");
+    // TO CALL lives by the dock, not inside the pot amount stack
+    expect(html.indexOf('data-poker-zone="amount"')).toBeLessThan(html.indexOf('data-poker-zone="call"'));
   });
 
   it("Owner switch badge targets the opposite game only when change is legal", () => {
@@ -246,8 +249,8 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
 
   it("seat layout responds to player count with viewer near bottom", () => {
     const two = [pokerSeatPosition(0, 2, 0), pokerSeatPosition(1, 2, 0)];
-    expect(Number.parseFloat(String(two[0]!.top))).toBeGreaterThan(85);
-    expect(Number.parseFloat(String(two[1]!.top))).toBeLessThan(15);
+    expect(Number.parseFloat(String(two[0]!.top))).toBeGreaterThan(90);
+    expect(Number.parseFloat(String(two[1]!.top))).toBeLessThan(10);
     const four = [0, 1, 2, 3].map((i) => pokerSeatPosition(i, 4, 0));
     expect(four.map((p) => p.left).join("|")).not.toEqual(two.map((p) => p.left).join("|"));
     const wager = pokerWagerPosition(0, 2, 0);

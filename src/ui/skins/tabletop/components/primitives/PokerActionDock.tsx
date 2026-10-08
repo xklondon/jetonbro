@@ -50,28 +50,38 @@ export function PokerActionDock({
 
   return (
     <div className="tt-actor" data-actor-controls="true" data-compose={compose ?? "closed"}>
-      {actions.map((action) => (
-        <button
-          key={action.type}
-          type="button"
-          className={`tt-btn${action.type === "CALL" || action.type === "CHECK" ? " gold" : ""}`}
-          disabled={busy}
-          aria-pressed={compose === action.type}
-          onClick={() => {
-            if (action.type === "BET" || action.type === "RAISE") {
-              if (compose === action.type) {
-                onCancel();
+      {actions.map((action) => {
+        const tone =
+          action.type === "FOLD"
+            ? " is-fold"
+            : action.type === "CALL" || action.type === "CHECK"
+              ? " is-primary"
+              : action.type === "BET" || action.type === "RAISE"
+                ? " is-bet"
+                : " is-quiet";
+        return (
+          <button
+            key={action.type}
+            type="button"
+            className={`tt-btn tt-poker-act${tone}${compose === action.type ? " is-open" : ""}`}
+            disabled={busy}
+            aria-pressed={compose === action.type}
+            onClick={() => {
+              if (action.type === "BET" || action.type === "RAISE") {
+                if (compose === action.type) {
+                  onCancel();
+                  return;
+                }
+                onOpenCompose(action.type);
                 return;
               }
-              onOpenCompose(action.type);
-              return;
-            }
-            onAction(action.type);
-          }}
-        >
-          {action.label}
-        </button>
-      ))}
+              onAction(action.type);
+            }}
+          >
+            {action.label}
+          </button>
+        );
+      })}
       {compose && bounds ? (
         <div className="tt-compose" data-raise-composer="true">
           <small data-raise-convention={bounds.convention}>

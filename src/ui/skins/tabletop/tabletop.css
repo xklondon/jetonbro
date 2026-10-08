@@ -1993,9 +1993,15 @@
   justify-content: center;
   --poker-w: 100%;
   --poker-h: 100%;
-  --poker-seat: clamp(2.2rem, 10cqi, 2.85rem);
-  --poker-safe-x: 28%;
-  --poker-safe-y: 24%;
+  --poker-seat: clamp(2.35rem, 10.5cqi, 3rem);
+  --poker-safe-x: 30%;
+  --poker-safe-y: 26%;
+  --poker-champagne: rgba(212, 184, 130, 0.72);
+}
+
+.tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] {
+  --poker-safe-x: 20%;
+  --poker-safe-y: 28%;
 }
 
 .tabletop-skin .tt-poker-table[data-seat-layout="full"] {
@@ -2007,8 +2013,8 @@
   position: relative;
   container-type: size;
   container-name: poker-stage;
-  aspect-ratio: 66 / 100;
-  width: min(100%, 21.5rem);
+  aspect-ratio: 68 / 100;
+  width: min(100%, 22rem);
   height: auto;
   max-height: 100%;
   margin: 0 auto;
@@ -2029,81 +2035,110 @@
   inset: 0;
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at 32% 22%, rgba(110, 74, 42, 0.45), transparent 52%),
-    linear-gradient(150deg, #4a301c 0%, #241408 45%, #1a1008 100%);
+    repeating-linear-gradient(
+      112deg,
+      rgba(70, 44, 24, 0.18) 0 1px,
+      transparent 1px 5px
+    ),
+    repeating-linear-gradient(
+      28deg,
+      rgba(40, 24, 12, 0.12) 0 1px,
+      transparent 1px 9px
+    ),
+    radial-gradient(ellipse at 30% 16%, rgba(110, 74, 42, 0.28), transparent 52%),
+    linear-gradient(150deg, #463018 0%, #2a180e 36%, #1a1008 70%, #100806 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(223, 189, 105, 0.16),
-    0 8px 22px rgba(0, 0, 0, 0.42);
+    inset 0 1px 0 rgba(255, 220, 160, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.5),
+    0 8px 20px rgba(0, 0, 0, 0.38);
 }
 
 .tabletop-skin .tt-poker-cups {
   position: absolute;
-  inset: 3.5% 5.5%;
+  inset: 3.2% 5%;
   z-index: 1;
 }
 
 .tabletop-skin .tt-poker-cups span {
   position: absolute;
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 35% 30%, rgba(255, 236, 180, 0.95), rgba(196, 150, 70, 0.9) 45%, rgba(90, 60, 20, 0.95));
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35), 0 1px 3px rgba(0, 0, 0, 0.45);
+    radial-gradient(circle at 35% 28%, rgba(255, 236, 190, 0.95), rgba(186, 148, 88, 0.88) 48%, rgba(70, 48, 22, 0.95));
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-.tabletop-skin .tt-poker-cups span:nth-child(1) { left: 50%; top: 1.5%; transform: translateX(-50%); }
-.tabletop-skin .tt-poker-cups span:nth-child(2) { right: 2%; top: 48%; }
-.tabletop-skin .tt-poker-cups span:nth-child(3) { left: 50%; bottom: 1.5%; transform: translateX(-50%); }
-.tabletop-skin .tt-poker-cups span:nth-child(4) { left: 2%; top: 48%; }
+.tabletop-skin .tt-poker-cups span:nth-child(1) { left: 50%; top: 1.2%; transform: translateX(-50%); }
+.tabletop-skin .tt-poker-cups span:nth-child(2) { right: 1.5%; top: 48%; }
+.tabletop-skin .tt-poker-cups span:nth-child(3) { left: 50%; bottom: 1.2%; transform: translateX(-50%); }
+.tabletop-skin .tt-poker-cups span:nth-child(4) { left: 1.5%; top: 48%; }
 
 .tabletop-skin .tt-poker-leather {
   position: absolute;
-  inset: 6% 7.5%;
+  inset: 5.2% 6.8%;
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(40, 40, 40, 0.28), transparent 60%),
-    linear-gradient(180deg, #1a1a1a 0%, #080808 55%, #121212 100%);
+    radial-gradient(ellipse at 50% 18%, rgba(40, 40, 40, 0.45), transparent 48%),
+    linear-gradient(180deg, #141414 0%, #050505 50%, #0e0e0e 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 6px 14px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 12px 22px rgba(0, 0, 0, 0.62),
+    inset 0 -3px 5px rgba(255, 255, 255, 0.03);
+}
+
+.tabletop-skin .tt-poker-leather::after {
+  content: "";
+  position: absolute;
+  inset: 10% 12%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
 }
 
 .tabletop-skin .tt-poker-gold-line {
   position: absolute;
-  inset: 11.5% 12.5%;
+  inset: 11% 12%;
   border-radius: 50%;
-  border: 1.25px solid rgba(223, 189, 105, 0.5);
-  box-shadow: 0 0 6px rgba(223, 189, 105, 0.12);
+  border: 1px solid rgba(212, 184, 130, 0.62);
+  box-shadow:
+    0 0 0 0.5px rgba(70, 52, 28, 0.4),
+    inset 0 0 0 0.5px rgba(255, 228, 175, 0.18);
 }
 
 .tabletop-skin .tt-poker-felt-disk {
   position: absolute;
-  inset: 13% 14%;
+  inset: 12.5% 13.5%;
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at 50% 36%, rgba(16, 88, 64, 0.4), transparent 58%),
-    linear-gradient(180deg, #0a6048 0%, #064836 50%, #032820 100%);
-  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.28);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 32%, rgba(14, 88, 64, 0.38), transparent 60%),
+    linear-gradient(180deg, #08523e 0%, #053a2c 50%, #021e18 100%);
+  background-blend-mode: soft-light, normal, normal;
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.36);
 }
 
 .tabletop-skin .tt-poker-club {
   position: absolute;
   left: 50%;
-  bottom: 7%;
+  bottom: 6.5%;
   transform: translateX(-50%);
   z-index: 2;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
-  color: rgba(223, 189, 105, 0.72);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  color: rgba(212, 184, 130, 0.7);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .tabletop-skin .tt-poker-club::before {
   content: "♣";
 }
 
-/* Reserved centre column — name / pot / track never absolute-collide */
+/* Centre: name → chips → POT → phase journey (TO CALL is in the dock) */
 .tabletop-skin .tt-poker-centre {
   position: absolute;
   left: var(--poker-safe-x);
@@ -2112,11 +2147,17 @@
   bottom: 26%;
   z-index: 1;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto 1fr;
   align-items: center;
   justify-items: center;
   gap: 6px;
   pointer-events: none;
+}
+
+.tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] .tt-poker-centre {
+  top: 26%;
+  bottom: 28%;
+  gap: 8px;
 }
 
 .tabletop-skin .tt-poker-felt-name {
@@ -2130,15 +2171,17 @@
   z-index: 1;
   text-align: center;
   align-self: start;
+  min-height: 1rem;
 }
 
 .tabletop-skin .tt-poker-felt-name .tt-table-name {
   margin: 0;
-  font-size: clamp(9px, 3.2cqi, 11px);
-  letter-spacing: 0.14em;
-  color: rgba(223, 189, 105, 0.3);
-  text-shadow: none;
+  font: 600 clamp(9px, 2.8cqi, 11px)/1.1 var(--tt-serif);
+  letter-spacing: 0.18em;
+  color: rgba(212, 184, 130, 0.26);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
   opacity: 1;
+  text-transform: uppercase;
 }
 
 .tabletop-skin .tt-streets {
@@ -2150,60 +2193,68 @@
   list-style: none;
   display: flex;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: space-between;
   gap: 0;
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 8px 2px 0;
-  border-top: 1px solid rgba(223, 189, 105, 0.35);
-  border-bottom: 1px solid rgba(223, 189, 105, 0.35);
+  padding: 9px 2px 2px;
+  border-top: 1px solid rgba(212, 184, 130, 0.42);
+  border-bottom: 1px solid rgba(212, 184, 130, 0.42);
   pointer-events: none;
   align-self: end;
+  grid-row: 4;
 }
+
+.tabletop-skin .tt-streets-arc li:nth-child(1) { transform: translateY(6px); }
+.tabletop-skin .tt-streets-arc li:nth-child(2) { transform: translateY(2px); }
+.tabletop-skin .tt-streets-arc li:nth-child(3) { transform: translateY(0); }
+.tabletop-skin .tt-streets-arc li:nth-child(4) { transform: translateY(0); }
+.tabletop-skin .tt-streets-arc li:nth-child(5) { transform: translateY(2px); }
+.tabletop-skin .tt-streets-arc li:nth-child(6) { transform: translateY(6px); }
 
 .tabletop-skin .tt-streets li {
   flex: 1 1 0;
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 3px;
   position: relative;
   min-width: 0;
-  padding: 0 0 5px;
-  font-size: clamp(5.5px, 2.4cqi, 7.5px);
-  letter-spacing: 0;
-  color: rgba(180, 180, 180, 0.5);
+  padding: 0 0 4px;
+  font-size: clamp(7.5px, 3.1cqi, 9.5px);
+  letter-spacing: 0.01em;
+  color: rgba(160, 168, 160, 0.58);
   text-align: center;
 }
 
 .tabletop-skin .tt-streets li:not(:last-child)::after {
   content: "";
   position: absolute;
-  top: 4px;
-  left: calc(50% + 5px);
-  right: calc(-50% + 5px);
+  top: 5px;
+  left: calc(50% + 7px);
+  right: calc(-50% + 7px);
   height: 1px;
-  background: rgba(223, 189, 105, 0.28);
+  background: rgba(212, 184, 130, 0.34);
 }
 
 .tabletop-skin .tt-streets-node {
-  width: 9px;
-  height: 9px;
+  width: 12px;
+  height: 12px;
   border-radius: 999px;
-  border: 1.5px solid rgba(160, 160, 160, 0.45);
+  border: 1.5px solid rgba(150, 150, 150, 0.48);
   background: transparent;
   box-sizing: border-box;
   z-index: 1;
 }
 
 .tabletop-skin .tt-streets li.is-done {
-  color: rgba(223, 189, 105, 0.75);
+  color: rgba(212, 184, 130, 0.82);
 }
 
 .tabletop-skin .tt-streets li.is-done .tt-streets-node {
-  border-color: rgba(223, 189, 105, 0.8);
-  background: rgba(223, 189, 105, 0.92);
-  box-shadow: inset 0 0 0 2px rgba(20, 16, 10, 0.55);
+  border-color: rgba(212, 184, 130, 0.88);
+  background: rgba(212, 184, 130, 0.92);
+  box-shadow: inset 0 0 0 2px rgba(16, 12, 8, 0.55);
   color: #1a1208;
   display: grid;
   place-items: center;
@@ -2217,21 +2268,23 @@
 }
 
 .tabletop-skin .tt-streets li.is-current {
-  color: rgba(244, 220, 150, 0.95);
+  color: rgba(244, 226, 170, 0.98);
   font-weight: 700;
 }
 
 .tabletop-skin .tt-streets li.is-current .tt-streets-node {
-  border-color: rgba(244, 220, 150, 0.95);
-  background: rgba(223, 189, 105, 0.95);
-  box-shadow: 0 0 0 2px rgba(223, 189, 105, 0.28), 0 0 10px rgba(223, 189, 105, 0.4);
+  border-color: rgba(244, 226, 170, 0.95);
+  background: rgba(212, 184, 130, 0.95);
+  box-shadow: 0 0 0 2px rgba(212, 184, 130, 0.22);
 }
 
 .tabletop-skin .tt-streets-label {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 5.2em;
+  line-height: 1.08;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
   text-transform: uppercase;
 }
 
@@ -2241,12 +2294,12 @@
   top: auto;
   transform: none;
   min-width: 0;
-  max-width: 100%;
+  max-width: 9rem;
   width: 100%;
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 3px;
+  gap: 8px;
   padding: 2px 4px;
   text-align: center;
   border-radius: 0;
@@ -2258,12 +2311,28 @@
 }
 
 .tabletop-skin .tt-pot-chips-zone,
-.tabletop-skin .tt-pot-amount-zone,
-.tabletop-skin .tt-pot-call-zone {
+.tabletop-skin .tt-pot-amount-zone {
   display: grid;
   justify-items: center;
-  gap: 1px;
+  gap: 3px;
   min-height: 0;
+}
+
+.tabletop-skin .tt-pot-chips-zone {
+  min-height: 1.75rem;
+}
+
+.tabletop-skin .tt-pot-chips-zone .tt-chip-stack .tt-jeton {
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.tabletop-skin .tt-seat-wager .tt-chip-stack .tt-jeton {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .tabletop-skin .tt-pot.tt-pot-cloth {
@@ -2274,7 +2343,7 @@
 
 .tabletop-skin .tt-pot.is-drop-hot,
 .tabletop-skin .tt-poker-table.is-drop-hot .tt-pot {
-  outline: 2px solid var(--tt-gold-hi);
+  outline: 1.5px solid var(--poker-champagne);
   outline-offset: 6px;
   border-radius: 12px;
 }
@@ -2338,10 +2407,25 @@
 }
 
 .tabletop-skin .tt-pot-amount {
-  font: 700 22px/1.1 var(--tt-serif);
-  color: #f4d896;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font: 700 20px/1.05 var(--tt-serif);
+  color: #e8d0a0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   font-variant-numeric: tabular-nums;
+}
+
+.tabletop-skin .tt-dock-call {
+  text-align: center;
+  font: 600 11px/1.2 var(--tt-sans);
+  letter-spacing: 0.12em;
+  color: rgba(212, 184, 130, 0.9);
+  padding: 2px 0 0;
+}
+
+.tabletop-skin .tt-dock-call strong {
+  color: #f4ead5;
+  font: 700 13px/1 var(--tt-serif);
+  letter-spacing: 0.04em;
+  margin-left: 4px;
 }
 
 .tabletop-skin .tt-to-call {
@@ -2423,12 +2507,12 @@
 .tabletop-skin .tt-seat {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: calc(var(--poker-seat, 2.75rem) + 1.8rem);
+  width: calc(var(--poker-seat, 2.75rem) + 1.6rem);
   min-width: 0;
-  max-width: 5.8rem;
+  max-width: 5.6rem;
   display: grid;
   justify-items: center;
-  gap: 1px;
+  gap: 2px;
   padding: 0;
   text-align: center;
   border: 0;
@@ -2439,18 +2523,26 @@
   z-index: 2;
 }
 
-/* Hang ledgers outward so north/south seats leave the centre column clear */
+/* Hang ledgers outward onto the rail — keep plates out of the felt centre */
 .tabletop-skin .tt-seat[data-seat-edge="south"] {
-  transform: translate(-50%, -28%);
+  transform: translate(-50%, -22%);
 }
 
 .tabletop-skin .tt-seat[data-seat-edge="north"] {
-  transform: translate(-50%, -72%);
+  transform: translate(-50%, -78%);
 }
 
 .tabletop-skin .tt-seat[data-seat-edge="east"],
 .tabletop-skin .tt-seat[data-seat-edge="west"] {
   transform: translate(-50%, -50%);
+}
+
+.tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] .tt-seat[data-seat-edge="south"] {
+  transform: translate(-50%, -42%);
+}
+
+.tabletop-skin .tt-poker-table[data-seat-layout="heads-up"] .tt-seat[data-seat-edge="north"] {
+  transform: translate(-50%, -78%);
 }
 
 .tabletop-skin .tt-seat.is-you {
@@ -2467,7 +2559,7 @@
 }
 
 .tabletop-skin .tt-seat.is-winner .tt-seat-medal {
-  box-shadow: 0 0 0 2px rgba(244, 220, 150, 0.85), 0 0 14px rgba(223, 189, 105, 0.45);
+  box-shadow: 0 0 0 2px rgba(212, 184, 130, 0.8), 0 0 10px rgba(212, 184, 130, 0.35);
 }
 
 .tabletop-skin .tt-seat-medal {
@@ -2475,43 +2567,40 @@
   width: var(--poker-seat, 3rem);
   height: var(--poker-seat, 3rem);
   border-radius: 999px;
-  border: 2px solid rgba(196, 160, 90, 0.78);
+  border: 1.75px solid rgba(212, 184, 130, 0.82);
   background:
-    radial-gradient(circle at 35% 28%, rgba(255, 236, 180, 0.22), transparent 48%),
-    linear-gradient(165deg, #2c2418 0%, #12100c 100%);
+    radial-gradient(circle at 34% 26%, rgba(255, 236, 180, 0.16), transparent 46%),
+    linear-gradient(165deg, #241c14 0%, #0e0c0a 100%);
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   display: grid;
   place-items: center;
-  font: 700 clamp(10px, 3.6cqi, 13px)/1 var(--tt-serif);
+  font: 700 clamp(10px, 3.5cqi, 12px)/1 var(--tt-serif);
   letter-spacing: 0.04em;
-  color: #f4e2a8;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  color: #e8d4a8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .tabletop-skin .tt-seat.is-actor .tt-seat-medal {
-  border-color: rgba(244, 220, 150, 0.98);
+  border-color: rgba(244, 220, 150, 0.95);
   box-shadow:
-    0 0 0 3px rgba(223, 189, 105, 0.3),
-    0 0 14px rgba(223, 189, 105, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  animation: tt-actor-pulse 1.3s ease-in-out infinite;
+    0 0 0 2px rgba(212, 184, 130, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  animation: tt-actor-pulse 1.6s ease-in-out infinite;
 }
 
 @keyframes tt-actor-pulse {
   0%,
   100% {
     box-shadow:
-      0 0 0 3px rgba(223, 189, 105, 0.22),
-      0 0 10px rgba(223, 189, 105, 0.35),
+      0 0 0 2px rgba(223, 189, 105, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.14);
   }
   50% {
     box-shadow:
-      0 0 0 4px rgba(223, 189, 105, 0.4),
-      0 0 22px rgba(223, 189, 105, 0.65),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      0 0 0 3px rgba(223, 189, 105, 0.38),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
   }
 }
 
@@ -2562,15 +2651,15 @@
 
 .tabletop-skin .tt-seat-ledger {
   display: grid;
-  gap: 1px;
+  gap: 0;
   justify-items: center;
-  min-width: 72px;
+  min-width: 4.2rem;
   max-width: 100%;
-  padding: 3px 8px 4px;
-  border-radius: 6px;
-  border: 1px solid rgba(223, 189, 105, 0.4);
-  background: rgba(8, 12, 10, 0.72);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  background: linear-gradient(180deg, rgba(18, 14, 10, 0.88), rgba(8, 8, 8, 0.9));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 .tabletop-skin .tt-seat-name {
@@ -2578,15 +2667,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 600 10px/1.2 var(--tt-serif);
-  letter-spacing: 0.04em;
-  color: rgba(244, 234, 213, 0.95);
+  font: 600 10px/1.15 var(--tt-serif);
+  letter-spacing: 0.03em;
+  color: rgba(244, 234, 213, 0.94);
 }
 
 .tabletop-skin .tt-seat-line {
   font-size: 10px;
   font-variant-numeric: tabular-nums;
-  color: #e8c878;
+  color: #d4b882;
   white-space: nowrap;
 }
 
@@ -2630,41 +2719,120 @@
 }
 
 .tabletop-skin .tt-poker .tt-rail {
-  gap: 6px;
-  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+  gap: 5px;
+  padding: 6px 12px calc(8px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(10, 8, 6, 0.92), #080604 55%);
+  border-top: 1px solid rgba(212, 184, 130, 0.28);
 }
 
 .tabletop-skin .tt-poker .tt-owner-zone {
-  gap: 4px;
-  padding-bottom: 4px;
+  gap: 3px;
+  padding: 0 0 4px;
+  border-bottom-color: rgba(212, 184, 130, 0.18);
 }
 
 .tabletop-skin .tt-poker .tt-owner-row > .tt-btn,
 .tabletop-skin .tt-poker .tt-owner-street .tt-btn {
   min-height: 44px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   font-size: 12px;
+  border-radius: 10px;
+  border-color: rgba(212, 184, 130, 0.35);
+  background: linear-gradient(180deg, #1a1814, #0e0c0a);
+}
+
+.tabletop-skin .tt-poker .tt-owner-street-idle {
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+  font: 500 10px/1.2 var(--tt-sans);
+  letter-spacing: 0.1em;
+  color: rgba(212, 184, 130, 0.42);
+  text-transform: uppercase;
 }
 
 .tabletop-skin .tt-poker .tt-owner-street small {
   font-size: 9px;
+  opacity: 0.65;
+  letter-spacing: 0.04em;
 }
 
-.tabletop-skin .tt-poker .tt-controls {
-  gap: 4px;
+.tabletop-skin .tt-poker .tt-controls,
+.tabletop-skin .tt-poker-dock {
+  gap: 6px;
+  padding: 8px 10px 6px;
+  margin: 0 -2px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 184, 130, 0.32);
+  background:
+    linear-gradient(180deg, rgba(28, 22, 16, 0.96), rgba(10, 8, 6, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 230, 180, 0.06);
 }
 
 .tabletop-skin .tt-poker .tt-turn-banner {
-  padding: 6px 8px;
+  padding: 5px 8px;
   font-size: 11px;
+  border-radius: 10px;
+  border-color: rgba(212, 184, 130, 0.3);
+  background: rgba(12, 10, 8, 0.7);
 }
 
 .tabletop-skin .tt-poker .tt-wallet-bar {
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .tabletop-skin .tt-poker .tt-wallet-available strong {
-  font-size: 18px;
+  font-size: 17px;
+  color: #e8d4a8;
+}
+
+.tabletop-skin .tt-poker .tt-actor {
+  gap: 5px;
+}
+
+.tabletop-skin .tt-poker .tt-poker-act {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(212, 184, 130, 0.48);
+  letter-spacing: 0.08em;
+  font: 600 12px/1.1 var(--tt-serif);
+  color: #e8d4a8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.28);
+}
+
+.tabletop-skin .tt-poker .tt-poker-act.is-fold {
+  background: linear-gradient(180deg, #5a2828, #2e1414);
+  color: #f0d8d0;
+}
+
+.tabletop-skin .tt-poker .tt-poker-act.is-primary {
+  background: linear-gradient(180deg, #2e2c28, #141210);
+  color: #f4ead5;
+  border-color: rgba(212, 184, 130, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(212, 184, 130, 0.18),
+    0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.tabletop-skin .tt-poker .tt-poker-act.is-bet {
+  background: linear-gradient(180deg, #1e4232, #0c2018);
+  color: #e4f0e6;
+}
+
+.tabletop-skin .tt-poker .tt-poker-act.is-quiet {
+  background: linear-gradient(180deg, #22201c, #10100e);
+  color: rgba(232, 212, 168, 0.78);
+  border-color: rgba(212, 184, 130, 0.32);
+}
+
+.tabletop-skin .tt-poker .tt-poker-act.is-open,
+.tabletop-skin .tt-poker .tt-poker-act.is-primary:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(212, 184, 130, 0.28);
 }
 
 .tabletop-skin .tt-owner-row {
