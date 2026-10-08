@@ -30,37 +30,48 @@ export function pokerSeatInitials(name: string): string {
   return (compact.slice(0, 2) || "P").toUpperCase();
 }
 
-/**
- * Seat angles around the oval. Viewer sits near the tray (bottom).
- * 2: top/bottom · 3: top, lower-left, lower-right · 4: NESW · 5–6: even ring.
- */
-export function pokerSeatPosition(index: number, count: number, viewerIndex: number): CSSProperties {
+export type PokerSeatEdge = "north" | "south" | "east" | "west";
+
+function seatAngleDeg(index: number, count: number, viewerIndex: number): number {
   const start = viewerIndex >= 0 ? viewerIndex : 0;
   const relative = (index - start + count) % Math.max(count, 1);
-  let angleDeg: number;
-  if (count <= 1) {
-    angleDeg = 90;
-  } else if (count === 2) {
-    angleDeg = relative === 0 ? 90 : -90;
-  } else if (count === 3) {
-    angleDeg = [90, 210, 330][relative]!;
-  } else if (count === 4) {
-    angleDeg = [90, 0, -90, 180][relative]!;
-  } else {
-    angleDeg = 90 + (relative * 360) / count;
-  }
-  const angle = (angleDeg * Math.PI) / 180;
-  const radiusX = count <= 2 ? 32 : count <= 4 ? 36 : 39;
-  const radiusY = count <= 2 ? 34 : count <= 4 ? 37 : 40;
-  return { left: `${50 + radiusX * Math.cos(angle)}%`, top: `${50 + radiusY * Math.sin(angle)}%` };
+  if (count <= 1) return 90;
+  if (count === 2) return relative === 0 ? 90 : -90;
+  if (count === 3) return [90, 215, 325][relative]!;
+  if (count === 4) return [90, 0, -90, 180][relative]!;
+  return 90 + (relative * 360) / count;
 }
 
-/** Chip stack sits inward from the seat toward the pot centre. */
+export function pokerSeatEdge(index: number, count: number, viewerIndex: number): PokerSeatEdge {
+  const deg = ((seatAngleDeg(index, count, viewerIndex) % 360) + 360) % 360;
+  if (deg > 45 && deg < 135) return "south";
+  if (deg > 225 && deg < 315) return "north";
+  if (deg >= 135 && deg <= 225) return "west";
+  return "east";
+}
+
+/**
+ * Perimeter anchors on the portrait racetrack stage.
+ * Viewer at bottom rail; radii keep seats outside the centre safe zone.
+ * Coordinates are % of `.tt-poker-stage`, not the viewport.
+ */
+export function pokerSeatPosition(index: number, count: number, viewerIndex: number): CSSProperties {
+  const angleDeg = seatAngleDeg(index, count, viewerIndex);
+  const angle = (angleDeg * Math.PI) / 180;
+  const radiusX = count >= 6 ? 42.5 : 43;
+  const radiusY = count >= 6 ? 41 : 41.5;
+  return {
+    left: `${50 + radiusX * Math.cos(angle)}%`,
+    top: `${50 + radiusY * Math.sin(angle)}%`,
+  };
+}
+
+/** Committed chips sit inward from the seat, still outside the pot safe zone. */
 export function pokerWagerPosition(index: number, count: number, viewerIndex: number): CSSProperties {
   const seat = pokerSeatPosition(index, count, viewerIndex) as { left: string; top: string };
   const left = Number.parseFloat(seat.left);
   const top = Number.parseFloat(seat.top);
-  const inward = 0.52;
+  const inward = 0.7;
   return {
     left: `${50 + (left - 50) * inward}%`,
     top: `${50 + (top - 50) * inward}%`,
@@ -100,6 +111,7 @@ export function PokerSeat({
         data-dealer={seat.isDealer ? "true" : "false"}
         data-viewer-seat={isYou ? "true" : undefined}
         data-seat-available={seat.available.label}
+        data-seat-edge={pokerSeatEdge(index, view.seats.length, view.seats.findIndex((item) => item.userId === view.viewerId))}
       >
         {!setup ? (
           <div className="tt-seat-markers">

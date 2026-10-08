@@ -158,6 +158,8 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
       expect(html).toContain("PRE-FLOP");
       expect(html).toContain("SHOWDOWN");
       expect(html).toContain("tt-poker-racetrack");
+      expect(html).toContain('data-poker-stage="true"');
+      expect(html).toContain('data-poker-centre="true"');
       expect(html).not.toContain("tt-poker-oval");
       expect(html).toContain('data-centre-divider="absent"');
       expect(html).toContain("TABLE SETUP");
@@ -244,8 +246,8 @@ describe("Poker oval surface (Dealer = Player anatomy)", () => {
 
   it("seat layout responds to player count with viewer near bottom", () => {
     const two = [pokerSeatPosition(0, 2, 0), pokerSeatPosition(1, 2, 0)];
-    expect(two[0]!.top).toContain("84");
-    expect(two[1]!.top).toContain("16");
+    expect(Number.parseFloat(String(two[0]!.top))).toBeGreaterThan(85);
+    expect(Number.parseFloat(String(two[1]!.top))).toBeLessThan(15);
     const four = [0, 1, 2, 3].map((i) => pokerSeatPosition(i, 4, 0));
     expect(four.map((p) => p.left).join("|")).not.toEqual(two.map((p) => p.left).join("|"));
     const wager = pokerWagerPosition(0, 2, 0);

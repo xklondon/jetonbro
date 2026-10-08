@@ -422,46 +422,51 @@ export function PokerBoard({
         data-poker-rail="oval"
         data-poker-surface="racetrack"
       >
-        <div className="tt-poker-racetrack" aria-hidden="true">
-          <div className="tt-poker-wood" />
-          <div className="tt-poker-cups">
-            <span />
-            <span />
-            <span />
-            <span />
+        <div className="tt-poker-stage" data-poker-stage="true">
+          <div className="tt-poker-racetrack" aria-hidden="true" data-poker-racetrack="true">
+            <div className="tt-poker-wood" />
+            <div className="tt-poker-cups">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="tt-poker-leather" />
+            <div className="tt-poker-gold-line" />
+            <div className="tt-poker-felt-disk" data-poker-felt="true" />
+            <span className="tt-poker-club" />
           </div>
-          <div className="tt-poker-leather" />
-          <div className="tt-poker-gold-line" />
-          <div className="tt-poker-felt-disk" />
-          <span className="tt-poker-club" />
-        </div>
-        <div className="tt-poker-felt-name">
-          <TableName name={view.tableName} />
-        </div>
-        <PokerPot view={view} dropHot={dropHot} />
-        <PokerStreet view={view} />
-        <PokerHandComplete view={view} />
-        {setup && view.seats.length === 0
-          ? [0, 1].map((index) => (
-              <div
-                key={`empty-${index}`}
-                className="tt-poker-empty"
-                style={pokerSeatPosition(index, 2, 0)}
-                data-empty-seat={index + 1}
-                aria-hidden="true"
-              />
-            ))
-          : null}
-        {view.seats.map((seat, index) => (
-          <PokerSeat
-            key={seat.userId}
-            seat={seat}
-            view={view}
-            index={index}
+          <div className="tt-poker-centre" data-poker-centre="true">
+            <div className="tt-poker-felt-name" data-poker-zone="name">
+              <TableName name={view.tableName} />
+            </div>
+            <PokerPot view={view} dropHot={dropHot} />
+            <PokerStreet view={view} />
+            <PokerHandComplete view={view} />
+          </div>
+          {setup && view.seats.length === 0
+            ? [0, 1].map((index) => (
+                <div
+                  key={`empty-${index}`}
+                  className="tt-poker-empty"
+                  style={pokerSeatPosition(index, 2, 0)}
+                  data-empty-seat={index + 1}
+                  aria-hidden="true"
+                />
+              ))
+            : null}
+          {view.seats.map((seat, index) => (
+            <PokerSeat
+              key={seat.userId}
+              seat={seat}
+              view={view}
+              index={index}
             style={pokerSeatPosition(index, view.seats.length, viewerIndex)}
           />
         ))}
+        </div>
       </div>
     </Shell>
   );
 }
+

@@ -9,7 +9,7 @@ export function pokerTrackLabel(id: string): string {
   return id.replaceAll("_", "-");
 }
 
-/** Compact central pot on the cloth — chips dominate; no competing street title. */
+/** Centre pot — chips, amount and TO CALL occupy reserved sub-zones (never stacked collide). */
 export function PokerPot({ view, dropHot = false }: { view: PokerTableView; dropHot?: boolean }) {
   const setup = view.phase === "POKER_SETUP";
   const complete = view.phase === "HAND_COMPLETE";
@@ -19,7 +19,7 @@ export function PokerPot({ view, dropHot = false }: { view: PokerTableView; drop
 
   if (setup) {
     return (
-      <div className="tt-pot tt-pot-cloth tt-blinds" data-poker-pot="setup">
+      <div className="tt-pot tt-pot-cloth tt-blinds" data-poker-pot="setup" data-poker-zone="pot">
         <span>
           SB <strong>{view.smallBlind.label}</strong>
         </span>
@@ -36,14 +36,21 @@ export function PokerPot({ view, dropHot = false }: { view: PokerTableView; drop
       data-drop-pot="pot"
       data-pot-paid={view.potPaid ? "true" : "false"}
       data-poker-pot="live"
+      data-poker-zone="pot"
     >
-      {!view.potPaid && !complete && view.pot.millis !== "0" ? <ChipStack millis={view.pot.millis} max={5} /> : null}
-      <small>{view.potPaid || complete ? "POT PAID" : "POT"}</small>
-      {!view.potPaid && !complete ? <strong className="tt-pot-amount">{view.pot.label}</strong> : null}
+      <div className="tt-pot-chips-zone" data-poker-zone="chips">
+        {!view.potPaid && !complete && view.pot.millis !== "0" ? <ChipStack millis={view.pot.millis} max={5} /> : null}
+      </div>
+      <div className="tt-pot-amount-zone" data-poker-zone="amount">
+        <small>{view.potPaid || complete ? "POT PAID" : "POT"}</small>
+        {!view.potPaid && !complete ? <strong className="tt-pot-amount">{view.pot.label}</strong> : null}
+      </div>
       {owed ? (
-        <span className="tt-to-call" data-to-call="true">
-          TO CALL <strong>{view.toCall.label}</strong>
-        </span>
+        <div className="tt-pot-call-zone" data-poker-zone="call">
+          <span className="tt-to-call" data-to-call="true">
+            TO CALL <strong>{view.toCall.label}</strong>
+          </span>
+        </div>
       ) : null}
       {sidePots ? (
         <ul className="tt-pot-list" data-side-pots="true">
@@ -81,7 +88,7 @@ export function PokerStreet({ view }: { view: PokerTableView }) {
         }));
 
   return (
-    <ol className="tt-streets" aria-label="Round track" data-poker-street="true" data-poker-track="felt">
+    <ol className="tt-streets" aria-label="Round track" data-poker-street="true" data-poker-track="felt" data-poker-zone="track">
       {stops.map((stop) => (
         <li
           key={stop.id}

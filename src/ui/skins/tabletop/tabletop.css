@@ -1907,17 +1907,18 @@
 /* ========== POKER (scoped — do not alter Blackjack surfaces) ========== */
 /* ========== POKER PREMIUM RACETRACK ========== */
 /* Authority: design/reference/tabletop/approved/poker-premium-racetrack.png */
+/* One ownership section: portrait stage coordinate system — no leftover oval geometry. */
 .tabletop-skin .tt-poker {
   padding-top: 0;
   background:
-    radial-gradient(ellipse 80% 55% at 50% 18%, rgba(40, 28, 18, 0.55), transparent 70%),
-    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.55), transparent 55%),
-    linear-gradient(180deg, #1a1410 0%, #0c0a08 100%);
+    radial-gradient(ellipse 70% 40% at 50% 12%, rgba(48, 32, 18, 0.4), transparent 65%),
+    linear-gradient(180deg, #14100c 0%, #080604 100%);
 }
 
 .tabletop-skin .tt-poker .tt-surface-body {
-  padding-top: 18px;
+  padding-top: 6px;
   overflow: hidden;
+  gap: 0;
 }
 
 .tabletop-skin .tt-poker-top {
@@ -1927,7 +1928,8 @@
   position: relative;
   z-index: 2;
   flex: 0 0 auto;
-  min-height: 36px;
+  min-height: 28px;
+  max-height: 36px;
 }
 
 .tabletop-skin .tt-poker .tt-phase {
@@ -1936,14 +1938,14 @@
 }
 
 .tabletop-skin .tt-poker .tt-phase strong {
-  font: 700 12px/1.15 var(--tt-serif);
+  font: 700 11px/1.1 var(--tt-serif);
   letter-spacing: 0.14em;
   color: rgba(244, 220, 150, 0.92);
 }
 
 .tabletop-skin .tt-poker .tt-phase em {
   color: rgba(244, 234, 213, 0.72);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .tabletop-skin .tt-turn {
@@ -1984,17 +1986,40 @@
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  margin-top: 2px;
-  overflow: hidden;
+  margin: 0;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --poker-w: 100%;
+  --poker-h: 100%;
+  --poker-seat: clamp(2.2rem, 10cqi, 2.85rem);
+  --poker-safe-x: 28%;
+  --poker-safe-y: 24%;
 }
 
 .tabletop-skin .tt-poker-table[data-seat-layout="full"] {
   overflow: hidden;
 }
 
+/* Portrait stage: aspect locked; seats/centre use this box only */
+.tabletop-skin .tt-poker-stage {
+  position: relative;
+  container-type: size;
+  container-name: poker-stage;
+  aspect-ratio: 66 / 100;
+  width: min(100%, 21.5rem);
+  height: auto;
+  max-height: 100%;
+  margin: 0 auto;
+  overflow: visible;
+  flex: 0 1 auto;
+  align-self: center;
+}
+
 .tabletop-skin .tt-poker-racetrack {
   position: absolute;
-  inset: 2% 3% 4%;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
 }
@@ -2002,77 +2027,75 @@
 .tabletop-skin .tt-poker-wood {
   position: absolute;
   inset: 0;
-  border-radius: 50% / 46%;
+  border-radius: 50%;
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(120, 82, 48, 0.55), transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(60, 36, 18, 0.7), transparent 55%),
-    linear-gradient(145deg, #5a3a22 0%, #2a180e 42%, #3d2614 68%, #1a1008 100%);
+    radial-gradient(ellipse at 32% 22%, rgba(110, 74, 42, 0.45), transparent 52%),
+    linear-gradient(150deg, #4a301c 0%, #241408 45%, #1a1008 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(223, 189, 105, 0.18),
-    0 10px 28px rgba(0, 0, 0, 0.45);
+    inset 0 0 0 1px rgba(223, 189, 105, 0.16),
+    0 8px 22px rgba(0, 0, 0, 0.42);
 }
 
 .tabletop-skin .tt-poker-cups {
   position: absolute;
-  inset: 4% 6%;
+  inset: 3.5% 5.5%;
   z-index: 1;
 }
 
 .tabletop-skin .tt-poker-cups span {
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 11px;
+  height: 11px;
   border-radius: 999px;
   background:
     radial-gradient(circle at 35% 30%, rgba(255, 236, 180, 0.95), rgba(196, 150, 70, 0.9) 45%, rgba(90, 60, 20, 0.95));
   box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35), 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-.tabletop-skin .tt-poker-cups span:nth-child(1) { left: 50%; top: 2%; transform: translateX(-50%); }
-.tabletop-skin .tt-poker-cups span:nth-child(2) { right: 3%; top: 48%; }
-.tabletop-skin .tt-poker-cups span:nth-child(3) { left: 50%; bottom: 2%; transform: translateX(-50%); }
-.tabletop-skin .tt-poker-cups span:nth-child(4) { left: 3%; top: 48%; }
+.tabletop-skin .tt-poker-cups span:nth-child(1) { left: 50%; top: 1.5%; transform: translateX(-50%); }
+.tabletop-skin .tt-poker-cups span:nth-child(2) { right: 2%; top: 48%; }
+.tabletop-skin .tt-poker-cups span:nth-child(3) { left: 50%; bottom: 1.5%; transform: translateX(-50%); }
+.tabletop-skin .tt-poker-cups span:nth-child(4) { left: 2%; top: 48%; }
 
 .tabletop-skin .tt-poker-leather {
   position: absolute;
-  inset: 7% 8%;
-  border-radius: 50% / 46%;
+  inset: 6% 7.5%;
+  border-radius: 50%;
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(40, 40, 40, 0.35), transparent 60%),
-    linear-gradient(180deg, #1c1c1c 0%, #0a0a0a 55%, #141414 100%);
+    radial-gradient(ellipse at 50% 40%, rgba(40, 40, 40, 0.28), transparent 60%),
+    linear-gradient(180deg, #1a1a1a 0%, #080808 55%, #121212 100%);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 8px 18px rgba(0, 0, 0, 0.55);
+    inset 0 6px 14px rgba(0, 0, 0, 0.5);
 }
 
 .tabletop-skin .tt-poker-gold-line {
   position: absolute;
-  inset: 12.5% 13%;
-  border-radius: 50% / 46%;
-  border: 1.5px solid rgba(223, 189, 105, 0.55);
-  box-shadow: 0 0 8px rgba(223, 189, 105, 0.18);
+  inset: 11.5% 12.5%;
+  border-radius: 50%;
+  border: 1.25px solid rgba(223, 189, 105, 0.5);
+  box-shadow: 0 0 6px rgba(223, 189, 105, 0.12);
 }
 
 .tabletop-skin .tt-poker-felt-disk {
   position: absolute;
-  inset: 14% 14.5%;
-  border-radius: 50% / 46%;
+  inset: 13% 14%;
+  border-radius: 50%;
   background:
-    radial-gradient(ellipse at 50% 38%, rgba(18, 92, 68, 0.55), transparent 58%),
-    radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.35), transparent 50%),
-    linear-gradient(180deg, #0b6b4e 0%, #075744 48%, #042a22 100%);
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.28);
+    radial-gradient(ellipse at 50% 36%, rgba(16, 88, 64, 0.4), transparent 58%),
+    linear-gradient(180deg, #0a6048 0%, #064836 50%, #032820 100%);
+  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.28);
 }
 
 .tabletop-skin .tt-poker-club {
   position: absolute;
   left: 50%;
-  bottom: 7.5%;
+  bottom: 7%;
   transform: translateX(-50%);
   z-index: 2;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
-  color: rgba(223, 189, 105, 0.78);
+  color: rgba(223, 189, 105, 0.72);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
@@ -2080,72 +2103,92 @@
   content: "♣";
 }
 
-.tabletop-skin .tt-poker-felt-name {
+/* Reserved centre column — name / pot / track never absolute-collide */
+.tabletop-skin .tt-poker-centre {
   position: absolute;
-  left: 50%;
-  top: 28%;
-  width: min(52%, 11rem);
-  transform: translate(-50%, -50%);
+  left: var(--poker-safe-x);
+  right: var(--poker-safe-x);
+  top: 22%;
+  bottom: 26%;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.tabletop-skin .tt-poker-felt-name {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  max-width: 11rem;
+  transform: none;
   pointer-events: none;
   z-index: 1;
   text-align: center;
+  align-self: start;
 }
 
 .tabletop-skin .tt-poker-felt-name .tt-table-name {
   margin: 0;
-  font-size: clamp(10px, 2.8vw, 12px);
-  letter-spacing: 0.16em;
-  color: rgba(223, 189, 105, 0.28);
+  font-size: clamp(9px, 3.2cqi, 11px);
+  letter-spacing: 0.14em;
+  color: rgba(223, 189, 105, 0.3);
   text-shadow: none;
   opacity: 1;
 }
 
 .tabletop-skin .tt-streets {
-  position: absolute;
-  left: 50%;
-  top: 68%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
   z-index: 2;
   list-style: none;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   gap: 0;
-  width: min(78%, 280px);
+  width: 100%;
+  max-width: 100%;
   margin: 0;
-  padding: 10px 4px 0;
+  padding: 8px 2px 0;
   border-top: 1px solid rgba(223, 189, 105, 0.35);
   border-bottom: 1px solid rgba(223, 189, 105, 0.35);
   pointer-events: none;
+  align-self: end;
 }
 
 .tabletop-skin .tt-streets li {
   flex: 1 1 0;
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 2px;
   position: relative;
   min-width: 0;
-  padding: 0 1px 8px;
-  font-size: 7px;
-  letter-spacing: 0.04em;
-  color: rgba(180, 180, 180, 0.55);
+  padding: 0 0 5px;
+  font-size: clamp(5.5px, 2.4cqi, 7.5px);
+  letter-spacing: 0;
+  color: rgba(180, 180, 180, 0.5);
   text-align: center;
 }
 
 .tabletop-skin .tt-streets li:not(:last-child)::after {
   content: "";
   position: absolute;
-  top: 5px;
-  left: calc(50% + 6px);
-  right: calc(-50% + 6px);
+  top: 4px;
+  left: calc(50% + 5px);
+  right: calc(-50% + 5px);
   height: 1px;
   background: rgba(223, 189, 105, 0.28);
 }
 
 .tabletop-skin .tt-streets-node {
-  width: 11px;
-  height: 11px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
   border: 1.5px solid rgba(160, 160, 160, 0.45);
   background: transparent;
@@ -2164,7 +2207,7 @@
   color: #1a1208;
   display: grid;
   place-items: center;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
   line-height: 1;
 }
@@ -2181,7 +2224,7 @@
 .tabletop-skin .tt-streets li.is-current .tt-streets-node {
   border-color: rgba(244, 220, 150, 0.95);
   background: rgba(223, 189, 105, 0.95);
-  box-shadow: 0 0 0 3px rgba(223, 189, 105, 0.28), 0 0 12px rgba(223, 189, 105, 0.45);
+  box-shadow: 0 0 0 2px rgba(223, 189, 105, 0.28), 0 0 10px rgba(223, 189, 105, 0.4);
 }
 
 .tabletop-skin .tt-streets-label {
@@ -2193,21 +2236,34 @@
 }
 
 .tabletop-skin .tt-pot {
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
   min-width: 0;
-  max-width: 48%;
+  max-width: 100%;
+  width: 100%;
   display: grid;
   justify-items: center;
-  gap: 2px;
-  padding: 4px 8px;
+  align-content: center;
+  gap: 3px;
+  padding: 2px 4px;
   text-align: center;
   border-radius: 0;
   background: transparent;
   border: 0;
   z-index: 2;
+  pointer-events: auto;
+  align-self: center;
+}
+
+.tabletop-skin .tt-pot-chips-zone,
+.tabletop-skin .tt-pot-amount-zone,
+.tabletop-skin .tt-pot-call-zone {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-height: 0;
 }
 
 .tabletop-skin .tt-pot.tt-pot-cloth {
@@ -2219,8 +2275,8 @@
 .tabletop-skin .tt-pot.is-drop-hot,
 .tabletop-skin .tt-poker-table.is-drop-hot .tt-pot {
   outline: 2px solid var(--tt-gold-hi);
-  outline-offset: 8px;
-  border-radius: 50%;
+  outline-offset: 6px;
+  border-radius: 12px;
 }
 
 .tabletop-skin .tt-inline-hint {
@@ -2319,17 +2375,28 @@
   color: var(--tt-ivory);
 }
 
+.tabletop-skin .tt-poker-centre .tt-hand-complete {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  grid-column: 1 / -1;
+  z-index: 3;
+}
+
 .tabletop-skin .tt-hand-complete {
   position: absolute;
   left: 50%;
-  top: 62%;
+  top: 58%;
   transform: translate(-50%, 0);
   width: min(86%, 280px);
   display: grid;
   gap: 4px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   text-align: center;
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(2, 23, 18, 0.62);
   border: 1px solid rgba(223, 189, 105, 0.45);
   z-index: 3;
@@ -2356,12 +2423,12 @@
 .tabletop-skin .tt-seat {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: min(28vw, 100px);
-  min-width: 84px;
-  max-width: 108px;
+  width: calc(var(--poker-seat, 2.75rem) + 1.8rem);
+  min-width: 0;
+  max-width: 5.8rem;
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 1px;
   padding: 0;
   text-align: center;
   border: 0;
@@ -2372,8 +2439,22 @@
   z-index: 2;
 }
 
+/* Hang ledgers outward so north/south seats leave the centre column clear */
+.tabletop-skin .tt-seat[data-seat-edge="south"] {
+  transform: translate(-50%, -28%);
+}
+
+.tabletop-skin .tt-seat[data-seat-edge="north"] {
+  transform: translate(-50%, -72%);
+}
+
+.tabletop-skin .tt-seat[data-seat-edge="east"],
+.tabletop-skin .tt-seat[data-seat-edge="west"] {
+  transform: translate(-50%, -50%);
+}
+
 .tabletop-skin .tt-seat.is-you {
-  z-index: 3;
+  z-index: 4;
 }
 
 .tabletop-skin .tt-seat.is-folded {
@@ -2391,8 +2472,8 @@
 
 .tabletop-skin .tt-seat-medal {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: var(--poker-seat, 3rem);
+  height: var(--poker-seat, 3rem);
   border-radius: 999px;
   border: 2px solid rgba(196, 160, 90, 0.78);
   background:
@@ -2403,7 +2484,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   display: grid;
   place-items: center;
-  font: 700 13px/1 var(--tt-serif);
+  font: 700 clamp(10px, 3.6cqi, 13px)/1 var(--tt-serif);
   letter-spacing: 0.04em;
   color: #f4e2a8;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
@@ -2413,7 +2494,7 @@
   border-color: rgba(244, 220, 150, 0.98);
   box-shadow:
     0 0 0 3px rgba(223, 189, 105, 0.3),
-    0 0 16px rgba(223, 189, 105, 0.5),
+    0 0 14px rgba(223, 189, 105, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
   animation: tt-actor-pulse 1.3s ease-in-out infinite;
 }
@@ -2548,6 +2629,44 @@
   border-bottom: 1px solid rgba(223, 189, 105, 0.22);
 }
 
+.tabletop-skin .tt-poker .tt-rail {
+  gap: 6px;
+  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+}
+
+.tabletop-skin .tt-poker .tt-owner-zone {
+  gap: 4px;
+  padding-bottom: 4px;
+}
+
+.tabletop-skin .tt-poker .tt-owner-row > .tt-btn,
+.tabletop-skin .tt-poker .tt-owner-street .tt-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.tabletop-skin .tt-poker .tt-owner-street small {
+  font-size: 9px;
+}
+
+.tabletop-skin .tt-poker .tt-controls {
+  gap: 4px;
+}
+
+.tabletop-skin .tt-poker .tt-turn-banner {
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.tabletop-skin .tt-poker .tt-wallet-bar {
+  margin-bottom: 4px;
+}
+
+.tabletop-skin .tt-poker .tt-wallet-available strong {
+  font-size: 18px;
+}
+
 .tabletop-skin .tt-owner-row {
   display: flex;
   flex-wrap: wrap;
@@ -2575,6 +2694,7 @@
 .tabletop-skin .tt-actor .tt-btn {
   padding: 8px 4px;
   font-size: 12px;
+  min-height: 44px;
 }
 
 .tabletop-skin .tt-actor .tt-btn:disabled {
@@ -3222,20 +3342,9 @@
     width: 40px;
     height: 40px;
   }
-  .tabletop-skin .tt-poker .tt-seat {
-    min-width: 76px;
-    width: 84px;
-  }
-  .tabletop-skin .tt-poker .tt-seat-medal {
-    width: 46px;
-    height: 46px;
-    font-size: 12px;
-  }
-  .tabletop-skin .tt-streets {
-    width: min(86%, 260px);
-  }
-  .tabletop-skin .tt-streets li {
-    font-size: 6px;
+  .tabletop-skin .tt-poker-table {
+    --poker-seat: clamp(2.2rem, 12cqi, 2.85rem);
+    --poker-safe-x: 24%;
   }
 }
 
