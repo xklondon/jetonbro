@@ -22,11 +22,12 @@ Full visual authority order and anatomy details: `docs/DESIGN_AUTHORITY.md`.
 
 ## Visual authority
 
-1. Original approved PNGs under `design/reference/classic/approved/`
-2. Product phase/control/role contracts
-3. Tabletop implementation
-4. HTML prototype as secondary token colour reference only
-5. Historical/implementation screenshots are never design authority
+1. Original approved PNGs under `design/reference/classic/approved/` (Blackjack / home / setup)
+2. Poker: `design/reference/tabletop/approved/poker-premium-racetrack.png` — literal composition (not inspiration)
+3. Product phase/control/role contracts
+4. Tabletop implementation
+5. HTML prototype as secondary token colour reference only
+6. Historical JPGs / implementation screenshots are never design authority
 
 ## Composition contract
 

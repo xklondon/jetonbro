@@ -39,9 +39,11 @@ Owner advances physical-card streets only after the betting round is matched. Bl
 
 ## Canonical Tabletop surface
 
-- Shared `PokerBoard` via `PokerDealer` / `PokerPlayer` for **all** phases including Phase 0
+- **Visual authority:** `design/reference/tabletop/approved/poker-premium-racetrack.png` — literal composition/materials (leather rail, wood racetrack, forest felt, seat avatars+ledgers, centre pot, in-felt round track). Supersedes prior Poker mockups and flat-oval Tabletop styling.
+- Shared `PokerBoard` via `PokerDealer` / `PokerPlayer` for **all** phases including Phase 0 — one active render path only
 - `selectTableBoard` → `POKER_DEALER` / `POKER_PLAYER` at `POKER_SETUP` / table setup — never the Blackjack PhaseZero ledger
-- Oval rail + cloth table name once (`data-table-name`)
+- Product state wins over mock: legal actions, offline cards (never render), factual names/balances, initials when no avatar, tray below table, responsive fit over room scenery
+- FAIL: flat CSS oval; thin yellow outline rail; pill/card seats; round track outside felt; duplicated phase title; table name vs pot competition; digital cards; list layout; invented portraits; Classic CSS
 - Inward street-wager chip stacks; **never** visible `STREET N` labels
 - Centre pot shows committed total; side-pot lines only when side pots exist
 - After HAND_COMPLETE: `POT PAID` / winners — no lingering TO CALL, actor, or Waiting seat

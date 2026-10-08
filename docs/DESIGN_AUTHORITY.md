@@ -4,11 +4,12 @@ Documentation only. These boards and rules control presentation. They do not cha
 
 ## Authority order
 
-1. Original approved PNGs under `design/reference/classic/approved/`
-2. Product phase / control / role contracts (`blackjack-phase-controls`, snapshots, permissions)
-3. Tabletop implementation (`src/ui/skins/tabletop/`)
-4. `design/reference/classic/jetonbro-player-bank-insurance.html` — secondary token colour reference only
-5. Historical screenshots, compressed JPG copies, and FAIL images — never design authority
+1. Original approved PNGs under `design/reference/classic/approved/` (Blackjack / home / setup)
+2. Tabletop approved Poker PNG: `design/reference/tabletop/approved/poker-premium-racetrack.png`
+3. Product phase / control / role contracts (`blackjack-phase-controls`, `pokerControls`, snapshots, permissions)
+4. Tabletop implementation (`src/ui/skins/tabletop/`)
+5. `design/reference/classic/jetonbro-player-bank-insurance.html` — secondary token colour reference only
+6. Historical screenshots, compressed JPG copies, and FAIL images — never design authority
 
 Default production skin is **Tabletop** (`ACTIVE_SKIN_ID = "tabletop"`). Classic remains registered only as rollback and must not load Classic CSS into Tabletop screens.
 
@@ -19,10 +20,11 @@ Default production skin is **Tabletop** (`ACTIVE_SKIN_ID = "tabletop"`). Classic
 | `ChatGPT Image Sep 22, 2026, 12_50_26 PM (1)(2).png` | Blackjack Player phases | `9d53d58afcb294b5626abdbf6eb3739cfd6aad702ab0a607aa270b3707c5ed2e` |
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (2)(2).png` | Home, Create Table, Table Setup, Game Selection | `2ffa477db6ac46bae88c5abb3e43ac7c28b39e7aae753e2287d3e969fd3ba1ea` |
 | `ChatGPT Image Sep 22, 2026, 12_50_27 PM (3)(2).png` | Blackjack Dealer/Owner phases | `c401ddec54e305d60bcb4f6ce025f635afb184a405893e5f5bc69cb5f326c5d1` |
+| `poker-premium-racetrack.png` | Tabletop Texas Hold’em (all roles/phases) | `8e36e96da19006a6deb283adc778250aa5261a6252e2501b5e1e84d08938f5e5` |
 
 Verified aliases (identical SHA): `blackjack-player-phases.png`, `table-owner-setup.png`, `blackjack-dealer-owner-phases.png`.
 
-Do not use as primary references: `design/reference/tabletop/approved/*.jpg`, `docs/design-reference/*.jpg`, `fail-*.png`, implementation screenshots, or the HTML prototype for layout.
+Do not use as primary references: `design/reference/tabletop/approved/*.jpg` (historical only), `docs/design-reference/*.jpg`, `fail-*.png`, implementation screenshots, or the HTML prototype for layout — **except** `poker-premium-racetrack.png`, which is the literal Poker composition authority.
 
 Documented phone-panel crops for comparison live under `docs/screenshots/tabletop/approved-crops/` (extracted from the 1024×554 sheets; each panel ~256×554, scaled proportionally to 390×844).
 
@@ -160,19 +162,23 @@ PAYOUT:      START BETTING (full width; disabled until resolved)
 
 ## Poker
 
-Poker boards under `docs/design-reference/poker-*.jpg` / `design/reference/tabletop/approved/poker-*.jpg` remain historical copies when the original `12_50_27 PM (5)` file is unavailable. Use the same Tabletop palette, rail, jetons and button primitives. Do not invent a second skin.
+**Literal visual authority:** `design/reference/tabletop/approved/poker-premium-racetrack.png` (source capture `image(20261008-121909)`). It supersedes earlier Poker mockups, HTML prototypes, spatial-seat experiments, `poker-dealer-phases.jpg` / `poker-player-phases.jpg`, and generic Tabletop oval styling.
+
+Treat that PNG as the composition and material contract — not general inspiration. Preserve table proportions, leather/wood rail materials, seat placement, pot hierarchy, chip positioning, in-felt round track, contrast, typography hierarchy, and actor emphasis.
+
+Where the reference conflicts with product behaviour:
+1. Existing game state and legal actions win (`pokerControls()`).
+2. Cards remain offline — never render digital community or hole cards.
+3. Real Player data replaces illustrative names/balances.
+4. Initials replace portraits when no real avatar exists — never invent photographic portraits.
+5. The existing action dock/tray remains below the table.
+6. Responsive fit wins over decorative room scenery.
+
+Automatic visual FAIL: flat CSS oval; thin yellow outline as the rail; seats as generic cards/pills; round sequence outside the felt; duplicated phase title; table name competing with the pot; central digital cards; spreadsheet/list layout; invented portraits; Classic CSS in Tabletop; any second active Poker render path.
+
+Historical JPGs under `docs/design-reference/poker-*.jpg` / `design/reference/tabletop/approved/poker-*-phases.jpg` remain archive only.
 
 Canonical Poker path: `/tables/{id}` → `TableSession` → `selectTableBoard()` → Tabletop `PokerDealer` / `PokerPlayer` → shared `PokerBoard` → `tabletop.css`.
-
-Composition (all roles and phases, including Phase 0):
-- Full-height green felt with one oval gold outer rail and padded inner rim.
-- Table name printed once on the cloth (low-contrast gold/ivory), behind pot/seats.
-- Seats around the oval; viewer nearest the tray. Committed street wagers sit as chip stacks on the cloth inward from each seat (never as `STREET N` text).
-- Centre shows street label + POT amount on the cloth (not a rectangular pot card). No digital community-card placeholders.
-- Phase copy: one primary label (`TABLE SETUP`, `PRE-FLOP`, …) and at most one short instruction. No SETUP badge + Table setup duplication.
-- Owner top-right shows the opposite-game switch control only at safe boundaries (opens existing Change Game sheet). Hide when not legal.
-- `START HAND` with too few Players keeps Phase 0 and shows one compact dock hint — never a Create Table / full-width top error.
-- Tray: tap and Pointer Events drag-and-drop both stage BET/RAISE via the same composer; confirmation still requires BET/RAISE.
 
 ## Must never appear
 
