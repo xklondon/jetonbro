@@ -8,7 +8,7 @@ export type CommandHandler = (
 ) => void | boolean | Promise<void | boolean>;
 
 export type JetonBroSkin = {
-  id: "classic" | "tabletop";
+  id: "classic" | "tabletop" | "premium";
   name: string;
   PlayerTable: ComponentType<{
     view: PlayerTableView;

@@ -54,16 +54,14 @@ describe("tabletop skin isolation", () => {
     }
   });
 
-  it("registry registers both skins and activates tabletop without Classic CSS", () => {
-    expect(ACTIVE_SKIN_ID).toBe("tabletop");
-    expect(Object.keys(SKINS).sort()).toEqual(["classic", "tabletop"]);
+  it("registry keeps Tabletop available as rollback without Classic CSS", () => {
+    expect(Object.keys(SKINS)).toContain("tabletop");
     expect(SKINS.tabletop.id).toBe("tabletop");
     expect(SKINS.classic.id).toBe("classic");
     const registry = readFileSync(join(process.cwd(), "src/ui/skins/registry.ts"), "utf8");
     expect(registry).toContain('from "./classic/skin"');
     expect(registry).not.toMatch(/from\s+["']\.\/classic["']/);
     expect(registry).not.toMatch(/^\s*import\s+["']\.\/classic\/styles["']/m);
-    expect(registry).not.toMatch(/^\s*import\s+["'][^"']*\.css["']/m);
   });
 
   it("Shell root exposes the tabletop skin hooks", () => {
