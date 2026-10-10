@@ -68,4 +68,23 @@ describe("premium skin isolation", () => {
     const shell = readFileSync(join(ROOT, "components/PremiumShell.tsx"), "utf8");
     expect(shell).toContain('data-skin="premium"');
   });
+
+  it("locks Premium screen geometry with CSS variables", () => {
+    const css = readFileSync(join(ROOT, "premium.css"), "utf8");
+    expect(css).toContain("--premium-header-height");
+    expect(css).toContain("--premium-table-height");
+    expect(css).toContain("--premium-console-height");
+    expect(css).toContain("--premium-safe-area");
+  });
+
+  it("Blackjack setup does not mount betting-box stage", () => {
+    const table = readFileSync(join(ROOT, "components/primitives/BlackjackTable.tsx"), "utf8");
+    expect(table).toContain('data-table-zone="setup"');
+    expect(table).toContain('data-table-zone="boxes"');
+    const player = readFileSync(join(ROOT, "components/PremiumBlackjackPlayer.tsx"), "utf8");
+    expect(player).not.toMatch(/BlackjackBox\s+empty/);
+    const waiting = readFileSync(join(ROOT, "components/PremiumBlackjackWaiting.tsx"), "utf8");
+    expect(waiting).not.toMatch(/BlackjackBox/);
+  });
 });
+

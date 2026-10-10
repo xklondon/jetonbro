@@ -52,7 +52,10 @@ export function PokerSeat({
         <div className="pm-poker-seat-plaque">
           <strong>{seat.name}</strong>
           <span data-seat-balance="true">{seat.available.label}</span>
-          {markers ? <span>{markers}</span> : null}
+          {markers ? <span className="pm-poker-seat-markers">{markers}</span> : null}
+          {seat.status && seat.status !== "ACTIVE" ? (
+            <span className="pm-poker-seat-status">{seat.status.replace(/_/g, " ")}</span>
+          ) : null}
         </div>
       </div>
       {seat.streetContribution.label !== "0" && wagerStyle ? (

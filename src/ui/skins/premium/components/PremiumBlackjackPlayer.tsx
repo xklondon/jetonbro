@@ -40,8 +40,10 @@ export function PremiumBlackjackPlayer({
     insuranceOpen: view.insuranceWindowOpen,
   });
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
+  const setup = view.phase === "TABLE_SETUP";
   const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const playing = view.phase === "PLAYING";
+  const showTray = !payout;
 
   let primary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
   let secondary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
@@ -71,14 +73,15 @@ export function PremiumBlackjackPlayer({
 
   return (
     <PremiumShell
-      title={view.tableName}
+      title="JETONBRO"
       balance={view.available.label}
       board="BLACKJACK_PLAYER"
       dock={
         <CasinoConsole
-          notice={notice ? <div className="pm-bj-empty">{notice}</div> : null}
+          notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           available={view.available.label}
-          showTray={!payout}
+          showTray={showTray}
+          reserveTray={showTray}
           trayEnabled={Boolean(controls.trayEnabled)}
           selectedChip={selectedChip}
           onChip={(value) => {
@@ -98,8 +101,9 @@ export function PremiumBlackjackPlayer({
         phaseInstruction={phaseCopy.instruction}
         dealerName="Dealer"
         dealerRanks={view.dealerHand?.ranks}
+        setup={setup}
       >
-        {staged.length > 0 ? (
+        {setup ? null : staged.length > 0 ? (
           staged.map((box) => (
             <BlackjackBox
               key={box.id}
@@ -109,7 +113,7 @@ export function PremiumBlackjackPlayer({
             />
           ))
         ) : (
-          <BlackjackBox empty />
+          <p className="pm-bj-empty">Waiting for a box</p>
         )}
       </BlackjackTable>
     </PremiumShell>

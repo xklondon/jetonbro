@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { BankTableView, BoxView, MemberView } from "@/application/queries/views";
 import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import { blackjackDealerControls } from "@/ui/core/blackjack-phase-controls";
@@ -59,18 +59,18 @@ export function PremiumBlackjackDealer({
     </>
   );
 
-  let layer;
+  let layer: ReactNode = null;
   if (setup) {
     layer =
-      joined.length > 0 ? (
-        joined.map((player) => (
-          <JoinedBettingMark key={player.userId} name={player.name} availableLabel={player.available.label} />
-        ))
-      ) : (
-        <p className="pm-bj-empty" data-dealer-empty="true">
-          No players have joined yet.
-        </p>
-      );
+      joined.length > 0
+        ? joined.map((player) => (
+            <JoinedBettingMark key={player.userId} name={player.name} availableLabel={player.available.label} />
+          ))
+        : (
+            <p className="pm-bj-empty" data-dealer-empty="true">
+              Waiting for players
+            </p>
+          );
   } else if (payout && boxes.length > 0) {
     layer = (
       <div className="pm-bj-settle-list">
@@ -86,7 +86,7 @@ export function PremiumBlackjackDealer({
     );
   } else if (play && staged.length > 0) {
     layer = staged.map((box) => <BlackjackBox key={box.id} box={box} showPlayerName />);
-  } else {
+  } else if (!setup) {
     layer = (
       <p className="pm-bj-empty" data-dealer-empty="true">
         Waiting for the first wager.
@@ -96,12 +96,13 @@ export function PremiumBlackjackDealer({
 
   return (
     <PremiumShell
-      title={view.tableName}
+      title="JETONBRO"
       badges={badges}
       board="BLACKJACK_DEALER"
       dock={
         <CasinoConsole
-          notice={notice ? <div className="pm-bj-empty">{notice}</div> : null}
+          notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
+          reserveTray
           primary={
             controls.primary
               ? {
@@ -131,6 +132,7 @@ export function PremiumBlackjackDealer({
         phaseInstruction={phaseCopy.instruction}
         dealerName={view.dealerName || "Dealer"}
         dealerRanks={view.dealerHand?.ranks}
+        setup={setup}
       >
         {layer}
       </BlackjackTable>

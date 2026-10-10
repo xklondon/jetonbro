@@ -5,32 +5,34 @@ import { PhaseJourney } from "./PhaseJourney";
 import { PokerPot } from "./PokerPot";
 import { PokerSeat } from "./PokerSeat";
 
-/** Portrait racetrack seat anchors (percent of stage). Viewer near bottom. */
+/**
+ * Stable portrait seat anchors (percent of stage).
+ * Centre corridor (~32–68% x, ~28–52% y) reserved for name / journey / pot.
+ */
 function seatLayout(count: number): { left: string; top: string; wagerLeft: string; wagerTop: string }[] {
   if (count <= 2) {
     return [
-      { left: "50%", top: "78%", wagerLeft: "50%", wagerTop: "62%" },
-      { left: "50%", top: "22%", wagerLeft: "50%", wagerTop: "34%" },
+      { left: "50%", top: "84%", wagerLeft: "50%", wagerTop: "68%" },
+      { left: "50%", top: "16%", wagerLeft: "50%", wagerTop: "30%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "80%", wagerLeft: "50%", wagerTop: "64%" },
-      { left: "18%", top: "38%", wagerLeft: "30%", wagerTop: "44%" },
-      { left: "82%", top: "38%", wagerLeft: "70%", wagerTop: "44%" },
+      { left: "50%", top: "84%", wagerLeft: "50%", wagerTop: "68%" },
+      { left: "16%", top: "36%", wagerLeft: "28%", wagerTop: "46%" },
+      { left: "84%", top: "36%", wagerLeft: "72%", wagerTop: "46%" },
     ];
   }
   return [
-    { left: "50%", top: "80%", wagerLeft: "50%", wagerTop: "64%" },
-    { left: "16%", top: "48%", wagerLeft: "28%", wagerTop: "50%" },
-    { left: "50%", top: "20%", wagerLeft: "50%", wagerTop: "32%" },
-    { left: "84%", top: "48%", wagerLeft: "72%", wagerTop: "50%" },
+    { left: "50%", top: "84%", wagerLeft: "50%", wagerTop: "68%" },
+    { left: "14%", top: "48%", wagerLeft: "26%", wagerTop: "52%" },
+    { left: "50%", top: "14%", wagerLeft: "50%", wagerTop: "28%" },
+    { left: "86%", top: "48%", wagerLeft: "74%", wagerTop: "52%" },
   ];
 }
 
 export function PokerTable({
   tableName,
-  phaseLabel,
   instruction,
   phase,
   pot,
@@ -38,7 +40,7 @@ export function PokerTable({
   viewerId,
 }: {
   tableName: string;
-  phaseLabel: string;
+  /** Setup-only short instruction — never a live phase heading. */
   instruction?: string;
   phase: string;
   pot: string;
@@ -55,8 +57,12 @@ export function PokerTable({
   const showPot = !setup && pot !== "0";
 
   return (
-    <div className="pm-poker-table" data-poker-table="true" data-seat-layout={ordered.length <= 2 ? "heads-up" : "multi"}>
-      <div className="pm-poker-stage">
+    <div
+      className="pm-poker-table"
+      data-poker-table="true"
+      data-seat-layout={ordered.length <= 2 ? "heads-up" : "multi"}
+    >
+      <div className="pm-poker-stage" data-poker-stage="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="pm-poker-base"
@@ -65,11 +71,13 @@ export function PokerTable({
           draggable={false}
         />
         <div className="pm-poker-overlay">
-          <div className="pm-poker-phase" data-phase-stack="true">
-            <strong data-phase-heading>{phaseLabel}</strong>
-            <em>{instruction || "\u00a0"}</em>
-          </div>
-          <div className="pm-poker-felt-name" data-felt-name="true">
+          {setup && instruction ? (
+            <div className="pm-poker-setup-copy" data-phase-stack="true">
+              <strong data-phase-heading>TABLE SETUP</strong>
+              <em>{instruction}</em>
+            </div>
+          ) : null}
+          <div className="pm-poker-felt-name" data-felt-name="true" data-table-name-anchor="true">
             <span data-table-name>{tableName}</span>
           </div>
           <PhaseJourney phase={phase} />

@@ -28,19 +28,22 @@ export function PremiumPokerPlayer({
   const fold = view.legalActions.find((a) => a.type === "FOLD");
   const raise = view.legalActions.find((a) => a.type === "RAISE" || a.type === "BET");
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
-  const trayEnabled = Boolean(!setup && (raise || primary));
+  const hasJetons = view.available.label !== "0";
+  const showTray = !setup && hasJetons;
+  const trayEnabled = Boolean(showTray && (raise || primary));
 
   return (
     <PremiumShell
-      title={view.tableName}
+      title="JETONBRO"
       balance={view.available.label}
       board="POKER_PLAYER"
       dock={
         <CasinoConsole
-          notice={notice ? <div className="pm-bj-empty">{notice}</div> : null}
+          notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           toCall={!setup && view.toCall.label !== "0" ? view.toCall.label : null}
           available={view.available.label}
-          showTray={!setup}
+          showTray={showTray}
+          reserveTray={!setup}
           trayEnabled={trayEnabled}
           selectedChip={selectedChip}
           onChip={(value) => {
@@ -70,8 +73,7 @@ export function PremiumPokerPlayer({
     >
       <PokerTable
         tableName={view.tableName}
-        phaseLabel={phaseCopy.primary}
-        instruction={phaseCopy.instruction}
+        instruction={setup ? phaseCopy.instruction : undefined}
         phase={view.phase}
         pot={view.pot.label}
         seats={view.seats}
