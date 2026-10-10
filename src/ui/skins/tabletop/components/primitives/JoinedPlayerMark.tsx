@@ -27,7 +27,7 @@ export function JoinedPlayerMark({
           {availableLabel} jetons
         </span>
         <span className="tt-bj-joined-badge" data-field="status">
-          ✓ PLAYER JOINED
+          PLAYER JOINED
         </span>
       </div>
     </div>

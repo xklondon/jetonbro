@@ -111,7 +111,8 @@ describe("Blackjack table composition — Setup / BoxStage / Payout", () => {
     expect(markup).toContain('data-table-zone="identity"');
     expect(markup).toContain('data-table-zone="boxes"');
     expect(markup).toContain("INSURANCE PAYS 2 TO 1");
-    expect(markup).toContain("BLACKJACK PAYS 3 TO 2 · DEALER STANDS ON 17");
+    expect(markup).toContain("BLACKJACK PAYS 3 TO 2");
+    expect(markup).toContain("DEALER STANDS ON 17");
     expect(markup).not.toContain("tt-bj-markings");
     expect(markup).toContain('data-dealer-empty="true"');
     expect(markup).toContain("Invite a Player to begin.");

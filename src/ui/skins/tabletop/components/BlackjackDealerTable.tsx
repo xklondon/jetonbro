@@ -239,6 +239,7 @@ export function BlackjackDealerTable({
   return (
     <Shell
       hideBrand
+      showRail={false}
       badges={badges}
       onMenu={() => setMenuOpen(true)}
       rail={dock}

@@ -190,6 +190,7 @@ export function PlayerTable({
   return (
     <Shell
       hideBrand
+      showRail={false}
       balance={view.available.label}
       badges={badges}
       onMenu={view.isOwner ? () => setMenuOpen(true) : undefined}

@@ -13,6 +13,7 @@ export function WaitingTable({ view }: { view: WaitingTableView }) {
   return (
     <Shell
       hideBrand
+      showRail={false}
       balance={view.available.label}
       rail={<Wallet available={view.available} trayEnabled={false} dropSelector="[data-drop-box]" />}
       feltClassName="tt-bj-player"
