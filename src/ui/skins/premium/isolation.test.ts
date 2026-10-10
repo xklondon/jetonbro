@@ -81,10 +81,24 @@ describe("premium skin isolation", () => {
     const table = readFileSync(join(ROOT, "components/primitives/BlackjackTable.tsx"), "utf8");
     expect(table).toContain('data-table-zone="setup"');
     expect(table).toContain('data-table-zone="boxes"');
+    expect(table).toContain("blackjack-player-betting-authority.png");
     const player = readFileSync(join(ROOT, "components/PremiumBlackjackPlayer.tsx"), "utf8");
+    expect(player).toContain('variant="blackjack"');
     expect(player).not.toMatch(/BlackjackBox\s+empty/);
     const waiting = readFileSync(join(ROOT, "components/PremiumBlackjackWaiting.tsx"), "utf8");
     expect(waiting).not.toMatch(/BlackjackBox/);
   });
+
+  it("rejects obsolete Blackjack composition selectors", () => {
+    const css = readFileSync(join(ROOT, "premium.css"), "utf8");
+    expect(css).not.toContain(".pm-bj-table");
+    expect(css).not.toContain(".pm-bj-overlay");
+    expect(css).not.toContain(".pm-bj-dealer-ring");
+    expect(css).not.toContain(".pm-console-walnut");
+    expect(css).toContain(".pm-console.is-bj");
+    expect(css).toContain("grid-template-columns: 34% 42% 24%");
+    expect(css).not.toContain("!important");
+  });
 });
+
 

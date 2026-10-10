@@ -250,6 +250,7 @@ export const PREMIUM_FIXTURE_IDS = [
   "11-poker-three-player-flop",
   "12-poker-hand-complete",
   "13-poker-setup-starting-stack",
+  "14-bj-player-betting-no-stake",
 ] as const;
 
 export type PremiumFixtureId = (typeof PREMIUM_FIXTURE_IDS)[number];
@@ -300,6 +301,10 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
         view: bank("PAYOUT"),
         members,
         onCommand: noop,
+      });
+    case "14-bj-player-betting-no-stake":
+      return createElement(PlayerFixture, {
+        view: player("BETTING", [box(1, { bet: money("0"), originalStake: money("0") })]),
       });
     case "06-bj-player-betting-one-box":
       return createElement(PlayerFixture, { view: player("BETTING", [box(1)]) });

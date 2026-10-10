@@ -22,6 +22,7 @@ export function CasinoConsole({
   onChip,
   showTray = false,
   reserveTray = false,
+  variant = "default",
   children,
 }: {
   primary?: DockAction | null;
@@ -33,55 +34,107 @@ export function CasinoConsole({
   selectedChip?: string | null;
   onChip?: (value: string) => void;
   showTray?: boolean;
-  /** Keep tray row height even when chips are hidden (geometry lock). */
   reserveTray?: boolean;
+  /** blackjack: action row + compact wallet; default: poker/legacy layout */
+  variant?: "default" | "blackjack";
   children?: ReactNode;
 }) {
-  const hasActions = Boolean(primary || secondary);
   const trayVisible = showTray;
+  const bj = variant === "blackjack";
+
   return (
-    <footer className="pm-console" data-premium-dock="true" data-casino-console="true">
+    <footer
+      className={`pm-console${bj ? " is-bj" : ""}`}
+      data-premium-dock="true"
+      data-casino-console="true"
+      data-console-variant={variant}
+    >
       <div className="pm-console-body">
         {notice}
-        <div className="pm-console-top">
-          {toCall != null && toCall !== "0" ? (
-            <div className="pm-console-call" data-to-call="true">
-              TO CALL <strong>{toCall}</strong>
+        {bj ? (
+          <div className="pm-console-action-row" data-console-actions="true">
+            <div className="pm-console-slot is-secondary">
+              {secondary ? (
+                <button
+                  type="button"
+                  className="pm-console-btn is-ghost"
+                  disabled={secondary.disabled}
+                  onClick={secondary.onClick}
+                >
+                  {secondary.label}
+                </button>
+              ) : null}
             </div>
-          ) : (
-            <span />
-          )}
-          {available != null ? (
-            <div className="pm-console-wallet" data-player-wallet="true">
-              <small>AVAILABLE</small>
-              <strong>{available}</strong>
+            <div className="pm-console-slot is-primary">
+              {primary ? (
+                <button
+                  type="button"
+                  className="pm-console-btn is-primary"
+                  disabled={primary.disabled}
+                  onClick={primary.onClick}
+                >
+                  {primary.label}
+                </button>
+              ) : null}
             </div>
-          ) : (
-            <span />
-          )}
-        </div>
-        <div className={`pm-console-actions${hasActions ? "" : " is-empty"}${primary && !secondary ? " is-single" : ""}`}>
-          {primary ? (
-            <button
-              type="button"
-              className="pm-console-btn is-primary"
-              disabled={primary.disabled}
-              onClick={primary.onClick}
+            <div className="pm-console-slot is-wallet" data-player-wallet="true">
+              {available != null ? (
+                <>
+                  <small>AVAILABLE</small>
+                  <strong>{available}</strong>
+                </>
+              ) : (
+                <span className="pm-console-wallet-spacer" aria-hidden="true" />
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="pm-console-top">
+              {toCall != null && toCall !== "0" ? (
+                <div className="pm-console-call" data-to-call="true">
+                  TO CALL <strong>{toCall}</strong>
+                </div>
+              ) : (
+                <span />
+              )}
+              {available != null ? (
+                <div className="pm-console-wallet" data-player-wallet="true">
+                  <small>AVAILABLE</small>
+                  <strong>{available}</strong>
+                </div>
+              ) : (
+                <span />
+              )}
+            </div>
+            <div
+              className={`pm-console-actions${primary || secondary ? "" : " is-empty"}${
+                primary && !secondary ? " is-single" : ""
+              }`}
             >
-              {primary.label}
-            </button>
-          ) : null}
-          {secondary ? (
-            <button
-              type="button"
-              className="pm-console-btn is-ghost"
-              disabled={secondary.disabled}
-              onClick={secondary.onClick}
-            >
-              {secondary.label}
-            </button>
-          ) : null}
-        </div>
+              {primary ? (
+                <button
+                  type="button"
+                  className="pm-console-btn is-primary"
+                  disabled={primary.disabled}
+                  onClick={primary.onClick}
+                >
+                  {primary.label}
+                </button>
+              ) : null}
+              {secondary ? (
+                <button
+                  type="button"
+                  className="pm-console-btn is-ghost"
+                  disabled={secondary.disabled}
+                  onClick={secondary.onClick}
+                >
+                  {secondary.label}
+                </button>
+              ) : null}
+            </div>
+          </>
+        )}
         {children}
         {(trayVisible || reserveTray) && (
           <div className={`pm-console-tray${trayVisible ? "" : " is-reserved"}`} data-jeton-tray="true">

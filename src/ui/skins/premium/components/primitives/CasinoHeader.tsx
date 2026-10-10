@@ -22,7 +22,7 @@ export function CasinoHeader({
       <div className="pm-header-meta">
         {badges}
         {balance != null ? (
-          <div className="pm-balance" data-player-wallet="true">
+          <div className="pm-balance" data-header-balance="true">
             <small>BALANCE</small>
             <strong>{balance}</strong>
           </div>

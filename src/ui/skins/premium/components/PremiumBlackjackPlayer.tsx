@@ -78,10 +78,11 @@ export function PremiumBlackjackPlayer({
       board="BLACKJACK_PLAYER"
       dock={
         <CasinoConsole
+          variant="blackjack"
           notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           available={view.available.label}
           showTray={showTray}
-          reserveTray={showTray}
+          reserveTray
           trayEnabled={Boolean(controls.trayEnabled)}
           selectedChip={selectedChip}
           onChip={(value) => {

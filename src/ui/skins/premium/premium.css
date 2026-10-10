@@ -1,6 +1,7 @@
 /*
  * Premium skin — fully isolated under [data-skin="premium"].
- * Does not import Classic or Tabletop CSS. Photographic table bases + overlays.
+ * Blackjack composition authority:
+ * design/reference/premium/blackjack-player-betting-authority.png
  */
 
 [data-skin="premium"] {
@@ -15,10 +16,9 @@
   --pm-serif: var(--font-display, "Playfair Display"), Georgia, "Times New Roman", serif;
   --pm-sans: var(--font-inter, Inter), system-ui, sans-serif;
 
-  /* Locked screen grid (390×844 reference) */
   --premium-safe-area: env(safe-area-inset-bottom, 0px);
   --premium-header-height: 44px;
-  --premium-console-height: 176px;
+  --premium-console-height: 168px;
   --premium-table-height: calc(
     100dvh - var(--premium-header-height) - var(--premium-console-height) - env(safe-area-inset-top, 0px) -
       var(--premium-safe-area)
@@ -36,6 +36,15 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Authority proportions for live Blackjack boards: ~7% / 68% / 25% */
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"],
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"],
+[data-skin="premium"] .pm-shell[data-table-board="PHASE_ZERO_PLAYER"] {
+  --premium-header-height: 7dvh;
+  --premium-table-height: 68dvh;
+  --premium-console-height: 25dvh;
+}
+
 [data-skin="premium"] *,
 [data-skin="premium"] *::before,
 [data-skin="premium"] *::after {
@@ -51,7 +60,6 @@
   cursor: default;
 }
 
-/* ===== Shell — fixed 4-band anatomy ===== */
 [data-skin="premium"] .pm-shell {
   height: 100%;
   display: grid;
@@ -77,11 +85,11 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 0 4px;
+  padding: 0;
   overflow: hidden;
+  background: radial-gradient(ellipse 80% 50% at 50% 18%, rgba(40, 28, 18, 0.55), #070605 70%);
 }
 
-/* ===== Header ===== */
 [data-skin="premium"] .pm-header {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;
@@ -149,82 +157,77 @@
   color: var(--pm-ivory);
 }
 
-/* ===== Blackjack table — fixed stage geometry ===== */
-[data-skin="premium"] .pm-bj-table {
+/* ===== Blackjack — rebuilt from approved composition ===== */
+[data-skin="premium"] .pm-bj {
   position: relative;
   width: 100%;
   height: 100%;
-  max-width: 26rem;
-  margin: 0 auto;
   overflow: hidden;
 }
 
-[data-skin="premium"] .pm-bj-stage {
+[data-skin="premium"] .pm-bj-frame {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   overflow: hidden;
 }
 
-[data-skin="premium"] .pm-bj-base {
+[data-skin="premium"] .pm-bj-photo {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 42%;
+  object-position: center 40%;
   pointer-events: none;
   user-select: none;
 }
 
-[data-skin="premium"] .pm-bj-overlay {
+[data-skin="premium"] .pm-bj-layer {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
 }
 
-/* Compact phase — top felt, never overlaps dealer */
 [data-skin="premium"] .pm-bj-phase {
   position: absolute;
   left: 50%;
-  top: 7%;
+  top: 3.2%;
   transform: translateX(-50%);
-  width: 70%;
+  width: min(72%, 16rem);
+  height: 2.4rem;
   text-align: center;
   pointer-events: none;
 }
 
 [data-skin="premium"] .pm-bj-phase strong {
-  font: 600 11px/1.15 var(--pm-serif);
+  display: block;
+  font: 600 10px/1.1 var(--pm-serif);
   letter-spacing: 0.14em;
-  color: rgba(240, 215, 138, 0.9);
+  color: rgba(240, 215, 138, 0.78);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 [data-skin="premium"] .pm-bj-phase em {
   display: block;
   margin-top: 2px;
-  font: 500 10px/1.2 var(--pm-sans);
+  min-height: 1em;
+  font: 500 9px/1.2 var(--pm-sans);
   font-style: normal;
-  color: rgba(244, 234, 213, 0.72);
-}
-
-/* Fixed dealer rail slot */
-[data-skin="premium"] .pm-bj-dealer-slot {
-  position: absolute;
-  left: 50%;
-  top: 15.5%;
-  width: 7.5rem;
-  height: 5.4rem;
-  transform: translateX(-50%);
-  display: grid;
-  place-items: start center;
-  pointer-events: auto;
+  color: rgba(244, 234, 213, 0.62);
 }
 
 [data-skin="premium"] .pm-bj-dealer {
+  position: absolute;
+  left: 50%;
+  top: 11%;
+  width: 6.5rem;
+  height: 4.8rem;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+[data-skin="premium"] .pm-bj-dealer-unit {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -234,16 +237,16 @@
 }
 
 [data-skin="premium"] .pm-bj-dealer-medal {
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 2.1rem;
+  height: 2.1rem;
   border-radius: 999px;
-  border: 1.5px solid rgba(212, 184, 130, 0.7);
+  border: 1.5px solid rgba(212, 184, 130, 0.72);
   background: linear-gradient(160deg, #2a8f68, #0c4634);
   display: grid;
   place-items: center;
-  font: 700 12px/1 var(--pm-serif);
+  font: 700 11px/1 var(--pm-serif);
   color: var(--pm-ivory);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 [data-skin="premium"] .pm-bj-dealer-name {
@@ -252,120 +255,117 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
-[data-skin="premium"] .pm-bj-dealer-status {
-  min-height: 1.5rem;
+[data-skin="premium"] .pm-bj-dealer-body {
+  min-height: 1.7rem;
   display: grid;
   place-items: center;
 }
 
-[data-skin="premium"] .pm-bj-dealer-status small {
-  font-size: 8px;
-  letter-spacing: 0.14em;
-  color: rgba(212, 184, 130, 0.8);
-}
-
-[data-skin="premium"] .pm-bj-dealer-cards,
-[data-skin="premium"] .pm-bj-box-cards {
-  display: flex;
-  gap: 3px;
-  margin-top: 2px;
-}
-
-[data-skin="premium"] .pm-card {
-  min-width: 1.4rem;
-  height: 1.9rem;
-  padding: 0 3px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #f8f1e4, #e7d8b8);
-  color: #2a1c0a;
-  font: 700 10px/1.9rem var(--pm-serif);
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
-}
-
-/* Embroidered table name — upper-middle felt */
-[data-skin="premium"] .pm-bj-name {
+[data-skin="premium"] .pm-bj-felt-name {
   position: absolute;
   left: 50%;
-  top: 30%;
+  top: 22.5%;
   transform: translateX(-50%);
   width: 80%;
   text-align: center;
   pointer-events: none;
 }
 
-[data-skin="premium"] .pm-bj-name strong {
-  font: 600 clamp(11px, 3vw, 13px)/1.15 var(--pm-serif);
-  letter-spacing: 0.2em;
-  color: rgba(212, 184, 130, 0.48);
+[data-skin="premium"] .pm-bj-felt-name strong {
+  display: block;
+  font: 600 12px/1.15 var(--pm-serif);
+  letter-spacing: 0.22em;
+  color: rgba(212, 184, 130, 0.55);
   text-transform: uppercase;
 }
 
-/* Player boxes — ~two-thirds down felt */
+[data-skin="premium"] .pm-bj-felt-name i {
+  display: block;
+  width: 4.5rem;
+  height: 1px;
+  margin: 5px auto 0;
+  background: linear-gradient(90deg, transparent, rgba(212, 184, 130, 0.55), transparent);
+  position: relative;
+}
+
+[data-skin="premium"] .pm-bj-felt-name i::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: rgba(212, 184, 130, 0.55);
+}
+
 [data-skin="premium"] .pm-bj-boxes {
   position: absolute;
-  left: 8%;
-  right: 8%;
-  top: 58%;
-  bottom: 10%;
+  left: 50%;
+  top: 72%;
+  width: 88%;
+  height: 148px;
+  transform: translate(-50%, -50%);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   pointer-events: auto;
   overflow: hidden;
 }
 
-[data-skin="premium"] .pm-bj-setup-layer {
+[data-skin="premium"] .pm-bj-setup {
   position: absolute;
   left: 10%;
   right: 10%;
   top: 62%;
-  bottom: 12%;
+  bottom: 10%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   pointer-events: none;
 }
 
 [data-skin="premium"] .pm-bj-box {
   flex: 0 0 auto;
-  width: min(42vw, 132px);
-  min-height: 118px;
+  width: min(40vw, 138px);
+  height: 140px;
+  min-height: 140px;
+  max-height: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
+  gap: 2px;
   padding: 8px 6px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(212, 184, 130, 0.5);
-  background: rgba(4, 20, 14, 0.28);
+  border-radius: 14px;
+  border: 1.5px solid rgba(212, 184, 130, 0.55);
+  background: rgba(4, 22, 16, 0.18);
   color: var(--pm-ivory);
   text-align: center;
 }
 
 [data-skin="premium"] .pm-bj-box.is-selected {
   border-color: rgba(240, 215, 138, 0.95);
-  box-shadow: 0 0 0 2px rgba(240, 215, 138, 0.22);
+  box-shadow: 0 0 0 2px rgba(240, 215, 138, 0.2);
 }
 
 [data-skin="premium"] .pm-bj-box.is-quiet {
-  border-style: solid;
-  border-color: rgba(212, 184, 130, 0.35);
   background: transparent;
+  border-color: rgba(212, 184, 130, 0.4);
 }
 
-[data-skin="premium"] .pm-bj-box-label {
+[data-skin="premium"] .pm-bj-box-label,
+[data-skin="premium"] .pm-bj-box-player {
   font-size: 8px;
   letter-spacing: 0.12em;
   color: rgba(212, 184, 130, 0.88);
 }
 
-[data-skin="premium"] .pm-bj-box-name,
-[data-skin="premium"] .pm-bj-joined-name {
+[data-skin="premium"] .pm-bj-box-player {
   font: 600 11px/1.1 var(--pm-sans);
+  letter-spacing: 0.02em;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -373,79 +373,107 @@
 }
 
 [data-skin="premium"] .pm-bj-spot {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 999px;
-  border: 1.5px solid rgba(212, 184, 130, 0.4);
-  background: rgba(4, 22, 16, 0.2);
+  border: 1.5px solid rgba(212, 184, 130, 0.35);
+  background: rgba(4, 22, 16, 0.15);
 }
 
 [data-skin="premium"] .pm-bj-stack {
   position: relative;
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
+  width: 72px;
+  height: 68px;
+  margin: 2px 0 4px;
 }
 
-[data-skin="premium"] .pm-bj-stack-chip {
+[data-skin="premium"] .pm-bj-disk {
   position: absolute;
-  width: 56px;
-  height: 14px;
+  left: 50%;
+  width: 62px;
+  height: 16px;
+  margin-left: -31px;
   border-radius: 999px;
   border: 1px solid rgba(244, 234, 213, 0.55);
-  background: linear-gradient(160deg, #2a9a68, #0d4a36);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(160deg, #2a9a68, #0d4a36);
 }
 
-[data-skin="premium"] .pm-bj-stack-chip:nth-child(1) {
-  top: 8px;
-}
-[data-skin="premium"] .pm-bj-stack-chip:nth-child(2) {
-  top: 16px;
-}
-[data-skin="premium"] .pm-bj-stack-chip:nth-child(3) {
-  top: 24px;
-}
-[data-skin="premium"] .pm-bj-stack-chip:nth-child(4) {
-  top: 32px;
-}
-
-[data-skin="premium"] .pm-bj-stack-chip.is-red {
+[data-skin="premium"] .pm-bj-disk.is-red {
   background: linear-gradient(160deg, #c24a4a, #7a1f24);
 }
-[data-skin="premium"] .pm-bj-stack-chip.is-blue {
+[data-skin="premium"] .pm-bj-disk.is-blue {
   background: linear-gradient(160deg, #3a7ec4, #1a3f72);
 }
+[data-skin="premium"] .pm-bj-disk.is-green {
+  background: linear-gradient(160deg, #2a9a68, #0d4a36);
+}
 
-[data-skin="premium"] .pm-bj-stack-face {
-  position: relative;
-  z-index: 5;
-  margin-top: 10px;
-  width: 44px;
-  height: 44px;
+[data-skin="premium"] .pm-bj-disk-face {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  z-index: 8;
+  width: 52px;
+  height: 52px;
+  margin-left: -26px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font: 700 14px/1 var(--pm-serif);
+  font: 700 16px/1 var(--pm-serif);
   color: #fff;
   background:
     radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.35), transparent 42%),
     linear-gradient(160deg, #1f8a62, #0a3f2f);
-  border: 2px solid rgba(244, 234, 213, 0.85);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border: 2.5px solid rgba(244, 234, 213, 0.9);
+  box-shadow:
+    inset 0 0 0 3px rgba(2, 18, 14, 0.35),
+    0 8px 14px rgba(0, 0, 0, 0.45);
 }
 
-[data-skin="premium"] .pm-bj-stake {
-  font: 600 12px/1 var(--pm-serif);
-  color: var(--pm-ivory);
+[data-skin="premium"] .pm-bj-main {
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  line-height: 1;
 }
 
-[data-skin="premium"] .pm-bj-stake small {
-  display: block;
-  font: 500 8px/1.2 var(--pm-sans);
-  letter-spacing: 0.12em;
-  color: rgba(212, 184, 130, 0.75);
+[data-skin="premium"] .pm-bj-main small {
+  font: 600 8px/1 var(--pm-sans);
+  letter-spacing: 0.14em;
+  color: rgba(212, 184, 130, 0.8);
+}
+
+[data-skin="premium"] .pm-bj-main strong {
+  font: 700 18px/1 var(--pm-serif);
+  color: #fff;
+}
+
+[data-skin="premium"] .pm-bj-cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+[data-skin="premium"] .pm-bj-total {
+  margin-left: 2px;
+  font: 700 11px/1 var(--pm-serif);
+  font-style: normal;
+  color: var(--pm-gold-hi);
+}
+
+[data-skin="premium"] .pm-card {
+  min-width: 1.35rem;
+  height: 1.85rem;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f8f1e4, #e7d8b8);
+  color: #2a1c0a;
+  font: 700 10px/1.85rem var(--pm-serif);
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
 [data-skin="premium"] .pm-bj-joined {
@@ -453,20 +481,23 @@
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  min-width: 4.5rem;
-  pointer-events: none;
+  min-width: 4.2rem;
 }
 
 [data-skin="premium"] .pm-bj-joined-medal {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.1rem;
+  height: 2.1rem;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font: 700 12px/1 var(--pm-serif);
+  font: 700 11px/1 var(--pm-serif);
   color: var(--pm-ivory);
   background: linear-gradient(160deg, #2a8f68, #0c4634);
   border: 1.5px solid rgba(212, 184, 130, 0.65);
+}
+
+[data-skin="premium"] .pm-bj-joined strong {
+  font: 600 11px/1.1 var(--pm-sans);
 }
 
 [data-skin="premium"] .pm-bj-joined [data-field="available"] {
@@ -476,11 +507,11 @@
 
 [data-skin="premium"] .pm-bj-empty {
   margin: 0;
-  font: 500 11px/1.3 var(--pm-sans);
-  color: rgba(244, 234, 213, 0.45);
+  width: 100%;
   text-align: center;
   align-self: flex-end;
-  width: 100%;
+  font: 500 11px/1.3 var(--pm-sans);
+  color: rgba(244, 234, 213, 0.42);
 }
 
 [data-skin="premium"] .pm-bj-settle-list {
@@ -554,6 +585,7 @@
 [data-skin="premium"] .pm-bj-settle-actions button.is-win {
   background: #17855a;
 }
+
 
 /* ===== Poker — fixed stage geometry ===== */
 [data-skin="premium"] .pm-poker-table {
@@ -749,9 +781,9 @@
 
 [data-skin="premium"] .pm-poker-seat-status {
   margin-top: 2px;
-  font: 700 9px/1.2 var(--pm-sans) !important;
+  font: 700 9px/1.2 var(--pm-sans);
   letter-spacing: 0.06em;
-  color: var(--pm-gold-hi) !important;
+  color: var(--pm-gold-hi);
 }
 
 [data-skin="premium"] .pm-poker-stack {
@@ -844,6 +876,90 @@
     linear-gradient(180deg, #6b4428, #2c180c);
   box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.35);
   pointer-events: none;
+}
+
+
+/* Blackjack console — action row + compact wallet (authority-modified) */
+[data-skin="premium"] .pm-console.is-bj {
+  margin-top: -18px;
+  padding: 0 6px var(--premium-safe-area);
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-body {
+  grid-template-rows: minmax(48px, auto) minmax(64px, 1fr);
+  gap: 10px;
+  padding: 16px 12px 12px;
+  border-radius: 18px 18px 14px 14px;
+  background:
+    radial-gradient(ellipse 90% 35% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 50%),
+    linear-gradient(180deg, #1c1814 0%, #0e0c0a 50%, #060504 100%);
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-body::before {
+  left: 10px;
+  right: 10px;
+  top: -8px;
+  height: 10px;
+}
+
+[data-skin="premium"] .pm-console-action-row {
+  display: grid;
+  grid-template-columns: 34% 42% 24%;
+  gap: 6px;
+  align-items: center;
+  min-height: 48px;
+}
+
+[data-skin="premium"] .pm-console-slot {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+[data-skin="premium"] .pm-console-slot.is-secondary { justify-content: stretch; }
+[data-skin="premium"] .pm-console-slot.is-primary { justify-content: stretch; }
+[data-skin="premium"] .pm-console-slot.is-wallet {
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  line-height: 1.05;
+  padding-right: 2px;
+}
+
+[data-skin="premium"] .pm-console-slot.is-wallet small {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: rgba(212, 184, 130, 0.78);
+}
+
+[data-skin="premium"] .pm-console-slot.is-wallet strong {
+  font: 700 20px/1 var(--pm-serif);
+  color: #fff;
+}
+
+[data-skin="premium"] .pm-console-wallet-spacer {
+  display: block;
+  width: 2.5rem;
+  height: 1.8rem;
+}
+
+[data-skin="premium"] .pm-console-slot .pm-console-btn {
+  width: 100%;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-tray {
+  min-height: 64px;
+  gap: 2px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-chip {
+  width: 58px;
+  height: 58px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-chip:disabled {
+  opacity: 0.78;
+  filter: saturate(0.9) brightness(0.92);
 }
 
 [data-skin="premium"] .pm-console-notice {

@@ -15,6 +15,7 @@ export function PremiumBlackjackWaiting({ view }: { view: WaitingTableView }) {
       board="PHASE_ZERO_PLAYER"
       dock={
         <CasinoConsole
+          variant="blackjack"
           available={view.available.label}
           showTray
           reserveTray

@@ -5,21 +5,20 @@ import type { BoxView } from "@/application/queries/views";
 function chipTone(label: string) {
   const n = Number(label);
   if (n >= 100) return "is-blue";
-  if (n >= 25) return "";
+  if (n >= 25) return "is-green";
   if (n >= 10) return "is-blue";
   if (n > 0) return "is-red";
-  return "";
+  return "is-green";
 }
 
-/** Compact physical stack — display focus of a staked box. */
 function StakeStack({ label }: { label: string }) {
-  const n = Math.max(1, Math.min(4, Math.ceil(Number(label) / 25) || 1));
+  const n = Math.max(2, Math.min(4, Math.ceil(Number(label) / 25) || 2));
   return (
     <div className="pm-bj-stack" aria-hidden="true">
       {Array.from({ length: n }, (_, i) => (
-        <span key={i} className={`pm-bj-stack-chip ${chipTone(label)}`} style={{ zIndex: n - i }} />
+        <span key={i} className={`pm-bj-disk ${chipTone(label)}`} style={{ bottom: `${i * 7}px`, zIndex: i + 1 }} />
       ))}
-      <strong className="pm-bj-stack-face">{label}</strong>
+      <strong className="pm-bj-disk-face">{label}</strong>
     </div>
   );
 }
@@ -37,36 +36,38 @@ export function BlackjackBox({
 }) {
   const stake = box.bet.label;
   const hasStake = stake !== "0";
+  const result = box.outcome;
+
   return (
     <button
       type="button"
-      className={`pm-bj-box${selected ? " is-selected" : ""}${hasStake ? "" : " is-quiet"}`}
+      className={`pm-bj-box${selected ? " is-selected" : ""}${hasStake ? " is-staked" : " is-quiet"}`}
       data-box-id={box.id}
       data-box-number={box.boxNumber}
       data-box-staked={hasStake ? "true" : "false"}
       onClick={onSelect}
     >
-      {showPlayerName ? <span className="pm-bj-box-name">{box.playerName}</span> : null}
+      {showPlayerName ? <span className="pm-bj-box-player">{box.playerName}</span> : null}
       <span className="pm-bj-box-label">BOX {box.boxNumber}</span>
       {hasStake ? <StakeStack label={stake} /> : <span className="pm-bj-spot" aria-hidden="true" />}
-      <span className="pm-bj-stake">
+      <span className="pm-bj-main">
         <small>MAIN</small>
-        {stake}
+        <strong>{result ? result : stake}</strong>
       </span>
       {box.hand?.ranks?.length ? (
-        <div className="pm-bj-box-cards">
+        <div className="pm-bj-cards">
           {box.hand.ranks.map((rank, index) => (
             <span key={`${box.id}-${rank}-${index}`} className="pm-card">
               {rank}
             </span>
           ))}
+          {box.hand.label ? <em className="pm-bj-total">{box.hand.label}</em> : null}
         </div>
       ) : null}
     </button>
   );
 }
 
-/** Compact joined-player marker for TABLE SETUP only. */
 export function JoinedBettingMark({
   name,
   availableLabel,
@@ -79,7 +80,7 @@ export function JoinedBettingMark({
       <span className="pm-bj-joined-medal" aria-hidden="true">
         {(name || "P").slice(0, 1).toUpperCase()}
       </span>
-      <strong className="pm-bj-joined-name">{name}</strong>
+      <strong>{name}</strong>
       <span data-field="available">{availableLabel}</span>
     </div>
   );

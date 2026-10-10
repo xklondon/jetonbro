@@ -28,7 +28,6 @@ function orderNewestLeft(boxes: BoxView[]) {
 
 export function PremiumBlackjackDealer({
   view,
-  members,
   onCommand,
   notice,
 }: {
@@ -62,15 +61,15 @@ export function PremiumBlackjackDealer({
   let layer: ReactNode = null;
   if (setup) {
     layer =
-      joined.length > 0
-        ? joined.map((player) => (
-            <JoinedBettingMark key={player.userId} name={player.name} availableLabel={player.available.label} />
-          ))
-        : (
-            <p className="pm-bj-empty" data-dealer-empty="true">
-              Waiting for players
-            </p>
-          );
+      joined.length > 0 ? (
+        joined.map((player) => (
+          <JoinedBettingMark key={player.userId} name={player.name} availableLabel={player.available.label} />
+        ))
+      ) : (
+        <p className="pm-bj-empty" data-dealer-empty="true">
+          Waiting for players
+        </p>
+      );
   } else if (payout && boxes.length > 0) {
     layer = (
       <div className="pm-bj-settle-list">
@@ -101,6 +100,7 @@ export function PremiumBlackjackDealer({
       board="BLACKJACK_DEALER"
       dock={
         <CasinoConsole
+          variant="blackjack"
           notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           reserveTray
           primary={
