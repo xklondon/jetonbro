@@ -1,6 +1,6 @@
 "use client";
 
-/** Compact dealer medal attached to the top rail — reserved slot, never a floating card. */
+/** Compact text-only dealer identity near the top rail. */
 export function BlackjackDealerPosition({
   name,
   ranks,
@@ -8,16 +8,15 @@ export function BlackjackDealerPosition({
   name: string;
   ranks?: string[];
 }) {
-  const initial = (name || "D").slice(0, 1).toUpperCase();
+  const dealerName = name?.trim() || "Dealer";
   return (
-    <div className="pm-bj-dealer-unit" data-dealer-slot="true" aria-label="Dealer">
-      <span className="pm-bj-dealer-medal" aria-hidden="true">
-        {initial}
+    <div className="pm-bj-dealer-unit" data-dealer-slot="true" aria-label={`Dealer · ${dealerName}`}>
+      <span className="pm-bj-dealer-label" data-dealer-label="true">
+        DEALER · {dealerName}
       </span>
-      <span className="pm-bj-dealer-name">{name || "Dealer"}</span>
       <div className="pm-bj-dealer-body">
         {ranks && ranks.length > 0 ? (
-          <div className="pm-bj-cards">
+          <div className="pm-bj-cards" data-dealer-hand="true">
             {ranks.map((rank, index) => (
               <span key={`${rank}-${index}`} className="pm-card">
                 {rank}

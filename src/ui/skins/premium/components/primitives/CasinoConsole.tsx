@@ -2,14 +2,9 @@
 
 import type { ReactNode } from "react";
 import type { DockAction } from "./CasinoDock";
+import { CasinoJeton } from "./CasinoJeton";
 
-const CHIPS = [
-  { value: "5", className: "is-5" },
-  { value: "10", className: "is-10" },
-  { value: "25", className: "is-25" },
-  { value: "50", className: "is-50" },
-  { value: "100", className: "is-100" },
-] as const;
+const CHIPS = ["5", "10", "25", "50", "100"] as const;
 
 export function CasinoConsole({
   primary,
@@ -184,19 +179,25 @@ export function CasinoConsole({
         {hasTray ? (
           <div className={`pm-console-tray${trayVisible ? "" : " is-reserved"}`} data-jeton-tray="true">
             {trayVisible
-              ? CHIPS.map((chip) => {
-                  const selected = selectedChip === chip.value;
+              ? CHIPS.map((value) => {
+                  const selected = selectedChip === value;
                   return (
                     <button
-                      key={chip.value}
+                      key={value}
                       type="button"
-                      className={`pm-console-chip ${chip.className}${selected ? " is-selected" : ""}`}
+                      className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
                       disabled={!trayEnabled}
-                      aria-label={`Add ${chip.value} jetons`}
+                      aria-label={`Add ${value} jetons`}
                       aria-pressed={selected}
-                      onClick={() => onChip?.(chip.value)}
+                      onClick={() => onChip?.(value)}
                     >
-                      <span className="pm-console-chip-face">{chip.value}</span>
+                      <CasinoJeton
+                        denomination={value}
+                        size={variant === "blackjack" ? "xl" : "lg"}
+                        selected={selected}
+                        disabled={!trayEnabled}
+                        label={value}
+                      />
                     </button>
                   );
                 })

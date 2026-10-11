@@ -38,7 +38,9 @@ describe("Premium BlackjackBox chip breakdown", () => {
     expect(html).toContain('data-main-amount="30"');
     expect(html).toContain('data-chip-stack-total="30"');
     expect(html).toContain('data-chip-values="25+5"');
+    expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-chip-value="25"');
     expect(html).toContain('data-chip-value="5"');
+    expect(html).not.toContain("pm-bj-disk");
   });
 });

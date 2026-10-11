@@ -11,7 +11,7 @@ import { PremiumInviteMask } from "./PremiumInviteMask";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
 import { BlackjackBox, JoinedBettingMark } from "./primitives/BlackjackBox";
-import { BlackjackSettlementBar } from "./primitives/BlackjackSettlementBar";
+import { BlackjackPayoutOverlay } from "./primitives/BlackjackSettlementBar";
 
 function activeBoxes(view: BankTableView): BoxView[] {
   const fromPlayers = view.players.flatMap((player) => player.boxes);
@@ -73,16 +73,11 @@ export function PremiumBlackjackDealer({
       );
   } else if (payout && boxes.length > 0) {
     layer = (
-      <div className="pm-bj-settle-list">
-        {boxes.map((box) => (
-          <BlackjackSettlementBar
-            key={box.id}
-            box={box}
-            enabled={controls.showPayoutResults}
-            onSettle={(outcome: BoxOutcome) => void onCommand("settleBox", { boxId: box.id, outcome })}
-          />
-        ))}
-      </div>
+      <BlackjackPayoutOverlay
+        boxes={boxes}
+        enabled={controls.showPayoutResults}
+        onSettle={(boxId, outcome: BoxOutcome) => void onCommand("settleBox", { boxId, outcome })}
+      />
     );
   } else if (play && staged.length > 0) {
     layer = staged.map((box) => <BlackjackBox key={box.id} box={box} showPlayerName />);
@@ -134,6 +129,7 @@ export function PremiumBlackjackDealer({
         dealerName={view.dealerName || "Dealer"}
         dealerRanks={view.dealerHand?.ranks}
         setup={setup}
+        layout={payout ? "payout" : "play"}
       >
         {layer}
       </BlackjackTable>

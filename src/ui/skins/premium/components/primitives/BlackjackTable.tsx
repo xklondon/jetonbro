@@ -17,6 +17,7 @@ export function BlackjackTable({
   dealerName,
   dealerRanks,
   setup = false,
+  layout = "play",
   children,
 }: {
   tableName: string;
@@ -25,10 +26,32 @@ export function BlackjackTable({
   dealerName: string;
   dealerRanks?: string[];
   setup?: boolean;
+  layout?: "play" | "payout";
   children?: ReactNode;
 }) {
+  const zone =
+    setup || layout === "payout" ? (
+      <div
+        className={setup ? "pm-bj-setup" : "pm-bj-payout-zone"}
+        data-table-zone={setup ? "setup" : "payout"}
+        data-bj-layout={layout}
+      >
+        {children}
+      </div>
+    ) : (
+      <div className="pm-bj-boxes" data-table-zone="boxes" data-player-layer="true">
+        {children}
+      </div>
+    );
+
   return (
-    <section className="pm-bj" data-blackjack-table-surface="true" data-premium-bj-table="true" data-bj-setup={setup ? "true" : "false"}>
+    <section
+      className="pm-bj"
+      data-blackjack-table-surface="true"
+      data-premium-bj-table="true"
+      data-bj-setup={setup ? "true" : "false"}
+      data-bj-layout={layout}
+    >
       <div className="pm-bj-frame" data-bj-stage="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -51,15 +74,7 @@ export function BlackjackTable({
             <strong data-table-name>{tableName}</strong>
             <i aria-hidden="true" />
           </div>
-          {setup ? (
-            <div className="pm-bj-setup" data-table-zone="setup">
-              {children}
-            </div>
-          ) : (
-            <div className="pm-bj-boxes" data-table-zone="boxes" data-player-layer="true">
-              {children}
-            </div>
-          )}
+          {zone}
         </div>
       </div>
     </section>

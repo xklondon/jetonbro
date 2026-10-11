@@ -79,7 +79,7 @@ describe("premium skin isolation", () => {
 
   it("Blackjack setup does not mount betting-box stage", () => {
     const table = readFileSync(join(ROOT, "components/primitives/BlackjackTable.tsx"), "utf8");
-    expect(table).toContain('data-table-zone="setup"');
+    expect(table).toMatch(/data-table-zone=\{setup \? "setup" : "payout"\}/);
     expect(table).toContain('data-table-zone="boxes"');
     expect(table).toContain("blackjack-player-betting-authority.png");
     const player = readFileSync(join(ROOT, "components/PremiumBlackjackPlayer.tsx"), "utf8");

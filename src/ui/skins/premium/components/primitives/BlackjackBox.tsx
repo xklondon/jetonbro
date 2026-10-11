@@ -1,8 +1,9 @@
 "use client";
 
 import type { BoxView } from "@/application/queries/views";
+import { CasinoChipStack } from "./CasinoJeton";
 
-/** Factual visual chip breakdown from MAIN amount — display only. */
+/** @deprecated Prefer CasinoChipStack + domain millis; kept for focused unit coverage. */
 export function chipBreakdown(amountLabel: string): number[] {
   let remaining = Math.max(0, Math.round(Number(amountLabel) || 0));
   if (remaining === 0) return [];
@@ -16,40 +17,6 @@ export function chipBreakdown(amountLabel: string): number[] {
   }
   if (remaining > 0) chips.push(remaining);
   return chips;
-}
-
-function chipClass(value: number) {
-  if (value >= 100) return "is-100";
-  if (value >= 50) return "is-50";
-  if (value >= 25) return "is-25";
-  if (value >= 10) return "is-10";
-  return "is-5";
-}
-
-function StakeStack({ label }: { label: string }) {
-  const chips = chipBreakdown(label);
-  const total = chips.reduce((sum, value) => sum + value, 0);
-  return (
-    <div
-      className="pm-bj-stack"
-      aria-hidden="true"
-      data-chip-stack="true"
-      data-chip-stack-total={String(total)}
-      data-chip-values={chips.join("+")}
-      style={{ height: `${Math.max(52, 28 + chips.length * 10)}px` }}
-    >
-      {chips.map((value, index) => (
-        <span
-          key={`${value}-${index}`}
-          className={`pm-bj-disk ${chipClass(value)}`}
-          style={{ bottom: `${index * 10}px`, zIndex: index + 1 }}
-          data-chip-value={String(value)}
-        >
-          <strong>{value}</strong>
-        </span>
-      ))}
-    </div>
-  );
 }
 
 export function BlackjackBox({
@@ -66,6 +33,7 @@ export function BlackjackBox({
   const stake = box.bet.label;
   const hasStake = stake !== "0";
   const result = box.outcome;
+  const insurance = box.insurance && box.insurance.label !== "0" ? box.insurance : null;
 
   return (
     <button
@@ -79,7 +47,19 @@ export function BlackjackBox({
     >
       {showPlayerName ? <span className="pm-bj-box-player">{box.playerName}</span> : null}
       <span className="pm-bj-box-label">BOX {box.boxNumber}</span>
-      {hasStake ? <StakeStack label={stake} /> : <span className="pm-bj-spot" aria-hidden="true" />}
+      {hasStake ? (
+        <div className="pm-bj-box-stakes">
+          <CasinoChipStack millis={box.bet.millis} label={stake} size="xl" />
+          {insurance ? (
+            <div className="pm-bj-ins-stake" data-insurance-stake="true">
+              <CasinoChipStack millis={insurance.millis} label={insurance.label} size="md" max={3} />
+              <small>INS {insurance.label}</small>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <span className="pm-bj-spot" aria-hidden="true" />
+      )}
       <span className="pm-bj-main">
         <small>MAIN</small>
         <strong>{result ? result : stake}</strong>
@@ -107,9 +87,6 @@ export function JoinedBettingMark({
 }) {
   return (
     <div className="pm-bj-joined" data-joined-player="true" data-status="PLAYER_JOINED">
-      <span className="pm-bj-joined-medal" aria-hidden="true">
-        {(name || "P").slice(0, 1).toUpperCase()}
-      </span>
       <strong>{name}</strong>
       <span data-field="available">{availableLabel}</span>
     </div>
