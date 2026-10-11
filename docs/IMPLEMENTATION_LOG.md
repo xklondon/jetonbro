@@ -1,3 +1,14 @@
+# Premium BJ payout rail + ADD BOX / chip retract
+
+Date: 2026-10-11
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `6939791`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `e9c55e0d-1700-4e0d-9bbd-127e7b859b85` SUCCESS.
+- Payout overlay per box; ADD BOX dock kept; chip `×` → `placeBet` RETRACT.
+- Migrate: 15 found, no pending; `/api/health` 200 connected; `/api/dev/session` 404.
+- Not merged. Not tagged. Other Railway projects untouched.
+
+---
 # Factual Dealer rows + shared cloth + Poker buy-in
 
 Date: 2026-10-07

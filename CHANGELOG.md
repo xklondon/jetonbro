@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Premium BJ payout rail + ADD BOX / chip retract (JetBro II Web)
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `6939791` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`e9c55e0d-1700-4e0d-9bbd-127e7b859b85`, SUCCESS).
+- Dealer payout: per-box `BOX n` + `MAIN BET`, single-row Lost/Tie/Blackjack/Win with icons, translucent overlay, existing `settleBox`.
+- Player: ADD BOX stays on the dock after a stake; retract uses on-chip `×` via `placeBet` `RETRACT` (fixes UNKNOWN_COMMAND from dock `retract`).
+- Gate: focused Premium BJ Vitest + guardrails + production build. Migrate: no pending. `/api/health` 200 database connected. Poker untouched. Not merged or tagged.
+
 ### Factual Dealer rows + shared cloth + Poker buy-in
 
 - Dealer Table Setup no longer pads fake “Open seat” rows; empty state is factual only.
