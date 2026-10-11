@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
 import { CasinoChipStack } from "./CasinoJeton";
 
@@ -24,32 +25,54 @@ export function BlackjackBox({
   selected,
   showPlayerName,
   onSelect,
+  onRetractChip,
+  retractBusy,
 }: {
   box: BoxView;
   selected?: boolean;
   showPlayerName?: boolean;
   onSelect?: () => void;
+  onRetractChip?: (amountLabel: string) => void;
+  retractBusy?: boolean;
 }) {
   const stake = box.bet.label;
   const hasStake = stake !== "0";
   const result = box.outcome;
   const insurance = box.insurance && box.insurance.label !== "0" ? box.insurance : null;
 
+  function onKey(event: KeyboardEvent<HTMLDivElement>) {
+    if (!onSelect) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    }
+  }
+
   return (
-    <button
-      type="button"
+    <div
       className={`pm-bj-box${selected ? " is-selected" : ""}${hasStake ? " is-staked" : " is-quiet"}`}
       data-box-id={box.id}
       data-box-number={box.boxNumber}
       data-box-staked={hasStake ? "true" : "false"}
       data-main-amount={stake}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-pressed={onSelect ? Boolean(selected) : undefined}
+      aria-label={`Box ${box.boxNumber}`}
       onClick={onSelect}
+      onKeyDown={onSelect ? onKey : undefined}
     >
       {showPlayerName ? <span className="pm-bj-box-player">{box.playerName}</span> : null}
       <span className="pm-bj-box-label">BOX {box.boxNumber}</span>
       {hasStake ? (
         <div className="pm-bj-box-stakes">
-          <CasinoChipStack millis={box.bet.millis} label={stake} size="xl" />
+          <CasinoChipStack
+            millis={box.bet.millis}
+            label={stake}
+            size="xl"
+            onRetractChip={result ? undefined : onRetractChip}
+            retractBusy={retractBusy}
+          />
           {insurance ? (
             <div className="pm-bj-ins-stake" data-insurance-stake="true">
               <CasinoChipStack millis={insurance.millis} label={insurance.label} size="md" max={3} />
@@ -74,7 +97,7 @@ export function BlackjackBox({
           {box.hand.label ? <em className="pm-bj-total">{box.hand.label}</em> : null}
         </div>
       ) : null}
-    </button>
+    </div>
   );
 }
 

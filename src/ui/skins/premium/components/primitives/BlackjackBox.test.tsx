@@ -43,4 +43,35 @@ describe("Premium BlackjackBox chip breakdown", () => {
     expect(html).toContain('data-chip-value="5"');
     expect(html).not.toContain("pm-bj-disk");
   });
+
+  it("exposes a per-jeton retract control without nesting a button in a button", () => {
+    const html = renderToStaticMarkup(
+      createElement(BlackjackBox, {
+        box: {
+          id: "b1",
+          playerId: "p1",
+          playerName: "Casey",
+          label: "Box 1",
+          boxNumber: 1,
+          bet: money("25"),
+          originalStake: money("25"),
+          isDoubled: false,
+          isSplit: false,
+          insurance: money("0"),
+          insuranceMax: money("0"),
+          insuranceResult: null,
+          outcome: null,
+          returned: null,
+          payoutActions: [],
+        },
+        onSelect: () => undefined,
+        onRetractChip: () => undefined,
+      }),
+    );
+    expect(html).toContain('role="button"');
+    expect(html).not.toMatch(/<button[^>]*role="button"/);
+    expect(html).toContain('data-retract-chip="25"');
+    expect(html).toContain("Retract 25 jetons");
+    expect(html).toContain("pm-jeton-retract");
+  });
 });

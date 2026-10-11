@@ -40,10 +40,22 @@ export function PremiumBlackjackPlayer({
     insuranceOpen: view.insuranceWindowOpen,
   });
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
+  const [retractBusy, setRetractBusy] = useState<string | null>(null);
   const setup = view.phase === "TABLE_SETUP";
   const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const playing = view.phase === "PLAYING";
   const showTray = !payout;
+
+  async function retractChip(boxId: string, amount: string) {
+    if (retractBusy || view.phase !== "BETTING" || !view.actions.retract) return;
+    setRetractBusy(boxId);
+    try {
+      // Canonical retract path — there is no "retract" command on the API.
+      await onCommand("placeBet", { boxId, amount, mode: "RETRACT" });
+    } finally {
+      setRetractBusy(null);
+    }
+  }
 
   let primary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
   let secondary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
@@ -52,16 +64,12 @@ export function PremiumBlackjackPlayer({
     primary = {
       label: "PLACE BET",
       disabled: !controls.placeBet,
-      onClick: () => void onCommand("placeBet", { boxId: selected?.id ?? "", amount: selectedChip ?? "25" }),
+      onClick: () => void onCommand("placeBet", { boxId: selected?.id ?? "", amount: selectedChip ?? "25", mode: "ADD" }),
     };
-    secondary = controls.retract
-      ? {
-          label: "RETRACT",
-          onClick: () => void onCommand("retract", { boxId: selected?.id ?? "" }),
-        }
-      : controls.addBox
-        ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
-        : null;
+    // ADD BOX stays available while betting even after a stake is placed (retract is on-chip ×).
+    secondary = controls.addBox
+      ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
+      : null;
   } else if (playing) {
     primary = controls.double
       ? { label: "2×", onClick: () => void onCommand("double", { boxId: selected?.id ?? "" }) }
@@ -88,7 +96,7 @@ export function PremiumBlackjackPlayer({
           onChip={(value) => {
             setSelectedChip(value);
             if (selected && controls.placeBet) {
-              void onCommand("placeBet", { boxId: selected.id, amount: value });
+              void onCommand("placeBet", { boxId: selected.id, amount: value, mode: "ADD" });
             }
           }}
           primary={primary}
@@ -111,6 +119,12 @@ export function PremiumBlackjackPlayer({
               box={box}
               selected={box.id === selected?.id}
               onSelect={() => onSelectBox(box.id)}
+              onRetractChip={
+                view.phase === "BETTING" && view.actions.retract
+                  ? (amount) => void retractChip(box.id, amount)
+                  : undefined
+              }
+              retractBusy={retractBusy === box.id}
             />
           ))
         ) : (

@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
 import type { BoxView } from "@/application/queries/views";
-import { CasinoChipStack } from "./CasinoJeton";
 
 const LABELS: Record<BoxOutcome, string> = {
   LOST: "Lost",
@@ -18,6 +17,48 @@ const CLASS: Record<BoxOutcome, string> = {
   BLACKJACK: "is-bj",
   WON: "is-win",
 };
+
+function OutcomeIcon({ outcome }: { outcome: BoxOutcome }) {
+  if (outcome === "LOST") {
+    return (
+      <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="12" fill="#7a2430" stroke="#1a1208" strokeWidth="2" />
+        <path d="M11 11l10 10M21 11L11 21" stroke="#f4ead5" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (outcome === "PUSH") {
+    return (
+      <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="4" y="12" width="24" height="8" rx="2" fill="#efe2c4" stroke="#1a1208" strokeWidth="2" />
+        <path d="M10 16h12" stroke="#1a1208" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (outcome === "BLACKJACK") {
+    return (
+      <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="5" y="6" width="14" height="18" rx="2" fill="#f4ead5" stroke="#1a1208" strokeWidth="1.6" transform="rotate(-12 12 15)" />
+        <text x="9" y="17" fontSize="7" fontWeight="700" fill="#8b1e1e">
+          A♥
+        </text>
+        <rect x="13" y="8" width="14" height="18" rx="2" fill="#f4ead5" stroke="#1a1208" strokeWidth="1.6" transform="rotate(10 20 17)" />
+        <text x="17" y="19" fontSize="7" fontWeight="700" fill="#1a1208">
+          J♠
+        </text>
+      </svg>
+    );
+  }
+  return (
+    <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
+      <polygon points="16,3 19,12 29,12 21,18 24,28 16,22 8,28 11,18 3,12 13,12" fill="#f0d78a" stroke="#1a1208" strokeWidth="1.5" />
+      <rect x="7" y="14" width="18" height="8" rx="1.5" fill="#c0392b" stroke="#1a1208" strokeWidth="1.4" />
+      <text x="16" y="20" textAnchor="middle" fontSize="6" fontWeight="800" fill="#1a1208">
+        WIN
+      </text>
+    </svg>
+  );
+}
 
 function BoxSettleRow({
   box,
@@ -42,17 +83,15 @@ function BoxSettleRow({
     >
       <div className="pm-bj-payout-box-head">
         <strong>BOX {box.boxNumber}</strong>
-        <div className="pm-bj-payout-wager">
-          <CasinoChipStack millis={box.bet.millis} label={box.bet.label} size="md" max={4} />
-          <span>
-            MAIN {box.bet.label}
-            {box.isDoubled ? " · 2×" : ""}
-            {box.isSplit ? " · SPLIT" : ""}
-          </span>
-        </div>
+        <span data-field="main-bet">
+          MAIN BET {box.bet.label}
+          {box.isDoubled ? " · 2×" : ""}
+          {box.isSplit ? " · SPLIT" : ""}
+        </span>
       </div>
       {settled ? (
         <div className={`pm-bj-payout-result ${CLASS[settled]}`} data-box-result={settled}>
+          <OutcomeIcon outcome={settled} />
           <strong>{LABELS[settled]}</strong>
           {box.returned?.label ? <em>{box.returned.label}</em> : null}
         </div>
@@ -65,6 +104,7 @@ function BoxSettleRow({
               className={`${CLASS[outcome]}${pending === outcome ? " is-selected" : ""}`}
               data-payout-action="true"
               data-outcome={outcome}
+              aria-label={`Set Box ${box.boxNumber} result: ${LABELS[outcome]}`}
               aria-pressed={pending === outcome}
               disabled={!unresolved}
               onClick={() => {
@@ -72,7 +112,8 @@ function BoxSettleRow({
                 onSettle?.(outcome);
               }}
             >
-              {LABELS[outcome]}
+              <OutcomeIcon outcome={outcome} />
+              <span>{LABELS[outcome]}</span>
             </button>
           ))}
         </div>
@@ -111,12 +152,11 @@ export function BlackjackPayoutOverlay({
           data-player-group={group.playerId}
           data-player-row="true"
         >
-          <header className="pm-bj-payout-panel-head">
-            <strong>{group.playerName}</strong>
-            <small>
-              {group.boxes.length} box{group.boxes.length === 1 ? "" : "es"}
-            </small>
-          </header>
+          {groups.length > 1 ? (
+            <header className="pm-bj-payout-panel-head">
+              <strong>{group.playerName}</strong>
+            </header>
+          ) : null}
           {group.boxes.map((box) => (
             <BoxSettleRow
               key={box.id}
@@ -140,7 +180,7 @@ export function BlackjackSettlementBar({
   box: BoxView;
   enabled?: boolean;
   onSettle?: (outcome: BoxOutcome) => void;
-}) {
+}): ReactNode {
   return (
     <BlackjackPayoutOverlay
       boxes={[box]}

@@ -44,6 +44,8 @@ export function CasinoJeton({
   );
 }
 
+export type StackChip = { label: string; index: number };
+
 /** Vertical stake stack from factual millis — every chip equals the MAIN total. */
 export function CasinoChipStack({
   millis,
@@ -51,12 +53,17 @@ export function CasinoChipStack({
   max = 6,
   size = "xl",
   className,
+  onRetractChip,
+  retractBusy = false,
 }: {
   millis: string;
   label?: string;
   max?: number;
   size?: CasinoJetonSize;
   className?: string;
+  /** Retract one factual chip denomination via existing placeBet RETRACT. */
+  onRetractChip?: (amountLabel: string) => void;
+  retractBusy?: boolean;
 }) {
   let value = 0n;
   try {
@@ -66,10 +73,7 @@ export function CasinoChipStack({
   }
   const chips = chipCompositionFromMillis(value).slice(0, max);
   const totalLabel =
-    label ??
-    (value > 0n
-      ? String(Number(value) / 1000)
-      : "0");
+    label ?? (value > 0n ? String(Number(value) / 1000) : "0");
   const values = chips.map((chip) => chip.label);
   const stackTotal = chips.reduce((sum, chip) => sum + Number(chip.label), 0);
 
@@ -79,8 +83,7 @@ export function CasinoChipStack({
       data-chip-stack="true"
       data-chip-stack-total={chips.length ? String(stackTotal) : "0"}
       data-chip-values={values.join("+")}
-      aria-hidden="true"
-      style={chips.length ? { height: `${Math.max(64, 40 + chips.length * 12)}px` } : undefined}
+      style={chips.length ? { height: `${Math.max(64, 40 + chips.length * 14)}px` } : undefined}
     >
       {chips.length === 0 ? (
         <CasinoJeton denomination="0" size="md" label="0" disabled />
@@ -89,9 +92,24 @@ export function CasinoChipStack({
           <span
             key={`${chip.label}-${index}`}
             className="pm-chip-stack-item"
-            style={{ bottom: `${index * 12}px`, zIndex: index + 1 }}
+            style={{ bottom: `${index * 14}px`, zIndex: index + 1 }}
           >
             <CasinoJeton denomination={chip.label} size={size} label={chip.label} />
+            {onRetractChip ? (
+              <button
+                type="button"
+                className="pm-jeton-retract"
+                data-retract-chip={chip.label}
+                aria-label={`Retract ${chip.label} jetons`}
+                disabled={retractBusy}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!retractBusy) onRetractChip(chip.label);
+                }}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            ) : null}
           </span>
         ))
       )}
