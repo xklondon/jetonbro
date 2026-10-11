@@ -10,8 +10,7 @@ import { PremiumPokerDealer as PokerDealer } from "./components/PremiumPokerDeal
 import { PremiumPokerPlayer as PokerPlayer } from "./components/PremiumPokerPlayer";
 import { PremiumHome as Home } from "./components/PremiumHome";
 import { PremiumCreateTable as CreateTable } from "./components/PremiumCreateTable";
-import { PremiumShell } from "./components/PremiumShell";
-import { CasinoDock } from "./components/primitives/CasinoDock";
+import { PremiumEntry as Entry } from "./components/PremiumEntry";
 
 /** Setup adapter — same props as registry interface; unused until Milestone 2. */
 const SetupTable: JetonBroSkin["SetupTable"] = ({ view, onCommand, notice }) =>
@@ -78,24 +77,6 @@ const SetupTable: JetonBroSkin["SetupTable"] = ({ view, onCommand, notice }) =>
     notice,
   });
 
-const Entry: JetonBroSkin["Entry"] = ({ title, copy, actionLabel, onSubmit, notice }) =>
-  createElement(
-    PremiumShell,
-    {
-      title,
-      dock: createElement(CasinoDock, {
-        primary: { label: actionLabel, onClick: () => void onSubmit({}) },
-      }),
-    },
-    createElement(
-      "div",
-      { className: "pm-panel" },
-      createElement("h1", null, title),
-      createElement("p", null, copy),
-      notice ? createElement("p", null, notice) : null,
-    ),
-  );
-
 const PhaseZero: JetonBroSkin["PhaseZero"] = ({
   setup,
   waiting,
@@ -108,7 +89,17 @@ const PhaseZero: JetonBroSkin["PhaseZero"] = ({
 }) => {
   if (game === "POKER" && poker) {
     return isBank
-      ? createElement(PokerDealer, { view: poker, members, onCommand, notice })
+      ? createElement(PokerDealer, {
+          view: poker,
+          members,
+          onCommand,
+          notice,
+          guestJoinUrl: setup?.guestJoinUrl ?? null,
+          verifiedJoinUrl: setup?.verifiedJoinUrl ?? setup?.joinUrl ?? null,
+          invitations: setup?.invitations,
+          startingJetons: setup?.startingJetonsPerPlayer.label ?? "100",
+          emailConfigured: setup?.emailConfigured !== false,
+        })
       : createElement(PokerPlayer, { view: poker, onCommand, notice });
   }
   if (waiting && !isBank) return createElement(WaitingTable, { view: waiting });

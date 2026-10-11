@@ -33,7 +33,7 @@ export function BlackjackTable({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="pm-bj-photo"
-          src="/skins/premium/blackjack-premium-table-base.jpg?v=4"
+          src="/skins/premium/blackjack-premium-table-base.jpg?v=5"
           alt=""
           draggable={false}
         />

@@ -46,7 +46,10 @@ test("Premium Create Table START TABLE → Phase 0 (Blackjack)", async ({ page, 
   await expect(page.getByLabel("Table name")).toHaveValue(tableName);
   await page.getByLabel("Starting jetons per player").fill("100");
   await page.getByLabel("Starting jetons per player").blur();
-  await page.getByRole("button", { name: "Blackjack" }).click();
+  await page.getByRole("button", { name: "BLACKJACK" }).click();
+  await page.getByRole("button", { name: "INVITE PLAYER" }).click();
+  await expect(page.locator('[data-invite-mask="true"]')).toHaveCount(1);
+  await page.getByRole("button", { name: "Close invite" }).click();
 
   await page.getByRole("button", { name: "START TABLE" }).click();
 

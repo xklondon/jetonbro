@@ -2,23 +2,52 @@
 
 import type { BoxView } from "@/application/queries/views";
 
-function chipTone(label: string) {
-  const n = Number(label);
-  if (n >= 100) return "is-blue";
-  if (n >= 25) return "is-green";
-  if (n >= 10) return "is-blue";
-  if (n > 0) return "is-red";
-  return "is-green";
+/** Factual visual chip breakdown from MAIN amount — display only. */
+export function chipBreakdown(amountLabel: string): number[] {
+  let remaining = Math.max(0, Math.round(Number(amountLabel) || 0));
+  if (remaining === 0) return [];
+  const denoms = [100, 50, 25, 10, 5];
+  const chips: number[] = [];
+  for (const denom of denoms) {
+    while (remaining >= denom) {
+      chips.push(denom);
+      remaining -= denom;
+    }
+  }
+  if (remaining > 0) chips.push(remaining);
+  return chips;
+}
+
+function chipClass(value: number) {
+  if (value >= 100) return "is-100";
+  if (value >= 50) return "is-50";
+  if (value >= 25) return "is-25";
+  if (value >= 10) return "is-10";
+  return "is-5";
 }
 
 function StakeStack({ label }: { label: string }) {
-  const n = Math.max(2, Math.min(4, Math.ceil(Number(label) / 25) || 2));
+  const chips = chipBreakdown(label);
+  const total = chips.reduce((sum, value) => sum + value, 0);
   return (
-    <div className="pm-bj-stack" aria-hidden="true">
-      {Array.from({ length: n }, (_, i) => (
-        <span key={i} className={`pm-bj-disk ${chipTone(label)}`} style={{ bottom: `${i * 7}px`, zIndex: i + 1 }} />
+    <div
+      className="pm-bj-stack"
+      aria-hidden="true"
+      data-chip-stack="true"
+      data-chip-stack-total={String(total)}
+      data-chip-values={chips.join("+")}
+      style={{ height: `${Math.max(52, 28 + chips.length * 10)}px` }}
+    >
+      {chips.map((value, index) => (
+        <span
+          key={`${value}-${index}`}
+          className={`pm-bj-disk ${chipClass(value)}`}
+          style={{ bottom: `${index * 10}px`, zIndex: index + 1 }}
+          data-chip-value={String(value)}
+        >
+          <strong>{value}</strong>
+        </span>
       ))}
-      <strong className="pm-bj-disk-face">{label}</strong>
     </div>
   );
 }
@@ -45,6 +74,7 @@ export function BlackjackBox({
       data-box-id={box.id}
       data-box-number={box.boxNumber}
       data-box-staked={hasStake ? "true" : "false"}
+      data-main-amount={stake}
       onClick={onSelect}
     >
       {showPlayerName ? <span className="pm-bj-box-player">{box.playerName}</span> : null}

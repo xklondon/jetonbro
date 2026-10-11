@@ -28,6 +28,7 @@ function orderNewestLeft(boxes: BoxView[]) {
 
 export function PremiumBlackjackDealer({
   view,
+  members,
   onCommand,
   notice,
 }: {
@@ -141,6 +142,11 @@ export function PremiumBlackjackDealer({
         onClose={() => setInviteOpen(false)}
         guestJoinUrl={view.guestJoinUrl}
         verifiedJoinUrl={view.verifiedJoinUrl}
+        emailConfigured={view.emailConfigured !== false}
+        startingJetons={view.startingJetons?.label ?? "100"}
+        members={members}
+        onCommand={onCommand}
+        notice={notice}
       />
     </PremiumShell>
   );

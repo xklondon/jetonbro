@@ -399,14 +399,33 @@
   background: linear-gradient(160deg, #2a9a68, #0d4a36);
 }
 
-[data-skin="premium"] .pm-bj-disk.is-red {
+[data-skin="premium"] .pm-bj-disk.is-red,
+[data-skin="premium"] .pm-bj-disk.is-5 {
   background: linear-gradient(160deg, #c24a4a, #7a1f24);
 }
-[data-skin="premium"] .pm-bj-disk.is-blue {
+[data-skin="premium"] .pm-bj-disk.is-blue,
+[data-skin="premium"] .pm-bj-disk.is-10 {
   background: linear-gradient(160deg, #3a7ec4, #1a3f72);
 }
-[data-skin="premium"] .pm-bj-disk.is-green {
+[data-skin="premium"] .pm-bj-disk.is-green,
+[data-skin="premium"] .pm-bj-disk.is-25 {
   background: linear-gradient(160deg, #2a9a68, #0d4a36);
+}
+[data-skin="premium"] .pm-bj-disk.is-50 {
+  background: linear-gradient(160deg, #c9a45a, #8a6a28);
+}
+[data-skin="premium"] .pm-bj-disk.is-100 {
+  background: linear-gradient(160deg, #3a5ec4, #1a2f72);
+}
+
+[data-skin="premium"] .pm-bj-disk strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 700 10px/1 var(--pm-serif);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 [data-skin="premium"] .pm-bj-disk-face {
@@ -862,6 +881,12 @@
     0 10px 24px rgba(0, 0, 0, 0.45);
 }
 
+[data-skin="premium"] .pm-console-body.no-tray,
+[data-skin="premium"] .pm-console.is-setup .pm-console-body {
+  grid-template-rows: auto minmax(48px, 1fr);
+  align-content: center;
+}
+
 /* Walnut connection — top edge of console, attached to table */
 [data-skin="premium"] .pm-console-body::before {
   content: "";
@@ -908,6 +933,10 @@
   gap: 6px;
   align-items: center;
   min-height: 48px;
+}
+
+[data-skin="premium"] .pm-console-action-row.is-setup-order {
+  grid-template-columns: 42% 34% 24%;
 }
 
 [data-skin="premium"] .pm-console-slot {
@@ -1257,6 +1286,181 @@
   color: rgba(244, 234, 213, 0.7);
 }
 
+[data-skin="premium"] .pm-create {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-create-row,
+[data-skin="premium"] .pm-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-field {
+  display: grid;
+  gap: 3px;
+  font-size: 11px;
+  color: rgba(244, 234, 213, 0.75);
+}
+
+[data-skin="premium"] .pm-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(212, 184, 130, 0.85);
+}
+
+[data-skin="premium"] .pm-muted {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(244, 234, 213, 0.55);
+}
+
+[data-skin="premium"] .pm-segment {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+}
+
+[data-skin="premium"] .pm-segment button {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  background: rgba(20, 16, 12, 0.7);
+  color: rgba(244, 234, 213, 0.8);
+  font: 700 10px/1 var(--pm-sans);
+  letter-spacing: 0.06em;
+  padding: 0 8px;
+}
+
+[data-skin="premium"] .pm-segment button.is-active {
+  background: linear-gradient(180deg, #f0d78a, #c9a45a);
+  color: #1a1208;
+  border-color: rgba(240, 215, 138, 0.9);
+}
+
+[data-skin="premium"] .pm-game-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-game-btn {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  background: rgba(20, 16, 12, 0.65);
+  color: rgba(244, 234, 213, 0.85);
+  font: 700 10px/1.1 var(--pm-sans);
+  letter-spacing: 0.08em;
+}
+
+[data-skin="premium"] .pm-game-btn.is-selected {
+  border-color: rgba(240, 215, 138, 0.95);
+  background: linear-gradient(180deg, rgba(240, 215, 138, 0.22), rgba(20, 16, 12, 0.75));
+  color: var(--pm-gold-hi);
+  box-shadow: 0 0 0 1px rgba(240, 215, 138, 0.25);
+}
+
+[data-skin="premium"] .pm-game-icon {
+  width: 36px;
+  height: 36px;
+}
+
+[data-skin="premium"] .pm-invite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 184, 130, 0.45);
+  background: rgba(20, 16, 12, 0.7);
+  color: var(--pm-gold-hi);
+  font: 700 11px/1 var(--pm-sans);
+  letter-spacing: 0.1em;
+}
+
+[data-skin="premium"] .pm-create-players {
+  display: grid;
+  gap: 6px;
+  min-height: 0;
+}
+
+[data-skin="premium"] .pm-chip-rows {
+  display: grid;
+  gap: 4px;
+  max-height: 56px;
+  overflow: auto;
+}
+
+[data-skin="premium"] .pm-chip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+[data-skin="premium"] .pm-chip-row small {
+  color: rgba(244, 234, 213, 0.55);
+}
+
+[data-skin="premium"] .pm-stake {
+  display: grid;
+  gap: 6px;
+}
+
+[data-skin="premium"] .pm-stake-extra {
+  display: grid;
+  gap: 6px;
+}
+
+[data-skin="premium"] .pm-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+[data-skin="premium"] .pm-link {
+  border: 0;
+  background: transparent;
+  color: var(--pm-gold);
+  font: 600 12px/1 var(--pm-sans);
+}
+
+[data-skin="premium"] .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="CREATE_TABLE"] .pm-stage {
+  overflow: hidden;
+}
+
 [data-skin="premium"] .pm-invite {
   position: absolute;
   inset: 0;
@@ -1269,14 +1473,39 @@
 
 [data-skin="premium"] .pm-invite-sheet {
   width: min(100%, 26rem);
+  max-height: min(70dvh, 520px);
+  overflow: auto;
   border-radius: 18px 18px 12px 12px;
   background: #12100e;
   border: 1px solid rgba(212, 184, 130, 0.3);
   padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+[data-skin="premium"] .pm-invite-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 [data-skin="premium"] .pm-invite-sheet h2 {
-  margin: 0 0 8px;
+  margin: 0;
   font: 600 16px/1.2 var(--pm-serif);
   color: var(--pm-gold);
+}
+
+[data-skin="premium"] .pm-invite-qr {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+[data-skin="premium"] .pm-invite-qr img {
+  width: 140px;
+  height: 140px;
+  background: #fff;
+  border-radius: 8px;
 }

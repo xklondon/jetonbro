@@ -35,48 +35,90 @@ export function CasinoConsole({
   onChip?: (value: string) => void;
   showTray?: boolean;
   reserveTray?: boolean;
-  /** blackjack: action row + compact wallet; default: poker/legacy layout */
-  variant?: "default" | "blackjack";
+  /** blackjack/setup: compact action row; default: poker live layout */
+  variant?: "default" | "blackjack" | "setup";
   children?: ReactNode;
 }) {
   const trayVisible = showTray;
-  const bj = variant === "blackjack";
+  const compact = variant === "blackjack" || variant === "setup";
+  const hasTray = trayVisible || reserveTray;
 
   return (
     <footer
-      className={`pm-console${bj ? " is-bj" : ""}`}
+      className={`pm-console${compact ? " is-bj" : ""}${variant === "setup" ? " is-setup" : ""}`}
       data-premium-dock="true"
       data-casino-console="true"
       data-console-variant={variant}
+      data-has-tray={hasTray ? "true" : "false"}
     >
-      <div className="pm-console-body">
+      <div className={`pm-console-body${hasTray ? " has-tray" : " no-tray"}`}>
         {notice}
-        {bj ? (
-          <div className="pm-console-action-row" data-console-actions="true">
-            <div className="pm-console-slot is-secondary">
-              {secondary ? (
-                <button
-                  type="button"
-                  className="pm-console-btn is-ghost"
-                  disabled={secondary.disabled}
-                  onClick={secondary.onClick}
-                >
-                  {secondary.label}
-                </button>
-              ) : null}
-            </div>
-            <div className="pm-console-slot is-primary">
-              {primary ? (
-                <button
-                  type="button"
-                  className="pm-console-btn is-primary"
-                  disabled={primary.disabled}
-                  onClick={primary.onClick}
-                >
-                  {primary.label}
-                </button>
-              ) : null}
-            </div>
+        {compact ? (
+          <div
+            className={`pm-console-action-row${variant === "setup" ? " is-setup-order" : ""}`}
+            data-console-actions="true"
+          >
+            {variant === "setup" ? (
+              <>
+                <div className="pm-console-slot is-primary">
+                  {primary ? (
+                    <button
+                      type="button"
+                      className="pm-console-btn is-primary"
+                      disabled={primary.disabled}
+                      onClick={primary.onClick}
+                      data-start-hand={primary.label === "START HAND" ? "true" : undefined}
+                    >
+                      {primary.label}
+                    </button>
+                  ) : null}
+                </div>
+                <div className="pm-console-slot is-secondary">
+                  {secondary ? (
+                    <button
+                      type="button"
+                      className="pm-console-btn is-ghost"
+                      disabled={secondary.disabled}
+                      onClick={secondary.onClick}
+                      aria-label={secondary.label}
+                      data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
+                    >
+                      {secondary.label}
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="pm-console-slot is-secondary">
+                  {secondary ? (
+                    <button
+                      type="button"
+                      className="pm-console-btn is-ghost"
+                      disabled={secondary.disabled}
+                      onClick={secondary.onClick}
+                      aria-label={secondary.label}
+                      data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
+                    >
+                      {secondary.label}
+                    </button>
+                  ) : null}
+                </div>
+                <div className="pm-console-slot is-primary">
+                  {primary ? (
+                    <button
+                      type="button"
+                      className="pm-console-btn is-primary"
+                      disabled={primary.disabled}
+                      onClick={primary.onClick}
+                      data-start-hand={primary.label === "START HAND" ? "true" : undefined}
+                    >
+                      {primary.label}
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            )}
             <div className="pm-console-slot is-wallet" data-player-wallet="true">
               {available != null ? (
                 <>
@@ -118,6 +160,7 @@ export function CasinoConsole({
                   className="pm-console-btn is-primary"
                   disabled={primary.disabled}
                   onClick={primary.onClick}
+                  data-start-hand={primary.label === "START HAND" ? "true" : undefined}
                 >
                   {primary.label}
                 </button>
@@ -128,6 +171,8 @@ export function CasinoConsole({
                   className="pm-console-btn is-ghost"
                   disabled={secondary.disabled}
                   onClick={secondary.onClick}
+                  aria-label={secondary.label}
+                  data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
                 >
                   {secondary.label}
                 </button>
@@ -136,7 +181,7 @@ export function CasinoConsole({
           </>
         )}
         {children}
-        {(trayVisible || reserveTray) && (
+        {hasTray ? (
           <div className={`pm-console-tray${trayVisible ? "" : " is-reserved"}`} data-jeton-tray="true">
             {trayVisible
               ? CHIPS.map((chip) => {
@@ -157,7 +202,7 @@ export function CasinoConsole({
                 })
               : null}
           </div>
-        )}
+        ) : null}
       </div>
     </footer>
   );

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { MemberView, PokerTableView } from "@/application/queries/views";
-import { pokerPhaseCopy } from "@/ui/core/phase-copy";
+import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
+import { pokerControls } from "@/application/queries/poker-controls";
+import { pokerPhaseCopy, pokerStartHandNotice } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { PremiumInviteMask } from "./PremiumInviteMask";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerAwardOverlay } from "./primitives/PokerAwardOverlay";
@@ -11,8 +13,14 @@ import { PokerTable } from "./primitives/PokerTable";
 
 export function PremiumPokerDealer({
   view,
+  members,
   onCommand,
   notice,
+  guestJoinUrl = null,
+  verifiedJoinUrl = null,
+  invitations,
+  startingJetons,
+  emailConfigured = true,
 }: {
   view: PokerTableView;
   members: MemberView[];
@@ -20,6 +28,9 @@ export function PremiumPokerDealer({
   notice?: string | null;
   guestJoinUrl?: string | null;
   verifiedJoinUrl?: string | null;
+  invitations?: InvitationView[];
+  startingJetons?: string;
+  emailConfigured?: boolean;
 }) {
   const phaseCopy = pokerPhaseCopy({
     phase: view.phase,
@@ -30,6 +41,14 @@ export function PremiumPokerDealer({
   const showdown = view.phase === "SHOWDOWN" && view.canAward;
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [busy, setBusy] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const controls = pokerControls(view);
+  const startHand = controls.find((control) => control.id === "startHand");
+  const nextHand = controls.find((control) => control.id === "nextHand");
+  const seatedCount = view.seats.filter((seat) => Boolean(seat.userId)).length;
+  const ownerSeated = view.seats.some((seat) => seat.userId === view.viewerId);
+  const startEnabled = Boolean(startHand?.enabled && seatedCount >= 2);
+  const seatNotice = pokerStartHandNotice(notice);
 
   useEffect(() => {
     if (view.phase !== "SHOWDOWN") setWinners({});
@@ -58,6 +77,30 @@ export function PremiumPokerDealer({
     </>
   );
 
+  let primary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
+  if (showdown) {
+    primary = null;
+  } else if (startHand) {
+    primary = {
+      label: "START HAND",
+      disabled: !startEnabled,
+      onClick: () => void onCommand("startTexasHoldem"),
+    };
+  } else if (nextHand) {
+    primary = {
+      label: "START HAND",
+      disabled: !nextHand.enabled,
+      onClick: () => void onCommand("startNextPokerHand"),
+    };
+  } else if (view.canDealStreet) {
+    primary = {
+      label: view.nextStreetLabel || "DEAL",
+      onClick: () => void onCommand("advancePokerStreet"),
+    };
+  }
+
+  const showAdd = Boolean(view.canAddPlayer && (setup || view.phase === "HAND_COMPLETE"));
+
   return (
     <PremiumShell
       title="JETONBRO"
@@ -65,27 +108,23 @@ export function PremiumPokerDealer({
       board="POKER_DEALER"
       dock={
         <CasinoConsole
-          notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
-          available={view.available.label !== "0" ? view.available.label : undefined}
-          showTray={false}
-          reserveTray={false}
-          primary={
-            showdown
-              ? null
-              : view.canNextHand
-                ? {
-                    label: "START HAND",
-                    onClick: () => void onCommand("pokerNextHand"),
-                  }
-                : view.canDealStreet
-                  ? {
-                      label: view.nextStreetLabel || "DEAL",
-                      onClick: () => void onCommand("pokerDealStreet"),
-                    }
-                  : null
+          variant={setup ? "setup" : "default"}
+          notice={
+            seatNotice || notice ? (
+              <div className="pm-console-notice">{seatNotice ?? notice}</div>
+            ) : null
           }
+          available={ownerSeated && view.available.label !== "0" ? view.available.label : undefined}
+          showTray={false}
+          reserveTray={!setup}
+          primary={primary}
           secondary={
-            !showdown && view.canAddPlayer ? { label: "ADD PLAYER", onClick: () => undefined } : null
+            showAdd
+              ? {
+                  label: "ADD PLAYER",
+                  onClick: () => setInviteOpen(true),
+                }
+              : null
           }
         >
           {showdown ? (
@@ -111,6 +150,18 @@ export function PremiumPokerDealer({
         pot={view.pot.label}
         seats={view.seats}
         viewerId={view.viewerId}
+      />
+      <PremiumInviteMask
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        guestJoinUrl={guestJoinUrl}
+        verifiedJoinUrl={verifiedJoinUrl}
+        emailConfigured={emailConfigured}
+        startingJetons={startingJetons ?? "100"}
+        members={members}
+        invitations={invitations}
+        onCommand={onCommand}
+        notice={notice}
       />
     </PremiumShell>
   );

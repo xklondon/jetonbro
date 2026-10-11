@@ -60,19 +60,28 @@ describe("PremiumCreateTable start flow", () => {
     expect(html).toContain('data-table-board="CREATE_TABLE"'); // PremiumShell board prop
     expect(html).toContain('aria-label="Table name"');
     expect(html).toContain('aria-label="Starting jetons per player"');
+    expect(html).toContain('aria-label="BLACKJACK"');
+    expect(html).toContain("INVITE PLAYER");
+    expect(html).toContain("OPEN BANK");
+    expect(html).toContain("PLAYING FOR");
+    expect(html).toContain('aria-label="Dealer"');
+    // One shell title only — no duplicate CREATE TABLE h1 in the form body.
+    expect(html.match(/>CREATE TABLE</g)?.length ?? 0).toBe(1);
   });
 
   it("uses updateSettings then finalizeSetup when view and onCommand are present", () => {
     const source = readFileSync(join(__dirname, "PremiumCreateTable.tsx"), "utf8");
     expect(source).toMatch(/if \(onCommand && view\)/);
-    expect(source).toContain('await persist({');
+    expect(source).toContain("stakeModeToPayload");
     expect(source).toContain('await onCommand("finalizeSetup"');
-    expect(source).toContain("stakeType");
     expect(source).toContain("bankFundingMode");
     expect(source).toContain("startingBank");
     expect(source).toContain("smallBlind");
     expect(source).toContain("bigBlind");
     expect(source).toContain("seatOrder");
+    expect(source).toContain("setBankFunding");
+    expect(source).toContain("assignBank");
+    expect(source).toContain("PremiumInviteMask");
     // Live TableSession passes a no-op onCreate — must not be the only path.
     expect(source).toMatch(/onCreate\(/);
     expect(source.indexOf('if (onCommand && view)')).toBeLessThan(source.indexOf("await onCreate("));
