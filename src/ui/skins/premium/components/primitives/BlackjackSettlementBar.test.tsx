@@ -33,7 +33,7 @@ function box(
 }
 
 describe("Premium Blackjack payout overlay", () => {
-  it("shows per-box MAIN BET and a single-row Lost/Tie/Blackjack/Win rail", () => {
+  it("shows per-box MAIN BET and a single-row WIN/LOST/BLACKJACK/DRAW rail", () => {
     const html = renderToStaticMarkup(
       createElement(BlackjackPayoutOverlay, {
         boxes: [
@@ -55,18 +55,18 @@ describe("Premium Blackjack payout overlay", () => {
     // Single-player table: no aggregate player header noise
     expect(html).not.toContain("Casey");
 
-    const lost = html.indexOf('data-outcome="LOST"');
-    const push = html.indexOf('data-outcome="PUSH"');
-    const bj = html.indexOf('data-outcome="BLACKJACK"');
     const won = html.indexOf('data-outcome="WON"');
-    expect(lost).toBeGreaterThan(-1);
-    expect(push).toBeGreaterThan(lost);
-    expect(bj).toBeGreaterThan(push);
-    expect(won).toBeGreaterThan(bj);
-    expect(html).toContain("Lost");
-    expect(html).toContain("Tie");
-    expect(html).toContain("Blackjack");
-    expect(html).toContain("Win");
+    const lost = html.indexOf('data-outcome="LOST"');
+    const bj = html.indexOf('data-outcome="BLACKJACK"');
+    const push = html.indexOf('data-outcome="PUSH"');
+    expect(won).toBeGreaterThan(-1);
+    expect(lost).toBeGreaterThan(won);
+    expect(bj).toBeGreaterThan(lost);
+    expect(push).toBeGreaterThan(bj);
+    expect(html).toContain(">WIN<");
+    expect(html).toContain(">LOST<");
+    expect(html).toContain(">BLACKJACK<");
+    expect(html).toContain(">DRAW<");
     expect(html).toContain("pm-outcome-icon");
     expect(html).toContain('data-payout-state="pending"');
   });

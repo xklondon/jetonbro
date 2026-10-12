@@ -116,7 +116,7 @@ export function PremiumPokerDealer({
           }
           available={ownerSeated && view.available.label !== "0" ? view.available.label : undefined}
           showTray={false}
-          reserveTray={!setup}
+          reserveTray={!setup && !showdown}
           primary={primary}
           secondary={
             showAdd
@@ -126,31 +126,36 @@ export function PremiumPokerDealer({
                 }
               : null
           }
-        >
-          {showdown ? (
+        />
+      }
+    >
+      <div className={`pm-poker-stage${showdown ? " is-payout" : ""}`}>
+        <PokerTable
+          tableName={view.tableName}
+          instruction={setup ? phaseCopy.instruction : undefined}
+          phase={view.phase}
+          pot={view.pot.label}
+          seats={view.seats}
+          viewerId={view.viewerId}
+        />
+        {showdown ? (
+          <div className="pm-poker-payout-zone">
             <PokerAwardOverlay
               view={view}
               winners={winners}
               onToggle={toggleWinner}
               onConfirm={() => {
                 setBusy(true);
-                void Promise.resolve(onCommand("awardPokerPots", { pots: winnerPayload })).finally(() => setBusy(false));
+                void Promise.resolve(onCommand("awardPokerPots", { pots: winnerPayload })).finally(() =>
+                  setBusy(false),
+                );
               }}
               onClear={() => setWinners({})}
               busy={busy}
             />
-          ) : null}
-        </CasinoConsole>
-      }
-    >
-      <PokerTable
-        tableName={view.tableName}
-        instruction={setup ? phaseCopy.instruction : undefined}
-        phase={view.phase}
-        pot={view.pot.label}
-        seats={view.seats}
-        viewerId={view.viewerId}
-      />
+          </div>
+        ) : null}
+      </div>
       <PremiumInviteMask
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}

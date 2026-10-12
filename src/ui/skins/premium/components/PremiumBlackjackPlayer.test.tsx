@@ -64,4 +64,15 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(html).toContain('data-retract-chip="25"');
     expect(html).toContain("PLACE BET");
   });
+
+  it("wires 2× and SPLIT to doubleBox / splitBox command names", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const source = readFileSync(join(process.cwd(), "src/ui/skins/premium/components/PremiumBlackjackPlayer.tsx"), "utf8");
+    expect(source).toContain('onCommand("doubleBox"');
+    expect(source).toContain('onCommand("splitBox"');
+    expect(source).toContain('onCommand("buyInsurance"');
+    expect(source).not.toMatch(/onCommand\("double"/);
+    expect(source).not.toMatch(/onCommand\("split"/);
+  });
 });

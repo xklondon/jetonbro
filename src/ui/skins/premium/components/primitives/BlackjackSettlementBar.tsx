@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import { PAYOUT_RAIL_ORDER, type BoxOutcome } from "@/domain/blackjack/payouts";
+import { useMemo, useState } from "react";
+import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import type { BoxView } from "@/application/queries/views";
 
+/** Premium payout rail — WIN → LOST → BLACKJACK → DRAW (PUSH). Domain order unchanged. */
+export const PREMIUM_PAYOUT_RAIL_ORDER: BoxOutcome[] = ["WON", "LOST", "BLACKJACK", "PUSH"];
+
 const LABELS: Record<BoxOutcome, string> = {
-  LOST: "Lost",
-  PUSH: "Tie",
-  BLACKJACK: "Blackjack",
-  WON: "Win",
+  WON: "WIN",
+  LOST: "LOST",
+  BLACKJACK: "BLACKJACK",
+  PUSH: "DRAW",
 };
 
 const CLASS: Record<BoxOutcome, string> = {
@@ -21,39 +24,44 @@ const CLASS: Record<BoxOutcome, string> = {
 function OutcomeIcon({ outcome }: { outcome: BoxOutcome }) {
   if (outcome === "LOST") {
     return (
-      <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
-        <circle cx="16" cy="16" r="12" fill="#7a2430" stroke="#1a1208" strokeWidth="2" />
-        <path d="M11 11l10 10M21 11L11 21" stroke="#f4ead5" strokeWidth="2.5" strokeLinecap="round" />
+      <svg className="pm-outcome-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="18" fill="rgba(122, 36, 48, 0.85)" stroke="rgba(244, 234, 213, 0.55)" strokeWidth="2" />
+        <path d="M16 16l16 16M32 16L16 32" stroke="#f4ead5" strokeWidth="3.2" strokeLinecap="round" />
       </svg>
     );
   }
   if (outcome === "PUSH") {
     return (
-      <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
-        <rect x="4" y="12" width="24" height="8" rx="2" fill="#efe2c4" stroke="#1a1208" strokeWidth="2" />
-        <path d="M10 16h12" stroke="#1a1208" strokeWidth="2.5" strokeLinecap="round" />
+      <svg className="pm-outcome-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="6" y="18" width="36" height="12" rx="3" fill="rgba(239, 226, 196, 0.9)" stroke="rgba(26, 18, 8, 0.45)" strokeWidth="2" />
+        <path d="M14 24h20" stroke="#1a1208" strokeWidth="3" strokeLinecap="round" />
       </svg>
     );
   }
   if (outcome === "BLACKJACK") {
     return (
-      <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
-        <rect x="5" y="6" width="14" height="18" rx="2" fill="#f4ead5" stroke="#1a1208" strokeWidth="1.6" transform="rotate(-12 12 15)" />
-        <text x="9" y="17" fontSize="7" fontWeight="700" fill="#8b1e1e">
+      <svg className="pm-outcome-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="7" y="8" width="20" height="28" rx="3" fill="rgba(244, 234, 213, 0.95)" stroke="rgba(26, 18, 8, 0.55)" strokeWidth="1.8" transform="rotate(-12 17 22)" />
+        <text x="12" y="26" fontSize="10" fontWeight="700" fill="#8b1e1e">
           A♥
         </text>
-        <rect x="13" y="8" width="14" height="18" rx="2" fill="#f4ead5" stroke="#1a1208" strokeWidth="1.6" transform="rotate(10 20 17)" />
-        <text x="17" y="19" fontSize="7" fontWeight="700" fill="#1a1208">
+        <rect x="19" y="12" width="20" height="28" rx="3" fill="rgba(244, 234, 213, 0.95)" stroke="rgba(26, 18, 8, 0.55)" strokeWidth="1.8" transform="rotate(10 29 26)" />
+        <text x="24" y="30" fontSize="10" fontWeight="700" fill="#1a1208">
           J♠
         </text>
       </svg>
     );
   }
   return (
-    <svg className="pm-outcome-icon" viewBox="0 0 32 32" aria-hidden="true">
-      <polygon points="16,3 19,12 29,12 21,18 24,28 16,22 8,28 11,18 3,12 13,12" fill="#f0d78a" stroke="#1a1208" strokeWidth="1.5" />
-      <rect x="7" y="14" width="18" height="8" rx="1.5" fill="#c0392b" stroke="#1a1208" strokeWidth="1.4" />
-      <text x="16" y="20" textAnchor="middle" fontSize="6" fontWeight="800" fill="#1a1208">
+    <svg className="pm-outcome-icon" viewBox="0 0 48 48" aria-hidden="true">
+      <polygon
+        points="24,4 28,18 42,18 31,27 35,41 24,33 13,41 17,27 6,18 20,18"
+        fill="rgba(240, 215, 138, 0.95)"
+        stroke="rgba(26, 18, 8, 0.5)"
+        strokeWidth="1.6"
+      />
+      <rect x="11" y="20" width="26" height="12" rx="2" fill="rgba(192, 57, 43, 0.92)" stroke="rgba(26, 18, 8, 0.45)" strokeWidth="1.4" />
+      <text x="24" y="29" textAnchor="middle" fontSize="8" fontWeight="800" fill="#1a1208">
         WIN
       </text>
     </svg>
@@ -97,7 +105,7 @@ function BoxSettleRow({
         </div>
       ) : (
         <div className="pm-bj-payout-actions" role="group" aria-label={`Settle Box ${box.boxNumber}`}>
-          {PAYOUT_RAIL_ORDER.map((outcome) => (
+          {PREMIUM_PAYOUT_RAIL_ORDER.map((outcome) => (
             <button
               key={outcome}
               type="button"
@@ -168,24 +176,5 @@ export function BlackjackPayoutOverlay({
         </section>
       ))}
     </div>
-  );
-}
-
-/** @deprecated Prefer BlackjackPayoutOverlay — kept for single-box call sites/tests. */
-export function BlackjackSettlementBar({
-  box,
-  enabled,
-  onSettle,
-}: {
-  box: BoxView;
-  enabled?: boolean;
-  onSettle?: (outcome: BoxOutcome) => void;
-}): ReactNode {
-  return (
-    <BlackjackPayoutOverlay
-      boxes={[box]}
-      enabled={enabled}
-      onSettle={onSettle ? (_id, outcome) => onSettle(outcome) : undefined}
-    />
   );
 }

@@ -6,9 +6,34 @@ import { CasinoJeton } from "./CasinoJeton";
 
 const CHIPS = ["5", "10", "25", "50", "100"] as const;
 
+function ActionButton({
+  action,
+  kind,
+}: {
+  action: DockAction;
+  kind: "primary" | "ghost";
+}) {
+  return (
+    <button
+      type="button"
+      className={`pm-console-btn is-${kind === "primary" ? "primary" : "ghost"}`}
+      disabled={action.disabled}
+      title={action.title}
+      onClick={action.onClick}
+      aria-label={action.title && action.disabled ? `${action.label}. ${action.title}` : action.label}
+      data-start-hand={action.label === "START HAND" ? "true" : undefined}
+      data-add-player-dock={action.label === "ADD PLAYER" ? "true" : undefined}
+      data-change-game={action.label === "CHANGE GAME" ? "true" : undefined}
+    >
+      {action.label}
+    </button>
+  );
+}
+
 export function CasinoConsole({
   primary,
   secondary,
+  tertiary,
   notice,
   toCall,
   available,
@@ -22,6 +47,8 @@ export function CasinoConsole({
 }: {
   primary?: DockAction | null;
   secondary?: DockAction | null;
+  /** Optional third compact control (e.g. CHANGE GAME on dealer setup). */
+  tertiary?: DockAction | null;
   notice?: ReactNode;
   toCall?: string | null;
   available?: string;
@@ -39,6 +66,7 @@ export function CasinoConsole({
   /** Only reserve empty tray height for Poker live — BJ dealer must not show a hollow betting well. */
   const hasTray = trayVisible || (reserveTray && variant === "default");
   const showWallet = available != null;
+  const actionCount = [primary, secondary, tertiary].filter(Boolean).length;
 
   return (
     <footer
@@ -56,68 +84,36 @@ export function CasinoConsole({
           <>
             <div
               className={`pm-console-action-row${variant === "setup" ? " is-setup-order" : ""}${
-                !secondary ? " is-single" : ""
-              }`}
+                actionCount <= 1 ? " is-single" : ""
+              }${actionCount >= 3 ? " is-triple" : ""}`}
               data-console-actions="true"
             >
               {variant === "setup" ? (
                 <>
                   <div className="pm-console-slot is-primary">
-                    {primary ? (
-                      <button
-                        type="button"
-                        className="pm-console-btn is-primary"
-                        disabled={primary.disabled}
-                        onClick={primary.onClick}
-                        data-start-hand={primary.label === "START HAND" ? "true" : undefined}
-                      >
-                        {primary.label}
-                      </button>
-                    ) : null}
+                    {primary ? <ActionButton action={primary} kind="primary" /> : null}
                   </div>
                   <div className="pm-console-slot is-secondary">
-                    {secondary ? (
-                      <button
-                        type="button"
-                        className="pm-console-btn is-ghost"
-                        disabled={secondary.disabled}
-                        onClick={secondary.onClick}
-                        aria-label={secondary.label}
-                        data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
-                      >
-                        {secondary.label}
-                      </button>
-                    ) : null}
+                    {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
                   </div>
+                  {tertiary ? (
+                    <div className="pm-console-slot is-tertiary">
+                      <ActionButton action={tertiary} kind="ghost" />
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <>
+                  {tertiary ? (
+                    <div className="pm-console-slot is-tertiary">
+                      <ActionButton action={tertiary} kind="ghost" />
+                    </div>
+                  ) : null}
                   <div className="pm-console-slot is-secondary">
-                    {secondary ? (
-                      <button
-                        type="button"
-                        className="pm-console-btn is-ghost"
-                        disabled={secondary.disabled}
-                        onClick={secondary.onClick}
-                        aria-label={secondary.label}
-                        data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
-                      >
-                        {secondary.label}
-                      </button>
-                    ) : null}
+                    {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
                   </div>
                   <div className="pm-console-slot is-primary">
-                    {primary ? (
-                      <button
-                        type="button"
-                        className="pm-console-btn is-primary"
-                        disabled={primary.disabled}
-                        onClick={primary.onClick}
-                        data-start-hand={primary.label === "START HAND" ? "true" : undefined}
-                      >
-                        {primary.label}
-                      </button>
-                    ) : null}
+                    {primary ? <ActionButton action={primary} kind="primary" /> : null}
                   </div>
                 </>
               )}
@@ -153,33 +149,13 @@ export function CasinoConsole({
               )}
             </div>
             <div
-              className={`pm-console-actions${primary || secondary ? "" : " is-empty"}${
-                primary && !secondary ? " is-single" : ""
+              className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
+                primary && !secondary && !tertiary ? " is-single" : ""
               }`}
             >
-              {primary ? (
-                <button
-                  type="button"
-                  className="pm-console-btn is-primary"
-                  disabled={primary.disabled}
-                  onClick={primary.onClick}
-                  data-start-hand={primary.label === "START HAND" ? "true" : undefined}
-                >
-                  {primary.label}
-                </button>
-              ) : null}
-              {secondary ? (
-                <button
-                  type="button"
-                  className="pm-console-btn is-ghost"
-                  disabled={secondary.disabled}
-                  onClick={secondary.onClick}
-                  aria-label={secondary.label}
-                  data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
-                >
-                  {secondary.label}
-                </button>
-              ) : null}
+              {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
+              {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
+              {primary ? <ActionButton action={primary} kind="primary" /> : null}
             </div>
           </>
         )}

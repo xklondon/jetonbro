@@ -134,7 +134,6 @@ Poker reducer, ledger, blinds, pots, settlement, and `poker-snapshot.ts` stay fr
 - `src/ui/core/table-board.ts`
 - `src/application/actor-resolve.ts`
 - `src/app/tables/new/page.tsx` (creates/reuses a draft and redirects to `/tables/{id}`)
-- `src/app/tables/new/create-table-client.tsx` **inactive** (no longer routed)
 - `e2e/setup-phase-zero.spec.ts`
 - `e2e/setup-invite-and-restart.spec.ts`
 - `e2e/welcome-home.spec.ts`

@@ -174,6 +174,26 @@ for (const file of srcFiles) {
   }
 }
 
+// Confirmed-dead duplicates removed in the route/screen audit — do not resurrect.
+const bannedDuplicatePaths = [
+  "src/app/tables/new/create-table-client.tsx",
+  "src/ui/skins/premium/components/primitives/CasinoTray.tsx",
+  "src/ui/skins/tabletop/components/Tray.tsx",
+  "src/ui/skins/tabletop/components/Dock.tsx",
+];
+for (const relPath of bannedDuplicatePaths) {
+  if (exists(relPath)) {
+    fail(`Removed duplicate resurrected: ${relPath}`);
+  }
+}
+
+for (const file of srcFiles) {
+  const base = relative(root, file).replaceAll("\\", "/").split("/").pop() ?? "";
+  if (/ \(\d+\)\.(ts|tsx|js|jsx|css)$/.test(base)) {
+    fail(`Numbered-copy source file is forbidden: ${relative(root, file).replaceAll("\\", "/")}`);
+  }
+}
+
 if (errors.length > 0) {
   console.error("JetonBro guardrails failed:\n");
   for (const error of errors) {

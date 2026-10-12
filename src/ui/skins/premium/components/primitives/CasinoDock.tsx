@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 export type DockAction = {
   label: string;
   disabled?: boolean;
+  /** Native tooltip / disabled explanation (e.g. Change Game while payout unsettled). */
+  title?: string;
   onClick?: () => void;
 };
 
