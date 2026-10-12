@@ -18,7 +18,6 @@ export function PremiumBlackjackWaiting({ view }: { view: WaitingTableView }) {
           variant="blackjack"
           available={view.available.label}
           showTray
-          reserveTray
           trayEnabled={false}
           selectedChip={null}
         />

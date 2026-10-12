@@ -96,7 +96,9 @@ describe("premium skin isolation", () => {
     expect(css).not.toContain(".pm-bj-dealer-ring");
     expect(css).not.toContain(".pm-console-walnut");
     expect(css).toContain(".pm-console.is-bj");
-    expect(css).toContain("grid-template-columns: 34% 42% 24%");
+    expect(css).toContain(".pm-console-available");
+    expect(css).toContain(".pm-jeton-lip");
+    expect(css).toContain("grid-template-columns: 1fr 1.15fr");
     expect(css).not.toContain("!important");
   });
 });

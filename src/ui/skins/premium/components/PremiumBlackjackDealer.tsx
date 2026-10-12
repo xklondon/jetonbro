@@ -98,7 +98,6 @@ export function PremiumBlackjackDealer({
         <CasinoConsole
           variant="blackjack"
           notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
-          reserveTray
           primary={
             controls.primary
               ? {

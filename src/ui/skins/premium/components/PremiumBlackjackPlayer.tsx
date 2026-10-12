@@ -90,7 +90,6 @@ export function PremiumBlackjackPlayer({
           notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           available={view.available.label}
           showTray={showTray}
-          reserveTray
           trayEnabled={Boolean(controls.trayEnabled)}
           selectedChip={selectedChip}
           onChip={(value) => {

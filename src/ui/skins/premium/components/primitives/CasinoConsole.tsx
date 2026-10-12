@@ -36,95 +36,103 @@ export function CasinoConsole({
 }) {
   const trayVisible = showTray;
   const compact = variant === "blackjack" || variant === "setup";
-  const hasTray = trayVisible || reserveTray;
+  /** Only reserve empty tray height for Poker live — BJ dealer must not show a hollow betting well. */
+  const hasTray = trayVisible || (reserveTray && variant === "default");
+  const showWallet = available != null;
 
   return (
     <footer
-      className={`pm-console${compact ? " is-bj" : ""}${variant === "setup" ? " is-setup" : ""}`}
+      className={`pm-console${compact ? " is-bj" : ""}${variant === "setup" ? " is-setup" : ""}${
+        trayVisible ? " has-visible-tray" : " no-visible-tray"
+      }`}
       data-premium-dock="true"
       data-casino-console="true"
       data-console-variant={variant}
       data-has-tray={hasTray ? "true" : "false"}
     >
-      <div className={`pm-console-body${hasTray ? " has-tray" : " no-tray"}`}>
+      <div className={`pm-console-body${hasTray || trayVisible ? " has-tray" : " no-tray"}`}>
         {notice}
         {compact ? (
-          <div
-            className={`pm-console-action-row${variant === "setup" ? " is-setup-order" : ""}`}
-            data-console-actions="true"
-          >
-            {variant === "setup" ? (
-              <>
-                <div className="pm-console-slot is-primary">
-                  {primary ? (
-                    <button
-                      type="button"
-                      className="pm-console-btn is-primary"
-                      disabled={primary.disabled}
-                      onClick={primary.onClick}
-                      data-start-hand={primary.label === "START HAND" ? "true" : undefined}
-                    >
-                      {primary.label}
-                    </button>
-                  ) : null}
-                </div>
-                <div className="pm-console-slot is-secondary">
-                  {secondary ? (
-                    <button
-                      type="button"
-                      className="pm-console-btn is-ghost"
-                      disabled={secondary.disabled}
-                      onClick={secondary.onClick}
-                      aria-label={secondary.label}
-                      data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
-                    >
-                      {secondary.label}
-                    </button>
-                  ) : null}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="pm-console-slot is-secondary">
-                  {secondary ? (
-                    <button
-                      type="button"
-                      className="pm-console-btn is-ghost"
-                      disabled={secondary.disabled}
-                      onClick={secondary.onClick}
-                      aria-label={secondary.label}
-                      data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
-                    >
-                      {secondary.label}
-                    </button>
-                  ) : null}
-                </div>
-                <div className="pm-console-slot is-primary">
-                  {primary ? (
-                    <button
-                      type="button"
-                      className="pm-console-btn is-primary"
-                      disabled={primary.disabled}
-                      onClick={primary.onClick}
-                      data-start-hand={primary.label === "START HAND" ? "true" : undefined}
-                    >
-                      {primary.label}
-                    </button>
-                  ) : null}
-                </div>
-              </>
-            )}
-            <div className="pm-console-slot is-wallet" data-player-wallet="true">
-              {available != null ? (
+          <>
+            <div
+              className={`pm-console-action-row${variant === "setup" ? " is-setup-order" : ""}${
+                !secondary ? " is-single" : ""
+              }`}
+              data-console-actions="true"
+            >
+              {variant === "setup" ? (
                 <>
-                  <small>AVAILABLE</small>
-                  <strong>{available}</strong>
+                  <div className="pm-console-slot is-primary">
+                    {primary ? (
+                      <button
+                        type="button"
+                        className="pm-console-btn is-primary"
+                        disabled={primary.disabled}
+                        onClick={primary.onClick}
+                        data-start-hand={primary.label === "START HAND" ? "true" : undefined}
+                      >
+                        {primary.label}
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="pm-console-slot is-secondary">
+                    {secondary ? (
+                      <button
+                        type="button"
+                        className="pm-console-btn is-ghost"
+                        disabled={secondary.disabled}
+                        onClick={secondary.onClick}
+                        aria-label={secondary.label}
+                        data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
+                      >
+                        {secondary.label}
+                      </button>
+                    ) : null}
+                  </div>
                 </>
               ) : (
-                <span className="pm-console-wallet-spacer" aria-hidden="true" />
+                <>
+                  <div className="pm-console-slot is-secondary">
+                    {secondary ? (
+                      <button
+                        type="button"
+                        className="pm-console-btn is-ghost"
+                        disabled={secondary.disabled}
+                        onClick={secondary.onClick}
+                        aria-label={secondary.label}
+                        data-add-player-dock={secondary.label === "ADD PLAYER" ? "true" : undefined}
+                      >
+                        {secondary.label}
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="pm-console-slot is-primary">
+                    {primary ? (
+                      <button
+                        type="button"
+                        className="pm-console-btn is-primary"
+                        disabled={primary.disabled}
+                        onClick={primary.onClick}
+                        data-start-hand={primary.label === "START HAND" ? "true" : undefined}
+                      >
+                        {primary.label}
+                      </button>
+                    ) : null}
+                  </div>
+                </>
               )}
             </div>
-          </div>
+            {showWallet ? (
+              <div className="pm-console-available" data-player-wallet="true">
+                <span className="pm-console-available-rule" aria-hidden="true" />
+                <div className="pm-console-available-copy">
+                  <small>AVAILABLE</small>
+                  <strong>{available}</strong>
+                </div>
+                <span className="pm-console-available-rule" aria-hidden="true" />
+              </div>
+            ) : null}
+          </>
         ) : (
           <>
             <div className="pm-console-top">
@@ -135,7 +143,7 @@ export function CasinoConsole({
               ) : (
                 <span />
               )}
-              {available != null ? (
+              {showWallet ? (
                 <div className="pm-console-wallet" data-player-wallet="true">
                   <small>AVAILABLE</small>
                   <strong>{available}</strong>
@@ -176,33 +184,33 @@ export function CasinoConsole({
           </>
         )}
         {children}
-        {hasTray ? (
-          <div className={`pm-console-tray${trayVisible ? "" : " is-reserved"}`} data-jeton-tray="true">
-            {trayVisible
-              ? CHIPS.map((value) => {
-                  const selected = selectedChip === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
-                      disabled={!trayEnabled}
-                      aria-label={`Add ${value} jetons`}
-                      aria-pressed={selected}
-                      onClick={() => onChip?.(value)}
-                    >
-                      <CasinoJeton
-                        denomination={value}
-                        size={variant === "blackjack" ? "xl" : "lg"}
-                        selected={selected}
-                        disabled={!trayEnabled}
-                        label={value}
-                      />
-                    </button>
-                  );
-                })
-              : null}
+        {trayVisible ? (
+          <div className="pm-console-tray" data-jeton-tray="true">
+            {CHIPS.map((value) => {
+              const selected = selectedChip === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
+                  disabled={!trayEnabled}
+                  aria-label={`Add ${value} jetons`}
+                  aria-pressed={selected}
+                  onClick={() => onChip?.(value)}
+                >
+                  <CasinoJeton
+                    denomination={value}
+                    size={variant === "blackjack" ? "xl" : "lg"}
+                    selected={selected}
+                    disabled={!trayEnabled}
+                    label={value}
+                  />
+                </button>
+              );
+            })}
           </div>
+        ) : hasTray ? (
+          <div className="pm-console-tray is-reserved" data-jeton-tray="true" aria-hidden="true" />
         ) : null}
       </div>
     </footer>
