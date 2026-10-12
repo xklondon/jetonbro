@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Premium BJ doubleBox/splitBox + Change Game chrome + payout rail (JetBro II Web)
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `1593ea0` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`a27e2c03-ec62-47c4-ac98-2d9eeaccec70`, SUCCESS).
+- Player: restore proven `doubleBox` / `splitBox` (legacy `double`/`split` stay UNKNOWN_COMMAND). Dealer: Betting + Payout Change Game and Owner/Dealer chrome → existing `switchGame` blinds/seat-order sheet; Payout Add Player; Change Game blocked until boxes settled.
+- Payout rail: WIN → LOST → BLACKJACK → DRAW, translucent large icons (BJ + Poker award styling). Dead duplicate screens removed + guardrails.
+- Gate: focused Premium Vitest + guardrails + production build + live `/tables` acceptance. `/api/health` 200 database connected. Not merged or tagged.
+
 ### Premium clay jetons + compact Blackjack dock (JetBro II Web)
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `2fe9376` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`77c558fc-0e9f-40f9-824c-6c8db648ceb3`, SUCCESS).

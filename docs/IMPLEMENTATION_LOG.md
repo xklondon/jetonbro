@@ -1,3 +1,13 @@
+# Premium BJ doubleBox/splitBox + Change Game chrome + payout rail
+
+Date: 2026-10-12
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `1593ea0`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `a27e2c03-ec62-47c4-ac98-2d9eeaccec70` SUCCESS.
+- `doubleBox`/`splitBox` restored; Change Game + Owner chrome; payout WIN/LOST/BLACKJACK/DRAW translucent rail.
+- `/api/health` 200 connected; `/api/dev/session` 404. Not merged. Not tagged. Other Railway projects untouched.
+
+---
 # Premium clay jetons + compact Blackjack dock
 
 Date: 2026-10-12
