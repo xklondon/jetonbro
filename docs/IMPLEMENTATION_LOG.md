@@ -1,3 +1,13 @@
+# Premium clay jetons + compact Blackjack dock
+
+Date: 2026-10-12
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `2fe9376`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `77c558fc-0e9f-40f9-824c-6c8db648ceb3` SUCCESS.
+- Clay jetons + compact player dock; dealer without hollow tray well.
+- `/api/health` 200 connected. Not merged. Not tagged. Other Railway projects untouched.
+
+---
 # Premium BJ payout rail + ADD BOX / chip retract
 
 Date: 2026-10-11

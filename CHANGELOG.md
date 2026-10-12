@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium clay jetons + compact Blackjack dock (JetBro II Web)
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `2fe9376` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`77c558fc-0e9f-40f9-824c-6c8db648ceb3`, SUCCESS).
+- Layered clay `CasinoJeton` (lip, rim spots, inset, ring, shine); compact player dock with AVAILABLE tied to tray; dealer/setup without empty reserved tray.
+- Gate: focused Premium Vitest + guardrails + production build. Poker untouched. Not merged or tagged.
+
 ### Premium BJ payout rail + ADD BOX / chip retract (JetBro II Web)
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `6939791` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`e9c55e0d-1700-4e0d-9bbd-127e7b859b85`, SUCCESS).
