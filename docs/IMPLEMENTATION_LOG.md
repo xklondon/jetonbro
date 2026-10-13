@@ -1,3 +1,13 @@
+# Premium BJ box frame + Poker CasinoJeton tray restore
+
+Date: 2026-10-13
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `7f6bee9`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `b2418c1f-b561-4665-bdf1-5d19172393b0` SUCCESS.
+- Complete smaller BJ box frame; glass payout icons; Poker CasinoJeton seats/tray without hollow dock.
+- `/api/health` 200 connected; `/api/dev/session` 404. Not merged. Not tagged. Other Railway projects untouched.
+
+---
 # Premium BJ doubleBox/splitBox + Change Game chrome + payout rail
 
 Date: 2026-10-12

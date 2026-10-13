@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Premium BJ box frame + Poker CasinoJeton tray restore (JetBro II Web)
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `7f6bee9` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`b2418c1f-b561-4665-bdf1-5d19172393b0`, SUCCESS).
+- BJ: smaller complete rounded box frame (fix clipped vertical-rail borders). Payout: glass icon-led WIN → LOST → BLACKJACK → DRAW.
+- Poker: real `CasinoJeton` stacks/wagers; compact seats; no hollow reserved tray; AVAILABLE once on integrated dock.
+- Gate: focused Premium Vitest + guardrails + production build + visual restore Playwright. `/api/health` 200 database connected. Not merged or tagged.
+
 ### Premium BJ doubleBox/splitBox + Change Game chrome + payout rail (JetBro II Web)
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `1593ea0` deployed to Railway project `tranquil-unity` / production / service JetBro II Web only (`a27e2c03-ec62-47c4-ac98-2d9eeaccec70`, SUCCESS).
