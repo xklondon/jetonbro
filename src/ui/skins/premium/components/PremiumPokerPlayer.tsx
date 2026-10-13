@@ -28,22 +28,22 @@ export function PremiumPokerPlayer({
   const fold = view.legalActions.find((a) => a.type === "FOLD");
   const raise = view.legalActions.find((a) => a.type === "RAISE" || a.type === "BET");
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
-  const hasJetons = view.available.label !== "0";
-  const showTray = !setup && hasJetons;
+  /** Compact integrated tray during live streets — CasinoJeton row + AVAILABLE once. */
+  const showTray = !setup;
   const trayEnabled = Boolean(showTray && (raise || primary));
 
   return (
     <PremiumShell
       title="JETONBRO"
-      balance={view.available.label}
       board="POKER_PLAYER"
       dock={
         <CasinoConsole
+          variant={setup ? "setup" : "default"}
           notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           toCall={!setup && view.toCall.label !== "0" ? view.toCall.label : null}
           available={view.available.label}
           showTray={showTray}
-          reserveTray={!setup}
+          reserveTray={false}
           trayEnabled={trayEnabled}
           selectedChip={selectedChip}
           onChip={(value) => {

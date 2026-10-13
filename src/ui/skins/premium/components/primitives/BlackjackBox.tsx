@@ -77,13 +77,14 @@ export function BlackjackBox({
           <CasinoChipStack
             millis={box.bet.millis}
             label={stake}
-            size="xl"
+            size="lg"
+            max={4}
             onRetractChip={result ? undefined : onRetractChip}
             retractBusy={retractBusy}
           />
           {insurance ? (
             <div className="pm-bj-ins-stake" data-insurance-stake="true">
-              <CasinoChipStack millis={insurance.millis} label={insurance.label} size="md" max={3} />
+              <CasinoChipStack millis={insurance.millis} label={insurance.label} size="sm" max={2} />
               <small>INS {insurance.label}</small>
             </div>
           ) : null}

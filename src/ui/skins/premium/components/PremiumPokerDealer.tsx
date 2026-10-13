@@ -116,7 +116,7 @@ export function PremiumPokerDealer({
           }
           available={ownerSeated && view.available.label !== "0" ? view.available.label : undefined}
           showTray={false}
-          reserveTray={!setup && !showdown}
+          reserveTray={false}
           primary={primary}
           secondary={
             showAdd

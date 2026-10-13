@@ -2,15 +2,13 @@
 
 import type { CSSProperties } from "react";
 import type { PokerSeatView } from "@/application/queries/views";
+import { CasinoChipStack } from "./CasinoJeton";
 
-/** Compact physical stack derived from seat available label — display only. */
-function StartingStack({ label }: { label: string }) {
-  const n = Math.max(1, Math.min(4, Math.ceil(Number(label) / 25) || 1));
+/** Starting stack — real CasinoJeton denominations (not blank green pills). */
+function StartingStack({ millis, label }: { millis: string; label: string }) {
   return (
     <div className="pm-poker-stack" data-starting-stack="true" aria-label={`${label} jetons`}>
-      {Array.from({ length: n }, (_, i) => (
-        <span key={i} className="pm-poker-stack-chip" style={{ zIndex: n - i }} />
-      ))}
+      <CasinoChipStack millis={millis} label={label} size="md" max={4} />
       <strong>{label}</strong>
     </div>
   );
@@ -35,6 +33,7 @@ export function PokerSeat({
   ]
     .filter(Boolean)
     .join(" · ");
+  const hasWager = seat.streetContribution.label !== "0";
 
   return (
     <>
@@ -45,7 +44,9 @@ export function PokerSeat({
         data-seat-edge="overlay"
         data-viewer-seat={showStartingStack ? "true" : undefined}
       >
-        {showStartingStack ? <StartingStack label={seat.available.label} /> : null}
+        {showStartingStack ? (
+          <StartingStack millis={seat.available.millis} label={seat.available.label} />
+        ) : null}
         <div className="pm-poker-seat-medal" aria-hidden="true">
           {initial}
         </div>
@@ -58,9 +59,15 @@ export function PokerSeat({
           ) : null}
         </div>
       </div>
-      {seat.streetContribution.label !== "0" && wagerStyle ? (
-        <div className="pm-poker-wager" style={wagerStyle}>
-          {seat.streetContribution.label}
+      {hasWager && wagerStyle ? (
+        <div className="pm-poker-wager" style={wagerStyle} data-street-wager="true">
+          <CasinoChipStack
+            millis={seat.streetContribution.millis}
+            label={seat.streetContribution.label}
+            size="sm"
+            max={3}
+          />
+          <strong>{seat.streetContribution.label}</strong>
         </div>
       ) : null}
     </>
