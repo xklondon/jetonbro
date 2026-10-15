@@ -1,3 +1,9 @@
+# Premium BJ insurance settle UI + player-area cleanup
+
+- Branch `fix/blackjack-stable-anatomy-v1`. Premium dealer payout → `settleInsurance`; box INS marker (pending vs settled); console AVAILABLE/tray separation; player header balance removed when tray shows AVAILABLE.
+- Repro: unresolved insurance blocks `startNextRound` with `NEXT_ROUND_BLOCKED`; existing `settleInsurance` clears it. No new settlement logic.
+- Release target: `jetonbro-lite-staging` / `staging` / `jetonbro-lite`. Join-order verified both ways. Temp repro scripts excluded from commit.
+
 # Premium BJ box frame + Poker CasinoJeton tray restore
 
 Date: 2026-10-13

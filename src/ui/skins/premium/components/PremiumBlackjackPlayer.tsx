@@ -86,7 +86,6 @@ export function PremiumBlackjackPlayer({
   return (
     <PremiumShell
       title="JETONBRO"
-      balance={view.available.label}
       board="BLACKJACK_PLAYER"
       dock={
         <CasinoConsole

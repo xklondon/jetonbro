@@ -74,4 +74,35 @@ describe("Premium BlackjackBox chip breakdown", () => {
     expect(html).toContain("Retract 25 jetons");
     expect(html).toContain("pm-jeton-retract");
   });
+
+  it("marks placed insurance as pending without implying it was paid", () => {
+    const html = renderToStaticMarkup(
+      createElement(BlackjackBox, {
+        box: {
+          id: "b1",
+          playerId: "p1",
+          playerName: "Casey",
+          label: "Box 1",
+          boxNumber: 1,
+          bet: money("25"),
+          originalStake: money("25"),
+          isDoubled: false,
+          isSplit: false,
+          insurance: money("12.5"),
+          insuranceMax: money("12.5"),
+          insuranceResult: null,
+          outcome: null,
+          returned: null,
+          payoutActions: [],
+        },
+      }),
+    );
+    expect(html).toContain('data-insurance-stake="true"');
+    expect(html).toContain('data-insurance-pending="true"');
+    expect(html).toContain("INS · placed");
+    expect(html).toContain("pm-bj-ins-marker");
+    expect(html).not.toContain("INS WON");
+    expect(html).not.toContain("INS LOST");
+    expect(html).toContain('data-main-amount="25"');
+  });
 });

@@ -179,7 +179,9 @@ export function PremiumBlackjackDealer({
       <BlackjackPayoutOverlay
         boxes={boxes}
         enabled={controls.showPayoutResults}
+        insuranceSettleEnabled={controls.showInsuranceSettle}
         onSettle={(boxId, outcome: BoxOutcome) => void onCommand("settleBox", { boxId, outcome })}
+        onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
       />
     );
   } else if (play && staged.length > 0) {

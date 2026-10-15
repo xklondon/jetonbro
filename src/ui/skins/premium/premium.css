@@ -450,8 +450,72 @@
   justify-items: center;
   gap: 2px;
   margin: 2px 0 4px;
+  width: 100%;
 }
 
+/* Main stack owns the center; insurance sits off to the side and never displaces it. */
+[data-skin="premium"] .pm-bj-main-stack {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  min-height: 62px;
+}
+
+[data-skin="premium"] .pm-bj-ins-marker {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  width: 28px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+[data-skin="premium"] .pm-bj-ins-marker .pm-jeton {
+  width: 22px;
+  height: 22px;
+  font-size: 7px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+}
+
+[data-skin="premium"] .pm-bj-ins-marker small {
+  font: 700 6px/1 var(--pm-sans);
+  letter-spacing: 0.04em;
+  color: rgba(212, 184, 130, 0.95);
+  white-space: nowrap;
+}
+
+[data-skin="premium"] .pm-bj-ins-marker.is-settled {
+  top: 4px;
+  right: 4px;
+  width: auto;
+  max-width: 48px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  background: rgba(8, 18, 14, 0.88);
+  border: 1px solid rgba(212, 184, 130, 0.45);
+}
+
+[data-skin="premium"] .pm-bj-ins-marker.is-settled small {
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  color: var(--pm-gold-hi);
+}
+
+[data-skin="premium"] .pm-bj-ins-caption {
+  font: 600 7px/1.1 var(--pm-sans);
+  letter-spacing: 0.04em;
+  color: rgba(212, 184, 130, 0.85);
+  max-width: 100%;
+  padding: 0 2px;
+}
+
+/* Legacy class kept for older markup snapshots */
 [data-skin="premium"] .pm-bj-ins-stake {
   display: grid;
   justify-items: center;
@@ -977,6 +1041,46 @@
   border-color: rgba(42, 154, 104, 0.7);
 }
 
+[data-skin="premium"] .pm-bj-ins-status {
+  font: 600 10px/1.2 var(--pm-sans);
+  letter-spacing: 0.04em;
+  color: rgba(212, 184, 130, 0.9);
+}
+
+[data-skin="premium"] .pm-bj-ins-status.is-pending {
+  color: rgba(240, 215, 138, 0.92);
+}
+
+[data-skin="premium"] .pm-bj-ins-status.is-settled {
+  color: var(--pm-gold-hi);
+}
+
+[data-skin="premium"] .pm-bj-ins-settle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+[data-skin="premium"] .pm-bj-ins-btn {
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 184, 130, 0.5);
+  background: rgba(8, 18, 14, 0.65);
+  color: var(--pm-ivory);
+  font: 700 11px/1 var(--pm-sans);
+  letter-spacing: 0.08em;
+}
+
+[data-skin="premium"] .pm-bj-ins-btn.is-won {
+  border-color: rgba(70, 180, 120, 0.65);
+  color: #9fe0bf;
+}
+
+[data-skin="premium"] .pm-bj-ins-btn.is-lost {
+  border-color: rgba(200, 90, 100, 0.65);
+  color: #f0b0b8;
+}
+
 
 /* ===== Poker — fixed stage geometry ===== */
 [data-skin="premium"] .pm-poker-table {
@@ -1240,6 +1344,7 @@
 [data-skin="premium"] .pm-console-body {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 6px;
   height: calc(var(--premium-console-height) - 8px);
@@ -1255,6 +1360,8 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     inset 0 -2px 8px rgba(0, 0, 0, 0.45),
     0 10px 24px rgba(0, 0, 0, 0.45);
+  /* Keep notice out of the action/AVAILABLE/tray row track so it cannot overlap chips. */
+  align-content: stretch;
 }
 
 [data-skin="premium"] .pm-console-body.no-tray,
@@ -1282,15 +1389,15 @@
 }
 
 
-/* Blackjack console — compact actions, AVAILABLE tied to tray, chips as focus */
+/* Blackjack console — actions | AVAILABLE | tray as separate non-overlapping rows */
 [data-skin="premium"] .pm-console.is-bj {
   margin-top: -14px;
   padding: 0 6px var(--premium-safe-area);
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body {
-  grid-template-rows: auto auto minmax(68px, 1fr);
-  gap: 5px;
+  grid-template-rows: auto auto minmax(64px, 1fr);
+  gap: 6px;
   padding: 10px 10px 6px;
   border-radius: 16px 16px 12px 12px;
   background:
@@ -1298,8 +1405,24 @@
     linear-gradient(180deg, #1a1612 0%, #0d0b09 55%, #050403 100%);
 }
 
+/* Notice overlays the top edge; it must not consume a grid row and crush AVAILABLE into the tray. */
+[data-skin="premium"] .pm-console.is-bj .pm-console-body > .pm-console-notice {
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  right: 10px;
+  z-index: 4;
+  margin: 0;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-body:has(> .pm-console-notice) {
+  padding-top: 26px;
+}
+
 [data-skin="premium"] .pm-console.is-bj.no-visible-tray .pm-console-body {
-  grid-template-rows: auto;
+  /* actions + AVAILABLE stay on separate rows even without the chip tray */
+  grid-template-rows: auto auto;
   align-content: center;
   padding: 10px 12px;
   border-radius: 14px 14px 10px 10px;
@@ -1307,6 +1430,10 @@
     radial-gradient(ellipse 85% 40% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 55%),
     linear-gradient(180deg, #221910 0%, #120e0a 100%);
   border-color: rgba(212, 184, 130, 0.48);
+}
+
+[data-skin="premium"] .pm-console.is-bj.no-visible-tray .pm-console-body:not(:has(.pm-console-available)) {
+  grid-template-rows: auto;
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body::before {
@@ -1361,7 +1488,22 @@
   align-items: center;
   gap: 10px;
   min-height: 0;
-  padding: 0 4px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  isolation: isolate;
+  z-index: 1;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-action-row,
+[data-skin="premium"] .pm-console.is-bj .pm-console-available,
+[data-skin="premium"] .pm-console.is-bj .pm-console-tray {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-available-copy strong {
+  font-size: 18px;
 }
 
 [data-skin="premium"] .pm-console-available-rule {

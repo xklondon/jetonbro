@@ -202,4 +202,50 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(source).toContain("SWITCH TO TEXAS HOLD’EM");
     expect(source).toContain('onCommand("assignBank"');
   });
+
+  it("wires settleInsurance through the payout overlay when insurance is unresolved", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumBlackjackDealer, {
+        view: bank({
+          phase: "PAYOUT",
+          primaryAction: { id: "nextHand", label: "START BETTING", enabled: false },
+          actions: {
+            ...bank().actions,
+            dealCards: false,
+            settleBoxes: true,
+            settleInsurance: true,
+            nextHand: false,
+            addPlayer: false,
+          },
+          boxes: [
+            {
+              ...bank().boxes[0]!,
+              outcome: "LOST",
+              insurance: money("12.5"),
+              insuranceResult: null,
+            },
+          ],
+          insurance: { window: "CLOSED", total: money("12.5"), count: 1, resolution: null },
+          insuranceSettleActions: [
+            { id: "DEALER_BLACKJACK", label: "INSURANCE WON" },
+            { id: "NO_DEALER_BLACKJACK", label: "INSURANCE LOST" },
+          ],
+        }),
+        members,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-insurance-action="won"');
+    expect(html).toContain('data-insurance-action="lost"');
+    expect(html).toContain("INS PLACED");
+    expect(html).toContain('data-insurance-pending="true"');
+  });
+
+  it("uses the existing settleInsurance command path", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const source = readFileSync(join(process.cwd(), "src/ui/skins/premium/components/PremiumBlackjackDealer.tsx"), "utf8");
+    expect(source).toContain('onCommand("settleInsurance"');
+    expect(source).toContain("resolution");
+  });
 });

@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import type { BoxView } from "@/application/queries/views";
-import { CasinoChipStack } from "./CasinoJeton";
+import { CasinoChipStack, CasinoJeton } from "./CasinoJeton";
 
 /** @deprecated Prefer CasinoChipStack + domain millis; kept for focused unit coverage. */
 export function chipBreakdown(amountLabel: string): number[] {
@@ -18,6 +18,28 @@ export function chipBreakdown(amountLabel: string): number[] {
   }
   if (remaining > 0) chips.push(remaining);
   return chips;
+}
+
+function InsuranceMarker({
+  label,
+  result,
+}: {
+  label: string;
+  result?: string | null;
+}) {
+  if (result) {
+    return (
+      <span className="pm-bj-ins-marker is-settled" data-insurance-stake="true" data-insurance-result={result}>
+        <small>{result.startsWith("INSURANCE WON") ? "INS WON" : "INS LOST"}</small>
+      </span>
+    );
+  }
+  return (
+    <span className="pm-bj-ins-marker is-pending" data-insurance-stake="true" data-insurance-pending="true">
+      <CasinoJeton denomination={label} size="sm" label={label} />
+      <small>INS · placed</small>
+    </span>
+  );
 }
 
 export function BlackjackBox({
@@ -44,7 +66,7 @@ export function BlackjackBox({
   const hasStake = stake !== "0";
   const result = box.outcome;
   const insurance = box.insurance && box.insurance.label !== "0" ? box.insurance : null;
-  const showInsure = Boolean(onInsurance) && !result;
+  const showInsure = Boolean(onInsurance) && !result && !insurance && !box.insuranceResult;
 
   function onKey(event: KeyboardEvent<HTMLDivElement>) {
     if (!onSelect) return;
@@ -74,20 +96,19 @@ export function BlackjackBox({
       <span className="pm-bj-box-label">BOX {box.boxNumber}</span>
       {hasStake ? (
         <div className="pm-bj-box-stakes">
-          <CasinoChipStack
-            millis={box.bet.millis}
-            label={stake}
-            size="lg"
-            max={4}
-            onRetractChip={result ? undefined : onRetractChip}
-            retractBusy={retractBusy}
-          />
-          {insurance ? (
-            <div className="pm-bj-ins-stake" data-insurance-stake="true">
-              <CasinoChipStack millis={insurance.millis} label={insurance.label} size="sm" max={2} />
-              <small>INS {insurance.label}</small>
-            </div>
-          ) : null}
+          <div className="pm-bj-main-stack">
+            <CasinoChipStack
+              millis={box.bet.millis}
+              label={stake}
+              size="lg"
+              max={4}
+              onRetractChip={result ? undefined : onRetractChip}
+              retractBusy={retractBusy}
+            />
+            {insurance || box.insuranceResult ? (
+              <InsuranceMarker label={insurance?.label ?? "0"} result={box.insuranceResult} />
+            ) : null}
+          </div>
         </div>
       ) : (
         <span className="pm-bj-spot" aria-hidden="true" />
@@ -103,17 +124,22 @@ export function BlackjackBox({
           data-player-action="insurance"
           data-insurance-panel="true"
           data-for-box={box.id}
-          disabled={!insuranceEnabled || Boolean(insurance)}
+          disabled={!insuranceEnabled}
           onClick={(event) => {
             event.stopPropagation();
-            if (insuranceEnabled && !insurance) onInsurance?.();
+            if (insuranceEnabled) onInsurance?.();
           }}
         >
-          {insurance ? "INS PLACED" : "INSURANCE"}
-          {!insurance && box.insuranceMax?.label && box.insuranceMax.label !== "0" ? (
+          INSURANCE
+          {box.insuranceMax?.label && box.insuranceMax.label !== "0" ? (
             <small>MAX {box.insuranceMax.label}</small>
           ) : null}
         </button>
+      ) : null}
+      {insurance && !box.insuranceResult && !showInsure ? (
+        <span className="pm-bj-ins-caption" data-insurance-pending="true">
+          Insurance placed · awaiting settlement
+        </span>
       ) : null}
       {box.hand?.ranks?.length ? (
         <div className="pm-bj-cards">

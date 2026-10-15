@@ -101,4 +101,46 @@ describe("Premium Blackjack payout overlay", () => {
     expect(html).toContain("is-settled");
     expect(html).not.toContain('data-payout-action="true"');
   });
+
+  it("shows pending insurance status and settle actions when insurance is unresolved", () => {
+    const insured = {
+      ...box("b1", "p1", "Casey", 1, "50", "LOST"),
+      insurance: money("25"),
+      insuranceResult: null as string | null,
+    };
+    const html = renderToStaticMarkup(
+      createElement(BlackjackPayoutOverlay, {
+        boxes: [insured],
+        enabled: true,
+        insuranceSettleEnabled: true,
+        onSettleInsurance: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-insurance-pending="true"');
+    expect(html).toContain("INS PLACED");
+    expect(html).toContain("pending");
+    expect(html).toContain('data-insurance-action="won"');
+    expect(html).toContain('data-insurance-action="lost"');
+    expect(html).toContain("INS WON");
+    expect(html).toContain("INS LOST");
+  });
+
+  it("shows settled insurance result without implying payout while only placed", () => {
+    const settled = {
+      ...box("b1", "p1", "Casey", 1, "50", "LOST"),
+      insurance: money("25"),
+      insuranceResult: "INSURANCE LOST",
+    };
+    const html = renderToStaticMarkup(
+      createElement(BlackjackPayoutOverlay, {
+        boxes: [settled],
+        enabled: true,
+        insuranceSettleEnabled: true,
+        onSettleInsurance: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-insurance-result="INSURANCE LOST"');
+    expect(html).not.toContain('data-insurance-action="won"');
+    expect(html).not.toContain("INS PLACED");
+  });
 });

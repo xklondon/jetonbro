@@ -21,6 +21,8 @@ const CLASS: Record<BoxOutcome, string> = {
   WON: "is-win",
 };
 
+type InsuranceResolution = "DEALER_BLACKJACK" | "NO_DEALER_BLACKJACK";
+
 function OutcomeIcon({ outcome }: { outcome: BoxOutcome }) {
   if (outcome === "LOST") {
     return (
@@ -68,18 +70,43 @@ function OutcomeIcon({ outcome }: { outcome: BoxOutcome }) {
   );
 }
 
+function InsuranceStatus({ box }: { box: BoxView }) {
+  if (box.insuranceResult) {
+    return (
+      <span className="pm-bj-ins-status is-settled" data-insurance-result={box.insuranceResult}>
+        {box.insuranceResult}
+      </span>
+    );
+  }
+  if (box.insurance && box.insurance.label !== "0") {
+    return (
+      <span className="pm-bj-ins-status is-pending" data-insurance-pending="true">
+        INS PLACED · {box.insurance.label} · pending
+      </span>
+    );
+  }
+  return null;
+}
+
 function BoxSettleRow({
   box,
   enabled,
+  insuranceSettleEnabled,
   onSettle,
+  onSettleInsurance,
 }: {
   box: BoxView;
   enabled?: boolean;
+  insuranceSettleEnabled?: boolean;
   onSettle?: (outcome: BoxOutcome) => void;
+  onSettleInsurance?: (resolution: InsuranceResolution) => void;
 }) {
   const [pending, setPending] = useState<BoxOutcome | null>(null);
   const settled = box.outcome ?? pending;
   const unresolved = Boolean(enabled && !box.outcome && onSettle);
+  const showInsSettle = Boolean(
+    insuranceSettleEnabled && box.insurance && box.insurance.label !== "0" && !box.insuranceResult && onSettleInsurance,
+  );
 
   return (
     <div
@@ -96,6 +123,7 @@ function BoxSettleRow({
           {box.isDoubled ? " · 2×" : ""}
           {box.isSplit ? " · SPLIT" : ""}
         </span>
+        <InsuranceStatus box={box} />
       </div>
       {settled ? (
         <div className={`pm-bj-payout-result ${CLASS[settled]}`} data-box-result={settled}>
@@ -126,6 +154,26 @@ function BoxSettleRow({
           ))}
         </div>
       )}
+      {showInsSettle ? (
+        <div className="pm-bj-ins-settle" role="group" aria-label={`Settle insurance · Box ${box.boxNumber}`}>
+          <button
+            type="button"
+            className="pm-bj-ins-btn is-won"
+            data-insurance-action="won"
+            onClick={() => onSettleInsurance?.("DEALER_BLACKJACK")}
+          >
+            INS WON
+          </button>
+          <button
+            type="button"
+            className="pm-bj-ins-btn is-lost"
+            data-insurance-action="lost"
+            onClick={() => onSettleInsurance?.("NO_DEALER_BLACKJACK")}
+          >
+            INS LOST
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -134,11 +182,15 @@ function BoxSettleRow({
 export function BlackjackPayoutOverlay({
   boxes,
   enabled,
+  insuranceSettleEnabled,
   onSettle,
+  onSettleInsurance,
 }: {
   boxes: BoxView[];
   enabled?: boolean;
+  insuranceSettleEnabled?: boolean;
   onSettle?: (boxId: string, outcome: BoxOutcome) => void;
+  onSettleInsurance?: (resolution: InsuranceResolution) => void;
 }) {
   const groups = useMemo(() => {
     const map = new Map<string, { playerId: string; playerName: string; boxes: BoxView[] }>();
@@ -170,7 +222,9 @@ export function BlackjackPayoutOverlay({
               key={box.id}
               box={box}
               enabled={enabled}
+              insuranceSettleEnabled={insuranceSettleEnabled}
               onSettle={onSettle ? (outcome) => onSettle(box.id, outcome) : undefined}
+              onSettleInsurance={onSettleInsurance}
             />
           ))}
         </section>
