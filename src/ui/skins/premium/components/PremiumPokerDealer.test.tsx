@@ -125,7 +125,7 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(source).toContain('onCommand("advancePokerStreet")');
     expect(source).toContain('variant={compactDock ? "setup" : "default"}');
     expect(source).toContain("ownerSeated");
-    expect(source).toContain("raiseTo?.label");
+    expect(source).toContain("pokerTrayChipAct");
     expect(source).toContain("compactDock");
   });
 
@@ -180,15 +180,20 @@ describe("PremiumPokerDealer setup wiring", () => {
         onCommand: () => undefined,
       }),
     );
+    expect(html).toContain('data-table-board="POKER_DEALER"');
     expect(html).toContain('data-owner-badge="true"');
     expect(html).toContain('data-dealer-badge="true"');
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain("has-visible-tray");
+    expect(html).not.toContain("no-visible-tray");
     expect(html).toContain("AVAILABLE");
     expect(html.match(/AVAILABLE/g)?.length).toBe(1);
+    expect(html.match(/data-casino-jeton="true"/g)?.length).toBeGreaterThanOrEqual(5);
+    expect(html).toContain('aria-label="Add 5 jetons"');
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 1");
     expect(html).toContain('data-pot-chips="true"');
+    expect(html).toContain('data-pot-amount="3"');
     expect(html).not.toContain('data-street-wager="true"');
   });
 
@@ -209,15 +214,20 @@ describe("PremiumPokerDealer setup wiring", () => {
       }),
     );
     expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain("has-visible-tray");
     expect(html).toContain("TURN · K");
     expect(html).not.toContain(">FOLD<");
     expect(html).toContain("AVAILABLE");
+    expect(html.match(/Add 5 jetons"/g)?.length).toBe(1);
+    expect(html).toMatch(/disabled="" aria-label="Add 5 jetons"/);
   });
 
-  it("wires seated dealer raises through pokerAct", () => {
+  it("never hardcodes showTray false (screenshot empty-dock regression)", () => {
     const source = readFileSync(join(__dirname, "PremiumPokerDealer.tsx"), "utf8");
     expect(source).toContain('onCommand("pokerAct"');
     expect(source).toContain("visiblePokerLegalActions");
-    expect(source).toContain("showTray");
+    expect(source).toContain("pokerTrayChipAct");
+    expect(source).toContain("showTray={showTray}");
+    expect(source).not.toContain("showTray={false}");
   });
 });

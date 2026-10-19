@@ -1,5 +1,16 @@
 import { describe, expect, test } from "vitest";
-import { pokerActorActions, pokerActorLayout, pokerComposeBounds, pokerComposeSeed, pokerControlIds, pokerControls, pokerTrayEnabled, pokerTurnLabel, visiblePokerLegalActions } from "./poker-controls";
+import {
+  pokerActorActions,
+  pokerActorLayout,
+  pokerComposeBounds,
+  pokerComposeSeed,
+  pokerControlIds,
+  pokerControls,
+  pokerTrayChipAct,
+  pokerTrayEnabled,
+  pokerTurnLabel,
+  visiblePokerLegalActions,
+} from "./poker-controls";
 import type { PokerLegalActionView, PokerSeatView, PokerTableView } from "./views";
 
 const money = (label: string, millis = `${Number(label) * 1000}`) => ({ millis, label });
@@ -111,6 +122,34 @@ test("actor controls keep CALL available and open BET/RAISE separately", () => {
     convention: "Raise to",
     min: "20",
   });
+});
+
+test("tray chip RAISE uses raise-to minimum, never raw denomination below it", () => {
+  const acting = view({
+    viewerId: "owner",
+    currentActorId: "owner",
+    toCall: money("10"),
+    available: money("100"),
+    legalActions: actorLegal,
+    seats: [
+      seat({ userId: "owner", isActor: true, streetContribution: money("0", "0") }),
+      seat({ userId: "sam", isBigBlind: true, streetContribution: money("10") }),
+    ],
+  });
+  expect(pokerTrayChipAct(acting, "5")).toEqual({ type: "RAISE", amount: "20" });
+  expect(pokerTrayChipAct(acting, "25")).toEqual({ type: "RAISE", amount: "25" });
+  expect(pokerTrayChipAct(acting, "20")).toEqual({ type: "RAISE", amount: "20" });
+
+  const waiting = view({
+    viewerId: "sam",
+    currentActorId: "owner",
+    legalActions: [],
+    seats: [
+      seat({ userId: "owner", isActor: true }),
+      seat({ userId: "sam", isBigBlind: true }),
+    ],
+  });
+  expect(pokerTrayChipAct(waiting, "5")).toBeNull();
 });
 
 test("folded and all-in players get no actor controls or tray", () => {

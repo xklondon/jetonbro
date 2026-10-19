@@ -79,6 +79,37 @@ export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "av
   return view.legalActions.some((action) => action.type === "BET" || action.type === "RAISE");
 }
 
+/**
+ * Resolve a tray chip tap to a legal pokerAct BET/RAISE payload.
+ * RAISE amount is always raise-to (never the raw chip denomination when below the legal minimum).
+ * Returns null when the viewer cannot BET/RAISE (waiting / folded / no legal action).
+ */
+export function pokerTrayChipAct(
+  view: PokerTableView,
+  chipLabel: string,
+): { type: "BET" | "RAISE"; amount: string } | null {
+  const legal = visiblePokerLegalActions(view);
+  const raise = legal.find((action) => action.type === "RAISE");
+  const bet = legal.find((action) => action.type === "BET");
+  if (raise) {
+    const minLabel = raise.raiseTo?.label ?? pokerComposeBounds(view, "RAISE").min;
+    const chip = Number(chipLabel);
+    const min = Number(minLabel);
+    const amount =
+      Number.isFinite(chip) && Number.isFinite(min) ? String(Math.max(chip, min)) : minLabel;
+    return { type: "RAISE", amount };
+  }
+  if (bet) {
+    const minLabel = bet.amount.label || pokerComposeBounds(view, "BET").min;
+    const chip = Number(chipLabel);
+    const min = Number(minLabel);
+    const amount =
+      Number.isFinite(chip) && Number.isFinite(min) ? String(Math.max(chip, min)) : minLabel;
+    return { type: "BET", amount };
+  }
+  return null;
+}
+
 export function pokerComposeSeed(
   view: Pick<PokerTableView, "legalActions" | "bigBlind" | "available" | "seats" | "viewerId">,
   kind: PokerComposeKind,

@@ -63,14 +63,9 @@
   --premium-console-height: 9dvh;
 }
 
+/* Dealer live default matches player tray well so chips are never clipped to AVAILABLE-only. */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] {
   --premium-header-height: 7dvh;
-  --premium-table-height: 83dvh;
-  --premium-console-height: 10dvh;
-}
-
-/* Seated dealer needs the same compact tray well as the player (chips + actions). */
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.has-visible-tray) {
   --premium-table-height: 71dvh;
   --premium-console-height: 22dvh;
 }

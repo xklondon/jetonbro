@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   pokerActorLayout,
   pokerControls,
+  pokerTrayChipAct,
   pokerTrayEnabled,
   visiblePokerLegalActions,
 } from "@/application/queries/poker-controls";
@@ -62,7 +63,6 @@ export function PremiumPokerDealer({
   const seatNotice = pokerStartHandNotice(notice);
   const legal = visiblePokerLegalActions(view);
   const layout = pokerActorLayout(legal);
-  const raise = legal.find((a) => a.type === "RAISE" || a.type === "BET");
   const fold = legal.find((a) => a.type === "FOLD");
   /** Seated dealer keeps the jeton tray during live betting streets (same anatomy as player). */
   const showTray = Boolean(ownerSeated && !compactDock && !showdown);
@@ -190,15 +190,9 @@ export function PremiumPokerDealer({
           selectedChip={selectedChip}
           onChip={(value) => {
             setSelectedChip(value);
-            if (!raise) return;
-            // RAISE amount is raise-to; BET amount is the bet size. Chip denoms below the legal min are lifted.
-            const minLabel =
-              raise.type === "RAISE" ? (raise.raiseTo?.label ?? raise.amount.label) : raise.amount.label;
-            const chip = Number(value);
-            const min = Number(minLabel);
-            const amount =
-              Number.isFinite(chip) && Number.isFinite(min) ? String(Math.max(chip, min)) : minLabel;
-            void onCommand("pokerAct", { type: raise.type, amount });
+            const act = pokerTrayChipAct(view, value);
+            if (!act) return;
+            void onCommand("pokerAct", { type: act.type, amount: act.amount });
           }}
           primary={primary}
           secondary={secondary}

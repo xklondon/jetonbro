@@ -127,15 +127,14 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html).toContain("disabled");
   });
 
-  it("wires raise chips through pokerAct with raise-to minimum", async () => {
+  it("wires raise chips through pokerTrayChipAct", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const source = readFileSync(join(__dirname, "PremiumPokerPlayer.tsx"), "utf8");
     expect(source).toContain('onCommand("pokerAct"');
     expect(source).toContain("visiblePokerLegalActions");
     expect(source).toContain("pokerTrayEnabled");
-    expect(source).toContain("raiseTo?.label");
-    expect(source).toContain("Math.max(chip, min)");
+    expect(source).toContain("pokerTrayChipAct");
   });
 
   it("setup dock omits AVAILABLE (balance stays on seat)", () => {
