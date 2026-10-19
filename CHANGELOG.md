@@ -2,12 +2,12 @@
 
 ## Unreleased
 
-### Premium Poker tray / pot / setup UX finish (commit ready — staging deploy blocked)
+### Premium Poker tray / pot / setup UX finish (jetonbro-staging)
 
-- Canonical route remains `/tables/[tableId]` → `TableSession` → `POKER_DEALER` / `POKER_PLAYER` (Premium). No duplicate Poker routes.
-- GAMEFLOW root cause: chip denomination sent as `pokerAct` RAISE amount (below raise-to) → `ILLEGAL_ACTION`. Tray chips now send raise-to / lifted min. Seated dealer gets live tray + legal actions; waiting tray stays disabled with turn hint.
-- Pot: felt-integrated POT + CasinoJeton stack from committed pot; seat street-wager boxes removed. Setup/HAND_COMPLETE: no console AVAILABLE over START HAND / ADD PLAYER.
-- **jetonbro-staging deploy STOPPED (migrations):** last SUCCESS deploy `deec41d2` (2026-09-15, message `feat: create JetonBro Blackjack MVP` ≈ `5b8247e`) has only `20260915124100_init` + `20260915130000_player_account` applied. Current HEAD has **13 pending** Prisma migrations (BJ settings through fun-only stakes). Poker UI diff adds **zero** new migrations; catching up staging requires that full schema upgrade. No production / lite-staging touched.
+- Commit `cc307e4` on `fix/blackjack-stable-anatomy-v1` — dealer/player trays + raise-to; felt-integrated pot chips; no seat wager boxes; setup/HAND_COMPLETE AVAILABLE overlap fixed.
+- Target: Railway project `jetonbro-staging` / environment `staging` / service `jetonbro` only (`c5c75bd8-e279-4956-a8b6-9c360405c368`, SUCCESS). URL https://jetonbro-staging.up.railway.app
+- Pre-deploy: pg_dump backup `docs/backups/jetonbro-staging-pre-migrate-20261019-023951.sql`; `prisma migrate deploy` applied 13 pending migrations (DB was empty of users/tables). PreDeploy migrate on deploy was no-op (already applied).
+- `/api/health` `{"ok":true,"database":"connected"}`. Poker staging smoke: CALL 15→20, RAISE 20, trays/AVAILABLE/pot chips OK. No production / `jetonbro-lite-staging` touched.
 
 ### Premium BJ insurance settle UI + player-area cleanup (JetonBro Lite staging)
 

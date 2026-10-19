@@ -2,11 +2,9 @@
 
 Date: 2026-10-19
 
-- Branch `fix/blackjack-stable-anatomy-v1`. Poker-only UI commit; Blackjack frozen for this pass (no further BJ edits).
-- Route: `/tables/[tableId]` → `TableSession` / `selectTableBoard` → Premium `PokerDealer` | `PokerPlayer` → `POST /api/tables/[tableId]/commands`.
-- GAMEFLOW: RAISE with chip denom below raise-to → `409 ILLEGAL_ACTION`. Fix: chip path uses `raiseTo` / `Math.max(chip, min)`.
-- Pot felt-integrated; seat wagers removed; setup/HAND_COMPLETE AVAILABLE removed from console; seated dealer tray + actor controls.
-- **Staging deploy blocked:** project `jetonbro-staging` / env `staging` / service `jetonbro` last SUCCESS `deec41d2` (2026-09-15 MVP). `_prisma_migrations`: only `init` + `player_account`. Local tree has 13 later migrations pending. Poker UI requires none of them; deploying current HEAD would run the full catch-up via `prisma migrate deploy`. Stopped without deploy.
+- Branch `fix/blackjack-stable-anatomy-v1` at `cc307e4`.
+- Railway: `jetonbro-staging` / `staging` / `jetonbro` only — deployment `c5c75bd8-e279-4956-a8b6-9c360405c368` SUCCESS. https://jetonbro-staging.up.railway.app
+- Postgres `f47f23ae-d04a-42d9-b5d6-dba52c279e58` / volume `51a35312-5a85-4be3-8e06-2cf900902856`. Pre-migrate dump `docs/backups/jetonbro-staging-pre-migrate-20261019-023951.sql`. Applied 13 migrations (empty User/Table counts). `/api/health` connected. Poker smoke CALL/RAISE passed. Production and lite-staging untouched.
 
 ---
 # Premium BJ insurance settle UI + player-area cleanup
