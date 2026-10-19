@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  pokerActorLayout,
+  pokerControls,
+  pokerTrayEnabled,
+  visiblePokerLegalActions,
+} from "@/application/queries/poker-controls";
 import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
-import { pokerControls } from "@/application/queries/poker-controls";
 import { pokerPhaseCopy, pokerStartHandNotice } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
 import { PremiumInviteMask } from "./PremiumInviteMask";
@@ -32,16 +37,22 @@ export function PremiumPokerDealer({
   startingJetons?: string;
   emailConfigured?: boolean;
 }) {
+  const isActor = view.currentActorId === view.viewerId;
   const phaseCopy = pokerPhaseCopy({
     phase: view.phase,
     waitingCopy: view.waitingCopy,
+    isActor,
     actorName: view.currentActorName,
   });
   const setup = view.phase === "POKER_SETUP" || view.phase === "TABLE_SETUP";
+  const betweenHands = view.phase === "HAND_COMPLETE";
   const showdown = view.phase === "SHOWDOWN" && view.canAward;
+  /** Setup + between-hands use the compact action dock (no AVAILABLE / tray). */
+  const compactDock = setup || betweenHands;
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [selectedChip, setSelectedChip] = useState<string | null>("25");
   const controls = pokerControls(view);
   const startHand = controls.find((control) => control.id === "startHand");
   const nextHand = controls.find((control) => control.id === "nextHand");
@@ -49,6 +60,13 @@ export function PremiumPokerDealer({
   const ownerSeated = view.seats.some((seat) => seat.userId === view.viewerId);
   const startEnabled = Boolean(startHand?.enabled && seatedCount >= 2);
   const seatNotice = pokerStartHandNotice(notice);
+  const legal = visiblePokerLegalActions(view);
+  const layout = pokerActorLayout(legal);
+  const raise = legal.find((a) => a.type === "RAISE" || a.type === "BET");
+  const fold = legal.find((a) => a.type === "FOLD");
+  /** Seated dealer keeps the jeton tray during live betting streets (same anatomy as player). */
+  const showTray = Boolean(ownerSeated && !compactDock && !showdown);
+  const trayEnabled = Boolean(showTray && pokerTrayEnabled(view));
 
   useEffect(() => {
     if (view.phase !== "SHOWDOWN") setWinners({});
@@ -72,14 +90,45 @@ export function PremiumPokerDealer({
 
   const badges = (
     <>
-      {view.isOwner ? <span className="pm-badge">OWNER</span> : null}
-      <span className="pm-badge">DEALER</span>
+      {view.isOwner ? (
+        <span className="pm-badge" data-owner-badge="true">
+          OWNER
+        </span>
+      ) : null}
+      <span className="pm-badge" data-dealer-badge="true">
+        DEALER
+      </span>
     </>
   );
 
-  let primary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
+  /** Prefer actor controls when this dealer is the current actor; else owner street/start. */
+  let primary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
+  let secondary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
+  let tertiary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
+
   if (showdown) {
     primary = null;
+  } else if (layout.primary) {
+    primary = {
+      label: layout.primary.label,
+      onClick: () =>
+        void onCommand("pokerAct", {
+          type: layout.primary!.type,
+          amount: layout.primary!.amount.label,
+        }),
+    };
+    if (fold) {
+      secondary = {
+        label: fold.label,
+        onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
+      };
+    }
+    if (view.canDealStreet) {
+      tertiary = {
+        label: view.nextStreetLabel || "DEAL",
+        onClick: () => void onCommand("advancePokerStreet"),
+      };
+    }
   } else if (startHand) {
     primary = {
       label: "START HAND",
@@ -100,6 +149,23 @@ export function PremiumPokerDealer({
   }
 
   const showAdd = Boolean(view.canAddPlayer && (setup || view.phase === "HAND_COMPLETE"));
+  if (showAdd && !secondary) {
+    secondary = {
+      label: "ADD PLAYER",
+      onClick: () => setInviteOpen(true),
+    };
+  } else if (showAdd && secondary && !tertiary) {
+    tertiary = {
+      label: "ADD PLAYER",
+      onClick: () => setInviteOpen(true),
+    };
+  }
+
+  const turnHint =
+    !setup && !showdown && phaseCopy.instruction
+      ? phaseCopy.instruction
+      : null;
+  const dockNotice = seatNotice ?? notice ?? turnHint;
 
   return (
     <PremiumShell
@@ -108,24 +174,35 @@ export function PremiumPokerDealer({
       board="POKER_DEALER"
       dock={
         <CasinoConsole
-          variant={setup ? "setup" : "default"}
+          variant={compactDock ? "setup" : "default"}
           notice={
-            seatNotice || notice ? (
-              <div className="pm-console-notice">{seatNotice ?? notice}</div>
+            dockNotice ? (
+              <div className="pm-console-notice" data-poker-turn-hint="true">
+                {dockNotice}
+              </div>
             ) : null
           }
-          available={ownerSeated && view.available.label !== "0" ? view.available.label : undefined}
-          showTray={false}
+          toCall={!compactDock && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
+          available={!compactDock && !showdown && ownerSeated ? view.available.label : undefined}
+          showTray={showTray}
           reserveTray={false}
+          trayEnabled={trayEnabled}
+          selectedChip={selectedChip}
+          onChip={(value) => {
+            setSelectedChip(value);
+            if (!raise) return;
+            // RAISE amount is raise-to; BET amount is the bet size. Chip denoms below the legal min are lifted.
+            const minLabel =
+              raise.type === "RAISE" ? (raise.raiseTo?.label ?? raise.amount.label) : raise.amount.label;
+            const chip = Number(value);
+            const min = Number(minLabel);
+            const amount =
+              Number.isFinite(chip) && Number.isFinite(min) ? String(Math.max(chip, min)) : minLabel;
+            void onCommand("pokerAct", { type: raise.type, amount });
+          }}
           primary={primary}
-          secondary={
-            showAdd
-              ? {
-                  label: "ADD PLAYER",
-                  onClick: () => setInviteOpen(true),
-                }
-              : null
-          }
+          secondary={secondary}
+          tertiary={tertiary}
         />
       }
     >
@@ -135,6 +212,8 @@ export function PremiumPokerDealer({
           instruction={setup ? phaseCopy.instruction : undefined}
           phase={view.phase}
           pot={view.pot.label}
+          potMillis={view.pot.millis}
+          pots={view.pots}
           seats={view.seats}
           viewerId={view.viewerId}
         />

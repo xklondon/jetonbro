@@ -6,7 +6,7 @@ import { PokerSeat } from "./PokerSeat";
 const money = (label: string) => ({ millis: `${Number(label) * 1000}`, label });
 
 describe("Premium PokerSeat", () => {
-  it("renders CasinoJeton stacks instead of blank green pills", () => {
+  it("renders compact plaque + starting CasinoJeton stack without seat wager chips", () => {
     const html = renderToStaticMarkup(
       createElement(PokerSeat, {
         seat: {
@@ -23,16 +23,18 @@ describe("Premium PokerSeat", () => {
           isActor: true,
           sittingOut: false,
           orderIndex: 0,
+          hasHoleCards: false,
+          holeCards: null,
         },
         style: { left: "50%", top: "80%" },
-        wagerStyle: { left: "50%", top: "55%" },
         showStartingStack: true,
       }),
     );
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-chip-stack="true"');
     expect(html).toContain('data-starting-stack="true"');
-    expect(html).toContain('data-street-wager="true"');
+    expect(html).toContain("D");
+    expect(html).not.toContain('data-street-wager="true"');
     expect(html).not.toContain("pm-poker-stack-chip");
   });
 });

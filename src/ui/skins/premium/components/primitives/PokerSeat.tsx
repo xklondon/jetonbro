@@ -17,12 +17,10 @@ function StartingStack({ millis, label }: { millis: string; label: string }) {
 export function PokerSeat({
   seat,
   style,
-  wagerStyle,
   showStartingStack = false,
 }: {
   seat: PokerSeatView;
   style: CSSProperties;
-  wagerStyle?: CSSProperties;
   showStartingStack?: boolean;
 }) {
   const initial = (seat.name || "?").slice(0, 1).toUpperCase();
@@ -33,43 +31,29 @@ export function PokerSeat({
   ]
     .filter(Boolean)
     .join(" · ");
-  const hasWager = seat.streetContribution.label !== "0";
 
   return (
-    <>
-      <div
-        className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}`}
-        style={style}
-        data-seat-id={seat.userId}
-        data-seat-edge="overlay"
-        data-viewer-seat={showStartingStack ? "true" : undefined}
-      >
-        {showStartingStack ? (
-          <StartingStack millis={seat.available.millis} label={seat.available.label} />
-        ) : null}
-        <div className="pm-poker-seat-medal" aria-hidden="true">
-          {initial}
-        </div>
-        <div className="pm-poker-seat-plaque">
-          <strong>{seat.name}</strong>
-          <span data-seat-balance="true">{seat.available.label}</span>
-          {markers ? <span className="pm-poker-seat-markers">{markers}</span> : null}
-          {seat.status && seat.status !== "ACTIVE" ? (
-            <span className="pm-poker-seat-status">{seat.status.replace(/_/g, " ")}</span>
-          ) : null}
-        </div>
-      </div>
-      {hasWager && wagerStyle ? (
-        <div className="pm-poker-wager" style={wagerStyle} data-street-wager="true">
-          <CasinoChipStack
-            millis={seat.streetContribution.millis}
-            label={seat.streetContribution.label}
-            size="sm"
-            max={3}
-          />
-          <strong>{seat.streetContribution.label}</strong>
-        </div>
+    <div
+      className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}`}
+      style={style}
+      data-seat-id={seat.userId}
+      data-seat-edge="overlay"
+      data-viewer-seat={showStartingStack ? "true" : undefined}
+    >
+      {showStartingStack ? (
+        <StartingStack millis={seat.available.millis} label={seat.available.label} />
       ) : null}
-    </>
+      <div className="pm-poker-seat-medal" aria-hidden="true">
+        {initial}
+      </div>
+      <div className="pm-poker-seat-plaque">
+        <strong>{seat.name}</strong>
+        <span data-seat-balance="true">{seat.available.label}</span>
+        {markers ? <span className="pm-poker-seat-markers">{markers}</span> : null}
+        {seat.status && seat.status !== "ACTIVE" ? (
+          <span className="pm-poker-seat-status">{seat.status.replace(/_/g, " ")}</span>
+        ) : null}
+      </div>
+    </div>
   );
 }

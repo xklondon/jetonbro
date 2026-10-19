@@ -1,33 +1,34 @@
 "use client";
 
-import type { PokerSeatView } from "@/application/queries/views";
+import type { PokerPotView, PokerSeatView } from "@/application/queries/views";
 import { PhaseJourney } from "./PhaseJourney";
 import { PokerPot } from "./PokerPot";
 import { PokerSeat } from "./PokerSeat";
 
 /**
  * Stable portrait seat anchors (percent of stage).
- * Centre corridor (~32–68% x, ~28–52% y) reserved for name / journey / pot.
+ * Centre corridor reserved for name / journey / pot (+ pot chips).
+ * Street wagers are shown at the pot — not duplicated at seats.
  */
-function seatLayout(count: number): { left: string; top: string; wagerLeft: string; wagerTop: string }[] {
+function seatLayout(count: number): { left: string; top: string }[] {
   if (count <= 2) {
     return [
-      { left: "50%", top: "84%", wagerLeft: "50%", wagerTop: "68%" },
-      { left: "50%", top: "16%", wagerLeft: "50%", wagerTop: "30%" },
+      { left: "50%", top: "88%" },
+      { left: "50%", top: "10%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "84%", wagerLeft: "50%", wagerTop: "68%" },
-      { left: "16%", top: "36%", wagerLeft: "28%", wagerTop: "46%" },
-      { left: "84%", top: "36%", wagerLeft: "72%", wagerTop: "46%" },
+      { left: "50%", top: "88%" },
+      { left: "12%", top: "42%" },
+      { left: "88%", top: "42%" },
     ];
   }
   return [
-    { left: "50%", top: "84%", wagerLeft: "50%", wagerTop: "68%" },
-    { left: "14%", top: "48%", wagerLeft: "26%", wagerTop: "52%" },
-    { left: "50%", top: "14%", wagerLeft: "50%", wagerTop: "28%" },
-    { left: "86%", top: "48%", wagerLeft: "74%", wagerTop: "52%" },
+    { left: "50%", top: "88%" },
+    { left: "10%", top: "52%" },
+    { left: "50%", top: "8%" },
+    { left: "90%", top: "52%" },
   ];
 }
 
@@ -36,6 +37,8 @@ export function PokerTable({
   instruction,
   phase,
   pot,
+  potMillis,
+  pots = [],
   seats,
   viewerId,
 }: {
@@ -44,6 +47,8 @@ export function PokerTable({
   instruction?: string;
   phase: string;
   pot: string;
+  potMillis?: string;
+  pots?: PokerPotView[];
   seats: PokerSeatView[];
   viewerId: string;
 }) {
@@ -55,6 +60,10 @@ export function PokerTable({
   const layout = seatLayout(ordered.length);
   const setup = phase === "POKER_SETUP" || phase === "TABLE_SETUP";
   const showPot = !setup && pot !== "0";
+  /** Side pots only — never re-list the main pot amount beside itself. */
+  const sidePots = pots
+    .filter((item) => item.index > 0 && item.amount.label !== "0" && item.amount.label !== pot)
+    .map((item) => ({ index: item.index, label: item.amount.label }));
 
   return (
     <div
@@ -81,21 +90,15 @@ export function PokerTable({
             <span data-table-name>{tableName}</span>
           </div>
           <PhaseJourney phase={phase} />
-          {showPot ? <PokerPot amount={pot} /> : null}
+          {showPot ? <PokerPot amount={pot} millis={potMillis} sidePots={sidePots} /> : null}
           {ordered.map((seat, index) => {
             const pos = layout[Math.min(index, layout.length - 1)]!;
-            const isViewer = seat.userId === viewerId;
             return (
               <PokerSeat
                 key={seat.userId}
                 seat={seat}
-                showStartingStack={setup && isViewer}
+                showStartingStack={false}
                 style={{ left: pos.left, top: pos.top }}
-                wagerStyle={
-                  !setup && seat.streetContribution.label !== "0"
-                    ? { left: pos.wagerLeft, top: pos.wagerTop }
-                    : undefined
-                }
               />
             );
           })}

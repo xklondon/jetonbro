@@ -1,8 +1,19 @@
+# Premium Poker tray / pot / setup UX finish
+
+Date: 2026-10-19
+
+- Branch `fix/blackjack-stable-anatomy-v1`. Poker-only UI commit; Blackjack frozen for this pass (no further BJ edits).
+- Route: `/tables/[tableId]` → `TableSession` / `selectTableBoard` → Premium `PokerDealer` | `PokerPlayer` → `POST /api/tables/[tableId]/commands`.
+- GAMEFLOW: RAISE with chip denom below raise-to → `409 ILLEGAL_ACTION`. Fix: chip path uses `raiseTo` / `Math.max(chip, min)`.
+- Pot felt-integrated; seat wagers removed; setup/HAND_COMPLETE AVAILABLE removed from console; seated dealer tray + actor controls.
+- **Staging deploy blocked:** project `jetonbro-staging` / env `staging` / service `jetonbro` last SUCCESS `deec41d2` (2026-09-15 MVP). `_prisma_migrations`: only `init` + `player_account`. Local tree has 13 later migrations pending. Poker UI requires none of them; deploying current HEAD would run the full catch-up via `prisma migrate deploy`. Stopped without deploy.
+
+---
 # Premium BJ insurance settle UI + player-area cleanup
 
-- Branch `fix/blackjack-stable-anatomy-v1`. Premium dealer payout → `settleInsurance`; box INS marker (pending vs settled); console AVAILABLE/tray separation; player header balance removed when tray shows AVAILABLE.
+- Commit `4ef8b56` on `fix/blackjack-stable-anatomy-v1`. Premium dealer payout → `settleInsurance`; box INS marker (pending vs settled); console AVAILABLE/tray separation; player header balance removed when tray shows AVAILABLE.
 - Repro: unresolved insurance blocks `startNextRound` with `NEXT_ROUND_BLOCKED`; existing `settleInsurance` clears it. No new settlement logic.
-- Release target: `jetonbro-lite-staging` / `staging` / `jetonbro-lite`. Join-order verified both ways. Temp repro scripts excluded from commit.
+- Lite staging deploy `343727a1` **CRASHED**: `prisma migrate deploy` → `P3009` failed `20260915124100_init` (started 2026-10-15 15:57:23 UTC). Previous SUCCESS `473b564a` REMOVED; health timeout. Smoke A–F not started. Blocker is DB migration state, not UI commit. No production touched.
 
 # Premium BJ box frame + Poker CasinoJeton tray restore
 

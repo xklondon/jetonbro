@@ -69,6 +69,18 @@
   --premium-console-height: 10dvh;
 }
 
+/* Seated dealer needs the same compact tray well as the player (chips + actions). */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.has-visible-tray) {
+  --premium-table-height: 71dvh;
+  --premium-console-height: 22dvh;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.is-setup),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.no-visible-tray) {
+  --premium-table-height: 83dvh;
+  --premium-console-height: 10dvh;
+}
+
 [data-skin="premium"] *,
 [data-skin="premium"] *::before,
 [data-skin="premium"] *::after {
@@ -1121,7 +1133,8 @@
 [data-skin="premium"] .pm-poker-setup-copy {
   position: absolute;
   left: 50%;
-  top: 7%;
+  /* Below heads-up top seat plaque — avoid covering TABLE SETUP with the remote seat. */
+  top: 20%;
   transform: translateX(-50%);
   text-align: center;
   pointer-events: none;
@@ -1145,7 +1158,7 @@
 [data-skin="premium"] .pm-poker-felt-name {
   position: absolute;
   left: 50%;
-  top: 20%;
+  top: 28%;
   transform: translateX(-50%);
   font: 600 11px/1.1 var(--pm-serif);
   letter-spacing: 0.18em;
@@ -1157,7 +1170,7 @@
 [data-skin="premium"] .pm-phase-journey {
   position: absolute;
   left: 50%;
-  top: 26%;
+  top: 34%;
   transform: translateX(-50%);
   display: flex;
   gap: 4px;
@@ -1188,48 +1201,79 @@
 [data-skin="premium"] .pm-poker-pot {
   position: absolute;
   left: 50%;
-  top: 44%;
-  transform: translate(-50%, -50%);
-  min-width: 8.5rem;
-  padding: 14px 22px;
-  border-radius: 999px;
-  text-align: center;
-  background: rgba(4, 18, 14, 0.55);
-  border: 1px solid rgba(212, 184, 130, 0.4);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
-  z-index: 2;
-}
-
-[data-skin="premium"] .pm-poker-pot small {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: rgba(212, 184, 130, 0.75);
-}
-
-[data-skin="premium"] .pm-poker-pot strong {
-  font: 700 30px/1.15 var(--pm-serif);
-  color: var(--pm-ivory);
-}
-
-[data-skin="premium"] .pm-poker-seat {
-  position: absolute;
-  width: clamp(4.2rem, 17cqi, 5.4rem);
+  top: 46%;
   transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
   gap: 2px;
+  min-width: 0;
+  max-width: min(78%, 10.5rem);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  text-align: center;
+  background: transparent;
+  box-shadow: none;
+  z-index: 2;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-poker-pot-chips {
+  flex: 0 0 auto;
+  transform: scale(0.9);
+  transform-origin: center bottom;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+
+[data-skin="premium"] .pm-poker-pot-copy {
+  min-width: 0;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-skin="premium"] .pm-poker-pot small,
+[data-skin="premium"] .pm-poker-pot-copy small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(240, 220, 170, 0.92);
+}
+
+[data-skin="premium"] .pm-poker-pot strong,
+[data-skin="premium"] .pm-poker-pot-copy strong {
+  font: 700 28px/1.05 var(--pm-serif);
+  color: var(--pm-ivory);
+}
+
+[data-skin="premium"] .pm-poker-side-pots {
+  display: grid;
+  gap: 2px;
+  margin-top: 2px;
+  font: 600 9px/1.2 var(--pm-sans);
+  letter-spacing: 0.06em;
+  color: rgba(240, 220, 170, 0.88);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Compact seats — clear of table name / street rail / pot */
+[data-skin="premium"] .pm-poker-seat {
+  position: absolute;
+  width: clamp(3.4rem, 14cqi, 4.4rem);
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 1px;
   pointer-events: auto;
   z-index: 3;
 }
 
 [data-skin="premium"] .pm-poker-seat-medal {
-  width: clamp(2.6rem, 11cqi, 3.4rem);
-  height: clamp(2.6rem, 11cqi, 3.4rem);
+  width: clamp(2rem, 8.5cqi, 2.6rem);
+  height: clamp(2rem, 8.5cqi, 2.6rem);
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font: 700 15px/1 var(--pm-serif);
+  font: 700 12px/1 var(--pm-serif);
   color: var(--pm-ivory);
   background:
     radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
@@ -1246,10 +1290,10 @@
 }
 
 [data-skin="premium"] .pm-poker-seat-plaque {
-  min-width: 4.8rem;
-  max-width: 5.8rem;
-  padding: 3px 6px;
-  border-radius: 8px;
+  min-width: 3.6rem;
+  max-width: 4.6rem;
+  padding: 2px 5px;
+  border-radius: 7px;
   background: rgba(8, 10, 8, 0.78);
   border: 1px solid rgba(212, 184, 130, 0.35);
   text-align: center;
@@ -1258,7 +1302,7 @@
 
 [data-skin="premium"] .pm-poker-seat-plaque strong {
   display: block;
-  font: 600 11px/1.15 var(--pm-sans);
+  font: 600 10px/1.1 var(--pm-sans);
   color: var(--pm-ivory);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1267,16 +1311,22 @@
 
 [data-skin="premium"] .pm-poker-seat-plaque span {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(212, 184, 130, 0.85);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+[data-skin="premium"] .pm-poker-seat-markers {
+  font: 700 8px/1.15 var(--pm-sans);
+  letter-spacing: 0.04em;
+  color: var(--pm-gold-hi);
+}
+
 [data-skin="premium"] .pm-poker-seat-status {
   margin-top: 1px;
-  font: 700 8px/1.2 var(--pm-sans);
+  font: 700 7px/1.15 var(--pm-sans);
   letter-spacing: 0.06em;
   color: var(--pm-gold-hi);
 }
@@ -1289,40 +1339,51 @@
 }
 
 [data-skin="premium"] .pm-poker-stack .pm-chip-stack {
-  transform: scale(0.78);
+  transform: scale(0.72);
   transform-origin: bottom center;
 }
 
 [data-skin="premium"] .pm-poker-stack strong {
-  font: 700 11px/1 var(--pm-serif);
-  color: var(--pm-gold-hi);
-}
-
-[data-skin="premium"] .pm-poker-wager {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: grid;
-  justify-items: center;
-  gap: 1px;
-  min-width: 2.2rem;
-  padding: 2px 4px;
-  border-radius: 10px;
-  color: var(--pm-ivory);
-  background: rgba(8, 18, 14, 0.55);
-  border: 1px solid rgba(212, 184, 130, 0.4);
-  backdrop-filter: blur(3px);
-  pointer-events: none;
-  z-index: 2;
-}
-
-[data-skin="premium"] .pm-poker-wager .pm-chip-stack {
-  transform: scale(0.72);
-  transform-origin: center bottom;
-}
-
-[data-skin="premium"] .pm-poker-wager strong {
   font: 700 10px/1 var(--pm-serif);
   color: var(--pm-gold-hi);
+}
+
+/* Poker live console — keep tray + AVAILABLE compact and integrated */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.has-visible-tray) .pm-console {
+  margin-top: -12px;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.has-visible-tray .pm-console-body {
+  grid-template-rows: auto auto minmax(56px, 1fr);
+  gap: 4px;
+  padding: 10px 10px 6px;
+}
+
+/* Poker notices overlay the dock rim — must not steal a grid row or crush AVAILABLE into chips. */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body > .pm-console-notice,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body > .pm-console-notice {
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  right: 10px;
+  z-index: 4;
+  margin: 0;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body:has(> .pm-console-notice),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body:has(> .pm-console-notice) {
+  padding-top: 24px;
+}
+
+/* Setup: actions only — no AVAILABLE row (balances stay on seats). */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-setup .pm-console-body,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-setup .pm-console-body {
+  grid-template-rows: auto;
+  align-content: center;
+  padding-top: 12px;
 }
 
 /* ===== Integrated casino console ===== */
@@ -1611,9 +1672,18 @@
   padding: 0;
 }
 
-[data-skin="premium"] .pm-console-body:has(.pm-console-actions.is-empty) {
-  grid-template-rows: auto auto;
-  align-content: end;
+/* Poker waiting actor: top row (TO CALL / AVAILABLE) + tray — empty action row is display:none. */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body.has-tray:has(.pm-console-actions.is-empty),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body.has-tray:has(.pm-console-actions.is-empty) {
+  grid-template-rows: auto minmax(56px, 1fr);
+  align-content: stretch;
+  gap: 6px;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body.no-tray:has(.pm-console-actions.is-empty),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body.no-tray:has(.pm-console-actions.is-empty) {
+  grid-template-rows: auto;
+  align-content: center;
   gap: 6px;
 }
 

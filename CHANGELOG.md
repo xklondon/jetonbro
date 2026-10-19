@@ -2,11 +2,19 @@
 
 ## Unreleased
 
+### Premium Poker tray / pot / setup UX finish (commit ready — staging deploy blocked)
+
+- Canonical route remains `/tables/[tableId]` → `TableSession` → `POKER_DEALER` / `POKER_PLAYER` (Premium). No duplicate Poker routes.
+- GAMEFLOW root cause: chip denomination sent as `pokerAct` RAISE amount (below raise-to) → `ILLEGAL_ACTION`. Tray chips now send raise-to / lifted min. Seated dealer gets live tray + legal actions; waiting tray stays disabled with turn hint.
+- Pot: felt-integrated POT + CasinoJeton stack from committed pot; seat street-wager boxes removed. Setup/HAND_COMPLETE: no console AVAILABLE over START HAND / ADD PLAYER.
+- **jetonbro-staging deploy STOPPED (migrations):** last SUCCESS deploy `deec41d2` (2026-09-15, message `feat: create JetonBro Blackjack MVP` ≈ `5b8247e`) has only `20260915124100_init` + `20260915130000_player_account` applied. Current HEAD has **13 pending** Prisma migrations (BJ settings through fun-only stakes). Poker UI diff adds **zero** new migrations; catching up staging requires that full schema upgrade. No production / lite-staging touched.
+
 ### Premium BJ insurance settle UI + player-area cleanup (JetonBro Lite staging)
 
-- Branch `fix/blackjack-stable-anatomy-v1` — Premium payout wires existing `settleInsurance`; smaller INS marker (placed vs settled); player tray AVAILABLE isolated; no duplicate header balance.
+- Commit `4ef8b56` on `fix/blackjack-stable-anatomy-v1` — Premium payout wires existing `settleInsurance`; smaller INS marker (placed vs settled); player tray AVAILABLE isolated; no duplicate header balance.
 - Root cause of reported distribution error: `startNextRound` → `NEXT_ROUND_BLOCKED` until insurance settled independently. No new accounting/commands.
-- Target: Railway project `jetonbro-lite-staging` / environment `staging` / service `jetonbro-lite` only. Poker and unrelated routes untouched. Temp `scripts/tmp-*.mjs` excluded.
+- Target: Railway project `jetonbro-lite-staging` / environment `staging` / service `jetonbro-lite` only (`343727a1-37dc-4050-8c26-29ddb54a20c7`).
+- **Deploy CRASHED** on start: Prisma `P3009` — failed migration `20260915124100_init` in staging Postgres. Live smoke not run. Staging currently offline. No production service touched. Temp `scripts/tmp-*.mjs` excluded.
 
 ### Premium BJ box frame + Poker CasinoJeton tray restore (JetBro II Web)
 
