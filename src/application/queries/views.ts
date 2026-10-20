@@ -137,6 +137,11 @@ export type BankPermittedActions = {
   switchGame: boolean;
 };
 
+export type OutcomeFxView = {
+  enabled: boolean;
+  frequency: "off" | "occasional" | "often" | "always";
+};
+
 export type PlayerTableView = {
   role: "PLAYER";
   phase: RoundPhase;
@@ -150,6 +155,7 @@ export type PlayerTableView = {
   bettingCloseDeadlineAt: string | null;
   nextRoundDeadlineAt: string | null;
   cardAssist?: "OFF" | "CONFIRM" | "AUTO";
+  outcomeFx?: OutcomeFxView;
   bankroll?: BankrollView;
   dealerHand?: HandView;
   bankLimitReached?: boolean;
@@ -183,6 +189,7 @@ export type BankTableView = {
   paused: boolean;
   closePreview: CloseTablePreview | null;
   cardAssist?: "OFF" | "CONFIRM" | "AUTO";
+  outcomeFx?: OutcomeFxView;
   bankroll?: BankrollView;
   dealerHand?: HandView;
   dealerName?: string;
@@ -239,6 +246,7 @@ export type SetupTableView = {
   paused: boolean;
   closePreview: CloseTablePreview | null;
   cardAssist?: "OFF" | "CONFIRM" | "AUTO";
+  outcomeFx?: OutcomeFxView;
   bankFundingMode?: "OPEN" | "LIMITED";
   startingBank?: MoneyView | null;
   canSwitchGame?: boolean;
@@ -336,6 +344,7 @@ export type PokerTableView = {
   canEditHole: boolean;
   streetRail: PokerStreetRailView[];
   gameSession?: GameSessionView | null;
+  outcomeFx?: OutcomeFxView;
 };
 
 export type WaitingTableView = {

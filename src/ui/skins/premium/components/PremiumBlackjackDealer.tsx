@@ -297,7 +297,12 @@ export function PremiumBlackjackDealer({
         title="GIVE JETONS"
         notice={notice}
       />
-      <PremiumCelebrationSettings open={fxSettingsOpen} onClose={() => setFxSettingsOpen(false)} />
+      <PremiumCelebrationSettings
+        open={fxSettingsOpen}
+        onClose={() => setFxSettingsOpen(false)}
+        prefs={view.outcomeFx}
+        onCommand={onCommand}
+      />
       {sheet !== "closed" ? (
         <div className="pm-sheet-mask" data-change-game-sheet={sheet === "pick" || sheet === "poker" ? "true" : undefined} role="dialog" aria-modal="true">
           <div className="pm-sheet">

@@ -2,59 +2,70 @@
 
 import { useEffect, useState } from "react";
 import {
-  CELEBRATION_PREFS_KEY,
-  DEFAULT_CELEBRATION_PREFS,
-  loadCelebrationPrefs,
-  saveCelebrationPrefs,
-  type CelebrationFrequency,
-  type CelebrationPrefs,
-} from "@/ui/core/celebration-prefs";
+  DEFAULT_OUTCOME_FX_PREFS,
+  type OutcomeFxFrequency,
+  type OutcomeFxPrefs,
+} from "@/domain/tables/outcome-fx";
 
-const FREQ: { id: CelebrationFrequency; label: string }[] = [
+const FREQ: { id: OutcomeFxFrequency; label: string }[] = [
   { id: "off", label: "Off" },
   { id: "occasional", label: "Occasional" },
   { id: "often", label: "Often" },
   { id: "always", label: "Always" },
 ];
 
-/** Table FX prefs — localStorage only. */
+/** Table Settings — owner-owned outcome FX (persisted on the table). */
 export function PremiumCelebrationSettings({
   open,
   onClose,
+  prefs: prefsProp,
+  onCommand,
 }: {
   open: boolean;
   onClose: () => void;
+  prefs?: OutcomeFxPrefs | null;
+  onCommand: (command: string, payload?: Record<string, string>) => void | boolean | Promise<void | boolean>;
 }) {
-  const [prefs, setPrefs] = useState<CelebrationPrefs>(DEFAULT_CELEBRATION_PREFS);
+  const [prefs, setPrefs] = useState<OutcomeFxPrefs>(prefsProp ?? DEFAULT_OUTCOME_FX_PREFS);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setPrefs(loadCelebrationPrefs(typeof localStorage !== "undefined" ? localStorage : null));
-  }, [open]);
+    setPrefs(prefsProp ?? DEFAULT_OUTCOME_FX_PREFS);
+  }, [open, prefsProp]);
 
   if (!open) return null;
 
-  function commit(next: CelebrationPrefs) {
+  async function commit(next: OutcomeFxPrefs) {
     setPrefs(next);
-    saveCelebrationPrefs(typeof localStorage !== "undefined" ? localStorage : null, next);
+    setBusy(true);
+    try {
+      await onCommand("setOutcomeFx", {
+        enabled: next.enabled ? "true" : "false",
+        frequency: next.frequency,
+      });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="pm-sheet-mask" data-celebration-settings="true" role="dialog" aria-modal="true" aria-label="Result animations">
       <div className="pm-sheet">
         <h3>Result animations</h3>
-        <p className="pm-muted" data-celebration-storage={CELEBRATION_PREFS_KEY}>
-          Funny win/loss bursts on this device. Honours reduced-motion.
+        <p className="pm-muted" data-celebration-storage="table">
+          Funny win/loss bursts for this table. Honours reduced-motion.
         </p>
         <label className="pm-check">
           <input
             type="checkbox"
             checked={prefs.enabled}
-            onChange={(event) => commit({ ...prefs, enabled: event.target.checked })}
+            disabled={busy}
+            onChange={(event) => void commit({ ...prefs, enabled: event.target.checked })}
           />
           Animations on
         </label>
-        <fieldset className="pm-fieldset">
+        <fieldset className="pm-fieldset" disabled={busy}>
           <legend>Frequency</legend>
           {FREQ.map((item) => (
             <label key={item.id} className="pm-radio">
@@ -62,7 +73,7 @@ export function PremiumCelebrationSettings({
                 type="radio"
                 name="fx-freq"
                 checked={prefs.frequency === item.id}
-                onChange={() => commit({ ...prefs, frequency: item.id })}
+                onChange={() => void commit({ ...prefs, frequency: item.id })}
               />
               {item.label}
             </label>

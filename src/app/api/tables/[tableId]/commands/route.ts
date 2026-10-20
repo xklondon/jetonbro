@@ -12,6 +12,7 @@ import {
   finalizeSetup,
   removeMember,
   saveTable,
+  setOutcomeFx,
   updateTableSettings,
 } from "@/application/services/tables";
 import { addPlayerManually, inviteByEmail, rotateQrInvitation } from "@/application/services/invitations";
@@ -295,6 +296,12 @@ async function dispatch(
       return applyInsuranceSuggestion(ctx);
     case "setCardAssist":
       return setCardAssist({ ...ctx, cardAssist: String(p.cardAssist ?? "") });
+    case "setOutcomeFx":
+      return setOutcomeFx({
+        ...ctx,
+        enabled: p.enabled === undefined ? undefined : p.enabled === true || p.enabled === "true",
+        frequency: p.frequency !== undefined ? String(p.frequency) : undefined,
+      });
     case "setBankFunding":
       return setBankFunding({
         ...ctx,

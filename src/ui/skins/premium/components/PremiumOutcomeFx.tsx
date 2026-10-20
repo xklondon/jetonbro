@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import {
-  loadCelebrationPrefs,
+  DEFAULT_OUTCOME_FX_PREFS,
   shouldPlayOutcomeFx,
-  type CelebrationPrefs,
-} from "@/ui/core/celebration-prefs";
+  type OutcomeFxPrefs,
+} from "@/domain/tables/outcome-fx";
 import { pickFunnyOutcomeFx, type FunnyFxTone } from "@/ui/core/funny-outcome-fx";
 import { prefersReducedMotion } from "@/ui/core/welcome-celebration";
 
-/** Random funny win/loss burst — respects prefs + reduced motion. */
+/** Random funny win/loss burst — table prefs + reduced motion. */
 export function PremiumOutcomeFx({
   active,
   tone,
@@ -19,7 +19,7 @@ export function PremiumOutcomeFx({
   active: boolean;
   tone: FunnyFxTone;
   seed: string;
-  prefs?: CelebrationPrefs;
+  prefs?: OutcomeFxPrefs | null;
 }) {
   const [show, setShow] = useState(false);
   const [copy, setCopy] = useState("");
@@ -35,7 +35,7 @@ export function PremiumOutcomeFx({
       typeof window !== "undefined"
         ? prefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)"))
         : false;
-    const prefs = prefsProp ?? loadCelebrationPrefs(typeof localStorage !== "undefined" ? localStorage : null);
+    const prefs = prefsProp ?? DEFAULT_OUTCOME_FX_PREFS;
     if (!shouldPlayOutcomeFx(prefs, reduced)) {
       setShow(false);
       return;

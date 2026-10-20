@@ -61,6 +61,13 @@ enum CardAssistMode {
   AUTO
 }
 
+enum OutcomeFxFrequency {
+  OFF
+  OCCASIONAL
+  OFTEN
+  ALWAYS
+}
+
 enum BankFundingMode {
   OPEN
   LIMITED
@@ -224,6 +231,8 @@ model Table {
   startingJetonsPerPlayerMillis BigInt        @default(100000)
   bankMayDistributeJetons Boolean             @default(true)
   cardAssist              CardAssistMode      @default(OFF)
+  outcomeFxEnabled        Boolean             @default(true)
+  outcomeFxFrequency      OutcomeFxFrequency  @default(OCCASIONAL)
   bankFundingMode         BankFundingMode     @default(OPEN)
   bankAvailableMillis     BigInt              @default(0)
   bankLockedExposureMillis BigInt             @default(0)

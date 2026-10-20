@@ -122,7 +122,7 @@ export function PremiumPokerPlayer({
         seats={view.seats}
         viewerId={view.viewerId}
       />
-      <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} />
+      <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
     </PremiumShell>
   );
 }

@@ -176,7 +176,7 @@ export function PremiumBlackjackPlayer({
           <p className="pm-bj-empty">Waiting for a box</p>
         )}
       </BlackjackTable>
-      <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} />
+      <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
     </PremiumShell>
   );
 }

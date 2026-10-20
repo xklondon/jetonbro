@@ -110,7 +110,11 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
 
   const onCommand = async (command: string, payload: Record<string, string> = {}) => {
     const seq = ++commandSeq.current;
-    const silent = command === "updateSettings" || command === "assignBank" || command === "setBankFunding";
+    const silent =
+      command === "updateSettings" ||
+      command === "assignBank" ||
+      command === "setBankFunding" ||
+      command === "setOutcomeFx";
     if (!silent) {
       setNotice(null);
       setBusy(true);

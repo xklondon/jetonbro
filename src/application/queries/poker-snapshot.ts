@@ -4,7 +4,8 @@ import { cardLabel, readPokerCards } from "@/domain/poker/cards";
 import { STREET_ADVANCE, isBettingStreet, pokerStreetRail, type BettingStreet } from "@/domain/poker/phases";
 import { allLiveAllIn, streetIsComplete } from "@/domain/poker/street";
 import { formatPokerPhaseLabel, pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
-import type { MoneyView, PokerTableView } from "./views";
+import type { MoneyView, OutcomeFxView, PokerTableView } from "./views";
+import { DEFAULT_OUTCOME_FX_PREFS } from "@/domain/tables/outcome-fx";
 
 function money(millis: bigint | null | undefined): MoneyView {
   const value = millis ?? 0n;
@@ -92,6 +93,7 @@ export function buildPokerView(input: {
   hand: Hand | null;
   tableClosed: boolean;
   handsStarted?: number;
+  outcomeFx?: OutcomeFxView;
 }): PokerTableView {
   const { hand, viewerId, isOwner } = input;
   const memberById = new Map(input.members.map((member) => [member.userId, member]));
@@ -263,5 +265,6 @@ export function buildPokerView(input: {
     canEditCommunity: Boolean(isOwner && ["FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(phase) && !input.tableClosed),
     canEditHole: Boolean(viewerPart && pokerHandIsOpen(phase) && !input.tableClosed),
     streetRail: pokerStreetRail(phase),
+    outcomeFx: input.outcomeFx ?? { ...DEFAULT_OUTCOME_FX_PREFS },
   };
 }

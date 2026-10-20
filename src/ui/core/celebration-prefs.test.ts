@@ -1,21 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
-  celebrationPlayChance,
-  DEFAULT_CELEBRATION_PREFS,
-  parseCelebrationPrefs,
+  DEFAULT_OUTCOME_FX_PREFS,
+  outcomeFxPlayChance,
+  parseOutcomeFxFrequency,
   shouldPlayOutcomeFx,
-} from "./celebration-prefs";
+} from "@/domain/tables/outcome-fx";
 import { FUNNY_OUTCOME_FX, pickFunnyOutcomeFx } from "./funny-outcome-fx";
 
-describe("celebration prefs", () => {
+describe("outcome fx prefs", () => {
   it("defaults to on + occasional", () => {
-    expect(parseCelebrationPrefs(null)).toEqual(DEFAULT_CELEBRATION_PREFS);
-    expect(DEFAULT_CELEBRATION_PREFS).toEqual({ enabled: true, frequency: "occasional" });
+    expect(DEFAULT_OUTCOME_FX_PREFS).toEqual({ enabled: true, frequency: "occasional" });
+    expect(parseOutcomeFxFrequency(null)).toBe("occasional");
+    expect(parseOutcomeFxFrequency("OCCASIONAL")).toBe("occasional");
   });
 
   it("frequency off or disabled never plays", () => {
-    expect(celebrationPlayChance({ enabled: false, frequency: "always" })).toBe(0);
-    expect(celebrationPlayChance({ enabled: true, frequency: "off" })).toBe(0);
+    expect(outcomeFxPlayChance({ enabled: false, frequency: "always" })).toBe(0);
+    expect(outcomeFxPlayChance({ enabled: true, frequency: "off" })).toBe(0);
     expect(shouldPlayOutcomeFx({ enabled: true, frequency: "always" }, true)).toBe(false);
     expect(shouldPlayOutcomeFx({ enabled: true, frequency: "off" }, false)).toBe(false);
   });

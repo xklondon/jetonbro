@@ -16,6 +16,11 @@ import { openInitialGameSession, recordSessionStarter } from "@/application/serv
 import { collectInviteEmails } from "@/domain/invitations/email";
 import { pokerHandIsOpen } from "@/domain/tables/active-game";
 import { parseStakeSpec, stakePersistFields } from "@/domain/stakes";
+import {
+  outcomeFxFrequencyToDb,
+  outcomeFxPrefsFromTable,
+  parseOutcomeFxFrequency,
+} from "@/domain/tables/outcome-fx";
 import { Prisma } from "@prisma/client";
 
 function isOpenDraftConflict(error: unknown): boolean {
@@ -1114,5 +1119,33 @@ export async function removeMember(input: {
     });
     publishTable(input.tableId);
     return { ok: true };
+  });
+}
+
+/** Owner Table Settings — cosmetic outcome FX; anytime, no accounting. */
+export async function setOutcomeFx(input: {
+  actorId: string;
+  tableId: string;
+  idempotencyKey: string;
+  enabled?: boolean;
+  frequency?: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "setOutcomeFx", input, async () => {
+    const table = await requireOwner(input.tableId, input.actorId);
+    const current = outcomeFxPrefsFromTable(table);
+    const enabled = typeof input.enabled === "boolean" ? input.enabled : current.enabled;
+    const frequency =
+      input.frequency !== undefined
+        ? parseOutcomeFxFrequency(input.frequency, current.frequency)
+        : current.frequency;
+    await prisma.table.update({
+      where: { id: table.id },
+      data: {
+        outcomeFxEnabled: enabled,
+        outcomeFxFrequency: outcomeFxFrequencyToDb(frequency),
+      },
+    });
+    publishTable(input.tableId);
+    return { ok: true, outcomeFx: { enabled, frequency } };
   });
 }

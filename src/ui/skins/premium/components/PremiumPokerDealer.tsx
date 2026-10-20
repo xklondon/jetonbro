@@ -276,7 +276,12 @@ export function PremiumPokerDealer({
         title="BUY-IN"
         notice={notice}
       />
-      <PremiumCelebrationSettings open={fxSettingsOpen} onClose={() => setFxSettingsOpen(false)} />
+      <PremiumCelebrationSettings
+        open={fxSettingsOpen}
+        onClose={() => setFxSettingsOpen(false)}
+        prefs={view.outcomeFx}
+        onCommand={onCommand}
+      />
     </PremiumShell>
   );
 }

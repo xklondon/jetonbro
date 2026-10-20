@@ -12,6 +12,7 @@ import { buildPokerView } from "./poker-snapshot";
 import { boxCoverageOk, FUNDING_LOCKED, insuranceCoverageOk, roundHasLockedStake } from "@/application/services/bankroll";
 import { handView, ranksFromJson, suggestedBoxOutcome, suggestedInsuranceResolution } from "@/application/services/card-hands";
 import { pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
+import { outcomeFxPrefsFromTable } from "@/domain/tables/outcome-fx";
 import { stakeExample, stakeFromSession } from "@/domain/stakes";
 import type {
   BankPlayerGroupView,
@@ -263,6 +264,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           insuranceEnabled: table.insuranceEnabled,
           bankMayDistributeJetons: table.bankMayDistributeJetons,
           cardAssist: table.cardAssist,
+          outcomeFx: outcomeFxPrefsFromTable(table),
           bankFundingMode: table.bankFundingMode,
           startingBank: table.startingBankMillis !== null ? money(table.startingBankMillis) : money(table.bankAvailableMillis),
           canStartBetting: Boolean(table.bankDealerId) && hasReadyPlayer,
@@ -422,6 +424,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             insurance: table.currentPhase === "PLAYING" && insuranceOpen && table.insuranceEnabled,
           },
           cardAssist: table.cardAssist,
+          outcomeFx: outcomeFxPrefsFromTable(table),
           bankroll,
           dealerHand: dealerHandView,
           bankLimitReached: table.bankFundingMode === "LIMITED" && !bankroll.canCoverMore,
@@ -496,7 +499,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
               settleDealerWon: false,
               settleInsurance: false,
               addPlayer: (isOwner || isBank) && !tableClosed,
-              giveJetons: false,
+              giveJetons: (isOwner || isBank) && !tableClosed,
               changeBank: isOwner && !tableClosed,
               saveTable: isOwner && !tableClosed,
               closeTable: isOwner && !tableClosed,
@@ -511,6 +514,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             paused: table.pausedAt !== null,
             closePreview: isOwner ? closePreview : null,
             cardAssist: table.cardAssist,
+            outcomeFx: outcomeFxPrefsFromTable(table),
             dealerName: table.bankDealer ? displayName(table.bankDealer) : displayName(table.owner),
             canSwitchGame: isOwner && !tableClosed,
             guestJoinUrl: guestUrl,
@@ -603,6 +607,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         paused: table.pausedAt !== null,
         closePreview: isOwner ? closePreview : null,
         cardAssist: table.cardAssist,
+        outcomeFx: outcomeFxPrefsFromTable(table),
         bankroll,
         dealerHand: dealerHandView,
         dealerName: table.bankDealer ? displayName(table.bankDealer) : "Dealer",
@@ -652,6 +657,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           hand: table.currentPokerHand,
           tableClosed,
           handsStarted: table._count.pokerHands,
+          outcomeFx: outcomeFxPrefsFromTable(table),
         })
       : null;
   const blackjack = table.game === "BLACKJACK";
