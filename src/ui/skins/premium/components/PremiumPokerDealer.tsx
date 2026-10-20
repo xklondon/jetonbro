@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  pokerActorLayout,
+  pokerActPayload,
+  pokerAggressionLabel,
   pokerControls,
+  pokerDockTrio,
   pokerTrayChipAct,
   pokerTrayEnabled,
   visiblePokerLegalActions,
@@ -11,6 +13,8 @@ import {
 import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
 import { pokerPhaseCopy, pokerStartHandNotice } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
+import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
@@ -53,20 +57,22 @@ export function PremiumPokerDealer({
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [giveOpen, setGiveOpen] = useState(false);
+  const [fxSettingsOpen, setFxSettingsOpen] = useState(false);
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
   const controls = pokerControls(view);
   const startHand = controls.find((control) => control.id === "startHand");
   const nextHand = controls.find((control) => control.id === "nextHand");
+  const giveJetons = controls.find((control) => control.id === "giveJetons");
   const seatedCount = view.seats.filter((seat) => Boolean(seat.userId)).length;
   const ownerSeated = view.seats.some((seat) => seat.userId === view.viewerId);
   const startEnabled = Boolean(startHand?.enabled && seatedCount >= 2);
   const seatNotice = pokerStartHandNotice(notice);
   const legal = visiblePokerLegalActions(view);
-  const layout = pokerActorLayout(legal);
-  const fold = legal.find((a) => a.type === "FOLD");
-  /** Seated dealer keeps the jeton tray during live betting streets (same anatomy as player). */
-  const showTray = Boolean(ownerSeated && !compactDock && !showdown);
-  const trayEnabled = Boolean(showTray && pokerTrayEnabled(view));
+  const trio = pokerDockTrio(legal);
+  /** Seated dealer: tray through live streets; reserve height in showdown for dock stability. */
+  const showTray = Boolean(ownerSeated && !compactDock);
+  const trayEnabled = Boolean(ownerSeated && !compactDock && !showdown && pokerTrayEnabled(view));
 
   useEffect(() => {
     if (view.phase !== "SHOWDOWN") setWinners({});
@@ -91,9 +97,15 @@ export function PremiumPokerDealer({
   const badges = (
     <>
       {view.isOwner ? (
-        <span className="pm-badge" data-owner-badge="true">
+        <button
+          type="button"
+          className="pm-badge is-action"
+          data-owner-badge="true"
+          aria-label="Table settings"
+          onClick={() => setFxSettingsOpen(true)}
+        >
           OWNER
-        </span>
+        </button>
       ) : null}
       <span className="pm-badge" data-dealer-badge="true">
         DEALER
@@ -101,34 +113,37 @@ export function PremiumPokerDealer({
     </>
   );
 
-  /** Prefer actor controls when this dealer is the current actor; else owner street/start. */
+  /** Prefer full legal trio when seated dealer is acting; else owner street/start. */
   let primary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
   let secondary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
   let tertiary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
 
   if (showdown) {
     primary = null;
-  } else if (layout.primary) {
-    primary = {
-      label: layout.primary.label,
-      onClick: () =>
-        void onCommand("pokerAct", {
-          type: layout.primary!.type,
-          amount: layout.primary!.amount.label,
-        }),
-    };
-    if (fold) {
-      secondary = {
-        label: fold.label,
-        onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
-      };
-    }
-    if (view.canDealStreet) {
-      tertiary = {
-        label: view.nextStreetLabel || "DEAL",
-        onClick: () => void onCommand("advancePokerStreet"),
-      };
-    }
+  } else if (trio.respond || trio.fold || trio.aggression) {
+    primary = trio.respond
+      ? {
+          label: trio.respond.label,
+          onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
+        }
+      : null;
+    secondary = trio.fold
+      ? {
+          label: trio.fold.label,
+          onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
+        }
+      : null;
+    tertiary = trio.aggression
+      ? {
+          label: pokerAggressionLabel(trio.aggression),
+          onClick: () => void onCommand("pokerAct", pokerActPayload(trio.aggression!)),
+        }
+      : view.canDealStreet
+        ? {
+            label: view.nextStreetLabel || "DEAL",
+            onClick: () => void onCommand("advancePokerStreet"),
+          }
+        : null;
   } else if (startHand) {
     primary = {
       label: "START HAND",
@@ -149,6 +164,7 @@ export function PremiumPokerDealer({
   }
 
   const showAdd = Boolean(view.canAddPlayer && (setup || view.phase === "HAND_COMPLETE"));
+  const showGive = Boolean(giveJetons && (setup || betweenHands));
   if (showAdd && !secondary) {
     secondary = {
       label: "ADD PLAYER",
@@ -158,6 +174,17 @@ export function PremiumPokerDealer({
     tertiary = {
       label: "ADD PLAYER",
       onClick: () => setInviteOpen(true),
+    };
+  }
+  if (showGive && !tertiary) {
+    tertiary = {
+      label: "BUY-IN",
+      onClick: () => setGiveOpen(true),
+    };
+  } else if (showGive && !secondary) {
+    secondary = {
+      label: "BUY-IN",
+      onClick: () => setGiveOpen(true),
     };
   }
 
@@ -185,7 +212,7 @@ export function PremiumPokerDealer({
           toCall={!compactDock && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
           available={!compactDock && !showdown && ownerSeated ? view.available.label : undefined}
           showTray={showTray}
-          reserveTray={false}
+          reserveTray={Boolean(ownerSeated && !compactDock)}
           trayEnabled={trayEnabled}
           selectedChip={selectedChip}
           onChip={(value) => {
@@ -241,6 +268,15 @@ export function PremiumPokerDealer({
         onCommand={onCommand}
         notice={notice}
       />
+      <PremiumGiveJetonsMask
+        open={giveOpen}
+        onClose={() => setGiveOpen(false)}
+        members={members}
+        onCommand={onCommand}
+        title="BUY-IN"
+        notice={notice}
+      />
+      <PremiumCelebrationSettings open={fxSettingsOpen} onClose={() => setFxSettingsOpen(false)} />
     </PremiumShell>
   );
 }

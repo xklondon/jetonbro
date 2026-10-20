@@ -192,6 +192,7 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(html).toContain('aria-label="Add 5 jetons"');
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 1");
+    expect(html).toContain("RAISE 4");
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="3"');
     expect(html).not.toContain('data-street-wager="true"');
@@ -227,7 +228,29 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(source).toContain('onCommand("pokerAct"');
     expect(source).toContain("visiblePokerLegalActions");
     expect(source).toContain("pokerTrayChipAct");
+    expect(source).toContain("pokerDockTrio");
+    expect(source).toContain("PremiumGiveJetonsMask");
     expect(source).toContain("showTray={showTray}");
     expect(source).not.toContain("showTray={false}");
+  });
+
+  it("setup dock exposes BUY-IN when giveJetons is allowed", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumPokerDealer, {
+        view: dealerView({
+          phase: "POKER_SETUP",
+          legalActions: [],
+          currentActorId: null,
+          canGiveJetons: true,
+          seats: [
+            seat("owner", "xklondon", 0, { status: "WAITING" }),
+            seat("k", "K", 1, { status: "WAITING", available: money("100") }),
+          ],
+        }),
+        members,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain("BUY-IN");
   });
 });

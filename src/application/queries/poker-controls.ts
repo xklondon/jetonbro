@@ -46,6 +46,48 @@ export function pokerActorActions(legal: PokerLegalActionView[]): PokerLegalActi
   return [layout.primary, ...layout.secondary].filter((action): action is PokerLegalActionView => Boolean(action));
 }
 
+/** Premium dock trio: FOLD + CHECK/CALL + BET/RAISE (chips still submit legal BET/RAISE amounts). */
+export type PokerDockTrio = {
+  owed: boolean;
+  fold: PokerLegalActionView | null;
+  respond: PokerLegalActionView | null;
+  aggression: PokerLegalActionView | null;
+};
+
+export function pokerDockTrio(legal: PokerLegalActionView[]): PokerDockTrio {
+  const fold = legal.find((action) => action.type === "FOLD") ?? null;
+  const call = legal.find((action) => action.type === "CALL") ?? null;
+  const check = legal.find((action) => action.type === "CHECK") ?? null;
+  const bet = legal.find((action) => action.type === "BET") ?? null;
+  const raise = legal.find((action) => action.type === "RAISE") ?? null;
+  if (call) {
+    return { owed: true, fold, respond: call, aggression: raise };
+  }
+  return { owed: false, fold, respond: check, aggression: bet ?? raise };
+}
+
+export function pokerActPayload(action: PokerLegalActionView): { type: string; amount: string } {
+  if (action.type === "FOLD" || action.type === "CHECK") {
+    return { type: action.type, amount: "0" };
+  }
+  if (action.type === "RAISE") {
+    return { type: "RAISE", amount: action.raiseTo?.label ?? action.amount.label };
+  }
+  return { type: action.type, amount: action.amount.label };
+}
+
+export function pokerAggressionLabel(action: PokerLegalActionView): string {
+  if (action.type === "RAISE") {
+    const to = action.raiseTo?.label;
+    return to && to !== "0" ? `RAISE ${to}` : action.label || "RAISE";
+  }
+  if (action.type === "BET") {
+    const amt = action.amount.label;
+    return amt && amt !== "0" ? `BET ${amt}` : action.label || "BET";
+  }
+  return action.label;
+}
+
 function millis(value: string | undefined): bigint {
   try {
     return BigInt(value || "0");

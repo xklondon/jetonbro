@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  pokerActorLayout,
+  pokerActPayload,
+  pokerAggressionLabel,
+  pokerDockTrio,
   pokerTrayChipAct,
   pokerTrayEnabled,
   visiblePokerLegalActions,
@@ -10,6 +12,7 @@ import {
 import type { PokerTableView } from "@/application/queries/views";
 import { pokerPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { PremiumOutcomeFx } from "./PremiumOutcomeFx";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerTable } from "./primitives/PokerTable";
@@ -31,16 +34,30 @@ export function PremiumPokerPlayer({
     actorName: view.currentActorName,
   });
   const setup = view.phase === "POKER_SETUP" || view.phase === "TABLE_SETUP";
-  const compactDock = setup || view.phase === "HAND_COMPLETE" || view.phase === "SHOWDOWN";
+  const handDone = view.phase === "HAND_COMPLETE";
+  const showdown = view.phase === "SHOWDOWN";
+  /** Keep tray slot through showdown/hand-complete so dock height stays stable. */
+  const liveStreet = !setup && !handDone && !showdown;
   const legal = visiblePokerLegalActions(view);
-  const layout = pokerActorLayout(legal);
-  const fold = legal.find((a) => a.type === "FOLD");
+  const trio = pokerDockTrio(legal);
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
-  /** Live betting streets keep tray populated; chips only enable when BET/RAISE is legal. */
-  const showTray = !compactDock;
-  const trayEnabled = Boolean(showTray && pokerTrayEnabled(view));
-  const waitingHint =
-    !compactDock && phaseCopy.instruction ? phaseCopy.instruction : null;
+  const showTray = !setup;
+  const trayEnabled = Boolean(liveStreet && pokerTrayEnabled(view));
+  const waitingHint = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
+  const [fxSeed, setFxSeed] = useState("");
+  const [fxTone, setFxTone] = useState<"win" | "loss">("win");
+  const [fxActive, setFxActive] = useState(false);
+
+  useEffect(() => {
+    if (view.phase !== "HAND_COMPLETE") {
+      setFxActive(false);
+      return;
+    }
+    const won = view.winners?.some((w) => w.userId === view.viewerId);
+    setFxTone(won ? "win" : "loss");
+    setFxSeed(`${view.handNumber}-${view.viewerId}-${won ? "w" : "l"}`);
+    setFxActive(true);
+  }, [view.phase, view.handNumber, view.viewerId, view.winners]);
 
   return (
     <PremiumShell
@@ -48,7 +65,7 @@ export function PremiumPokerPlayer({
       board="POKER_PLAYER"
       dock={
         <CasinoConsole
-          variant={compactDock ? "setup" : "default"}
+          variant={setup ? "setup" : "default"}
           notice={
             notice || waitingHint ? (
               <div className="pm-console-notice" data-poker-turn-hint="true">
@@ -56,10 +73,10 @@ export function PremiumPokerPlayer({
               </div>
             ) : null
           }
-          toCall={!compactDock && view.toCall.label !== "0" ? view.toCall.label : null}
-          available={!compactDock ? view.available.label : undefined}
+          toCall={liveStreet && view.toCall.label !== "0" ? view.toCall.label : null}
+          available={!setup ? view.available.label : undefined}
           showTray={showTray}
-          reserveTray={false}
+          reserveTray={!setup}
           trayEnabled={trayEnabled}
           selectedChip={selectedChip}
           onChip={(value) => {
@@ -69,22 +86,26 @@ export function PremiumPokerPlayer({
             void onCommand("pokerAct", { type: act.type, amount: act.amount });
           }}
           primary={
-            layout.primary
+            trio.respond
               ? {
-                  label: layout.primary.label,
-                  onClick: () =>
-                    void onCommand("pokerAct", {
-                      type: layout.primary!.type,
-                      amount: layout.primary!.amount.label,
-                    }),
+                  label: trio.respond.label,
+                  onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
                 }
               : null
           }
           secondary={
-            fold
+            trio.fold
               ? {
-                  label: fold.label,
+                  label: trio.fold.label,
                   onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
+                }
+              : null
+          }
+          tertiary={
+            trio.aggression
+              ? {
+                  label: pokerAggressionLabel(trio.aggression),
+                  onClick: () => void onCommand("pokerAct", pokerActPayload(trio.aggression!)),
                 }
               : null
           }
@@ -101,6 +122,7 @@ export function PremiumPokerPlayer({
         seats={view.seats}
         viewerId={view.viewerId}
       />
+      <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} />
     </PremiumShell>
   );
 }

@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
+  pokerActPayload,
   pokerActorActions,
   pokerActorLayout,
+  pokerAggressionLabel,
   pokerComposeBounds,
   pokerComposeSeed,
   pokerControlIds,
   pokerControls,
+  pokerDockTrio,
   pokerTrayChipAct,
   pokerTrayEnabled,
   pokerTurnLabel,
@@ -122,6 +125,23 @@ test("actor controls keep CALL available and open BET/RAISE separately", () => {
     convention: "Raise to",
     min: "20",
   });
+});
+
+test("dock trio shows FOLD/CALL/RAISE when facing a wager and FOLD/CHECK/BET when not", () => {
+  const facing = pokerDockTrio(actorLegal);
+  expect(facing.owed).toBe(true);
+  expect(facing.fold?.type).toBe("FOLD");
+  expect(facing.respond?.type).toBe("CALL");
+  expect(facing.aggression?.type).toBe("RAISE");
+  expect(pokerActPayload(facing.aggression!)).toEqual({ type: "RAISE", amount: "20" });
+  expect(pokerAggressionLabel(facing.aggression!)).toBe("RAISE 20");
+
+  const free = pokerDockTrio(checkLegal);
+  expect(free.owed).toBe(false);
+  expect(free.fold?.type).toBe("FOLD");
+  expect(free.respond?.type).toBe("CHECK");
+  expect(free.aggression?.type).toBe("BET");
+  expect(pokerActPayload(free.respond!)).toEqual({ type: "CHECK", amount: "0" });
 });
 
 test("tray chip RAISE uses raise-to minimum, never raw denomination below it", () => {

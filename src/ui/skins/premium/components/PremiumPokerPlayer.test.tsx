@@ -99,6 +99,7 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html.match(/AVAILABLE/g)?.length).toBe(1);
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 10");
+    expect(html).toContain("RAISE 20");
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="15"');
     expect(html).not.toContain('data-street-wager="true"');

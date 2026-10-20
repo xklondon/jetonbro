@@ -6,8 +6,10 @@ import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import { blackjackDealerControls, blackjackOwnerMenu } from "@/ui/core/blackjack-phase-controls";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
-import { PremiumShell } from "./PremiumShell";
+import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
+import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
+import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
 import { BlackjackBox, setupSeatBox } from "./primitives/BlackjackBox";
@@ -63,6 +65,8 @@ export function PremiumBlackjackDealer({
   notice?: string | null;
 }) {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [giveOpen, setGiveOpen] = useState(false);
+  const [fxSettingsOpen, setFxSettingsOpen] = useState(false);
   const [sheet, setSheet] = useState<Sheet>("closed");
   const [smallBlind, setSmallBlind] = useState("1");
   const [bigBlind, setBigBlind] = useState("2");
@@ -94,6 +98,7 @@ export function PremiumBlackjackDealer({
   });
 
   const showAddPlayer = setup || betting || payout;
+  const showGiveJetons = Boolean(view.isOwner && view.actions.giveJetons && (setup || betting));
   /** Tray Change Game: Betting/Setup when safe; Payout always visible for owner (may be disabled). */
   const showChangeGame =
     view.isOwner && (setup || betting || payout) && (ownerMenu.changeGame || payout);
@@ -242,9 +247,16 @@ export function PremiumBlackjackDealer({
                     disabled: !controls.insurance.enabled,
                     onClick: () => void onCommand(controls.insurance!.command),
                   }
-                : null
+                : showGiveJetons
+                  ? { label: "GIVE JETONS", onClick: () => setGiveOpen(true) }
+                  : null
           }
-          tertiary={tertiary}
+          tertiary={
+            tertiary ??
+            (showGiveJetons && showAddPlayer
+              ? { label: "GIVE JETONS", onClick: () => setGiveOpen(true) }
+              : null)
+          }
         />
       }
     >
@@ -277,6 +289,15 @@ export function PremiumBlackjackDealer({
         onCommand={onCommand}
         notice={notice}
       />
+      <PremiumGiveJetonsMask
+        open={giveOpen}
+        onClose={() => setGiveOpen(false)}
+        members={members}
+        onCommand={onCommand}
+        title="GIVE JETONS"
+        notice={notice}
+      />
+      <PremiumCelebrationSettings open={fxSettingsOpen} onClose={() => setFxSettingsOpen(false)} />
       {sheet !== "closed" ? (
         <div className="pm-sheet-mask" data-change-game-sheet={sheet === "pick" || sheet === "poker" ? "true" : undefined} role="dialog" aria-modal="true">
           <div className="pm-sheet">
@@ -302,6 +323,17 @@ export function PremiumBlackjackDealer({
                     {changeGameReason}
                   </p>
                 ) : null}
+                <button
+                  type="button"
+                  className="pm-console-btn is-ghost"
+                  data-celebration-settings-open="true"
+                  onClick={() => {
+                    setSheet("closed");
+                    setFxSettingsOpen(true);
+                  }}
+                >
+                  Result animations
+                </button>
                 <button type="button" className="pm-sheet-cancel" onClick={() => setSheet("closed")}>
                   Cancel
                 </button>

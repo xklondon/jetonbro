@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { MemberView, PlayerTableView } from "@/application/queries/views";
 import { blackjackPlayerControls } from "@/ui/core/blackjack-phase-controls";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { PremiumOutcomeFx } from "./PremiumOutcomeFx";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
@@ -44,7 +45,28 @@ export function PremiumBlackjackPlayer({
   const setup = view.phase === "TABLE_SETUP";
   const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const playing = view.phase === "PLAYING";
-  const showTray = !payout;
+  /** Keep tray well during payout so dock height matches betting while dealer awards. */
+  const showTray = true;
+  const trayInteractive = !payout && !setup;
+  const [fxActive, setFxActive] = useState(false);
+  const [fxTone, setFxTone] = useState<"win" | "loss">("win");
+  const [fxSeed, setFxSeed] = useState("");
+
+  useEffect(() => {
+    if (!payout) {
+      setFxActive(false);
+      return;
+    }
+    const settled = view.boxes.find((box) => box.outcome);
+    if (!settled?.outcome) {
+      setFxActive(false);
+      return;
+    }
+    const win = settled.outcome === "WON" || settled.outcome === "BLACKJACK";
+    setFxTone(win ? "win" : "loss");
+    setFxSeed(`${view.phase}-${settled.id}-${settled.outcome}`);
+    setFxActive(true);
+  }, [payout, view.boxes, view.phase]);
 
   async function retractChip(boxId: string, amount: string) {
     if (retractBusy || view.phase !== "BETTING" || !view.actions.retract) return;
@@ -93,11 +115,12 @@ export function PremiumBlackjackPlayer({
           notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           available={view.available.label}
           showTray={showTray}
-          trayEnabled={Boolean(controls.trayEnabled)}
+          reserveTray
+          trayEnabled={Boolean(trayInteractive && controls.trayEnabled)}
           selectedChip={selectedChip}
           onChip={(value) => {
             setSelectedChip(value);
-            if (selected && controls.placeBet) {
+            if (selected && controls.placeBet && trayInteractive) {
               void onCommand("placeBet", { boxId: selected.id, amount: value, mode: "ADD" });
             }
           }}
@@ -153,6 +176,7 @@ export function PremiumBlackjackPlayer({
           <p className="pm-bj-empty">Waiting for a box</p>
         )}
       </BlackjackTable>
+      <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} />
     </PremiumShell>
   );
 }
