@@ -6,6 +6,15 @@ import { CasinoJeton } from "./CasinoJeton";
 
 const CHIPS = ["5", "10", "25", "50", "100"] as const;
 
+function pokerActionTone(label: string): string {
+  const upper = label.toUpperCase();
+  if (upper.startsWith("FOLD")) return " is-fold";
+  if (upper.startsWith("CHECK")) return " is-check";
+  if (upper.startsWith("BET") || upper.startsWith("RAISE")) return " is-bet";
+  if (upper.startsWith("CALL")) return " is-call";
+  return "";
+}
+
 function ActionButton({
   action,
   kind,
@@ -13,10 +22,11 @@ function ActionButton({
   action: DockAction;
   kind: "primary" | "ghost";
 }) {
+  const tone = pokerActionTone(action.label);
   return (
     <button
       type="button"
-      className={`pm-console-btn is-${kind === "primary" ? "primary" : "ghost"}`}
+      className={`pm-console-btn is-${kind === "primary" ? "primary" : "ghost"}${tone}`}
       disabled={action.disabled}
       title={action.title}
       onClick={action.onClick}
@@ -76,13 +86,14 @@ export function CasinoConsole({
 
   return (
     <footer
-      className={`pm-console${compact ? " is-bj" : ""}${variant === "setup" ? " is-setup" : ""}${
+      className={`pm-console${compact ? " is-bj" : " is-poker-wallet"}${variant === "setup" ? " is-setup" : ""}${
         trayVisible ? " has-visible-tray" : " no-visible-tray"
       }`}
       data-premium-dock="true"
       data-casino-console="true"
       data-console-variant={variant}
       data-has-tray={hasTray ? "true" : "false"}
+      data-poker-wallet={!compact ? "true" : undefined}
     >
       <div className={`pm-console-body${hasTray || trayVisible ? " has-tray" : " no-tray"}`}>
         {notice}
@@ -137,24 +148,23 @@ export function CasinoConsole({
           </>
         ) : (
           <>
-            <div className="pm-console-top">
-              {toCall != null && toCall !== "0" ? (
+            {toCall != null && toCall !== "0" ? (
+              <div className="pm-console-top">
                 <div className="pm-console-call" data-to-call="true">
                   TO CALL <strong>{toCall}</strong>
                 </div>
-              ) : (
-                <span />
-              )}
-              <span />
-            </div>
+              </div>
+            ) : null}
             <div
               className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
                 primary && !secondary && !tertiary ? " is-single" : ""
-              }`}
+              }${secondary && primary && tertiary ? " is-trio" : ""}`}
+              data-console-actions="true"
             >
-              {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
+              {/* Poker0 order: FOLD · CHECK/CALL · BET/RAISE */}
               {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
               {primary ? <ActionButton action={primary} kind="primary" /> : null}
+              {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
             </div>
           </>
         )}
@@ -189,7 +199,7 @@ export function CasinoConsole({
                   >
                     <CasinoJeton
                       denomination={value}
-                      size={variant === "blackjack" ? "xl" : "lg"}
+                      size={variant === "blackjack" ? "xl" : "md"}
                       selected={selected}
                       disabled={chipDisabled}
                       label={value}

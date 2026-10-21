@@ -50,30 +50,12 @@
   --premium-console-height: 10dvh;
 }
 
-/* Poker player — compact integrated tray; shrink further when setup / no chip tray. */
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] {
-  --premium-header-height: 7dvh;
-  --premium-table-height: 71dvh;
-  --premium-console-height: 22dvh;
-}
-
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"]:has(.pm-console.is-setup),
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"]:has(.pm-console.no-visible-tray) {
-  --premium-table-height: 84dvh;
-  --premium-console-height: 9dvh;
-}
-
-/* Dealer live default matches player tray well so chips are never clipped to AVAILABLE-only. */
+/* Poker — fixed wallet height through setup / betting / waiting / showdown / hand-complete. */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"],
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] {
   --premium-header-height: 7dvh;
-  --premium-table-height: 71dvh;
-  --premium-console-height: 22dvh;
-}
-
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.is-setup),
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.no-visible-tray) {
-  --premium-table-height: 83dvh;
-  --premium-console-height: 10dvh;
+  --premium-table-height: 70dvh;
+  --premium-console-height: 23dvh;
 }
 
 [data-skin="premium"] *,
@@ -1153,7 +1135,7 @@
 [data-skin="premium"] .pm-poker-felt-name {
   position: absolute;
   left: 50%;
-  top: 28%;
+  top: 22%;
   transform: translateX(-50%);
   font: 600 11px/1.1 var(--pm-serif);
   letter-spacing: 0.18em;
@@ -1165,7 +1147,8 @@
 [data-skin="premium"] .pm-phase-journey {
   position: absolute;
   left: 50%;
-  top: 34%;
+  /* Below the pot cluster (Poker0 authority). */
+  top: 58%;
   transform: translateX(-50%);
   display: flex;
   gap: 4px;
@@ -1196,48 +1179,74 @@
 [data-skin="premium"] .pm-poker-pot {
   position: absolute;
   left: 50%;
-  top: 46%;
+  top: 36%;
   transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 10px;
   min-width: 0;
-  max-width: min(78%, 10.5rem);
+  max-width: min(86%, 12rem);
   padding: 0;
   border: 0;
   border-radius: 0;
   text-align: center;
   background: transparent;
   box-shadow: none;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
 }
 
-[data-skin="premium"] .pm-poker-pot-chips {
-  flex: 0 0 auto;
-  transform: scale(0.9);
-  transform-origin: center bottom;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+/* Poker0: mixed jeton mound above clear POT / total */
+[data-skin="premium"] .pm-poker-pot-cluster {
+  position: relative;
+  width: 7.2rem;
+  height: 3.1rem;
+  margin: 0 auto;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+}
+
+[data-skin="premium"] .pm-poker-pot-chip {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+}
+
+[data-skin="premium"] .pm-poker-pot-chip.is-i0 { transform: translate(-68%, -58%) rotate(-14deg); z-index: 1; }
+[data-skin="premium"] .pm-poker-pot-chip.is-i1 { transform: translate(-22%, -72%) rotate(10deg); z-index: 3; }
+[data-skin="premium"] .pm-poker-pot-chip.is-i2 { transform: translate(28%, -52%) rotate(-8deg); z-index: 2; }
+[data-skin="premium"] .pm-poker-pot-chip.is-i3 { transform: translate(-42%, -30%) rotate(16deg); z-index: 4; }
+[data-skin="premium"] .pm-poker-pot-chip.is-i4 { transform: translate(10%, -26%) rotate(-4deg); z-index: 5; }
+[data-skin="premium"] .pm-poker-pot-chip.is-i5 { transform: translate(48%, -40%) rotate(12deg); z-index: 3; }
+
+[data-skin="premium"] .pm-poker-pot-chip .pm-jeton {
+  transform: scale(0.82);
 }
 
 [data-skin="premium"] .pm-poker-pot-copy {
+  position: relative;
+  z-index: 8;
   min-width: 0;
   line-height: 1.05;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 12px rgba(0, 0, 0, 0.35);
+  padding: 0 6px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 14px rgba(0, 0, 0, 0.45);
 }
 
 [data-skin="premium"] .pm-poker-pot small,
 [data-skin="premium"] .pm-poker-pot-copy small {
   display: block;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  color: rgba(240, 220, 170, 0.92);
+  font: 700 12px/1.15 var(--pm-sans);
+  letter-spacing: 0.28em;
+  color: #f3dc9a;
+  text-transform: uppercase;
 }
 
 [data-skin="premium"] .pm-poker-pot strong,
 [data-skin="premium"] .pm-poker-pot-copy strong {
-  font: 700 28px/1.05 var(--pm-serif);
-  color: var(--pm-ivory);
+  display: block;
+  margin-top: 3px;
+  font: 700 34px/1.05 var(--pm-serif);
+  color: #f3dc9a;
 }
 
 [data-skin="premium"] .pm-poker-side-pots {
@@ -1343,20 +1352,46 @@
   color: var(--pm-gold-hi);
 }
 
-/* Poker live console — keep tray + AVAILABLE compact and integrated */
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console,
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console.has-visible-tray) .pm-console {
-  margin-top: -12px;
+/* Poker wallet — BJ emerald-felt tray chrome: leather well, wood lip, gold trim */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet {
+  margin-top: -14px;
+  padding: 0 6px var(--premium-safe-area);
 }
 
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body,
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.has-visible-tray .pm-console-body {
-  grid-template-rows: auto auto minmax(56px, 1fr);
-  gap: 4px;
-  padding: 10px 10px 6px;
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body {
+  grid-template-rows: auto minmax(58px, 1fr);
+  gap: 6px;
+  padding: 12px 12px 8px;
+  border-radius: 18px 18px 14px 14px;
+  border: 1.5px solid rgba(212, 184, 130, 0.55);
+  background:
+    radial-gradient(ellipse 90% 34% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 52%),
+    linear-gradient(180deg, #1c1612 0%, #100e0c 48%, #070605 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -3px 10px rgba(0, 0, 0, 0.5),
+    0 12px 28px rgba(0, 0, 0, 0.48);
 }
 
-/* Poker notices overlay the dock rim — must not steal a grid row or crush AVAILABLE into chips. */
+/* Warm wood rail lip at the top of the wallet (table→tray join) */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body::before,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body::before {
+  left: 10px;
+  right: 10px;
+  top: -8px;
+  height: 11px;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  border-bottom: 0;
+  background:
+    repeating-linear-gradient(92deg, rgba(140, 92, 48, 0.28) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg, #7a5230 0%, #4a2c16 55%, #2a180c 100%);
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Poker notices overlay the dock rim — must not steal a grid row. */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body > .pm-console-notice,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body > .pm-console-notice {
   position: absolute;
@@ -1370,15 +1405,12 @@
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body:has(> .pm-console-notice),
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body:has(> .pm-console-notice) {
-  padding-top: 24px;
+  padding-top: 26px;
 }
 
-/* Setup: actions only — no AVAILABLE row (balances stay on seats). */
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-setup .pm-console-body,
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-setup .pm-console-body {
-  grid-template-rows: auto;
-  align-content: center;
-  padding-top: 12px;
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body:has(.pm-console-top),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body:has(.pm-console-top) {
+  grid-template-rows: auto auto minmax(58px, 1fr);
 }
 
 /* ===== Integrated casino console ===== */
@@ -1659,12 +1691,43 @@
   grid-template-columns: 1fr;
 }
 
+[data-skin="premium"] .pm-console-actions.is-trio {
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
 [data-skin="premium"] .pm-console-actions.is-empty {
   display: none;
   min-height: 0;
   height: 0;
   margin: 0;
   padding: 0;
+}
+
+/* Poker0 action tones on the integrated wallet */
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-btn.is-fold {
+  background: linear-gradient(180deg, #5a221c 0%, #3a1210 55%, #240a08 100%);
+  color: #f6e7d6;
+  border-color: rgba(212, 184, 130, 0.55);
+}
+
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-btn.is-check {
+  background: linear-gradient(180deg, #1a1a1a 0%, #0c0c0c 100%);
+  color: #f4ead5;
+  border-color: rgba(212, 184, 130, 0.5);
+}
+
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-btn.is-bet {
+  background: linear-gradient(180deg, #1a4a32 0%, #0c2e1e 55%, #071a12 100%);
+  color: #f4ead5;
+  border-color: rgba(212, 184, 130, 0.55);
+}
+
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-btn.is-call.is-primary,
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-btn.is-primary:not(.is-fold):not(.is-bet):not(.is-check) {
+  background: linear-gradient(180deg, #f3dc9a 0%, #d4b882 48%, #b8924a 100%);
+  color: var(--pm-ink);
+  border-color: rgba(90, 64, 24, 0.35);
 }
 
 /* Poker waiting actor: top row (TO CALL / AVAILABLE) + tray — empty action row is display:none. */
@@ -1728,22 +1791,26 @@
 
 [data-skin="premium"] .pm-console-tray.has-available {
   justify-content: flex-start;
-  gap: 8px;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(212, 184, 130, 0.22);
+  overflow: visible;
 }
 
 [data-skin="premium"] .pm-console-tray-available {
   flex: 0 0 auto;
   min-width: 52px;
+  max-width: 58px;
   text-align: left;
   line-height: 1.05;
-  padding-right: 4px;
+  padding-right: 0;
 }
 
 [data-skin="premium"] .pm-console-tray-available small {
   display: block;
   font-size: 8px;
   letter-spacing: 0.12em;
-  color: rgba(212, 184, 130, 0.75);
+  color: rgba(244, 234, 213, 0.72);
 }
 
 [data-skin="premium"] .pm-console-tray-available strong {
@@ -1756,8 +1823,30 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2px;
+  gap: 0;
   min-width: 0;
+  overflow: visible;
+}
+
+/* Phone tray: five md jetons + AVAILABLE must stay fully inside 390px */
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-tray-chips .pm-console-jeton-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 52px;
+}
+
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-tray-chips .pm-jeton {
+  width: 46px;
+  height: 46px;
+  font-size: 12px;
+}
+
+[data-skin="premium"] .pm-console.is-poker-wallet .pm-console-body.has-tray .pm-console-tray {
+  margin-top: 0;
+  padding-top: 6px;
+  border-top: 1px solid rgba(107, 68, 40, 0.4);
+  background: linear-gradient(180deg, rgba(50, 32, 18, 0.28), transparent 75%);
+  border-radius: 0 0 12px 12px;
 }
 
 /* Reserve tray well height across phases (e.g. BJ player payout) — do not collapse the dock. */

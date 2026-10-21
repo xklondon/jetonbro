@@ -184,7 +184,7 @@ function poker(extra: Partial<PokerTableView> = {}): PokerTableView {
     tableName: "WALNUT ROOM",
     copy: "",
     isOwner: false,
-    pot: money("15"),
+    pot: money("60"),
     potPaid: false,
     toCall: money("10"),
     contribution: money("0", "0"),
@@ -196,6 +196,8 @@ function poker(extra: Partial<PokerTableView> = {}): PokerTableView {
     seats: [
       pokerSeat("v", "Vi", 0, { isActor: true, isDealer: true, streetContribution: money("0", "0") }),
       pokerSeat("s", "Sam", 1, { isSmallBlind: true, streetContribution: money("5") }),
+      pokerSeat("a", "Alex", 2, { isBigBlind: true, streetContribution: money("10") }),
+      pokerSeat("b", "Blair", 3, { streetContribution: money("20") }),
     ],
     pots: [],
     legalActions: [

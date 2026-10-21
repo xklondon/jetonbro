@@ -1,7 +1,7 @@
 /**
  * @vitest-environment happy-dom
  *
- * Regression: clicking the tray chip labelled "5" must send raise-to 20, not denomination 5.
+ * Regression: tray chips below legal min stay disabled; RAISE uses the selected face value.
  */
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -138,7 +138,7 @@ function waitingView(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, ac
   };
 }
 
-describe("Premium Poker tray chip click → pokerAct raise-to", () => {
+describe("Premium Poker tray chip select → pokerAct raise face", () => {
   let host: HTMLDivElement;
   let root: Root;
 
@@ -203,7 +203,7 @@ describe("Premium Poker tray chip click → pokerAct raise-to", () => {
     await assertDealerTrayDom();
   });
 
-  it("dealer: chip labelled 5 sends RAISE amount 20 (raise-to), not 5", async () => {
+  it("dealer: below-min chip 5 stays disabled; RAISE uses selected face 25", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerDealer, {
@@ -218,14 +218,20 @@ describe("Premium Poker tray chip click → pokerAct raise-to", () => {
 
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
     expect(chip5).toBeTruthy();
-    expect(chip5!.disabled).toBe(false);
-    chip5!.click();
+    expect(chip5!.disabled).toBe(true);
+
+    const raise = [...host.querySelectorAll("button")].find((btn) =>
+      (btn.textContent ?? "").toUpperCase().startsWith("RAISE"),
+    ) as HTMLButtonElement | undefined;
+    expect(raise).toBeTruthy();
+    expect(raise!.textContent).toMatch(/RAISE\s+25/i);
+    raise!.click();
     await flush();
 
-    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "20" } }]);
+    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "25" } }]);
   });
 
-  it("player: chip labelled 5 sends RAISE amount 20 (raise-to), not 5", async () => {
+  it("player: below-min chip 5 stays disabled; RAISE uses selected face 25", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerPlayer, {
@@ -239,11 +245,17 @@ describe("Premium Poker tray chip click → pokerAct raise-to", () => {
 
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
     expect(chip5).toBeTruthy();
-    expect(chip5!.disabled).toBe(false);
-    chip5!.click();
+    expect(chip5!.disabled).toBe(true);
+
+    const raise = [...host.querySelectorAll("button")].find((btn) =>
+      (btn.textContent ?? "").toUpperCase().startsWith("RAISE"),
+    ) as HTMLButtonElement | undefined;
+    expect(raise).toBeTruthy();
+    expect(raise!.textContent).toMatch(/RAISE\s+25/i);
+    raise!.click();
     await flush();
 
-    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "20" } }]);
+    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "25" } }]);
   });
 
   it("waiting dealer cannot submit a raise from the tray", async () => {
