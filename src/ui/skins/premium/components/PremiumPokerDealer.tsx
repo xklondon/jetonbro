@@ -8,6 +8,7 @@ import {
   pokerDockTrio,
   pokerTrayChipAct,
   pokerTrayEnabled,
+  pokerTrayMinAmount,
   visiblePokerLegalActions,
 } from "@/application/queries/poker-controls";
 import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
@@ -52,8 +53,7 @@ export function PremiumPokerDealer({
   const setup = view.phase === "POKER_SETUP" || view.phase === "TABLE_SETUP";
   const betweenHands = view.phase === "HAND_COMPLETE";
   const showdown = view.phase === "SHOWDOWN" && view.canAward;
-  /** Setup + between-hands use the compact action dock (no AVAILABLE / tray). */
-  const compactDock = setup || betweenHands;
+  const liveStreet = !setup && !betweenHands && !showdown;
   const [winners, setWinners] = useState<Record<number, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -70,9 +70,19 @@ export function PremiumPokerDealer({
   const seatNotice = pokerStartHandNotice(notice);
   const legal = visiblePokerLegalActions(view);
   const trio = pokerDockTrio(legal);
-  /** Seated dealer: tray through live streets; reserve height in showdown for dock stability. */
-  const showTray = Boolean(ownerSeated && !compactDock);
-  const trayEnabled = Boolean(ownerSeated && !compactDock && !showdown && pokerTrayEnabled(view));
+  /** Fixed tray through every Poker phase for seated dealer (and always reserve height). */
+  const showTray = Boolean(ownerSeated);
+  const trayEnabled = Boolean(ownerSeated && liveStreet && pokerTrayEnabled(view));
+  const minChip = trayEnabled ? pokerTrayMinAmount(view) : null;
+  const chipAct = selectedChip && trayEnabled ? pokerTrayChipAct(view, selectedChip) : null;
+
+  useEffect(() => {
+    if (!minChip || !selectedChip) return;
+    if (Number(selectedChip) < minChip) {
+      const next = ["5", "10", "25", "50", "100"].find((value) => Number(value) >= minChip) ?? null;
+      if (next) setSelectedChip(next);
+    }
+  }, [minChip, selectedChip]);
 
   useEffect(() => {
     if (view.phase !== "SHOWDOWN") setWinners({});
@@ -115,8 +125,8 @@ export function PremiumPokerDealer({
 
   /** Prefer full legal trio when seated dealer is acting; else owner street/start. */
   let primary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
-  let secondary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
-  let tertiary: { label: string; disabled?: boolean; onClick?: () => void } | null = null;
+  let secondary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
+  let tertiary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
 
   if (showdown) {
     primary = null;
@@ -135,8 +145,13 @@ export function PremiumPokerDealer({
       : null;
     tertiary = trio.aggression
       ? {
-          label: pokerAggressionLabel(trio.aggression),
-          onClick: () => void onCommand("pokerAct", pokerActPayload(trio.aggression!)),
+          label: chipAct ? `${chipAct.type} ${chipAct.amount}` : pokerAggressionLabel(trio.aggression),
+          disabled: !chipAct,
+          title: chipAct ? undefined : "Select a legal chip amount",
+          onClick: () => {
+            if (!chipAct) return;
+            void onCommand("pokerAct", { type: chipAct.type, amount: chipAct.amount });
+          },
         }
       : view.canDealStreet
         ? {
@@ -201,7 +216,7 @@ export function PremiumPokerDealer({
       board="POKER_DEALER"
       dock={
         <CasinoConsole
-          variant={compactDock ? "setup" : "default"}
+          variant="default"
           notice={
             dockNotice ? (
               <div className="pm-console-notice" data-poker-turn-hint="true">
@@ -209,18 +224,14 @@ export function PremiumPokerDealer({
               </div>
             ) : null
           }
-          toCall={!compactDock && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
-          available={!compactDock && !showdown && ownerSeated ? view.available.label : undefined}
+          toCall={liveStreet && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
+          available={ownerSeated ? view.available.label : undefined}
           showTray={showTray}
-          reserveTray={Boolean(ownerSeated && !compactDock)}
+          reserveTray={Boolean(ownerSeated)}
           trayEnabled={trayEnabled}
           selectedChip={selectedChip}
-          onChip={(value) => {
-            setSelectedChip(value);
-            const act = pokerTrayChipAct(view, value);
-            if (!act) return;
-            void onCommand("pokerAct", { type: act.type, amount: act.amount });
-          }}
+          minChipAmount={minChip}
+          onChip={(value) => setSelectedChip(value)}
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}

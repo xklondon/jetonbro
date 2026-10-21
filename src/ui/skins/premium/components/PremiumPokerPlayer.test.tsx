@@ -94,12 +94,14 @@ describe("PremiumPokerPlayer live tray", () => {
       createElement(PremiumPokerPlayer, { view: view(), onCommand: () => undefined }),
     );
     expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-tray-available="true"');
+    expect(html).toContain("pm-console-tray-available");
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain("AVAILABLE");
     expect(html.match(/AVAILABLE/g)?.length).toBe(1);
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 10");
-    expect(html).toContain("RAISE 20");
+    expect(html).toContain("RAISE 25");
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="15"');
     expect(html).not.toContain('data-street-wager="true"');
@@ -128,7 +130,7 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html).toContain("disabled");
   });
 
-  it("wires raise chips through pokerTrayChipAct", async () => {
+  it("selects chips then submits player-chosen raise via aggression button", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const source = readFileSync(join(__dirname, "PremiumPokerPlayer.tsx"), "utf8");
@@ -136,9 +138,11 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(source).toContain("visiblePokerLegalActions");
     expect(source).toContain("pokerTrayEnabled");
     expect(source).toContain("pokerTrayChipAct");
+    expect(source).toContain("setSelectedChip");
+    expect(source).not.toContain("onChip={(value) => {\n            setSelectedChip(value);\n            const act = pokerTrayChipAct");
   });
 
-  it("setup dock omits AVAILABLE (balance stays on seat)", () => {
+  it("setup dock keeps fixed tray with AVAILABLE beside jetons", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumPokerPlayer, {
         view: view({
@@ -153,7 +157,9 @@ describe("PremiumPokerPlayer live tray", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html).not.toContain("AVAILABLE");
-    expect(html).not.toContain('data-jeton-tray="true"');
+    expect(html).toContain("AVAILABLE");
+    expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-tray-available="true"');
+    expect(html).toContain("pm-console-tray-available");
   });
 });

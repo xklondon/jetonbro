@@ -144,7 +144,7 @@ test("dock trio shows FOLD/CALL/RAISE when facing a wager and FOLD/CHECK/BET whe
   expect(pokerActPayload(free.respond!)).toEqual({ type: "CHECK", amount: "0" });
 });
 
-test("tray chip RAISE uses raise-to minimum, never raw denomination below it", () => {
+test("tray chip RAISE uses player-selected face value; below-min chips are illegal", () => {
   const acting = view({
     viewerId: "owner",
     currentActorId: "owner",
@@ -156,7 +156,7 @@ test("tray chip RAISE uses raise-to minimum, never raw denomination below it", (
       seat({ userId: "sam", isBigBlind: true, streetContribution: money("10") }),
     ],
   });
-  expect(pokerTrayChipAct(acting, "5")).toEqual({ type: "RAISE", amount: "20" });
+  expect(pokerTrayChipAct(acting, "5")).toBeNull();
   expect(pokerTrayChipAct(acting, "25")).toEqual({ type: "RAISE", amount: "25" });
   expect(pokerTrayChipAct(acting, "20")).toEqual({ type: "RAISE", amount: "20" });
 

@@ -7,6 +7,7 @@ import {
   pokerDockTrio,
   pokerTrayChipAct,
   pokerTrayEnabled,
+  pokerTrayMinAmount,
   visiblePokerLegalActions,
 } from "@/application/queries/poker-controls";
 import type { PokerTableView } from "@/application/queries/views";
@@ -36,13 +37,15 @@ export function PremiumPokerPlayer({
   const setup = view.phase === "POKER_SETUP" || view.phase === "TABLE_SETUP";
   const handDone = view.phase === "HAND_COMPLETE";
   const showdown = view.phase === "SHOWDOWN";
-  /** Keep tray slot through showdown/hand-complete so dock height stays stable. */
   const liveStreet = !setup && !handDone && !showdown;
   const legal = visiblePokerLegalActions(view);
   const trio = pokerDockTrio(legal);
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
-  const showTray = !setup;
+  /** Fixed tray through every Poker phase — same size/position. */
+  const showTray = true;
   const trayEnabled = Boolean(liveStreet && pokerTrayEnabled(view));
+  const minChip = trayEnabled ? pokerTrayMinAmount(view) : null;
+  const chipAct = selectedChip && trayEnabled ? pokerTrayChipAct(view, selectedChip) : null;
   const waitingHint = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
   const [fxSeed, setFxSeed] = useState("");
   const [fxTone, setFxTone] = useState<"win" | "loss">("win");
@@ -59,13 +62,21 @@ export function PremiumPokerPlayer({
     setFxActive(true);
   }, [view.phase, view.handNumber, view.viewerId, view.winners]);
 
+  useEffect(() => {
+    if (!minChip || !selectedChip) return;
+    if (Number(selectedChip) < minChip) {
+      const next = ["5", "10", "25", "50", "100"].find((value) => Number(value) >= minChip) ?? null;
+      if (next) setSelectedChip(next);
+    }
+  }, [minChip, selectedChip]);
+
   return (
     <PremiumShell
       title="JETONBRO"
       board="POKER_PLAYER"
       dock={
         <CasinoConsole
-          variant={setup ? "setup" : "default"}
+          variant="default"
           notice={
             notice || waitingHint ? (
               <div className="pm-console-notice" data-poker-turn-hint="true">
@@ -74,17 +85,13 @@ export function PremiumPokerPlayer({
             ) : null
           }
           toCall={liveStreet && view.toCall.label !== "0" ? view.toCall.label : null}
-          available={!setup ? view.available.label : undefined}
+          available={view.available.label}
           showTray={showTray}
-          reserveTray={!setup}
+          reserveTray
           trayEnabled={trayEnabled}
           selectedChip={selectedChip}
-          onChip={(value) => {
-            setSelectedChip(value);
-            const act = pokerTrayChipAct(view, value);
-            if (!act) return;
-            void onCommand("pokerAct", { type: act.type, amount: act.amount });
-          }}
+          minChipAmount={minChip}
+          onChip={(value) => setSelectedChip(value)}
           primary={
             trio.respond
               ? {
@@ -104,8 +111,15 @@ export function PremiumPokerPlayer({
           tertiary={
             trio.aggression
               ? {
-                  label: pokerAggressionLabel(trio.aggression),
-                  onClick: () => void onCommand("pokerAct", pokerActPayload(trio.aggression!)),
+                  label: chipAct
+                    ? `${chipAct.type} ${chipAct.amount}`
+                    : pokerAggressionLabel(trio.aggression),
+                  disabled: !chipAct,
+                  title: chipAct ? undefined : "Select a legal chip amount",
+                  onClick: () => {
+                    if (!chipAct) return;
+                    void onCommand("pokerAct", { type: chipAct.type, amount: chipAct.amount });
+                  },
                 }
               : null
           }

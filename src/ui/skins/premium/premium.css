@@ -1726,6 +1726,40 @@
   margin-top: 0;
 }
 
+[data-skin="premium"] .pm-console-tray.has-available {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-console-tray-available {
+  flex: 0 0 auto;
+  min-width: 52px;
+  text-align: left;
+  line-height: 1.05;
+  padding-right: 4px;
+}
+
+[data-skin="premium"] .pm-console-tray-available small {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: rgba(212, 184, 130, 0.75);
+}
+
+[data-skin="premium"] .pm-console-tray-available strong {
+  font: 700 18px/1 var(--pm-serif);
+  color: var(--pm-ivory);
+}
+
+[data-skin="premium"] .pm-console-tray-chips {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
 /* Reserve tray well height across phases (e.g. BJ player payout) — do not collapse the dock. */
 [data-skin="premium"] .pm-console-tray.is-reserved {
   visibility: hidden;

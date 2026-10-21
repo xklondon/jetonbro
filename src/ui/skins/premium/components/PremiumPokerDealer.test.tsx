@@ -123,13 +123,13 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(source).toContain('onCommand("startTexasHoldem")');
     expect(source).toContain('onCommand("startNextPokerHand")');
     expect(source).toContain('onCommand("advancePokerStreet")');
-    expect(source).toContain('variant={compactDock ? "setup" : "default"}');
+    expect(source).toContain('variant="default"');
     expect(source).toContain("ownerSeated");
     expect(source).toContain("pokerTrayChipAct");
-    expect(source).toContain("compactDock");
+    expect(source).toContain("pokerTrayMinAmount");
   });
 
-  it("setup dock has START HAND / ADD PLAYER without AVAILABLE overlap", () => {
+  it("setup dock keeps fixed tray with AVAILABLE beside jetons", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumPokerDealer, {
         view: dealerView({
@@ -147,11 +147,13 @@ describe("PremiumPokerDealer setup wiring", () => {
     );
     expect(html).toContain("START HAND");
     expect(html).toContain("ADD PLAYER");
-    expect(html).not.toContain("AVAILABLE");
-    expect(html).not.toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-tray-available="true"');
+    expect(html).toContain("AVAILABLE");
+    expect(html).toContain("pm-console-tray-available");
   });
 
-  it("HAND_COMPLETE dock keeps START HAND without AVAILABLE or tray", () => {
+  it("HAND_COMPLETE dock keeps fixed tray with AVAILABLE", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumPokerDealer, {
         view: dealerView({
@@ -168,8 +170,8 @@ describe("PremiumPokerDealer setup wiring", () => {
     );
     expect(html).toContain("START HAND");
     expect(html).toContain("ADD PLAYER");
-    expect(html).not.toContain("AVAILABLE");
-    expect(html).not.toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain("AVAILABLE");
   });
 
   it("shows tray + Fold/Call for seated dealer when it is their turn", () => {
@@ -187,12 +189,14 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(html).toContain("has-visible-tray");
     expect(html).not.toContain("no-visible-tray");
     expect(html).toContain("AVAILABLE");
+    expect(html).toContain('data-tray-available="true"');
+    expect(html).toContain("pm-console-tray-available");
     expect(html.match(/AVAILABLE/g)?.length).toBe(1);
     expect(html.match(/data-casino-jeton="true"/g)?.length).toBeGreaterThanOrEqual(5);
     expect(html).toContain('aria-label="Add 5 jetons"');
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 1");
-    expect(html).toContain("RAISE 4");
+    expect(html).toContain("RAISE 25");
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="3"');
     expect(html).not.toContain('data-street-wager="true"');

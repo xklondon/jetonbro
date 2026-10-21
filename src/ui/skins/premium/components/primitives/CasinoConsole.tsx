@@ -40,6 +40,7 @@ export function CasinoConsole({
   trayEnabled = false,
   selectedChip,
   onChip,
+  minChipAmount = null,
   showTray = false,
   reserveTray = false,
   variant = "default",
@@ -55,6 +56,8 @@ export function CasinoConsole({
   trayEnabled?: boolean;
   selectedChip?: string | null;
   onChip?: (value: string) => void;
+  /** When set, chips below this face value stay disabled (Poker legal min bet/raise). */
+  minChipAmount?: number | null;
   showTray?: boolean;
   reserveTray?: boolean;
   /** blackjack/setup: compact action row; default: poker live layout */
@@ -66,6 +69,9 @@ export function CasinoConsole({
   /** Only reserve empty tray height for Poker live — BJ dealer must not show a hollow betting well. */
   const hasTray = trayVisible || (reserveTray && variant === "default");
   const showWallet = available != null;
+  /** Poker: AVAILABLE sits on the chip row. BJ compact keeps the centered AVAILABLE band. */
+  const walletInTray = showWallet && !compact;
+  const walletAboveTray = showWallet && compact;
   const actionCount = [primary, secondary, tertiary].filter(Boolean).length;
 
   return (
@@ -118,7 +124,7 @@ export function CasinoConsole({
                 </>
               )}
             </div>
-            {showWallet ? (
+            {walletAboveTray ? (
               <div className="pm-console-available" data-player-wallet="true">
                 <span className="pm-console-available-rule" aria-hidden="true" />
                 <div className="pm-console-available-copy">
@@ -139,14 +145,7 @@ export function CasinoConsole({
               ) : (
                 <span />
               )}
-              {showWallet ? (
-                <div className="pm-console-wallet" data-player-wallet="true">
-                  <small>AVAILABLE</small>
-                  <strong>{available}</strong>
-                </div>
-              ) : (
-                <span />
-              )}
+              <span />
             </div>
             <div
               className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
@@ -161,32 +160,47 @@ export function CasinoConsole({
         )}
         {children}
         {trayVisible ? (
-          <div className="pm-console-tray" data-jeton-tray="true">
-            {CHIPS.map((value) => {
-              const selected = selectedChip === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
-                  disabled={!trayEnabled}
-                  aria-label={`Add ${value} jetons`}
-                  aria-pressed={selected}
-                  onClick={() => onChip?.(value)}
-                >
-                  <CasinoJeton
-                    denomination={value}
-                    size={variant === "blackjack" ? "xl" : "lg"}
-                    selected={selected}
-                    disabled={!trayEnabled}
-                    label={value}
-                  />
-                </button>
-              );
-            })}
+          <div
+            className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
+            data-jeton-tray="true"
+            data-tray-available={walletInTray ? "true" : undefined}
+          >
+            {walletInTray ? (
+              <div className="pm-console-tray-available" data-player-wallet="true">
+                <small>AVAILABLE</small>
+                <strong>{available}</strong>
+              </div>
+            ) : null}
+            <div className="pm-console-tray-chips">
+              {CHIPS.map((value) => {
+                const selected = selectedChip === value;
+                const belowMin =
+                  minChipAmount != null && Number.isFinite(minChipAmount) && Number(value) < minChipAmount;
+                const chipDisabled = !trayEnabled || belowMin;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
+                    disabled={chipDisabled}
+                    aria-label={`Add ${value} jetons`}
+                    aria-pressed={selected}
+                    onClick={() => onChip?.(value)}
+                  >
+                    <CasinoJeton
+                      denomination={value}
+                      size={variant === "blackjack" ? "xl" : "lg"}
+                      selected={selected}
+                      disabled={chipDisabled}
+                      label={value}
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : hasTray ? (
-          <div className="pm-console-tray is-reserved" data-jeton-tray="true" aria-hidden="true" />
+          <div className="pm-console-tray is-reserved has-available" data-jeton-tray="true" aria-hidden="true" />
         ) : null}
       </div>
     </footer>

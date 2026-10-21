@@ -122,9 +122,9 @@ export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "av
 }
 
 /**
- * Resolve a tray chip tap to a legal pokerAct BET/RAISE payload.
- * RAISE amount is always raise-to (never the raw chip denomination when below the legal minimum).
- * Returns null when the viewer cannot BET/RAISE (waiting / folded / no legal action).
+ * Resolve a selected tray chip to a legal pokerAct BET/RAISE payload.
+ * Amount is the player-chosen chip face value only — never lifted to min raise-to.
+ * Returns null when the chip is below the legal minimum or BET/RAISE is unavailable.
  */
 export function pokerTrayChipAct(
   view: PokerTableView,
@@ -133,21 +133,33 @@ export function pokerTrayChipAct(
   const legal = visiblePokerLegalActions(view);
   const raise = legal.find((action) => action.type === "RAISE");
   const bet = legal.find((action) => action.type === "BET");
+  const chip = Number(chipLabel);
+  if (!Number.isFinite(chip) || chip <= 0) return null;
   if (raise) {
-    const minLabel = raise.raiseTo?.label ?? pokerComposeBounds(view, "RAISE").min;
-    const chip = Number(chipLabel);
-    const min = Number(minLabel);
-    const amount =
-      Number.isFinite(chip) && Number.isFinite(min) ? String(Math.max(chip, min)) : minLabel;
-    return { type: "RAISE", amount };
+    const min = Number(raise.raiseTo?.label ?? pokerComposeBounds(view, "RAISE").min);
+    if (!Number.isFinite(min) || chip < min) return null;
+    return { type: "RAISE", amount: String(chip) };
   }
   if (bet) {
-    const minLabel = bet.amount.label || pokerComposeBounds(view, "BET").min;
-    const chip = Number(chipLabel);
-    const min = Number(minLabel);
-    const amount =
-      Number.isFinite(chip) && Number.isFinite(min) ? String(Math.max(chip, min)) : minLabel;
-    return { type: "BET", amount };
+    const min = Number(bet.amount.label || pokerComposeBounds(view, "BET").min);
+    if (!Number.isFinite(min) || chip < min) return null;
+    return { type: "BET", amount: String(chip) };
+  }
+  return null;
+}
+
+/** Minimum legal chip face for BET/RAISE, or null when aggression is unavailable. */
+export function pokerTrayMinAmount(view: PokerTableView): number | null {
+  const legal = visiblePokerLegalActions(view);
+  const raise = legal.find((action) => action.type === "RAISE");
+  if (raise) {
+    const min = Number(raise.raiseTo?.label ?? pokerComposeBounds(view, "RAISE").min);
+    return Number.isFinite(min) ? min : null;
+  }
+  const bet = legal.find((action) => action.type === "BET");
+  if (bet) {
+    const min = Number(bet.amount.label || pokerComposeBounds(view, "BET").min);
+    return Number.isFinite(min) ? min : null;
   }
   return null;
 }
