@@ -11,24 +11,25 @@ import { PokerSeat } from "./PokerSeat";
  * Street wagers are shown at the pot — not duplicated at seats.
  */
 function seatLayout(count: number): { left: string; top: string }[] {
+  // Bottom seat stays fully above the fixed wallet dock (Poker0 / production 390).
   if (count <= 2) {
     return [
-      { left: "50%", top: "88%" },
-      { left: "50%", top: "10%" },
+      { left: "50%", top: "68%" },
+      { left: "50%", top: "11%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "88%" },
-      { left: "12%", top: "42%" },
-      { left: "88%", top: "42%" },
+      { left: "50%", top: "68%" },
+      { left: "12%", top: "40%" },
+      { left: "88%", top: "40%" },
     ];
   }
   return [
-    { left: "50%", top: "88%" },
-    { left: "10%", top: "52%" },
-    { left: "50%", top: "8%" },
-    { left: "90%", top: "52%" },
+    { left: "50%", top: "68%" },
+    { left: "10%", top: "48%" },
+    { left: "50%", top: "9%" },
+    { left: "90%", top: "48%" },
   ];
 }
 
@@ -86,16 +87,20 @@ export function PokerTable({
           alt=""
           draggable={false}
         />
-        <div className="pm-poker-overlay">
-          {setup && instruction ? (
+        <div className={`pm-poker-overlay${setup ? " is-setup" : ""}`}>
+          {setup ? (
             <div className="pm-poker-setup-copy" data-phase-stack="true">
               <strong data-phase-heading>TABLE SETUP</strong>
-              <em>{instruction}</em>
+              <span className="pm-poker-setup-table" data-felt-name="true" data-table-name-anchor="true">
+                <span data-table-name>{tableName}</span>
+              </span>
+              {instruction ? <em>{instruction}</em> : null}
             </div>
-          ) : null}
-          <div className="pm-poker-felt-name" data-felt-name="true" data-table-name-anchor="true">
-            <span data-table-name>{tableName}</span>
-          </div>
+          ) : (
+            <div className="pm-poker-felt-name" data-felt-name="true" data-table-name-anchor="true">
+              <span data-table-name>{tableName}</span>
+            </div>
+          )}
           <PhaseJourney phase={phase} />
           {showPot ? <PokerPot amount={pot} millis={potMillis} sidePots={sidePots} /> : null}
           {ordered.map((seat, index) => {
