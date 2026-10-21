@@ -11,25 +11,25 @@ import { PokerSeat } from "./PokerSeat";
  * Street wagers are shown at the pot — not duplicated at seats.
  */
 function seatLayout(count: number): { left: string; top: string }[] {
-  // Bottom seat stays fully above the fixed wallet dock (Poker0 / production 390).
+  // Bottom seat fully clear of the fixed wallet (plaque + wood lip, 390×844).
   if (count <= 2) {
     return [
-      { left: "50%", top: "68%" },
+      { left: "50%", top: "62%" },
       { left: "50%", top: "11%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "68%" },
+      { left: "50%", top: "62%" },
       { left: "12%", top: "40%" },
       { left: "88%", top: "40%" },
     ];
   }
   return [
-    { left: "50%", top: "68%" },
-    { left: "10%", top: "48%" },
+    { left: "50%", top: "62%" },
+    { left: "10%", top: "46%" },
     { left: "50%", top: "9%" },
-    { left: "90%", top: "48%" },
+    { left: "90%", top: "46%" },
   ];
 }
 
