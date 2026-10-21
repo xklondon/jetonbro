@@ -60,10 +60,17 @@ export function PokerTable({
   const layout = seatLayout(ordered.length);
   const setup = phase === "POKER_SETUP" || phase === "TABLE_SETUP";
   const showPot = !setup && pot !== "0";
-  /** Side pots only — never re-list the main pot amount beside itself. */
-  const sidePots = pots
-    .filter((item) => item.index > 0 && item.amount.label !== "0" && item.amount.label !== pot)
-    .map((item) => ({ index: item.index, label: item.amount.label }));
+  /**
+   * Side-pot labels only when a real side pot exists (all-in split).
+   * Never re-list main-pot slices during a normal multi-way street.
+   */
+  const hasAllIn = seats.some((seat) => seat.status === "ALL_IN");
+  const sidePots =
+    hasAllIn && pots.length > 1
+      ? pots
+          .filter((item) => item.index > 0 && item.amount.label !== "0" && item.amount.label !== pot)
+          .map((item) => ({ index: item.index, label: item.amount.label }))
+      : [];
 
   return (
     <div

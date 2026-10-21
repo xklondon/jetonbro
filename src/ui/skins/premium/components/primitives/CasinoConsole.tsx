@@ -173,10 +173,13 @@ export function CasinoConsole({
           <div
             className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
             data-jeton-tray="true"
-            data-tray-available={walletInTray ? "true" : undefined}
           >
             {walletInTray ? (
-              <div className="pm-console-tray-available" data-player-wallet="true">
+              <div
+                className="pm-console-tray-available"
+                data-player-wallet="true"
+                data-tray-available="true"
+              >
                 <small>AVAILABLE</small>
                 <strong>{available}</strong>
               </div>

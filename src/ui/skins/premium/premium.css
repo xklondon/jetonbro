@@ -50,12 +50,20 @@
   --premium-console-height: 10dvh;
 }
 
-/* Poker — fixed wallet height through setup / betting / waiting / showdown / hand-complete. */
+/* Poker — table fills leftover height; wallet docks at bottom and hugs content (no hollow well). */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"],
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] {
   --premium-header-height: 7dvh;
-  --premium-table-height: 70dvh;
-  --premium-console-height: 23dvh;
+  --premium-table-height: auto;
+  --premium-console-height: auto;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"]:has(.pm-console),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"]:has(.pm-console) {
+  grid-template-rows:
+    calc(var(--premium-header-height) + env(safe-area-inset-top, 0px))
+    minmax(0, 1fr)
+    auto;
 }
 
 [data-skin="premium"] *,
@@ -1352,20 +1360,27 @@
   color: var(--pm-gold-hi);
 }
 
-/* Poker wallet — BJ emerald-felt tray chrome: leather well, wood lip, gold trim */
+/* Poker wallet — compact BJ tray chrome: leather well, wood lip, gold trim, content height */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet {
-  margin-top: -14px;
-  padding: 0 6px var(--premium-safe-area);
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin-top: -18px;
+  padding: 0 8px var(--premium-safe-area);
+  overflow: visible;
 }
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body {
-  grid-template-rows: auto minmax(58px, 1fr);
-  gap: 6px;
-  padding: 12px 12px 8px;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  grid-template-rows: auto auto;
+  gap: 8px;
+  padding: 12px 12px 10px;
   border-radius: 18px 18px 14px 14px;
-  border: 1.5px solid rgba(212, 184, 130, 0.55);
+  border: 1.5px solid rgba(212, 184, 130, 0.58);
   background:
     radial-gradient(ellipse 90% 34% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 52%),
     linear-gradient(180deg, #1c1612 0%, #100e0c 48%, #070605 100%);
@@ -1373,6 +1388,14 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     inset 0 -3px 10px rgba(0, 0, 0, 0.5),
     0 12px 28px rgba(0, 0, 0, 0.48);
+  align-content: start;
+}
+
+/* Empty action row is display:none — hug the tray only (setup / waiting). */
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body.has-tray:has(.pm-console-actions.is-empty),
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body.has-tray:has(.pm-console-actions.is-empty) {
+  grid-template-rows: auto;
+  gap: 0;
 }
 
 /* Warm wood rail lip at the top of the wallet (table→tray join) */
@@ -1410,7 +1433,7 @@
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body:has(.pm-console-top),
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body:has(.pm-console-top) {
-  grid-template-rows: auto auto minmax(58px, 1fr);
+  grid-template-rows: auto auto auto;
 }
 
 /* ===== Integrated casino console ===== */
@@ -1730,19 +1753,12 @@
   border-color: rgba(90, 64, 24, 0.35);
 }
 
-/* Poker waiting actor: top row (TO CALL / AVAILABLE) + tray — empty action row is display:none. */
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body.has-tray:has(.pm-console-actions.is-empty),
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body.has-tray:has(.pm-console-actions.is-empty) {
-  grid-template-rows: auto minmax(56px, 1fr);
-  align-content: stretch;
-  gap: 6px;
-}
-
+/* Poker waiting / setup with empty actions: tray-only compact dock (no 1fr hollow). */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console-body.no-tray:has(.pm-console-actions.is-empty),
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console-body.no-tray:has(.pm-console-actions.is-empty) {
   grid-template-rows: auto;
-  align-content: center;
-  gap: 6px;
+  align-content: start;
+  gap: 0;
 }
 
 [data-skin="premium"] .pm-console-btn {
@@ -1843,10 +1859,11 @@
 
 [data-skin="premium"] .pm-console.is-poker-wallet .pm-console-body.has-tray .pm-console-tray {
   margin-top: 0;
-  padding-top: 6px;
-  border-top: 1px solid rgba(107, 68, 40, 0.4);
-  background: linear-gradient(180deg, rgba(50, 32, 18, 0.28), transparent 75%);
-  border-radius: 0 0 12px 12px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(212, 184, 130, 0.22);
+  background: transparent;
+  border-radius: 0;
+  min-height: 52px;
 }
 
 /* Reserve tray well height across phases (e.g. BJ player payout) — do not collapse the dock. */
