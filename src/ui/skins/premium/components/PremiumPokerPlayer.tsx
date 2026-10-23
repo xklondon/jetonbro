@@ -50,7 +50,7 @@ export function PremiumPokerPlayer({
   const trayEnabled = Boolean(liveStreet && pokerTrayEnabled(view));
   const minChip = trayEnabled ? pokerTrayMinAmount(view) : null;
   const chipAct = selectedChip && trayEnabled ? pokerTrayChipAct(view, selectedChip) : null;
-  const waitingHint = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
+  const turnStatus = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
   const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
   const [fxSeed, setFxSeed] = useState("");
@@ -85,12 +85,13 @@ export function PremiumPokerPlayer({
         <CasinoConsole
           variant="default"
           notice={
-            notice || waitingHint ? (
-              <div className="pm-console-notice" data-poker-turn-hint="true">
-                {notice ?? waitingHint}
+            notice ? (
+              <div className="pm-console-notice" data-poker-dock-notice="true">
+                {notice}
               </div>
             ) : null
           }
+          turnStatus={turnStatus}
           toCall={liveStreet && view.toCall.label !== "0" ? view.toCall.label : null}
           available={view.available.label}
           showTray={showTray}

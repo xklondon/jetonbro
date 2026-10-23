@@ -209,11 +209,10 @@ export function PremiumPokerDealer({
     };
   }
 
-  const turnHint =
-    !setup && !showdown && phaseCopy.instruction
-      ? phaseCopy.instruction
-      : null;
-  const dockNotice = seatNotice ?? notice ?? turnHint;
+  const turnStatus =
+    !setup && !showdown && phaseCopy.instruction ? phaseCopy.instruction : null;
+  /** Seat / error notices only — turn status lives in the compact strip head. */
+  const dockNotice = seatNotice ?? notice ?? null;
 
   return (
     <PremiumShell
@@ -226,11 +225,12 @@ export function PremiumPokerDealer({
           variant="default"
           notice={
             dockNotice ? (
-              <div className="pm-console-notice" data-poker-turn-hint="true">
+              <div className="pm-console-notice" data-poker-dock-notice="true">
                 {dockNotice}
               </div>
             ) : null
           }
+          turnStatus={liveStreet && ownerSeated ? turnStatus : null}
           toCall={liveStreet && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
           available={ownerSeated ? view.available.label : undefined}
           showTray={showTray}

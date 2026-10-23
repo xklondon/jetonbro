@@ -45,6 +45,7 @@ export function CasinoConsole({
   secondary,
   tertiary,
   notice,
+  turnStatus = null,
   toCall,
   available,
   trayEnabled = false,
@@ -61,6 +62,8 @@ export function CasinoConsole({
   /** Optional third compact control (e.g. CHANGE GAME on dealer setup). */
   tertiary?: DockAction | null;
   notice?: ReactNode;
+  /** Poker live strip: YOUR TURN / TURN · Name — shares one row with TO CALL. */
+  turnStatus?: string | null;
   toCall?: string | null;
   available?: string;
   trayEnabled?: boolean;
@@ -83,17 +86,20 @@ export function CasinoConsole({
   const walletInTray = showWallet && !compact;
   const walletAboveTray = showWallet && compact;
   const actionCount = [primary, secondary, tertiary].filter(Boolean).length;
+  const showCall = toCall != null && toCall !== "0";
+  const stripHead = !compact && (showCall || Boolean(turnStatus));
 
   return (
     <footer
       className={`pm-console${compact ? " is-bj" : " is-poker-wallet"}${variant === "setup" ? " is-setup" : ""}${
         trayVisible ? " has-visible-tray" : " no-visible-tray"
-      }`}
+      }${stripHead ? " has-strip-head" : ""}`}
       data-premium-dock="true"
       data-casino-console="true"
       data-console-variant={variant}
       data-has-tray={hasTray ? "true" : "false"}
       data-poker-wallet={!compact ? "true" : undefined}
+      data-action-strip={stripHead || (!compact && actionCount > 0) ? "true" : undefined}
     >
       <div className={`pm-console-body${hasTray || trayVisible ? " has-tray" : " no-tray"}`}>
         {notice}
@@ -147,72 +153,87 @@ export function CasinoConsole({
             ) : null}
           </>
         ) : (
-          <>
-            {toCall != null && toCall !== "0" ? (
-              <div className="pm-console-top">
-                <div className="pm-console-call" data-to-call="true">
-                  TO CALL <strong>{toCall}</strong>
+          /* Poker: action bar (turn + options) layered above the jeton row. */
+          <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true">
+            <div
+              className={`pm-poker-action-bar${actionCount === 0 ? " is-status-only" : ""}`}
+              data-poker-action-bar="true"
+            >
+              {stripHead ? (
+                <div className="pm-console-strip-head" data-action-strip-head="true">
+                  {showCall ? (
+                    <div className="pm-console-call" data-to-call="true">
+                      TO CALL <strong>{toCall}</strong>
+                    </div>
+                  ) : (
+                    <span className="pm-console-strip-spacer" aria-hidden="true" />
+                  )}
+                  {turnStatus ? (
+                    <div className="pm-console-turn" data-poker-turn-hint="true">
+                      {turnStatus}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              <div
+                className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
+                  primary && !secondary && !tertiary ? " is-single" : ""
+                }${secondary && primary && tertiary ? " is-trio" : ""}`}
+                data-console-actions="true"
+              >
+                {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
+                {primary ? <ActionButton action={primary} kind="primary" /> : null}
+                {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
+              </div>
+            </div>
+            {trayVisible ? (
+              <div
+                className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
+                data-jeton-tray="true"
+              >
+                {walletInTray ? (
+                  <div
+                    className="pm-console-tray-available"
+                    data-player-wallet="true"
+                    data-tray-available="true"
+                  >
+                    <small>AVAILABLE</small>
+                    <strong>{available}</strong>
+                  </div>
+                ) : null}
+                <div className="pm-console-tray-chips">
+                  {CHIPS.map((value) => {
+                    const selected = selectedChip === value;
+                    const belowMin =
+                      minChipAmount != null && Number.isFinite(minChipAmount) && Number(value) < minChipAmount;
+                    const chipDisabled = !trayEnabled || belowMin;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
+                        disabled={chipDisabled}
+                        aria-label={`Add ${value} jetons`}
+                        aria-pressed={selected}
+                        onClick={() => onChip?.(value)}
+                      >
+                        <CasinoJeton
+                          denomination={value}
+                          size="md"
+                          selected={selected}
+                          disabled={chipDisabled}
+                          label={value}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
-            <div
-              className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
-                primary && !secondary && !tertiary ? " is-single" : ""
-              }${secondary && primary && tertiary ? " is-trio" : ""}`}
-              data-console-actions="true"
-            >
-              {/* Poker0 order: FOLD · CHECK/CALL · BET/RAISE */}
-              {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
-              {primary ? <ActionButton action={primary} kind="primary" /> : null}
-              {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
-            </div>
-          </>
+          </div>
         )}
         {children}
-        {trayVisible ? (
-          <div
-            className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
-            data-jeton-tray="true"
-          >
-            {walletInTray ? (
-              <div
-                className="pm-console-tray-available"
-                data-player-wallet="true"
-                data-tray-available="true"
-              >
-                <small>AVAILABLE</small>
-                <strong>{available}</strong>
-              </div>
-            ) : null}
-            <div className="pm-console-tray-chips">
-              {CHIPS.map((value) => {
-                const selected = selectedChip === value;
-                const belowMin =
-                  minChipAmount != null && Number.isFinite(minChipAmount) && Number(value) < minChipAmount;
-                const chipDisabled = !trayEnabled || belowMin;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
-                    disabled={chipDisabled}
-                    aria-label={`Add ${value} jetons`}
-                    aria-pressed={selected}
-                    onClick={() => onChip?.(value)}
-                  >
-                    <CasinoJeton
-                      denomination={value}
-                      size={variant === "blackjack" ? "xl" : "md"}
-                      selected={selected}
-                      disabled={chipDisabled}
-                      label={value}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : hasTray ? (
+        {hasTray && compact ? (
           <div className="pm-console-tray is-reserved has-available" data-jeton-tray="true" aria-hidden="true" />
         ) : null}
       </div>
