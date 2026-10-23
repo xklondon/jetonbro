@@ -14,9 +14,11 @@ import {
 import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
 import { pokerPhaseCopy, pokerStartHandNotice } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { communityCardLimit } from "@/domain/poker/cards";
 import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
+import { PremiumPokerCardSheet, PremiumPokerCardToolsMenu } from "./PremiumPokerCardSheet";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerAwardOverlay } from "./primitives/PokerAwardOverlay";
@@ -59,7 +61,11 @@ export function PremiumPokerDealer({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [giveOpen, setGiveOpen] = useState(false);
   const [fxSettingsOpen, setFxSettingsOpen] = useState(false);
+  const [cardToolsOpen, setCardToolsOpen] = useState(false);
+  const [cards, setCards] = useState<"hole" | "board" | null>(null);
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
+  const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
+  const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
   const controls = pokerControls(view);
   const startHand = controls.find((control) => control.id === "startHand");
   const nextHand = controls.find((control) => control.id === "nextHand");
@@ -214,6 +220,7 @@ export function PremiumPokerDealer({
       title="JETONBRO"
       badges={badges}
       board="POKER_DEALER"
+      onMenu={showCardTools ? () => setCardToolsOpen(true) : undefined}
       dock={
         <CasinoConsole
           variant="default"
@@ -246,6 +253,7 @@ export function PremiumPokerDealer({
           pot={view.pot.label}
           potMillis={view.pot.millis}
           pots={view.pots}
+          communityCards={view.communityCards}
           seats={view.seats}
           viewerId={view.viewerId}
         />
@@ -293,6 +301,39 @@ export function PremiumPokerDealer({
         prefs={view.outcomeFx}
         onCommand={onCommand}
       />
+      {cardToolsOpen ? (
+        <PremiumPokerCardToolsMenu
+          canEditHole={view.canEditHole}
+          canEditCommunity={view.canEditCommunity}
+          onHole={() => {
+            setCardToolsOpen(false);
+            setCards("hole");
+          }}
+          onBoard={() => {
+            setCardToolsOpen(false);
+            setCards("board");
+          }}
+          onClose={() => setCardToolsOpen(false)}
+        />
+      ) : null}
+      {cards === "board" ? (
+        <PremiumPokerCardSheet
+          title="Board cards"
+          cards={view.communityCards}
+          max={communityCardLimit(view.phase)}
+          onSave={(next) => void onCommand("setPokerCommunityCards", { cards: JSON.stringify(next) })}
+          onClose={() => setCards(null)}
+        />
+      ) : null}
+      {cards === "hole" ? (
+        <PremiumPokerCardSheet
+          title="Hole cards"
+          cards={ownHole}
+          max={2}
+          onSave={(next) => void onCommand("setPokerHoleCards", { cards: JSON.stringify(next) })}
+          onClose={() => setCards(null)}
+        />
+      ) : null}
     </PremiumShell>
   );
 }

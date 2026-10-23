@@ -1,6 +1,7 @@
 "use client";
 
-import type { PokerPotView, PokerSeatView } from "@/application/queries/views";
+import type { PokerCardView, PokerPotView, PokerSeatView } from "@/application/queries/views";
+import { SUIT_GLYPH, type PokerCard } from "@/domain/poker/cards";
 import { PhaseJourney } from "./PhaseJourney";
 import { PokerPot } from "./PokerPot";
 import { PokerSeat } from "./PokerSeat";
@@ -40,6 +41,7 @@ export function PokerTable({
   pot,
   potMillis,
   pots = [],
+  communityCards = [],
   seats,
   viewerId,
 }: {
@@ -50,6 +52,7 @@ export function PokerTable({
   pot: string;
   potMillis?: string;
   pots?: PokerPotView[];
+  communityCards?: PokerCardView[];
   seats: PokerSeatView[];
   viewerId: string;
 }) {
@@ -103,6 +106,20 @@ export function PokerTable({
           )}
           <PhaseJourney phase={phase} />
           {showPot ? <PokerPot amount={pot} millis={potMillis} sidePots={sidePots} /> : null}
+          {communityCards.length > 0 ? (
+            <div className="pm-poker-board" data-community-cards="true" aria-label="Board cards">
+              {communityCards.map((card, index) => (
+                <span
+                  key={`${card.rank}${card.suit}-${index}`}
+                  className="pm-playing-card"
+                  data-poker-card={`${card.rank}${card.suit}`}
+                >
+                  {card.rank}
+                  {SUIT_GLYPH[card.suit as PokerCard["suit"]] ?? card.suit}
+                </span>
+              ))}
+            </div>
+          ) : null}
           {ordered.map((seat, index) => {
             const pos = layout[Math.min(index, layout.length - 1)]!;
             return (

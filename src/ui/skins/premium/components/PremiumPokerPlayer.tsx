@@ -13,7 +13,9 @@ import {
 import type { PokerTableView } from "@/application/queries/views";
 import { pokerPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { communityCardLimit } from "@/domain/poker/cards";
 import { PremiumOutcomeFx } from "./PremiumOutcomeFx";
+import { PremiumPokerCardSheet, PremiumPokerCardToolsMenu } from "./PremiumPokerCardSheet";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerTable } from "./primitives/PokerTable";
@@ -41,12 +43,16 @@ export function PremiumPokerPlayer({
   const legal = visiblePokerLegalActions(view);
   const trio = pokerDockTrio(legal);
   const [selectedChip, setSelectedChip] = useState<string | null>("25");
+  const [cardToolsOpen, setCardToolsOpen] = useState(false);
+  const [cards, setCards] = useState<"hole" | "board" | null>(null);
   /** Fixed tray through every Poker phase — same size/position. */
   const showTray = true;
   const trayEnabled = Boolean(liveStreet && pokerTrayEnabled(view));
   const minChip = trayEnabled ? pokerTrayMinAmount(view) : null;
   const chipAct = selectedChip && trayEnabled ? pokerTrayChipAct(view, selectedChip) : null;
   const waitingHint = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
+  const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
+  const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
   const [fxSeed, setFxSeed] = useState("");
   const [fxTone, setFxTone] = useState<"win" | "loss">("win");
   const [fxActive, setFxActive] = useState(false);
@@ -74,6 +80,7 @@ export function PremiumPokerPlayer({
     <PremiumShell
       title="JETONBRO"
       board="POKER_PLAYER"
+      onMenu={showCardTools ? () => setCardToolsOpen(true) : undefined}
       dock={
         <CasinoConsole
           variant="default"
@@ -133,10 +140,44 @@ export function PremiumPokerPlayer({
         pot={view.pot.label}
         potMillis={view.pot.millis}
         pots={view.pots}
+        communityCards={view.communityCards}
         seats={view.seats}
         viewerId={view.viewerId}
       />
       <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
+      {cardToolsOpen ? (
+        <PremiumPokerCardToolsMenu
+          canEditHole={view.canEditHole}
+          canEditCommunity={view.canEditCommunity}
+          onHole={() => {
+            setCardToolsOpen(false);
+            setCards("hole");
+          }}
+          onBoard={() => {
+            setCardToolsOpen(false);
+            setCards("board");
+          }}
+          onClose={() => setCardToolsOpen(false)}
+        />
+      ) : null}
+      {cards === "board" ? (
+        <PremiumPokerCardSheet
+          title="Board cards"
+          cards={view.communityCards}
+          max={communityCardLimit(view.phase)}
+          onSave={(next) => void onCommand("setPokerCommunityCards", { cards: JSON.stringify(next) })}
+          onClose={() => setCards(null)}
+        />
+      ) : null}
+      {cards === "hole" ? (
+        <PremiumPokerCardSheet
+          title="Hole cards"
+          cards={ownHole}
+          max={2}
+          onSave={(next) => void onCommand("setPokerHoleCards", { cards: JSON.stringify(next) })}
+          onClose={() => setCards(null)}
+        />
+      ) : null}
     </PremiumShell>
   );
 }

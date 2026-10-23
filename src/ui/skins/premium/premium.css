@@ -82,6 +82,7 @@
 }
 
 [data-skin="premium"] .pm-shell {
+  position: relative;
   height: 100%;
   display: grid;
   grid-template-rows:
@@ -1273,6 +1274,93 @@
   margin-top: 3px;
   font: 700 34px/1.05 var(--pm-serif);
   color: #f3dc9a;
+}
+
+[data-skin="premium"] .pm-poker-board {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 4px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-poker-hole {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+[data-skin="premium"] .pm-playing-card {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.7rem;
+  min-height: 2.3rem;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(212, 184, 130, 0.55);
+  background: linear-gradient(180deg, #f7f1e4 0%, #e8dfc8 100%);
+  color: #1a120c;
+  font: 700 12px/1 var(--pm-sans);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+[data-skin="premium"] .pm-playing-card.is-mini {
+  min-width: 1.25rem;
+  min-height: 1.7rem;
+  font-size: 10px;
+}
+
+[data-skin="premium"] .pm-playing-card.is-back {
+  background:
+    repeating-linear-gradient(45deg, rgba(80, 20, 20, 0.55) 0 2px, transparent 2px 5px),
+    linear-gradient(180deg, #5a1e1e 0%, #2a0e0e 100%);
+  border-color: rgba(212, 184, 130, 0.35);
+  color: transparent;
+}
+
+[data-skin="premium"] .pm-card-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-card-draft {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 2.4rem;
+  align-items: center;
+}
+
+[data-skin="premium"] .pm-card-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+[data-skin="premium"] .pm-card-segment button {
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--pm-ivory);
+  font: 700 12px/1 var(--pm-sans);
+}
+
+[data-skin="premium"] .pm-card-segment button.is-active {
+  border-color: rgba(212, 184, 130, 0.85);
+  background: rgba(212, 184, 130, 0.22);
+  color: var(--pm-gold-hi);
+}
+
+[data-skin="premium"] .pm-sheet-actions.is-stack {
+  grid-template-columns: 1fr;
 }
 
 [data-skin="premium"] .pm-poker-side-pots {
