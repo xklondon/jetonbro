@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Premium Poker pending chip stack → CONFIRM raise-to (JetBro II Web)
+
+- Commit `1e09c60` on `fix/blackjack-stable-anatomy-v1` — `usePokerPendingBet` accumulates tray faces; CONFIRM submits one raise-to/bet; pot chip sum styling; local verify shots under `docs/screenshots/premium/poker-pending-confirm/`.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`ab91684e-ea55-4241-a453-0edb1948325d`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: guardrails + `npm run build` passed. Focused Premium Poker Vitest did not run locally (Vitest v5 suite loader error). Deploy via `railway up` (CLI upload).
+- Start: `prisma migrate deploy` — 16 migrations, no pending. `/api/health` `{"ok":true,"database":"connected"}`. Smoke: `/sign-in` 200; `/api/dev/session` 404 (expected). Full prod Poker pending-confirm Playwright not run (needs prod DB tunnel + session seed). Not merged or tagged.
+
 ### Premium Poker tray / pot / setup UX finish (jetonbro-staging)
 
 - Commit `cc307e4` on `fix/blackjack-stable-anatomy-v1` — dealer/player trays + raise-to; felt-integrated pot chips; no seat wager boxes; setup/HAND_COMPLETE AVAILABLE overlap fixed.

@@ -1,3 +1,12 @@
+# Premium Poker pending chip stack → CONFIRM raise-to
+
+Date: 2026-10-24
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `1e09c60`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `ab91684e-ea55-4241-a453-0edb1948325d` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- `prisma migrate deploy` on start: no pending migrations. `/api/health` connected. `/sign-in` 200. Prod Poker pending-confirm smoke deferred (no `/api/dev/session`; prod seed script needs DB tunnel). Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Premium Poker tray / pot / setup UX finish
 
 Date: 2026-10-19
