@@ -3,12 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   pokerActPayload,
-  pokerAggressionLabel,
   pokerControls,
   pokerDockTrio,
-  pokerTrayChipAct,
-  pokerTrayEnabled,
-  pokerTrayMinAmount,
   visiblePokerLegalActions,
 } from "@/application/queries/poker-controls";
 import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
@@ -23,6 +19,7 @@ import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerAwardOverlay } from "./primitives/PokerAwardOverlay";
 import { PokerTable } from "./primitives/PokerTable";
+import { usePokerPendingBet } from "./usePokerPendingBet";
 
 export function PremiumPokerDealer({
   view,
@@ -63,7 +60,6 @@ export function PremiumPokerDealer({
   const [fxSettingsOpen, setFxSettingsOpen] = useState(false);
   const [cardToolsOpen, setCardToolsOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
-  const [selectedChip, setSelectedChip] = useState<string | null>("25");
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
   const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
   const controls = pokerControls(view);
@@ -78,17 +74,15 @@ export function PremiumPokerDealer({
   const trio = pokerDockTrio(legal);
   /** Fixed tray through every Poker phase for seated dealer (and always reserve height). */
   const showTray = Boolean(ownerSeated);
-  const trayEnabled = Boolean(ownerSeated && liveStreet && pokerTrayEnabled(view));
-  const minChip = trayEnabled ? pokerTrayMinAmount(view) : null;
-  const chipAct = selectedChip && trayEnabled ? pokerTrayChipAct(view, selectedChip) : null;
-
-  useEffect(() => {
-    if (!minChip || !selectedChip) return;
-    if (Number(selectedChip) < minChip) {
-      const next = ["5", "10", "25", "50", "100"].find((value) => Number(value) >= minChip) ?? null;
-      if (next) setSelectedChip(next);
-    }
-  }, [minChip, selectedChip]);
+  const {
+    trayEnabled,
+    minAmount: minChip,
+    pendingChips,
+    pendingLabel,
+    pendingAct,
+    addChip,
+    clearPending,
+  } = usePokerPendingBet(view, Boolean(ownerSeated && liveStreet));
 
   useEffect(() => {
     if (view.phase !== "SHOWDOWN") setWinners({});
@@ -136,7 +130,7 @@ export function PremiumPokerDealer({
 
   if (showdown) {
     primary = null;
-  } else if (trio.respond || trio.fold || trio.aggression) {
+  } else if (trio.respond || trio.fold || trio.aggression || pendingChips.length > 0) {
     primary = trio.respond
       ? {
           label: trio.respond.label,
@@ -149,22 +143,27 @@ export function PremiumPokerDealer({
           onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
         }
       : null;
-    tertiary = trio.aggression
-      ? {
-          label: chipAct ? `${chipAct.type} ${chipAct.amount}` : pokerAggressionLabel(trio.aggression),
-          disabled: !chipAct,
-          title: chipAct ? undefined : "Select a legal chip amount",
-          onClick: () => {
-            if (!chipAct) return;
-            void onCommand("pokerAct", { type: chipAct.type, amount: chipAct.amount });
-          },
-        }
-      : view.canDealStreet
-        ? {
-            label: view.nextStreetLabel || "DEAL",
-            onClick: () => void onCommand("advancePokerStreet"),
-          }
-        : null;
+    if (pendingChips.length > 0 && trayEnabled) {
+      tertiary = {
+        label: pendingAct ? `CONFIRM ${pendingAct.amount}` : "CONFIRM",
+        disabled: !pendingAct,
+        title: pendingAct
+          ? undefined
+          : minChip != null
+            ? `Add chips to reach ${minChip}`
+            : "Add a legal chip amount",
+        onClick: () => {
+          if (!pendingAct) return;
+          void onCommand("pokerAct", { type: pendingAct.type, amount: pendingAct.amount });
+          clearPending();
+        },
+      };
+    } else if (view.canDealStreet && !trio.aggression) {
+      tertiary = {
+        label: view.nextStreetLabel || "DEAL",
+        onClick: () => void onCommand("advancePokerStreet"),
+      };
+    }
   } else if (startHand) {
     primary = {
       label: "START HAND",
@@ -236,9 +235,10 @@ export function PremiumPokerDealer({
           showTray={showTray}
           reserveTray={Boolean(ownerSeated)}
           trayEnabled={trayEnabled}
-          selectedChip={selectedChip}
+          pendingChips={pendingChips}
+          pendingTotal={pendingLabel || null}
           minChipAmount={minChip}
-          onChip={(value) => setSelectedChip(value)}
+          onChip={addChip}
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}

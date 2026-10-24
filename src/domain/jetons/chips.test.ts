@@ -10,6 +10,10 @@ test("85 is 50 + 25 + 10", () => {
   expect(chipCompositionFromMillis(jeton(85)).map((chip) => chip.label)).toEqual(["50", "25", "10"]);
 });
 
+test("160 is 100 + 50 + 10", () => {
+  expect(chipCompositionFromMillis(jeton(160)).map((chip) => chip.label)).toEqual(["100", "50", "10"]);
+});
+
 test("leftover that is not a standard denomination is one exact token", () => {
   const chips = chipCompositionFromMillis(jeton("7"));
   expect(chips).toEqual([

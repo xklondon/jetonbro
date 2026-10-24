@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   pokerActPayload,
-  pokerAggressionLabel,
   pokerDockTrio,
-  pokerTrayChipAct,
-  pokerTrayEnabled,
-  pokerTrayMinAmount,
   visiblePokerLegalActions,
 } from "@/application/queries/poker-controls";
 import type { PokerTableView } from "@/application/queries/views";
@@ -19,6 +15,7 @@ import { PremiumPokerCardSheet, PremiumPokerCardToolsMenu } from "./PremiumPoker
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerTable } from "./primitives/PokerTable";
+import { usePokerPendingBet } from "./usePokerPendingBet";
 
 export function PremiumPokerPlayer({
   view,
@@ -42,14 +39,19 @@ export function PremiumPokerPlayer({
   const liveStreet = !setup && !handDone && !showdown;
   const legal = visiblePokerLegalActions(view);
   const trio = pokerDockTrio(legal);
-  const [selectedChip, setSelectedChip] = useState<string | null>("25");
   const [cardToolsOpen, setCardToolsOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
   /** Fixed tray through every Poker phase — same size/position. */
   const showTray = true;
-  const trayEnabled = Boolean(liveStreet && pokerTrayEnabled(view));
-  const minChip = trayEnabled ? pokerTrayMinAmount(view) : null;
-  const chipAct = selectedChip && trayEnabled ? pokerTrayChipAct(view, selectedChip) : null;
+  const {
+    trayEnabled,
+    minAmount: minChip,
+    pendingChips,
+    pendingLabel,
+    pendingAct,
+    addChip,
+    clearPending,
+  } = usePokerPendingBet(view, liveStreet);
   const turnStatus = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
   const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
@@ -68,13 +70,23 @@ export function PremiumPokerPlayer({
     setFxActive(true);
   }, [view.phase, view.handNumber, view.viewerId, view.winners]);
 
-  useEffect(() => {
-    if (!minChip || !selectedChip) return;
-    if (Number(selectedChip) < minChip) {
-      const next = ["5", "10", "25", "50", "100"].find((value) => Number(value) >= minChip) ?? null;
-      if (next) setSelectedChip(next);
-    }
-  }, [minChip, selectedChip]);
+  const confirmAction =
+    pendingChips.length > 0 && trayEnabled
+      ? {
+          label: pendingAct ? `CONFIRM ${pendingAct.amount}` : "CONFIRM",
+          disabled: !pendingAct,
+          title: pendingAct
+            ? undefined
+            : minChip != null
+              ? `Add chips to reach ${minChip}`
+              : "Add a legal chip amount",
+          onClick: () => {
+            if (!pendingAct) return;
+            void onCommand("pokerAct", { type: pendingAct.type, amount: pendingAct.amount });
+            clearPending();
+          },
+        }
+      : null;
 
   return (
     <PremiumShell
@@ -97,9 +109,10 @@ export function PremiumPokerPlayer({
           showTray={showTray}
           reserveTray
           trayEnabled={trayEnabled}
-          selectedChip={selectedChip}
+          pendingChips={pendingChips}
+          pendingTotal={pendingLabel || null}
           minChipAmount={minChip}
-          onChip={(value) => setSelectedChip(value)}
+          onChip={addChip}
           primary={
             trio.respond
               ? {
@@ -116,21 +129,7 @@ export function PremiumPokerPlayer({
                 }
               : null
           }
-          tertiary={
-            trio.aggression
-              ? {
-                  label: chipAct
-                    ? `${chipAct.type} ${chipAct.amount}`
-                    : pokerAggressionLabel(trio.aggression),
-                  disabled: !chipAct,
-                  title: chipAct ? undefined : "Select a legal chip amount",
-                  onClick: () => {
-                    if (!chipAct) return;
-                    void onCommand("pokerAct", { type: chipAct.type, amount: chipAct.amount });
-                  },
-                }
-              : null
-          }
+          tertiary={confirmAction}
         />
       }
     >

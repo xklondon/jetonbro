@@ -125,8 +125,8 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(source).toContain('onCommand("advancePokerStreet")');
     expect(source).toContain('variant="default"');
     expect(source).toContain("ownerSeated");
-    expect(source).toContain("pokerTrayChipAct");
-    expect(source).toContain("pokerTrayMinAmount");
+    expect(source).toContain("usePokerPendingBet");
+    expect(source).toContain("CONFIRM");
   });
 
   it("setup dock keeps fixed tray with AVAILABLE beside jetons", () => {
@@ -196,9 +196,10 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(html).toContain('aria-label="Add 5 jetons"');
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 1");
-    expect(html).toContain("RAISE 25");
+    expect(html).not.toContain("RAISE 25");
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="3"');
+    expect(html).toContain('data-seat-me="true"');
     expect(html).not.toContain('data-street-wager="true"');
   });
 
@@ -231,7 +232,7 @@ describe("PremiumPokerDealer setup wiring", () => {
     const source = readFileSync(join(__dirname, "PremiumPokerDealer.tsx"), "utf8");
     expect(source).toContain('onCommand("pokerAct"');
     expect(source).toContain("visiblePokerLegalActions");
-    expect(source).toContain("pokerTrayChipAct");
+    expect(source).toContain("usePokerPendingBet");
     expect(source).toContain("pokerDockTrio");
     expect(source).toContain("PremiumGiveJetonsMask");
     expect(source).toContain("showTray={showTray}");

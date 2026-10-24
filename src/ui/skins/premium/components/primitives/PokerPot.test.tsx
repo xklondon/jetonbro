@@ -4,16 +4,18 @@ import { describe, expect, it } from "vitest";
 import { PokerPot } from "./PokerPot";
 
 describe("PokerPot", () => {
-  it("renders a centered jeton cluster above POT label and total", () => {
+  it("renders a centered jeton cluster whose faces sum to the pot", () => {
     const html = renderToStaticMarkup(
       createElement(PokerPot, { amount: "60", millis: "60000" }),
     );
     expect(html).toContain('data-pot-chips="true"');
+    expect(html).toContain('data-pot-chip-sum="60"');
     expect(html).toContain("pm-poker-pot-cluster");
     expect(html).toContain(">POT<");
     expect(html).toContain('data-pot-amount="60"');
     expect(html).toContain("data-casino-jeton");
     expect(html).not.toContain("data-side-pots");
+    expect(html).not.toContain("-pad-");
   });
 
   it("shows side-pot labels only when side pots exist", () => {

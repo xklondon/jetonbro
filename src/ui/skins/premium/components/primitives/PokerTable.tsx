@@ -8,29 +8,28 @@ import { PokerSeat } from "./PokerSeat";
 
 /**
  * Stable portrait seat anchors (percent of stage).
+ * Index 0 = viewer (ME) at bottom-center, clear of pot and tray.
  * Centre corridor reserved for name / journey / pot (+ pot chips).
- * Street wagers are shown at the pot — not duplicated at seats.
  */
 function seatLayout(count: number): { left: string; top: string }[] {
-  // Bottom seat fully clear of the fixed wallet (plaque + wood lip, 390×844).
   if (count <= 2) {
     return [
-      { left: "50%", top: "62%" },
-      { left: "50%", top: "11%" },
+      { left: "50%", top: "78%" },
+      { left: "50%", top: "12%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "62%" },
-      { left: "12%", top: "40%" },
-      { left: "88%", top: "40%" },
+      { left: "50%", top: "78%" },
+      { left: "12%", top: "38%" },
+      { left: "88%", top: "38%" },
     ];
   }
   return [
-    { left: "50%", top: "62%" },
-    { left: "10%", top: "46%" },
-    { left: "50%", top: "9%" },
-    { left: "90%", top: "46%" },
+    { left: "50%", top: "78%" },
+    { left: "10%", top: "42%" },
+    { left: "50%", top: "10%" },
+    { left: "90%", top: "42%" },
   ];
 }
 
@@ -122,10 +121,13 @@ export function PokerTable({
           ) : null}
           {ordered.map((seat, index) => {
             const pos = layout[Math.min(index, layout.length - 1)]!;
+            const isMe = seat.userId === viewerId;
             return (
               <PokerSeat
                 key={seat.userId}
                 seat={seat}
+                isMe={isMe}
+                toneIndex={isMe ? 0 : Math.max(0, index - 1)}
                 showStartingStack={false}
                 style={{ left: pos.left, top: pos.top }}
               />

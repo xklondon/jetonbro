@@ -3,7 +3,7 @@
 import { chipCompositionFromMillis } from "@/domain/jetons/chips";
 import { CasinoJeton } from "./CasinoJeton";
 
-/** Scattered jeton pile for the felt pot — denser than a neat vertical stack. */
+/** Exact greedy composition — chip faces sum to the pot (incl. blinds). No fillers. */
 function potClusterChips(millis: string): { label: string; key: string }[] {
   let value = 0n;
   try {
@@ -12,20 +12,17 @@ function potClusterChips(millis: string): { label: string; key: string }[] {
     value = 0n;
   }
   if (value <= 0n) return [];
-  const base = chipCompositionFromMillis(value);
-  const chips = base.slice(0, 8).map((chip, index) => ({
+  return chipCompositionFromMillis(value).map((chip, index) => ({
     label: chip.label,
     key: `${chip.label}-${index}`,
   }));
-  // Poker0 mound: mixed colours even on small pots (amount stays authoritative below).
-  const fillers = ["25", "5", "10", "50", "100"] as const;
-  let fill = 0;
-  while (chips.length > 0 && chips.length < 6) {
-    const label = fillers[fill % fillers.length]!;
-    chips.push({ label, key: `${label}-pad-${chips.length}` });
-    fill += 1;
-  }
-  return chips.slice(0, 6);
+}
+
+function chipFaceSum(chips: { label: string }[]): number {
+  return chips.reduce((sum, chip) => {
+    const n = Number(chip.label);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
 }
 
 /** Central pot — jeton cluster above POT label + total; side pots only when present. */
@@ -41,6 +38,7 @@ export function PokerPot({
   const showStack = Boolean(millis && millis !== "0" && amount !== "0");
   const cluster = showStack ? potClusterChips(millis!) : [];
   const extras = sidePots.filter((pot) => pot.label !== "0");
+  const faceSum = chipFaceSum(cluster);
 
   return (
     <div className="pm-poker-pot" data-poker-centre="true">
@@ -49,10 +47,11 @@ export function PokerPot({
           className="pm-poker-pot-cluster"
           data-pot-chips="true"
           data-pot-chip-count={String(cluster.length)}
+          data-pot-chip-sum={String(faceSum)}
           aria-hidden="true"
         >
           {cluster.map((chip, index) => (
-            <span key={chip.key} className={`pm-poker-pot-chip is-i${index % 6}`}>
+            <span key={chip.key} className={`pm-poker-pot-chip is-i${index % 8}`}>
               <CasinoJeton denomination={chip.label} size="md" label={chip.label} />
             </span>
           ))}

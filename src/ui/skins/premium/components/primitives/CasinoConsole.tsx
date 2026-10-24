@@ -10,7 +10,7 @@ function pokerActionTone(label: string): string {
   const upper = label.toUpperCase();
   if (upper.startsWith("FOLD")) return " is-fold";
   if (upper.startsWith("CHECK")) return " is-check";
-  if (upper.startsWith("BET") || upper.startsWith("RAISE")) return " is-bet";
+  if (upper.startsWith("BET") || upper.startsWith("RAISE") || upper.startsWith("CONFIRM")) return " is-bet";
   if (upper.startsWith("CALL")) return " is-call";
   return "";
 }
@@ -34,6 +34,7 @@ function ActionButton({
       data-start-hand={action.label === "START HAND" ? "true" : undefined}
       data-add-player-dock={action.label === "ADD PLAYER" ? "true" : undefined}
       data-change-game={action.label === "CHANGE GAME" ? "true" : undefined}
+      data-poker-confirm={action.label.toUpperCase().startsWith("CONFIRM") ? "true" : undefined}
     >
       {action.label}
     </button>
@@ -50,6 +51,8 @@ export function CasinoConsole({
   available,
   trayEnabled = false,
   selectedChip,
+  pendingChips,
+  pendingTotal,
   onChip,
   minChipAmount = null,
   showTray = false,
@@ -68,8 +71,11 @@ export function CasinoConsole({
   available?: string;
   trayEnabled?: boolean;
   selectedChip?: string | null;
+  /** Poker: accumulated tray chip faces (click adds; does not submit). */
+  pendingChips?: string[];
+  pendingTotal?: string | null;
   onChip?: (value: string) => void;
-  /** When set, chips below this face value stay disabled (Poker legal min bet/raise). */
+  /** Informational min for Confirm — individual chips stay clickable when tray is live. */
   minChipAmount?: number | null;
   showTray?: boolean;
   reserveTray?: boolean;
@@ -88,18 +94,22 @@ export function CasinoConsole({
   const actionCount = [primary, secondary, tertiary].filter(Boolean).length;
   const showCall = toCall != null && toCall !== "0";
   const stripHead = !compact && (showCall || Boolean(turnStatus));
+  const accumulateMode = pendingChips != null;
+  const pending = pendingChips ?? [];
+  const showPending = accumulateMode && pending.length > 0;
 
   return (
     <footer
       className={`pm-console${compact ? " is-bj" : " is-poker-wallet"}${variant === "setup" ? " is-setup" : ""}${
         trayVisible ? " has-visible-tray" : " no-visible-tray"
-      }${stripHead ? " has-strip-head" : ""}`}
+      }${stripHead ? " has-strip-head" : ""}${showPending ? " has-pending-bet" : ""}`}
       data-premium-dock="true"
       data-casino-console="true"
       data-console-variant={variant}
       data-has-tray={hasTray ? "true" : "false"}
       data-poker-wallet={!compact ? "true" : undefined}
       data-action-strip={stripHead || (!compact && actionCount > 0) ? "true" : undefined}
+      data-pending-bet={showPending ? pendingTotal ?? String(pending.length) : undefined}
     >
       <div className={`pm-console-body${hasTray || trayVisible ? " has-tray" : " no-tray"}`}>
         {notice}
@@ -188,9 +198,28 @@ export function CasinoConsole({
             </div>
             {trayVisible ? (
               <div
-                className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
+                className={`pm-console-tray${walletInTray ? " has-available" : ""}${
+                  showPending ? " has-pending" : ""
+                }`}
                 data-jeton-tray="true"
               >
+                {showPending ? (
+                  <div
+                    className="pm-console-pending"
+                    data-pending-stack="true"
+                    aria-label={`Pending wager ${pendingTotal ?? ""}`}
+                  >
+                    <small>PENDING</small>
+                    <div className="pm-console-pending-chips">
+                      {pending.map((face, index) => (
+                        <span key={`${face}-${index}`} className="pm-console-pending-chip">
+                          <CasinoJeton denomination={face} size="sm" label={face} />
+                        </span>
+                      ))}
+                    </div>
+                    <strong data-pending-total={pendingTotal ?? undefined}>{pendingTotal}</strong>
+                  </div>
+                ) : null}
                 {walletInTray ? (
                   <div
                     className="pm-console-tray-available"
@@ -203,10 +232,8 @@ export function CasinoConsole({
                 ) : null}
                 <div className="pm-console-tray-chips">
                   {CHIPS.map((value) => {
-                    const selected = selectedChip === value;
-                    const belowMin =
-                      minChipAmount != null && Number.isFinite(minChipAmount) && Number(value) < minChipAmount;
-                    const chipDisabled = !trayEnabled || belowMin;
+                    const selected = !accumulateMode && selectedChip === value;
+                    const chipDisabled = !trayEnabled;
                     return (
                       <button
                         key={value}
@@ -215,6 +242,13 @@ export function CasinoConsole({
                         disabled={chipDisabled}
                         aria-label={`Add ${value} jetons`}
                         aria-pressed={selected}
+                        title={
+                          chipDisabled
+                            ? "Waiting for your turn"
+                            : minChipAmount != null && Number(value) < minChipAmount
+                              ? `Adds ${value} toward min ${minChipAmount}`
+                              : `Add ${value} to pending wager`
+                        }
                         onClick={() => onChip?.(value)}
                       >
                         <CasinoJeton

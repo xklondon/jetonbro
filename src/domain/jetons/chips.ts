@@ -1,6 +1,7 @@
 import { formatJetons, MILLIS_PER_JETON, type JetonMillis } from "../money";
 
 export const STANDARD_CHIP_MILLIS: { millis: JetonMillis; label: string }[] = [
+  { millis: 100n * MILLIS_PER_JETON, label: "100" },
   { millis: 50n * MILLIS_PER_JETON, label: "50" },
   { millis: 25n * MILLIS_PER_JETON, label: "25" },
   { millis: 10n * MILLIS_PER_JETON, label: "10" },

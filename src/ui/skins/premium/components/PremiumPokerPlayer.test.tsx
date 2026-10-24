@@ -101,9 +101,10 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html.match(/AVAILABLE/g)?.length).toBe(1);
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 10");
-    expect(html).toContain("RAISE 25");
+    expect(html).not.toContain("RAISE 25");
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="15"');
+    expect(html).toContain('data-seat-me="true"');
     expect(html).not.toContain('data-street-wager="true"');
     expect(html).not.toContain('data-header-balance="true"');
   });
@@ -130,16 +131,16 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html).toContain("disabled");
   });
 
-  it("selects chips then submits player-chosen raise via aggression button", async () => {
+  it("accumulates chips then submits raise-to via Confirm", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const source = readFileSync(join(__dirname, "PremiumPokerPlayer.tsx"), "utf8");
     expect(source).toContain('onCommand("pokerAct"');
     expect(source).toContain("visiblePokerLegalActions");
-    expect(source).toContain("pokerTrayEnabled");
-    expect(source).toContain("pokerTrayChipAct");
-    expect(source).toContain("setSelectedChip");
-    expect(source).not.toContain("onChip={(value) => {\n            setSelectedChip(value);\n            const act = pokerTrayChipAct");
+    expect(source).toContain("usePokerPendingBet");
+    expect(source).toContain("pendingAct");
+    expect(source).toContain("CONFIRM");
+    expect(source).not.toContain("setSelectedChip");
   });
 
   it("setup dock keeps fixed tray with AVAILABLE beside jetons", () => {

@@ -122,9 +122,9 @@ export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "av
 }
 
 /**
- * Resolve a selected tray chip to a legal pokerAct BET/RAISE payload.
- * Amount is the player-chosen chip face value only — never lifted to min raise-to.
- * Returns null when the chip is below the legal minimum or BET/RAISE is unavailable.
+ * Resolve a pending tray total (sum of clicked chip faces) to a legal pokerAct BET/RAISE.
+ * For RAISE, `amount` is the raise-to total the backend expects.
+ * Returns null when the total is below the legal minimum or BET/RAISE is unavailable.
  */
 export function pokerTrayChipAct(
   view: PokerTableView,

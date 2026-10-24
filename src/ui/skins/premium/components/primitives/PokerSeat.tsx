@@ -48,10 +48,15 @@ export function PokerSeat({
   seat,
   style,
   showStartingStack = false,
+  isMe = false,
+  toneIndex = 0,
 }: {
   seat: PokerSeatView;
   style: CSSProperties;
   showStartingStack?: boolean;
+  isMe?: boolean;
+  /** Stable color lane for non-ME seats (0–3). */
+  toneIndex?: number;
 }) {
   const initial = (seat.name || "?").slice(0, 1).toUpperCase();
   const markers = [
@@ -61,24 +66,26 @@ export function PokerSeat({
   ]
     .filter(Boolean)
     .join(" · ");
+  const tone = isMe ? "me" : String(toneIndex % 4);
 
   return (
     <div
-      className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}`}
+      className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}${isMe ? " is-me" : ""} is-tone-${tone}`}
       style={style}
       data-seat-id={seat.userId}
       data-seat-edge="overlay"
-      data-viewer-seat={showStartingStack ? "true" : undefined}
+      data-viewer-seat={isMe || showStartingStack ? "true" : undefined}
+      data-seat-me={isMe ? "true" : undefined}
     >
       {showStartingStack ? (
         <StartingStack millis={seat.available.millis} label={seat.available.label} />
       ) : null}
       <HoleCards seat={seat} />
       <div className="pm-poker-seat-medal" aria-hidden="true">
-        {initial}
+        {isMe ? "ME" : initial}
       </div>
       <div className="pm-poker-seat-plaque">
-        <strong>{seat.name}</strong>
+        <strong>{isMe ? "ME" : seat.name}</strong>
         <span data-seat-balance="true">{seat.available.label}</span>
         {markers ? <span className="pm-poker-seat-markers">{markers}</span> : null}
         {seat.status && seat.status !== "ACTIVE" ? (

@@ -1,0 +1,60 @@
+{
+  "base": "http://127.0.0.1:3010",
+  "ok": true,
+  "steps": [
+    {
+      "actorIsOwner": true,
+      "actorBefore": "cmvlvhtae003q40iwh0yezmya",
+      "actorAfter": "cmvlvhx5q004f40iwl5ii5w71",
+      "acting0": {
+        "consoleCount": 1,
+        "potAmount": "15",
+        "potChipSum": "15",
+        "hasPending": false,
+        "pendingTotal": null,
+        "hasConfirm": false,
+        "confirmLabel": "",
+        "confirmDisabled": null,
+        "chip10Disabled": false,
+        "actionsText": "FOLDCALL 5",
+        "hasSeatMe": true
+      },
+      "actingPending": {
+        "consoleCount": 1,
+        "potAmount": "15",
+        "potChipSum": "15",
+        "hasPending": true,
+        "pendingTotal": "20",
+        "hasConfirm": true,
+        "confirmLabel": "CONFIRM 20",
+        "confirmDisabled": false,
+        "chip10Disabled": false,
+        "actionsText": "FOLDCALL 5CONFIRM 20",
+        "hasSeatMe": true
+      },
+      "waiting": {
+        "consoleCount": 1,
+        "potAmount": "30",
+        "potChipSum": "30",
+        "hasPending": false,
+        "pendingTotal": null,
+        "hasConfirm": false,
+        "confirmLabel": "",
+        "confirmDisabled": null,
+        "chip10Disabled": true,
+        "actionsText": "",
+        "hasSeatMe": true
+      }
+    }
+  ],
+  "shots": [
+    "01-acting-390.png",
+    "02-acting-pending-390.png",
+    "03-waiting-390.png",
+    "04-acting-desktop.png",
+    "05-waiting-desktop.png",
+    "06-dealer-hole-entry-390.png",
+    "07-player-hole-entry-390.png"
+  ],
+  "failures": []
+}

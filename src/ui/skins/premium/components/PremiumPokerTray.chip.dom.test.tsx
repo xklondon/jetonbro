@@ -1,9 +1,10 @@
 /**
  * @vitest-environment happy-dom
  *
- * Regression: tray chips below legal min stay disabled; RAISE uses the selected face value.
+ * Regression: chip clicks accumulate a pending stack; Confirm submits raise-to once.
  */
-import { createElement } from "react";
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { MemberView, PokerTableView } from "@/application/queries/views";
@@ -138,7 +139,7 @@ function waitingView(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, ac
   };
 }
 
-describe("Premium Poker tray chip select → pokerAct raise face", () => {
+describe("Premium Poker tray chip accumulate → Confirm raise-to", () => {
   let host: HTMLDivElement;
   let root: Root;
 
@@ -156,23 +157,32 @@ describe("Premium Poker tray chip select → pokerAct raise face", () => {
   });
 
   async function flush() {
-    await new Promise((r) => setTimeout(r, 0));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
+
+  async function clickChip(button: HTMLButtonElement | null) {
+    await act(async () => {
+      button!.click();
+    });
   }
 
   async function assertDealerTrayDom() {
     const shell = host.querySelector('[data-table-board="POKER_DEALER"]');
-    const consoleEl = host.querySelector(".pm-console.has-visible-tray");
+    const consoleEl = host.querySelectorAll('[data-casino-console="true"]');
     const tray = host.querySelector('[data-jeton-tray="true"]');
     const chips = host.querySelectorAll('[data-casino-jeton="true"]');
     const avail = host.textContent?.match(/AVAILABLE/g) ?? [];
 
     expect(shell).toBeTruthy();
-    expect(consoleEl).toBeTruthy();
+    expect(consoleEl.length).toBe(1);
     expect(tray).toBeTruthy();
     expect(chips.length).toBeGreaterThanOrEqual(5);
     expect(avail.length).toBe(1);
     expect(host.querySelector('[data-street-wager="true"]')).toBeNull();
     expect(host.querySelector('[data-pot-chips="true"]')).toBeTruthy();
+    expect(host.querySelector('[data-seat-me="true"]')).toBeTruthy();
   }
 
   it("dealer acting DOM includes tray chips + single AVAILABLE @390", async () => {
@@ -203,7 +213,7 @@ describe("Premium Poker tray chip select → pokerAct raise face", () => {
     await assertDealerTrayDom();
   });
 
-  it("dealer: below-min chip 5 stays disabled; RAISE uses selected face 25", async () => {
+  it("dealer: chips accumulate; Confirm submits raise-to once", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerDealer, {
@@ -217,21 +227,29 @@ describe("Premium Poker tray chip select → pokerAct raise face", () => {
     await flush();
 
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
+    const chip10 = host.querySelector('button[aria-label="Add 10 jetons"]') as HTMLButtonElement | null;
     expect(chip5).toBeTruthy();
-    expect(chip5!.disabled).toBe(true);
+    expect(chip5!.disabled).toBe(false);
+    expect(chip10).toBeTruthy();
 
-    const raise = [...host.querySelectorAll("button")].find((btn) =>
-      (btn.textContent ?? "").toUpperCase().startsWith("RAISE"),
-    ) as HTMLButtonElement | undefined;
-    expect(raise).toBeTruthy();
-    expect(raise!.textContent).toMatch(/RAISE\s+25/i);
-    raise!.click();
+    await clickChip(chip10);
+    await clickChip(chip10);
+
+    expect(host.querySelector('[data-pending-stack="true"]')).toBeTruthy();
+    expect(host.querySelector('[data-pending-total="20"]')).toBeTruthy();
+
+    const confirm = host.querySelector('button[data-poker-confirm="true"]') as HTMLButtonElement | null;
+    expect(confirm).toBeTruthy();
+    expect(confirm!.disabled).toBe(false);
+    expect(confirm!.textContent).toMatch(/CONFIRM\s+20/i);
+    await clickChip(confirm);
     await flush();
 
-    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "25" } }]);
+    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "20" } }]);
+    expect(host.querySelector('[data-pending-stack="true"]')).toBeNull();
   });
 
-  it("player: below-min chip 5 stays disabled; RAISE uses selected face 25", async () => {
+  it("player: chips accumulate; Confirm submits raise-to once", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerPlayer, {
@@ -244,21 +262,22 @@ describe("Premium Poker tray chip select → pokerAct raise face", () => {
     await flush();
 
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
-    expect(chip5).toBeTruthy();
-    expect(chip5!.disabled).toBe(true);
+    expect(chip5!.disabled).toBe(false);
+    await clickChip(chip5);
+    await clickChip(chip5);
+    await clickChip(chip5);
+    await clickChip(chip5);
 
-    const raise = [...host.querySelectorAll("button")].find((btn) =>
-      (btn.textContent ?? "").toUpperCase().startsWith("RAISE"),
-    ) as HTMLButtonElement | undefined;
-    expect(raise).toBeTruthy();
-    expect(raise!.textContent).toMatch(/RAISE\s+25/i);
-    raise!.click();
+    expect(host.querySelector('[data-pending-total="20"]')).toBeTruthy();
+    const confirm = host.querySelector('button[data-poker-confirm="true"]') as HTMLButtonElement | null;
+    expect(confirm).toBeTruthy();
+    await clickChip(confirm);
     await flush();
 
-    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "25" } }]);
+    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "20" } }]);
   });
 
-  it("waiting dealer cannot submit a raise from the tray", async () => {
+  it("waiting dealer cannot add chips or confirm", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerDealer, {
@@ -274,12 +293,13 @@ describe("Premium Poker tray chip select → pokerAct raise face", () => {
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
     expect(chip5).toBeTruthy();
     expect(chip5!.disabled).toBe(true);
-    chip5!.click();
-    await flush();
+    await clickChip(chip5);
+    expect(host.querySelector('[data-pending-stack="true"]')).toBeNull();
+    expect(host.querySelector('button[data-poker-confirm="true"]')).toBeNull();
     expect(calls).toEqual([]);
   });
 
-  it("waiting player cannot submit a raise from the tray", async () => {
+  it("waiting player cannot add chips or confirm", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerPlayer, {
@@ -294,8 +314,7 @@ describe("Premium Poker tray chip select → pokerAct raise face", () => {
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
     expect(chip5).toBeTruthy();
     expect(chip5!.disabled).toBe(true);
-    chip5!.click();
-    await flush();
+    await clickChip(chip5);
     expect(calls).toEqual([]);
   });
 });
