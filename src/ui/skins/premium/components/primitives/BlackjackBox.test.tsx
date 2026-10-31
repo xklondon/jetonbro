@@ -75,6 +75,37 @@ describe("Premium BlackjackBox chip breakdown", () => {
     expect(html).toContain("pm-jeton-retract");
   });
 
+  it("shows allocated seat jetons before a MAIN stake exists", () => {
+    const html = renderToStaticMarkup(
+      createElement(BlackjackBox, {
+        box: {
+          id: "setup-seat-p1",
+          playerId: "p1",
+          playerName: "Casey",
+          label: "Box 1",
+          boxNumber: 1,
+          bet: money("0"),
+          originalStake: money("0"),
+          isDoubled: false,
+          isSplit: false,
+          insurance: null,
+          insuranceMax: money("0"),
+          insuranceResult: null,
+          outcome: null,
+          returned: null,
+          payoutActions: [],
+        },
+        showPlayerName: true,
+        bankroll: money("100"),
+      }),
+    );
+    expect(html).toContain('data-seat-bankroll="true"');
+    expect(html).toContain('data-chip-stack-total="100"');
+    expect(html).toContain("STACK");
+    expect(html).toContain("Casey");
+    expect(html).not.toContain("pm-bj-spot");
+  });
+
   it("marks placed insurance as pending without implying it was paid", () => {
     const html = renderToStaticMarkup(
       createElement(BlackjackBox, {

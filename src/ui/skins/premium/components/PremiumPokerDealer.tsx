@@ -10,12 +10,13 @@ import {
 import type { InvitationView, MemberView, PokerTableView } from "@/application/queries/views";
 import { pokerPhaseCopy, pokerStartHandNotice } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
-import { communityCardLimit } from "@/domain/poker/cards";
+import { communityCardLimit, POKER_ASSIST_HOLE_MAX } from "@/domain/poker/cards";
 import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
 import { PremiumPokerCardSheet, PremiumPokerCardToolsMenu } from "./PremiumPokerCardSheet";
 import { PremiumShell } from "./PremiumShell";
+import { pokerAggressionTertiary } from "./pokerAggressionTertiary";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerAwardOverlay } from "./primitives/PokerAwardOverlay";
 import { PokerTable } from "./primitives/PokerTable";
@@ -76,10 +77,17 @@ export function PremiumPokerDealer({
   const showTray = Boolean(ownerSeated);
   const {
     trayEnabled,
+    composeOpen,
+    composeKind,
     minAmount: minChip,
+    maxAmount: maxChip,
+    amountText,
     pendingChips,
+    pendingAmount,
     pendingLabel,
     pendingAct,
+    openCompose,
+    setAmount,
     addChip,
     clearPending,
   } = usePokerPendingBet(view, Boolean(ownerSeated && liveStreet));
@@ -130,7 +138,7 @@ export function PremiumPokerDealer({
 
   if (showdown) {
     primary = null;
-  } else if (trio.respond || trio.fold || trio.aggression || pendingChips.length > 0) {
+  } else if (trio.respond || trio.fold || trio.aggression || composeOpen) {
     primary = trio.respond
       ? {
           label: trio.respond.label,
@@ -143,27 +151,28 @@ export function PremiumPokerDealer({
           onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
         }
       : null;
-    if (pendingChips.length > 0 && trayEnabled) {
-      tertiary = {
-        label: pendingAct ? `CONFIRM ${pendingAct.amount}` : "CONFIRM",
-        disabled: !pendingAct,
-        title: pendingAct
-          ? undefined
-          : minChip != null
-            ? `Add chips to reach ${minChip}`
-            : "Add a legal chip amount",
-        onClick: () => {
-          if (!pendingAct) return;
-          void onCommand("pokerAct", { type: pendingAct.type, amount: pendingAct.amount });
-          clearPending();
-        },
-      };
-    } else if (view.canDealStreet && !trio.aggression) {
-      tertiary = {
-        label: view.nextStreetLabel || "DEAL",
-        onClick: () => void onCommand("advancePokerStreet"),
-      };
-    }
+    tertiary = pokerAggressionTertiary({
+      trio,
+      trayEnabled,
+      composeOpen,
+      pendingAct,
+      pendingAmount,
+      minChip,
+      maxChip,
+      onOpenCompose: openCompose,
+      onConfirm: () => {
+        if (!pendingAct) return;
+        void onCommand("pokerAct", { type: pendingAct.type, amount: pendingAct.amount });
+        clearPending();
+      },
+      dealStreet:
+        view.canDealStreet && !trio.aggression
+          ? {
+              label: view.nextStreetLabel || "DEAL",
+              onClick: () => void onCommand("advancePokerStreet"),
+            }
+          : null,
+    });
   } else if (startHand) {
     primary = {
       label: "START HAND",
@@ -235,9 +244,13 @@ export function PremiumPokerDealer({
           showTray={showTray}
           reserveTray={Boolean(ownerSeated)}
           trayEnabled={trayEnabled}
-          pendingChips={pendingChips}
-          pendingTotal={pendingLabel || null}
+          composeOpen={composeOpen}
+          composeKind={composeKind}
+          composeAmount={amountText}
+          raiseToPreview={composeOpen && composeKind === "RAISE" && pendingLabel ? pendingLabel : null}
+          onComposeAmount={setAmount}
           minChipAmount={minChip}
+          maxChipAmount={maxChip}
           onChip={addChip}
           primary={primary}
           secondary={secondary}
@@ -256,6 +269,8 @@ export function PremiumPokerDealer({
           communityCards={view.communityCards}
           seats={view.seats}
           viewerId={view.viewerId}
+          pendingWager={composeOpen && pendingLabel ? pendingLabel : null}
+          pendingChips={composeOpen ? pendingChips : []}
         />
         {showdown ? (
           <div className="pm-poker-payout-zone">
@@ -329,7 +344,7 @@ export function PremiumPokerDealer({
         <PremiumPokerCardSheet
           title="Hole cards"
           cards={ownHole}
-          max={2}
+          max={POKER_ASSIST_HOLE_MAX}
           onSave={(next) => void onCommand("setPokerHoleCards", { cards: JSON.stringify(next) })}
           onClose={() => setCards(null)}
         />

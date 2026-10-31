@@ -173,7 +173,17 @@ export function PremiumBlackjackDealer({
     const seats = setupDisplayBoxes(view);
     layer =
       seats.length > 0 ? (
-        seats.map((box) => <BlackjackBox key={box.id} box={box} showPlayerName />)
+        seats.map((box) => {
+          const player = joined.find((item) => item.userId === box.playerId);
+          return (
+            <BlackjackBox
+              key={box.id}
+              box={box}
+              showPlayerName
+              bankroll={player?.available ?? null}
+            />
+          );
+        })
       ) : (
         <p className="pm-bj-empty" data-dealer-empty="true">
           Waiting for players

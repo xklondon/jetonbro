@@ -9,7 +9,7 @@ import { PremiumOutcomeFx } from "./PremiumOutcomeFx";
 import { PremiumShell } from "./PremiumShell";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
-import { BlackjackBox } from "./primitives/BlackjackBox";
+import { BlackjackBox, setupSeatBox } from "./primitives/BlackjackBox";
 
 function orderNewestLeft<T extends { boxNumber: number }>(boxes: T[]) {
   return [...boxes].sort((a, b) => b.boxNumber - a.boxNumber);
@@ -138,7 +138,18 @@ export function PremiumBlackjackPlayer({
         setup={setup}
       >
         {setup && staged.length === 0 ? (
-          <p className="pm-bj-empty">Waiting for betting to open</p>
+          view.available.label !== "0" ? (
+            <BlackjackBox
+              box={setupSeatBox(
+                { userId: "viewer", name: "You", available: view.available },
+                1,
+              )}
+              showPlayerName
+              bankroll={view.available}
+            />
+          ) : (
+            <p className="pm-bj-empty">Waiting for betting to open</p>
+          )
         ) : staged.length > 0 ? (
           staged.map((box) => {
             const canInsure =

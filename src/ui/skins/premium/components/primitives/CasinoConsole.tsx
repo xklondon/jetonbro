@@ -41,6 +41,58 @@ function ActionButton({
   );
 }
 
+function TrayChips({
+  trayEnabled,
+  selectedChip,
+  minChipAmount,
+  onChip,
+  composeKind,
+}: {
+  trayEnabled: boolean;
+  selectedChip?: string | null;
+  minChipAmount?: number | null;
+  onChip?: (value: string) => void;
+  composeKind?: "RAISE" | "BET" | null;
+}) {
+  return (
+    <div className="pm-console-tray-chips">
+      {CHIPS.map((value) => {
+        const selected = selectedChip === value;
+        const chipDisabled = !trayEnabled;
+        const raiseBy = composeKind === "RAISE";
+        return (
+          <button
+            key={value}
+            type="button"
+            className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
+            disabled={chipDisabled}
+            aria-label={`Add ${value} jetons`}
+            aria-pressed={selected}
+            title={
+              chipDisabled
+                ? "Waiting for your turn"
+                : raiseBy
+                  ? `Add ${value} to raise-by`
+                  : minChipAmount != null && Number(value) < minChipAmount
+                    ? `Adds ${value} toward min ${minChipAmount}`
+                    : `Add ${value} to bet amount`
+            }
+            onClick={() => onChip?.(value)}
+          >
+            <CasinoJeton
+              denomination={value}
+              size="md"
+              selected={selected}
+              disabled={chipDisabled}
+              label={value}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function CasinoConsole({
   primary,
   secondary,
@@ -51,10 +103,14 @@ export function CasinoConsole({
   available,
   trayEnabled = false,
   selectedChip,
-  pendingChips,
-  pendingTotal,
+  composeOpen = false,
+  composeKind = null,
+  composeAmount = "",
+  raiseToPreview = null,
+  onComposeAmount,
   onChip,
   minChipAmount = null,
+  maxChipAmount = null,
   showTray = false,
   reserveTray = false,
   variant = "default",
@@ -62,54 +118,54 @@ export function CasinoConsole({
 }: {
   primary?: DockAction | null;
   secondary?: DockAction | null;
-  /** Optional third compact control (e.g. CHANGE GAME on dealer setup). */
   tertiary?: DockAction | null;
   notice?: ReactNode;
-  /** Poker live strip: YOUR TURN / TURN · Name — shares one row with TO CALL. */
   turnStatus?: string | null;
   toCall?: string | null;
   available?: string;
   trayEnabled?: boolean;
   selectedChip?: string | null;
-  /** Poker: accumulated tray chip faces (click adds; does not submit). */
-  pendingChips?: string[];
-  pendingTotal?: string | null;
+  /** RAISE/BET compose — row is always reserved; active when composeOpen. */
+  composeOpen?: boolean;
+  composeKind?: "RAISE" | "BET" | null;
+  composeAmount?: string;
+  /** Computed raise-to while composing RAISE BY (street wager + increment). */
+  raiseToPreview?: string | null;
+  onComposeAmount?: (value: string) => void;
   onChip?: (value: string) => void;
-  /** Informational min for Confirm — individual chips stay clickable when tray is live. */
   minChipAmount?: number | null;
+  maxChipAmount?: number | null;
   showTray?: boolean;
   reserveTray?: boolean;
-  /** blackjack/setup: compact action row; default: poker live layout */
   variant?: "default" | "blackjack" | "setup";
   children?: ReactNode;
 }) {
   const trayVisible = showTray;
   const compact = variant === "blackjack" || variant === "setup";
-  /** Only reserve empty tray height for Poker live — BJ dealer must not show a hollow betting well. */
   const hasTray = trayVisible || (reserveTray && variant === "default");
   const showWallet = available != null;
-  /** Poker: AVAILABLE sits on the chip row. BJ compact keeps the centered AVAILABLE band. */
-  const walletInTray = showWallet && !compact;
-  const walletAboveTray = showWallet && compact;
+  /** AVAILABLE sits beside jetons whenever the tray is visible (BJ + Poker). */
+  const walletInTray = showWallet && trayVisible;
+  const walletAboveTray = showWallet && compact && !trayVisible;
   const actionCount = [primary, secondary, tertiary].filter(Boolean).length;
   const showCall = toCall != null && toCall !== "0";
   const stripHead = !compact && (showCall || Boolean(turnStatus));
-  const accumulateMode = pendingChips != null;
-  const pending = pendingChips ?? [];
-  const showPending = accumulateMode && pending.length > 0;
+  const composeActive = !compact && composeOpen;
+  const raiseCompose = composeActive && composeKind === "RAISE";
 
   return (
     <footer
       className={`pm-console${compact ? " is-bj" : " is-poker-wallet"}${variant === "setup" ? " is-setup" : ""}${
         trayVisible ? " has-visible-tray" : " no-visible-tray"
-      }${stripHead ? " has-strip-head" : ""}${showPending ? " has-pending-bet" : ""}`}
+      }${stripHead ? " has-strip-head" : ""}${composeActive ? " has-compose" : ""}`}
       data-premium-dock="true"
       data-casino-console="true"
       data-console-variant={variant}
       data-has-tray={hasTray ? "true" : "false"}
       data-poker-wallet={!compact ? "true" : undefined}
       data-action-strip={stripHead || (!compact && actionCount > 0) ? "true" : undefined}
-      data-pending-bet={showPending ? pendingTotal ?? String(pending.length) : undefined}
+      data-raise-compose={composeActive ? composeKind ?? "true" : "reserved"}
+      data-pending-bet={composeActive && composeAmount ? composeAmount : undefined}
     >
       <div className={`pm-console-body${hasTray || trayVisible ? " has-tray" : " no-tray"}`}>
         {notice}
@@ -161,10 +217,81 @@ export function CasinoConsole({
                 <span className="pm-console-available-rule" aria-hidden="true" />
               </div>
             ) : null}
+            {trayVisible ? (
+              <div
+                className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
+                data-jeton-tray="true"
+              >
+                {walletInTray ? (
+                  <div
+                    className="pm-console-tray-available"
+                    data-player-wallet="true"
+                    data-tray-available="true"
+                  >
+                    <small>AVAILABLE</small>
+                    <strong>{available}</strong>
+                  </div>
+                ) : null}
+                <TrayChips
+                  trayEnabled={trayEnabled}
+                  selectedChip={selectedChip}
+                  minChipAmount={minChipAmount}
+                  onChip={onChip}
+                  composeKind={composeKind}
+                />
+              </div>
+            ) : null}
           </>
         ) : (
-          /* Poker: action bar (turn + options) layered above the jeton row. */
+          /* Fixed rows: compose (always reserved) → RAISE | CALL/CHECK | FOLD → jetons. */
           <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true">
+            <div
+              className={`pm-console-compose-slot${composeActive ? " is-active" : " is-reserved"}`}
+              data-raise-slot="true"
+              data-raise-input={composeActive ? "true" : undefined}
+              aria-hidden={composeActive ? undefined : true}
+            >
+              {composeActive ? (
+                <div className="pm-console-compose">
+                  <div className="pm-console-compose-meta">
+                    <small>{raiseCompose ? "RAISE BY" : composeKind === "BET" ? "BET" : "RAISE BY"}</small>
+                    {showCall ? (
+                      <span className="pm-console-compose-call" data-to-call-inline="true">
+                        TO CALL <strong>{toCall}</strong>
+                      </span>
+                    ) : null}
+                    {!raiseCompose && minChipAmount != null ? (
+                      <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)}>
+                        MIN {minChipAmount}
+                      </span>
+                    ) : null}
+                    {maxChipAmount != null && !raiseCompose ? (
+                      <span className="pm-console-compose-max" data-raise-max={String(maxChipAmount)}>
+                        MAX {maxChipAmount}
+                      </span>
+                    ) : null}
+                    {raiseCompose && raiseToPreview ? (
+                      <span className="pm-console-compose-preview" data-raise-to-preview={raiseToPreview}>
+                        TO {raiseToPreview}
+                      </span>
+                    ) : null}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="pm-console-compose-field"
+                    value={composeAmount}
+                    placeholder={raiseCompose ? "0" : minChipAmount != null ? String(minChipAmount) : "0"}
+                    aria-label={raiseCompose ? "Raise by amount" : composeKind === "BET" ? "Bet amount" : "Raise by amount"}
+                    data-compose-amount="true"
+                    onChange={(event) => onComposeAmount?.(event.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="pm-console-compose is-placeholder" />
+              )}
+            </div>
             <div
               className={`pm-poker-action-bar${actionCount === 0 ? " is-status-only" : ""}`}
               data-poker-action-bar="true"
@@ -184,42 +311,25 @@ export function CasinoConsole({
                     </div>
                   ) : null}
                 </div>
-              ) : null}
+              ) : (
+                <div className="pm-console-strip-head is-spacer" aria-hidden="true" data-action-strip-head="reserved" />
+              )}
               <div
                 className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
                   primary && !secondary && !tertiary ? " is-single" : ""
                 }${secondary && primary && tertiary ? " is-trio" : ""}`}
                 data-console-actions="true"
               >
-                {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
-                {primary ? <ActionButton action={primary} kind="primary" /> : null}
                 {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
+                {primary ? <ActionButton action={primary} kind="primary" /> : null}
+                {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
               </div>
             </div>
             {trayVisible ? (
               <div
-                className={`pm-console-tray${walletInTray ? " has-available" : ""}${
-                  showPending ? " has-pending" : ""
-                }`}
+                className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
                 data-jeton-tray="true"
               >
-                {showPending ? (
-                  <div
-                    className="pm-console-pending"
-                    data-pending-stack="true"
-                    aria-label={`Pending wager ${pendingTotal ?? ""}`}
-                  >
-                    <small>PENDING</small>
-                    <div className="pm-console-pending-chips">
-                      {pending.map((face, index) => (
-                        <span key={`${face}-${index}`} className="pm-console-pending-chip">
-                          <CasinoJeton denomination={face} size="sm" label={face} />
-                        </span>
-                      ))}
-                    </div>
-                    <strong data-pending-total={pendingTotal ?? undefined}>{pendingTotal}</strong>
-                  </div>
-                ) : null}
                 {walletInTray ? (
                   <div
                     className="pm-console-tray-available"
@@ -230,46 +340,20 @@ export function CasinoConsole({
                     <strong>{available}</strong>
                   </div>
                 ) : null}
-                <div className="pm-console-tray-chips">
-                  {CHIPS.map((value) => {
-                    const selected = !accumulateMode && selectedChip === value;
-                    const chipDisabled = !trayEnabled;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        className={`pm-console-jeton-btn${selected ? " is-selected" : ""}`}
-                        disabled={chipDisabled}
-                        aria-label={`Add ${value} jetons`}
-                        aria-pressed={selected}
-                        title={
-                          chipDisabled
-                            ? "Waiting for your turn"
-                            : minChipAmount != null && Number(value) < minChipAmount
-                              ? `Adds ${value} toward min ${minChipAmount}`
-                              : `Add ${value} to pending wager`
-                        }
-                        onClick={() => onChip?.(value)}
-                      >
-                        <CasinoJeton
-                          denomination={value}
-                          size="md"
-                          selected={selected}
-                          disabled={chipDisabled}
-                          label={value}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
+                <TrayChips
+                  trayEnabled={trayEnabled}
+                  selectedChip={selectedChip}
+                  minChipAmount={minChipAmount}
+                  onChip={onChip}
+                  composeKind={composeKind}
+                />
               </div>
-            ) : null}
+            ) : (
+              <div className="pm-console-tray is-height-reserve" data-jeton-tray="reserved" aria-hidden="true" />
+            )}
           </div>
         )}
         {children}
-        {hasTray && compact ? (
-          <div className="pm-console-tray is-reserved has-available" data-jeton-tray="true" aria-hidden="true" />
-        ) : null}
       </div>
     </footer>
   );

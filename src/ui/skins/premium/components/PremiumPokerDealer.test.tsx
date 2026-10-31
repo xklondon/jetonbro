@@ -126,7 +126,7 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(source).toContain('variant="default"');
     expect(source).toContain("ownerSeated");
     expect(source).toContain("usePokerPendingBet");
-    expect(source).toContain("CONFIRM");
+    expect(source).toContain("pokerAggressionTertiary");
   });
 
   it("setup dock keeps fixed tray with AVAILABLE beside jetons", () => {
@@ -196,10 +196,11 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(html).toContain('aria-label="Add 5 jetons"');
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 1");
-    expect(html).not.toContain("RAISE 25");
+    expect(html).toMatch(/RAISE/);
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="3"');
     expect(html).toContain('data-seat-me="true"');
+    expect(html).toContain('data-dealer-button="true"');
     expect(html).not.toContain('data-street-wager="true"');
   });
 

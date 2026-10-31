@@ -101,7 +101,7 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html.match(/AVAILABLE/g)?.length).toBe(1);
     expect(html).toContain("FOLD");
     expect(html).toContain("CALL 10");
-    expect(html).not.toContain("RAISE 25");
+    expect(html).toMatch(/RAISE/);
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-amount="15"');
     expect(html).toContain('data-seat-me="true"');
@@ -138,8 +138,8 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(source).toContain('onCommand("pokerAct"');
     expect(source).toContain("visiblePokerLegalActions");
     expect(source).toContain("usePokerPendingBet");
-    expect(source).toContain("pendingAct");
-    expect(source).toContain("CONFIRM");
+    expect(source).toContain("pokerAggressionTertiary");
+    expect(source).toContain("POKER_ASSIST_HOLE_MAX");
     expect(source).not.toContain("setSelectedChip");
   });
 

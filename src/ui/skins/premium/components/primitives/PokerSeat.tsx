@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import type { PokerSeatView } from "@/application/queries/views";
 import { SUIT_GLYPH, type PokerCard } from "@/domain/poker/cards";
-import { CasinoChipStack } from "./CasinoJeton";
+import { CasinoChipStack, CasinoJeton } from "./CasinoJeton";
 
 /** Starting stack — real CasinoJeton denominations (not blank green pills). */
 function StartingStack({ millis, label }: { millis: string; label: string }) {
@@ -50,6 +50,8 @@ export function PokerSeat({
   showStartingStack = false,
   isMe = false,
   toneIndex = 0,
+  pendingWager = null,
+  pendingChips = [],
 }: {
   seat: PokerSeatView;
   style: CSSProperties;
@@ -57,26 +59,55 @@ export function PokerSeat({
   isMe?: boolean;
   /** Stable color lane for non-ME seats (0–3). */
   toneIndex?: number;
+  /** Compose wager shown on the felt beside ME until Confirm. */
+  pendingWager?: string | null;
+  pendingChips?: string[];
 }) {
   const initial = (seat.name || "?").slice(0, 1).toUpperCase();
-  const markers = [
-    seat.isDealer ? "D" : null,
-    seat.isSmallBlind ? "SB" : null,
-    seat.isBigBlind ? "BB" : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const blindMarkers = [seat.isSmallBlind ? "SB" : null, seat.isBigBlind ? "BB" : null].filter(Boolean).join(" · ");
   const tone = isMe ? "me" : String(toneIndex % 4);
+  const showPending = Boolean(isMe && pendingWager && pendingWager !== "0");
 
   return (
     <div
-      className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}${isMe ? " is-me" : ""} is-tone-${tone}`}
+      className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}${isMe ? " is-me" : ""}${
+        seat.isDealer ? " is-dealer" : ""
+      }${showPending ? " has-pending-wager" : ""} is-tone-${tone}`}
       style={style}
       data-seat-id={seat.userId}
       data-seat-edge="overlay"
       data-viewer-seat={isMe || showStartingStack ? "true" : undefined}
       data-seat-me={isMe ? "true" : undefined}
+      data-seat-actor={seat.isActor ? "true" : undefined}
+      data-seat-dealer={seat.isDealer ? "true" : undefined}
     >
+      {seat.isDealer ? (
+        <span className="pm-poker-dealer-btn" data-dealer-button="true" aria-label="Dealer button">
+          D
+        </span>
+      ) : null}
+      {seat.isActor ? (
+        <span className="pm-poker-turn-marker" data-turn-marker="true">
+          TURN
+        </span>
+      ) : null}
+      {showPending ? (
+        <div
+          className="pm-poker-pending-wager"
+          data-pending-felt="true"
+          data-pending-total={pendingWager ?? undefined}
+          aria-label={`Pending wager ${pendingWager}`}
+        >
+          <div className="pm-poker-pending-wager-chips" data-pending-stack="true">
+            {(pendingChips.length > 0 ? pendingChips : [pendingWager!]).slice(0, 6).map((face, index) => (
+              <span key={`${face}-${index}`} className="pm-poker-pending-wager-chip">
+                <CasinoJeton denomination={face} size="sm" label={face} />
+              </span>
+            ))}
+          </div>
+          <strong>{pendingWager}</strong>
+        </div>
+      ) : null}
       {showStartingStack ? (
         <StartingStack millis={seat.available.millis} label={seat.available.label} />
       ) : null}
@@ -87,7 +118,7 @@ export function PokerSeat({
       <div className="pm-poker-seat-plaque">
         <strong>{isMe ? "ME" : seat.name}</strong>
         <span data-seat-balance="true">{seat.available.label}</span>
-        {markers ? <span className="pm-poker-seat-markers">{markers}</span> : null}
+        {blindMarkers ? <span className="pm-poker-seat-markers">{blindMarkers}</span> : null}
         {seat.status && seat.status !== "ACTIVE" ? (
           <span className="pm-poker-seat-status">{seat.status.replace(/_/g, " ")}</span>
         ) : null}

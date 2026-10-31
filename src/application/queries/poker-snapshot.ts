@@ -136,6 +136,10 @@ export function buildPokerView(input: {
   const nextStreet = hand && isBettingStreet(hand.phase) ? STREET_ADVANCE[hand.phase as BettingStreet] : null;
   const actorName = actorId ? nameOf(actorId) : null;
   const awards = readAwardSummary(hand?.awardSummary, nameOf);
+  const setupDealerOrder =
+    !hand && input.seats.length > 0
+      ? Math.min(...input.seats.map((seat) => seat.orderIndex))
+      : null;
   const seats: PokerTableView["seats"] = (hand
     ? hand.participants
     : input.seats.map((seat) => ({
@@ -145,7 +149,8 @@ export function buildPokerView(input: {
         totalContributionMillis: 0n,
         lockedMillis: 0n,
         hasActedThisStreet: false,
-        isDealer: false,
+        // Keep the D button on a seat through setup (no live hand participants yet).
+        isDealer: setupDealerOrder != null && seat.orderIndex === setupDealerOrder,
         isSmallBlind: false,
         isBigBlind: false,
         seatOrder: seat.orderIndex,
@@ -262,7 +267,9 @@ export function buildPokerView(input: {
     handNumber: hand?.number ?? 0,
     viewerId,
     communityCards: readPokerCards(hand?.communityCards ?? []).map((card) => ({ ...card, label: cardLabel(card) })),
-    canEditCommunity: Boolean(isOwner && ["FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(phase) && !input.tableClosed),
+    canEditCommunity: Boolean(
+      isOwner && ["PRE_FLOP", "FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(phase) && !input.tableClosed,
+    ),
     canEditHole: Boolean(viewerPart && pokerHandIsOpen(phase) && !input.tableClosed),
     streetRail: pokerStreetRail(phase),
     outcomeFx: input.outcomeFx ?? { ...DEFAULT_OUTCOME_FX_PREFS },

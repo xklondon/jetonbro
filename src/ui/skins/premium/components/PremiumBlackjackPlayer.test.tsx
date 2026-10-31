@@ -63,6 +63,40 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(html).not.toContain(">RETRACT<");
     expect(html).toContain('data-retract-chip="25"');
     expect(html).toContain("PLACE BET");
+    expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-casino-jeton="true"');
+    expect(html).toContain('data-tray-available="true"');
+    expect(html).not.toContain('aria-hidden="true" data-jeton-tray');
+  });
+
+  it("after allocation shows seat jetons on felt and real tray chips before betting", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumBlackjackPlayer, {
+        view: playerView({
+          phase: "TABLE_SETUP",
+          boxes: [],
+          available: money("100"),
+          actions: {
+            bet: false,
+            retract: false,
+            addBox: false,
+            removeEmptyBox: false,
+            double: false,
+            split: false,
+            insurance: false,
+          },
+        }),
+        selectedBoxId: null,
+        onSelectBox: () => undefined,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-seat-bankroll="true"');
+    expect(html).toContain('data-chip-stack-total="100"');
+    expect(html).toContain('data-jeton-tray="true"');
+    expect(html).toContain('data-casino-jeton="true"');
+    expect(html).toContain('data-tray-available="true"');
+    expect(html).not.toContain("Waiting for betting to open");
   });
 
   it("wires 2× and SPLIT to doubleBox / splitBox command names", async () => {

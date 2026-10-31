@@ -11,6 +11,7 @@ import {
   pokerDockTrio,
   pokerTrayChipAct,
   pokerTrayEnabled,
+  pokerTrayMinAmount,
   pokerTurnLabel,
   visiblePokerLegalActions,
 } from "./poker-controls";
@@ -134,7 +135,8 @@ test("dock trio shows FOLD/CALL/RAISE when facing a wager and FOLD/CHECK/BET whe
   expect(facing.respond?.type).toBe("CALL");
   expect(facing.aggression?.type).toBe("RAISE");
   expect(pokerActPayload(facing.aggression!)).toEqual({ type: "RAISE", amount: "20" });
-  expect(pokerAggressionLabel(facing.aggression!)).toBe("RAISE 20");
+  expect(pokerAggressionLabel(facing.aggression!)).toBe("RAISE");
+  expect(pokerAggressionLabel(facing.aggression!)).not.toMatch(/20/);
 
   const free = pokerDockTrio(checkLegal);
   expect(free.owed).toBe(false);
@@ -144,21 +146,23 @@ test("dock trio shows FOLD/CALL/RAISE when facing a wager and FOLD/CHECK/BET whe
   expect(pokerActPayload(free.respond!)).toEqual({ type: "CHECK", amount: "0" });
 });
 
-test("tray chip RAISE uses player-selected face value; below-min chips are illegal", () => {
+test("tray chip RAISE treats face as RAISE BY; raise-to = streetWager + raiseBy", () => {
   const acting = view({
     viewerId: "owner",
     currentActorId: "owner",
-    toCall: money("10"),
+    toCall: money("25"),
     available: money("100"),
+    streetWager: money("25"),
     legalActions: actorLegal,
     seats: [
       seat({ userId: "owner", isActor: true, streetContribution: money("0", "0") }),
-      seat({ userId: "sam", isBigBlind: true, streetContribution: money("10") }),
+      seat({ userId: "sam", isBigBlind: true, streetContribution: money("25") }),
     ],
   });
-  expect(pokerTrayChipAct(acting, "5")).toBeNull();
-  expect(pokerTrayChipAct(acting, "25")).toEqual({ type: "RAISE", amount: "25" });
-  expect(pokerTrayChipAct(acting, "20")).toEqual({ type: "RAISE", amount: "20" });
+  // Chip 5 → raise-by 5 → raise-to 30 (call 25 + raise 5); do not force min raise-to.
+  expect(pokerTrayChipAct(acting, "5")).toEqual({ type: "RAISE", amount: "30" });
+  expect(pokerTrayChipAct(acting, "25")).toEqual({ type: "RAISE", amount: "50" });
+  expect(pokerTrayMinAmount(acting)).toBe(1);
 
   const waiting = view({
     viewerId: "sam",
@@ -170,6 +174,67 @@ test("tray chip RAISE uses player-selected face value; below-min chips are illeg
     ],
   });
   expect(pokerTrayChipAct(waiting, "5")).toBeNull();
+});
+
+test("open BET uses big-blind min — never stack-max as fixed BET amount", () => {
+  const open = view({
+    viewerId: "owner",
+    currentActorId: "owner",
+    toCall: money("0", "0"),
+    available: money("90"),
+    bigBlind: money("10"),
+    streetWager: money("0", "0"),
+    legalActions: checkLegal.map((action) =>
+      action.type === "BET" ? { ...action, amount: money("90"), label: "BET" } : action,
+    ),
+    seats: [
+      seat({ userId: "owner", isActor: true, streetContribution: money("0", "0"), available: money("90") }),
+      seat({ userId: "sam", streetContribution: money("0", "0") }),
+    ],
+  });
+  const trio = pokerDockTrio(visiblePokerLegalActions(open));
+  expect(trio.aggression?.type).toBe("BET");
+  expect(pokerAggressionLabel(trio.aggression!)).toBe("BET");
+  expect(pokerAggressionLabel(trio.aggression!)).not.toMatch(/90/);
+  expect(pokerTrayMinAmount(open)).toBe(10);
+  expect(pokerTrayChipAct(open, "5")).toBeNull();
+  expect(pokerTrayChipAct(open, "10")).toEqual({ type: "BET", amount: "10" });
+  expect(pokerTrayChipAct(open, "25")).toEqual({ type: "BET", amount: "25" });
+});
+
+test("BB preflop option maps CHECK+RAISE — never disabled BET stack", () => {
+  const bb = view({
+    viewerId: "sam",
+    currentActorId: "sam",
+    toCall: money("0", "0"),
+    available: money("90"),
+    bigBlind: money("10"),
+    streetWager: money("10"),
+    legalActions: bbOptionLegal,
+    seats: [
+      seat({ userId: "owner", streetContribution: money("10") }),
+      seat({
+        userId: "sam",
+        isBigBlind: true,
+        isActor: true,
+        streetContribution: money("10"),
+        available: money("90"),
+      }),
+    ],
+  });
+  const legal = visiblePokerLegalActions(bb);
+  expect(legal.some((action) => action.type === "RAISE")).toBe(true);
+  expect(legal.some((action) => action.type === "BET")).toBe(false);
+  const trio = pokerDockTrio(legal);
+  expect(trio.respond?.type).toBe("CHECK");
+  expect(trio.aggression?.type).toBe("RAISE");
+  expect(pokerAggressionLabel(trio.aggression!)).toBe("RAISE");
+  expect(pokerAggressionLabel(trio.aggression!)).not.toMatch(/20|BET/);
+  expect(pokerTrayMinAmount(bb)).toBe(1);
+  // RAISE BY 10 → raise-to 20; RAISE BY 25 → raise-to 35 (streetWager 10).
+  expect(pokerTrayChipAct(bb, "10")).toEqual({ type: "RAISE", amount: "20" });
+  expect(pokerTrayChipAct(bb, "20")).toEqual({ type: "RAISE", amount: "30" });
+  expect(pokerTrayChipAct(bb, "25")).toEqual({ type: "RAISE", amount: "35" });
 });
 
 test("folded and all-in players get no actor controls or tray", () => {

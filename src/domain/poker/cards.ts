@@ -17,7 +17,8 @@ export type PokerCard = {
 export function communityCardLimit(phase: string): number {
   if (phase === "FLOP") return 3;
   if (phase === "TURN") return 4;
-  if (phase === "RIVER" || phase === "SHOWDOWN" || phase === "HAND_COMPLETE") return 5;
+  // PRE_FLOP: Card Assist may stage up to a full board; streets still enforce exact counts on save when set.
+  if (phase === "PRE_FLOP" || phase === "RIVER" || phase === "SHOWDOWN" || phase === "HAND_COMPLETE") return 5;
   return 0;
 }
 
@@ -58,6 +59,7 @@ export function assertCommunityCards(phase: string, cards: PokerCard[]) {
   if (cards.length > limit) {
     throw new DomainError("CARD_LIMIT", `This street can show at most ${limit} community cards.`);
   }
+  if (phase === "PRE_FLOP") return;
   if (phase === "FLOP" && cards.length !== 0 && cards.length !== 3) {
     throw new DomainError("CARD_LIMIT", "The flop is exactly 3 community cards.");
   }
@@ -69,8 +71,11 @@ export function assertCommunityCards(phase: string, cards: PokerCard[]) {
   }
 }
 
+/** Card Assist may record more than two ranks (display-only); hard cap keeps payloads bounded. */
+export const POKER_ASSIST_HOLE_MAX = 7;
+
 export function assertHoleCards(cards: PokerCard[]) {
-  if (cards.length > 2) {
-    throw new DomainError("CARD_LIMIT", "Hole cards are at most 2 cards.");
+  if (cards.length > POKER_ASSIST_HOLE_MAX) {
+    throw new DomainError("CARD_LIMIT", `Card Assist holds at most ${POKER_ASSIST_HOLE_MAX} cards.`);
   }
 }

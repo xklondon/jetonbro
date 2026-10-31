@@ -46,6 +46,7 @@ export function BlackjackBox({
   box,
   selected,
   showPlayerName,
+  bankroll,
   onSelect,
   onRetractChip,
   retractBusy,
@@ -55,6 +56,8 @@ export function BlackjackBox({
   box: BoxView;
   selected?: boolean;
   showPlayerName?: boolean;
+  /** Allocated seat jetons shown before betting opens (setup / empty box). */
+  bankroll?: { millis: string; label: string } | null;
   onSelect?: () => void;
   onRetractChip?: (amountLabel: string) => void;
   retractBusy?: boolean;
@@ -64,6 +67,10 @@ export function BlackjackBox({
 }) {
   const stake = box.bet.label;
   const hasStake = stake !== "0";
+  const seatBankroll =
+    !hasStake && bankroll && bankroll.label !== "0"
+      ? bankroll
+      : null;
   const result = box.outcome;
   const insurance = box.insurance && box.insurance.label !== "0" ? box.insurance : null;
   const showInsure = Boolean(onInsurance) && !result && !insurance && !box.insuranceResult;
@@ -110,12 +117,18 @@ export function BlackjackBox({
             ) : null}
           </div>
         </div>
+      ) : seatBankroll ? (
+        <div className="pm-bj-box-stakes" data-seat-bankroll="true">
+          <div className="pm-bj-main-stack">
+            <CasinoChipStack millis={seatBankroll.millis} label={seatBankroll.label} size="lg" max={4} />
+          </div>
+        </div>
       ) : (
         <span className="pm-bj-spot" aria-hidden="true" />
       )}
       <span className="pm-bj-main">
-        <small>MAIN</small>
-        <strong>{result ? result : stake}</strong>
+        <small>{seatBankroll ? "STACK" : "MAIN"}</small>
+        <strong>{result ? result : seatBankroll ? seatBankroll.label : stake}</strong>
       </span>
       {showInsure ? (
         <button

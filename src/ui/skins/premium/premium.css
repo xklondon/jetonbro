@@ -36,18 +36,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Tall felt + compact console sized to actions + AVAILABLE + jeton tray (no hollow well). */
+/* Tall felt + compact console sized to actions + jetons (tray must not push the table up). */
 [data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"],
 [data-skin="premium"] .pm-shell[data-table-board="PHASE_ZERO_PLAYER"] {
   --premium-header-height: 7dvh;
-  --premium-table-height: 71dvh;
-  --premium-console-height: 22dvh;
+  --premium-table-height: 74dvh;
+  --premium-console-height: 19dvh;
 }
 
 [data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] {
   --premium-header-height: 7dvh;
-  --premium-table-height: 83dvh;
-  --premium-console-height: 10dvh;
+  --premium-table-height: 84dvh;
+  --premium-console-height: 9dvh;
 }
 
 /* Poker — table fills leftover height; wallet docks at bottom and hugs content (no hollow well). */
@@ -1404,8 +1404,9 @@
 }
 
 [data-skin="premium"] .pm-poker-seat.is-me {
-  width: clamp(4.6rem, 18cqi, 6rem);
+  width: clamp(5.2rem, 20cqi, 6.8rem);
   z-index: 5;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
 }
 
 [data-skin="premium"] .pm-poker-seat-medal {
@@ -1424,18 +1425,19 @@
 }
 
 [data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-medal {
-  width: clamp(2.7rem, 11cqi, 3.4rem);
-  height: clamp(2.7rem, 11cqi, 3.4rem);
-  font: 700 11px/1 var(--pm-serif);
-  letter-spacing: 0.06em;
+  width: clamp(3.1rem, 12.5cqi, 3.9rem);
+  height: clamp(3.1rem, 12.5cqi, 3.9rem);
+  font: 700 12px/1 var(--pm-serif);
+  letter-spacing: 0.08em;
   color: #1a1208;
   background:
-    radial-gradient(circle at 32% 28%, rgba(255, 248, 220, 0.75), transparent 42%),
-    linear-gradient(155deg, #f0d78a 0%, #c9a24a 48%, #8a6a28 100%);
-  border: 2px solid rgba(244, 220, 150, 0.95);
+    radial-gradient(circle at 32% 28%, rgba(255, 248, 220, 0.85), transparent 42%),
+    linear-gradient(155deg, #f6e2a4 0%, #d4b05a 46%, #8a6a28 100%);
+  border: 2px solid rgba(244, 220, 150, 0.98);
   box-shadow:
-    0 0 0 1px rgba(90, 60, 20, 0.35),
-    0 6px 14px rgba(0, 0, 0, 0.45);
+    0 0 0 1px rgba(90, 60, 20, 0.4),
+    0 0 0 4px rgba(18, 72, 48, 0.28),
+    0 8px 18px rgba(0, 0, 0, 0.5);
 }
 
 [data-skin="premium"] .pm-poker-seat.is-tone-0 .pm-poker-seat-medal {
@@ -1476,6 +1478,49 @@
     0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
+[data-skin="premium"] .pm-poker-dealer-btn {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.35rem;
+  z-index: 6;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font: 700 8px/1 var(--pm-sans);
+  letter-spacing: 0.02em;
+  color: #1a1208;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 248, 220, 0.9), transparent 45%),
+    linear-gradient(160deg, #f0d78a 0%, #b8924a 100%);
+  border: 1px solid rgba(90, 60, 20, 0.55);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+[data-skin="premium"] .pm-poker-turn-marker {
+  position: absolute;
+  top: -1.05rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font: 700 7px/1 var(--pm-sans);
+  letter-spacing: 0.14em;
+  color: #1a1208;
+  background: linear-gradient(180deg, #f3dc9a 0%, #d4b882 100%);
+  border: 1px solid rgba(90, 60, 20, 0.45);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+[data-skin="premium"] .pm-poker-seat.is-me .pm-poker-turn-marker {
+  top: -1.2rem;
+  font-size: 8px;
+  padding: 3px 8px;
+}
+
 [data-skin="premium"] .pm-poker-seat-plaque {
   min-width: 3.6rem;
   max-width: 4.6rem;
@@ -1488,13 +1533,16 @@
 }
 
 [data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-plaque {
-  min-width: 4.8rem;
-  max-width: 6.2rem;
-  padding: 4px 8px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(42, 32, 16, 0.92) 0%, rgba(12, 10, 8, 0.9) 100%);
-  border: 1px solid rgba(232, 198, 120, 0.55);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  min-width: 5.4rem;
+  max-width: 7rem;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(52, 40, 22, 0.94) 0%, rgba(14, 12, 10, 0.92) 100%);
+  border: 1.5px solid rgba(232, 198, 120, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(244, 220, 170, 0.12),
+    0 5px 14px rgba(0, 0, 0, 0.45);
 }
 
 [data-skin="premium"] .pm-poker-seat-plaque strong {
@@ -1556,13 +1604,13 @@
   color: var(--pm-gold-hi);
 }
 
-/* Poker wallet — compact BJ tray chrome; sit under the felt (do not cover bottom seat). */
+/* Poker wallet — tuck into felt rail (leather + gold + emerald join). */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet {
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
-  margin-top: 0 !important;
+  margin-top: -14px !important;
   padding: 0 8px var(--premium-safe-area);
   overflow: visible;
 }
@@ -1574,16 +1622,17 @@
   max-height: none;
   grid-template-rows: auto auto;
   gap: 6px;
-  padding: 10px 12px 8px;
-  border-radius: 18px 18px 14px 14px;
-  border: 1.5px solid rgba(212, 184, 130, 0.58);
+  padding: 12px 12px 8px;
+  border-radius: 20px 20px 14px 14px;
+  border: 1.5px solid rgba(212, 184, 130, 0.62);
   background:
-    radial-gradient(ellipse 90% 34% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 52%),
-    linear-gradient(180deg, #1c1612 0%, #100e0c 48%, #070605 100%);
+    radial-gradient(ellipse 95% 40% at 50% -8%, rgba(18, 72, 48, 0.55), transparent 55%),
+    radial-gradient(ellipse 80% 28% at 50% 0%, rgba(255, 236, 180, 0.08), transparent 50%),
+    linear-gradient(180deg, #2a1f16 0%, #1a1410 42%, #0e0b09 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 -3px 10px rgba(0, 0, 0, 0.5),
-    0 12px 28px rgba(0, 0, 0, 0.48);
+    inset 0 1px 0 rgba(243, 220, 154, 0.16),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.35),
+    0 8px 20px rgba(0, 0, 0, 0.35);
   align-content: start;
 }
 
@@ -1594,11 +1643,26 @@
   gap: 0;
 }
 
-/* Poker wallet: no ribbed brown lip — action bar is the top chrome. */
+/* Felt–leather join: emerald + walnut bridge into the tray. */
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-body::before,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-body::before {
-  content: none;
-  display: none;
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: -8px;
+  height: 11px;
+  border-radius: 8px 8px 0 0;
+  display: block;
+  background:
+    linear-gradient(180deg, rgba(12, 70, 52, 0.75) 0%, rgba(8, 40, 30, 0.35) 45%, transparent 100%),
+    repeating-linear-gradient(92deg, rgba(120, 78, 42, 0.28) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #6b4428, #2c180c);
+  box-shadow:
+    0 -1px 0 rgba(212, 184, 130, 0.35),
+    0 -2px 6px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* Poker error/seat notices float — turn status is in the strip head, not here. */
@@ -1687,20 +1751,31 @@
 }
 
 
-/* Blackjack console — actions | AVAILABLE | tray as separate non-overlapping rows */
+/* Blackjack console — same leather / emerald / gold tray as Poker (no hollow black well). */
 [data-skin="premium"] .pm-console.is-bj {
-  margin-top: -14px;
-  padding: 0 6px var(--premium-safe-area);
+  margin-top: -8px;
+  padding: 0 8px var(--premium-safe-area);
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body {
-  grid-template-rows: auto auto minmax(64px, 1fr);
+  grid-template-rows: auto auto;
   gap: 6px;
-  padding: 10px 10px 6px;
-  border-radius: 16px 16px 12px 12px;
+  padding: 10px 12px 8px;
+  border-radius: 20px 20px 14px 14px;
+  border-color: rgba(212, 184, 130, 0.62);
   background:
-    radial-gradient(ellipse 85% 30% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 50%),
-    linear-gradient(180deg, #1a1612 0%, #0d0b09 55%, #050403 100%);
+    radial-gradient(ellipse 95% 40% at 50% -8%, rgba(18, 72, 48, 0.55), transparent 55%),
+    radial-gradient(ellipse 80% 28% at 50% 0%, rgba(255, 236, 180, 0.08), transparent 50%),
+    linear-gradient(180deg, #2a1f16 0%, #1a1410 42%, #0e0b09 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(243, 220, 154, 0.16),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.35),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+  align-content: start;
+}
+
+[data-skin="premium"] .pm-console.is-bj.has-visible-tray .pm-console-body {
+  grid-template-rows: auto auto;
 }
 
 /* Notice overlays the top edge; it must not consume a grid row and crush AVAILABLE into the tray. */
@@ -1735,10 +1810,17 @@
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body::before {
-  left: 10px;
-  right: 10px;
-  top: -7px;
-  height: 9px;
+  left: 18px;
+  right: 18px;
+  top: -8px;
+  height: 11px;
+  background:
+    linear-gradient(180deg, rgba(12, 70, 52, 0.75) 0%, rgba(8, 40, 30, 0.35) 45%, transparent 100%),
+    repeating-linear-gradient(92deg, rgba(120, 78, 42, 0.28) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #6b4428, #2c180c);
+  box-shadow:
+    0 -1px 0 rgba(212, 184, 130, 0.35),
+    0 -2px 6px rgba(0, 0, 0, 0.28);
 }
 
 [data-skin="premium"] .pm-console-action-row {
@@ -1833,12 +1915,13 @@
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-tray {
-  min-height: 68px;
-  height: 100%;
-  gap: 0;
+  min-height: 0;
+  height: auto;
+  gap: 8px;
   align-items: center;
   justify-content: space-between;
   padding: 2px 2px 4px;
+  flex-shrink: 0;
 }
 
 [data-skin="premium"] .pm-console-notice {
@@ -2790,48 +2873,159 @@
     linear-gradient(180deg, #161310 0%, #0e0c0a 55%, #080706 100%) !important;
 }
 
-/* Action bar on top of jetons — compact strip, no ribbed wood. */
+/* Fixed poker tray: compose slot → actions → jetons (same geometry every phase). */
 [data-skin="premium"] .pm-poker-wallet-stack {
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: 3.35rem minmax(3.35rem, auto) 3.6rem;
   gap: 0;
   border-radius: 16px 16px 12px 12px;
   overflow: visible;
+  min-height: 10.3rem;
+}
+
+[data-skin="premium"] .pm-console-compose-slot {
+  grid-row: 1;
+  height: 3.35rem;
+  min-height: 3.35rem;
+  max-height: 3.35rem;
+  padding: 4px 10px 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+[data-skin="premium"] .pm-console-compose-slot.is-reserved .pm-console-compose.is-placeholder {
+  height: 100%;
+  min-height: 2.85rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
 }
 
 [data-skin="premium"] .pm-poker-action-bar {
+  grid-row: 2;
   position: relative;
   z-index: 2;
   display: grid;
   gap: 4px;
-  padding: 6px 10px 5px;
+  min-height: 3.35rem;
+  padding: 4px 10px 5px;
   background:
-    linear-gradient(180deg, rgba(48, 36, 22, 0.98) 0%, rgba(22, 18, 14, 0.96) 55%, rgba(12, 10, 8, 0.94) 100%);
+    linear-gradient(180deg, rgba(42, 58, 42, 0.35) 0%, rgba(36, 28, 20, 0.55) 28%, rgba(22, 18, 14, 0.92) 100%);
   border-bottom: 1px solid rgba(212, 184, 130, 0.28);
-  box-shadow: inset 0 1px 0 rgba(244, 220, 170, 0.1);
+  box-shadow: inset 0 1px 0 rgba(244, 220, 170, 0.12);
 }
 
-[data-skin="premium"] .pm-console-tray.has-pending {
+[data-skin="premium"] .pm-console-strip-head.is-spacer {
+  height: 18px;
+  min-height: 18px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-console-compose {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr auto;
   grid-template-areas:
-    "pending pending"
-    "avail chips";
+    "meta meta"
+    "field field";
   align-items: center;
-  column-gap: 6px;
-  row-gap: 4px;
+  gap: 2px 8px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(52, 40, 22, 0.8) 0%, rgba(18, 14, 10, 0.72) 100%);
+  border: 1px solid rgba(212, 184, 130, 0.4);
+  box-sizing: border-box;
 }
 
-[data-skin="premium"] .pm-console-tray.has-pending .pm-console-pending {
-  grid-area: pending;
+[data-skin="premium"] .pm-console-compose-meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
 }
 
-[data-skin="premium"] .pm-console-tray.has-pending .pm-console-tray-available {
-  grid-area: avail;
+[data-skin="premium"] .pm-console-compose-meta small {
+  font: 700 8px/1 var(--pm-sans);
+  letter-spacing: 0.14em;
+  color: rgba(243, 220, 154, 0.85);
 }
 
-[data-skin="premium"] .pm-console-tray.has-pending .pm-console-tray-chips {
-  grid-area: chips;
+[data-skin="premium"] .pm-console-compose-call,
+[data-skin="premium"] .pm-console-compose-preview,
+[data-skin="premium"] .pm-console-compose-min,
+[data-skin="premium"] .pm-console-compose-max {
+  font: 600 9px/1 var(--pm-sans);
+  letter-spacing: 0.06em;
+  color: rgba(244, 234, 213, 0.65);
+}
+
+[data-skin="premium"] .pm-console-compose-field {
+  grid-area: field;
+  width: 100%;
+  max-width: 8rem;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 184, 130, 0.55);
+  background: rgba(8, 10, 8, 0.72);
+  color: #f3dc9a;
+  font: 700 16px/1 var(--pm-serif);
+  letter-spacing: 0.02em;
+}
+
+[data-skin="premium"] .pm-console-compose-field::placeholder {
+  color: rgba(243, 220, 154, 0.35);
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-tray,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-tray {
+  grid-row: 3;
+  min-height: 3.6rem;
+  height: 3.6rem;
+  max-height: 3.6rem;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+[data-skin="premium"] .pm-console-tray.is-height-reserve {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-poker-pending-wager {
+  position: absolute;
+  left: calc(100% + 0.35rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  border-radius: 8px;
+  background: rgba(8, 12, 10, 0.72);
+  border: 1px solid rgba(212, 184, 130, 0.45);
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-poker-pending-wager-chips {
+  display: flex;
+  gap: 1px;
+}
+
+[data-skin="premium"] .pm-poker-pending-wager-chip .pm-jeton {
+  transform: scale(0.58);
+  transform-origin: center;
+}
+
+[data-skin="premium"] .pm-poker-pending-wager strong {
+  font: 700 11px/1 var(--pm-serif);
+  color: #f3dc9a;
 }
 
 [data-skin="premium"] .pm-console-pending {

@@ -33,7 +33,8 @@ describe("Premium PokerSeat", () => {
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-chip-stack="true"');
     expect(html).toContain('data-starting-stack="true"');
-    expect(html).toContain("D");
+    expect(html).toContain('data-dealer-button="true"');
+    expect(html).toContain('data-turn-marker="true"');
     expect(html).not.toContain('data-street-wager="true"');
     expect(html).not.toContain("pm-poker-stack-chip");
   });

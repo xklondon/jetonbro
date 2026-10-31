@@ -102,6 +102,40 @@ function bank(overrides: Partial<BankTableView> = {}): BankTableView {
 }
 
 describe("PremiumBlackjackDealer owner chrome", () => {
+  it("setup after allocation shows seat jetons on the felt", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumBlackjackDealer, {
+        view: bank({
+          phase: "TABLE_SETUP",
+          boxes: [],
+          players: [
+            {
+              userId: "p1",
+              name: "Casey",
+              available: money("100"),
+              locked: money("0"),
+              status: "Joined",
+              boxes: [],
+            },
+          ],
+          primaryAction: { id: "openBetting", label: "OPEN BETTING", enabled: true },
+          actions: {
+            ...bank().actions,
+            dealCards: false,
+            giveJetons: true,
+          },
+          hasValidBet: false,
+        }),
+        members,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-seat-bankroll="true"');
+    expect(html).toContain('data-chip-stack-total="100"');
+    expect(html).toContain("Casey");
+    expect(html).toContain("STACK");
+  });
+
   it("shows Change Game in Betting tray and interactive Owner/Dealer badges", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumBlackjackDealer, {

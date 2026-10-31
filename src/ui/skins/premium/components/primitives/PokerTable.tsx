@@ -12,21 +12,22 @@ import { PokerSeat } from "./PokerSeat";
  * Centre corridor reserved for name / journey / pot (+ pot chips).
  */
 function seatLayout(count: number): { left: string; top: string }[] {
+  // ME (index 0) sits bottom-center on the felt rail, clear of pot and above the tray.
   if (count <= 2) {
     return [
-      { left: "50%", top: "78%" },
+      { left: "50%", top: "74%" },
       { left: "50%", top: "12%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "78%" },
+      { left: "50%", top: "74%" },
       { left: "12%", top: "38%" },
       { left: "88%", top: "38%" },
     ];
   }
   return [
-    { left: "50%", top: "78%" },
+    { left: "50%", top: "74%" },
     { left: "10%", top: "42%" },
     { left: "50%", top: "10%" },
     { left: "90%", top: "42%" },
@@ -43,6 +44,8 @@ export function PokerTable({
   communityCards = [],
   seats,
   viewerId,
+  pendingWager = null,
+  pendingChips = [],
 }: {
   tableName: string;
   /** Setup-only short instruction — never a live phase heading. */
@@ -54,6 +57,9 @@ export function PokerTable({
   communityCards?: PokerCardView[];
   seats: PokerSeatView[];
   viewerId: string;
+  /** Compose wager beside ME until Confirm (then clears; pot updates from server). */
+  pendingWager?: string | null;
+  pendingChips?: string[];
 }) {
   const ordered = [...seats].sort((a, b) => {
     if (a.userId === viewerId) return -1;
@@ -129,6 +135,8 @@ export function PokerTable({
                 isMe={isMe}
                 toneIndex={isMe ? 0 : Math.max(0, index - 1)}
                 showStartingStack={false}
+                pendingWager={isMe ? pendingWager : null}
+                pendingChips={isMe ? pendingChips : []}
                 style={{ left: pos.left, top: pos.top }}
               />
             );

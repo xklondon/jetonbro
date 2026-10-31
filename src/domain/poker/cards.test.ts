@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { assertCommunityCards, cardLabel, communityCardLimit, parsePokerCard } from "./cards";
 
 test("community card limits follow the physical street", () => {
-  expect(communityCardLimit("PRE_FLOP")).toBe(0);
+  expect(communityCardLimit("PRE_FLOP")).toBe(5);
   expect(communityCardLimit("FLOP")).toBe(3);
   expect(communityCardLimit("TURN")).toBe(4);
   expect(communityCardLimit("RIVER")).toBe(5);

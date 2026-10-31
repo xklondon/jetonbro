@@ -213,7 +213,7 @@ describe("Premium Poker tray chip accumulate → Confirm raise-to", () => {
     await assertDealerTrayDom();
   });
 
-  it("dealer: chips accumulate; Confirm submits raise-to once", async () => {
+  it("dealer: RAISE opens compose; chips build raise-to; Confirm submits once", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerDealer, {
@@ -226,30 +226,81 @@ describe("Premium Poker tray chip accumulate → Confirm raise-to", () => {
     );
     await flush();
 
+    expect(host.querySelector("[data-raise-slot]")).toBeTruthy();
+    expect(host.querySelector("[data-raise-input]")).toBeNull();
+
+    const raiseBtn = [...host.querySelectorAll("button")].find((btn) => (btn.textContent ?? "").trim() === "RAISE");
+    expect(raiseBtn).toBeTruthy();
+    expect(raiseBtn!.textContent).not.toMatch(/20/);
+    await clickChip(raiseBtn as HTMLButtonElement);
+
+    expect(host.querySelector("[data-raise-slot]")).toBeTruthy();
+    expect(host.querySelector("[data-raise-input]")).toBeTruthy();
+    // RAISE BY — no forced MIN raise-to on the compose lip.
+    expect(host.querySelector("[data-raise-min]")).toBeNull();
+    expect(host.textContent).toMatch(/RAISE BY/);
+    const field = host.querySelector('[data-compose-amount="true"]') as HTMLInputElement | null;
+    expect(field).toBeTruthy();
+    expect(field!.value).toBe("");
+    expect(field!.placeholder).toBe("0");
+
+    // streetWager 10 + raise-by 5 = raise-to 15
     const chip5 = host.querySelector('button[aria-label="Add 5 jetons"]') as HTMLButtonElement | null;
-    const chip10 = host.querySelector('button[aria-label="Add 10 jetons"]') as HTMLButtonElement | null;
-    expect(chip5).toBeTruthy();
-    expect(chip5!.disabled).toBe(false);
-    expect(chip10).toBeTruthy();
+    await clickChip(chip5);
 
-    await clickChip(chip10);
-    await clickChip(chip10);
-
-    expect(host.querySelector('[data-pending-stack="true"]')).toBeTruthy();
-    expect(host.querySelector('[data-pending-total="20"]')).toBeTruthy();
+    expect(field!.value).toBe("5");
+    expect(host.querySelector('[data-pending-felt="true"]')).toBeTruthy();
+    expect(host.querySelector('[data-pending-total="15"]')).toBeTruthy();
+    expect(host.querySelector('[data-raise-to-preview="15"]')).toBeTruthy();
 
     const confirm = host.querySelector('button[data-poker-confirm="true"]') as HTMLButtonElement | null;
     expect(confirm).toBeTruthy();
     expect(confirm!.disabled).toBe(false);
-    expect(confirm!.textContent).toMatch(/CONFIRM\s+20/i);
+    expect(confirm!.textContent).toMatch(/CONFIRM\s+15/i);
     await clickChip(confirm);
     await flush();
 
-    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "20" } }]);
-    expect(host.querySelector('[data-pending-stack="true"]')).toBeNull();
+    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "15" } }]);
+    expect(host.querySelector("[data-raise-input]")).toBeNull();
+    expect(host.querySelector("[data-raise-slot]")).toBeTruthy();
+    expect(host.querySelector('[data-pending-felt="true"]')).toBeNull();
   });
 
-  it("player: chips accumulate; Confirm submits raise-to once", async () => {
+  it("player: typed RAISE BY then Confirm submits raise-to once", async () => {
+    const calls: { command: string; payload: Record<string, string> }[] = [];
+    root.render(
+      createElement(PremiumPokerPlayer, {
+        view: actingView("POKER_PLAYER", "sam"),
+        onCommand: (command, payload = {}) => {
+          calls.push({ command, payload });
+        },
+      }),
+    );
+    await flush();
+
+    const raiseBtn = [...host.querySelectorAll("button")].find((btn) => (btn.textContent ?? "").trim() === "RAISE");
+    await clickChip(raiseBtn as HTMLButtonElement);
+    const field = host.querySelector('[data-compose-amount="true"]') as HTMLInputElement | null;
+    expect(field).toBeTruthy();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(field!, "5");
+      field!.dispatchEvent(new InputEvent("input", { bubbles: true, data: "5" }));
+    });
+    await flush();
+
+    expect((host.querySelector('[data-compose-amount="true"]') as HTMLInputElement).value).toBe("5");
+    const confirm = host.querySelector('button[data-poker-confirm="true"]') as HTMLButtonElement | null;
+    expect(confirm).toBeTruthy();
+    expect(confirm!.disabled).toBe(false);
+    expect(confirm!.textContent).toMatch(/CONFIRM\s+15/i);
+    await clickChip(confirm);
+    await flush();
+
+    expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "15" } }]);
+  });
+
+  it("player: chip-built RAISE BY Confirm submits raise-to once", async () => {
     const calls: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerPlayer, {
@@ -265,9 +316,9 @@ describe("Premium Poker tray chip accumulate → Confirm raise-to", () => {
     expect(chip5!.disabled).toBe(false);
     await clickChip(chip5);
     await clickChip(chip5);
-    await clickChip(chip5);
-    await clickChip(chip5);
 
+    const field = host.querySelector('[data-compose-amount="true"]') as HTMLInputElement | null;
+    expect(field?.value).toBe("10");
     expect(host.querySelector('[data-pending-total="20"]')).toBeTruthy();
     const confirm = host.querySelector('button[data-poker-confirm="true"]') as HTMLButtonElement | null;
     expect(confirm).toBeTruthy();
@@ -275,6 +326,7 @@ describe("Premium Poker tray chip accumulate → Confirm raise-to", () => {
     await flush();
 
     expect(calls).toEqual([{ command: "pokerAct", payload: { type: "RAISE", amount: "20" } }]);
+    expect(host.querySelector('[data-pending-felt="true"]')).toBeNull();
   });
 
   it("waiting dealer cannot add chips or confirm", async () => {

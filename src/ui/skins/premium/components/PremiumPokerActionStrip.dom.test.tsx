@@ -159,9 +159,12 @@ describe("Premium Poker action strip", () => {
     expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/TO CALL/);
     expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/5/);
     expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/YOUR TURN/i);
-    expect(host.querySelector("[data-console-actions]")?.textContent).toMatch(/FOLD/);
-    expect(host.querySelector("[data-console-actions]")?.textContent).toMatch(/CALL 5/);
-    expect(host.querySelector("[data-console-actions]")?.textContent).toMatch(/RAISE/);
+    const actions = host.querySelector("[data-console-actions]")?.textContent ?? "";
+    expect(actions).toMatch(/RAISE/);
+    expect(actions).toMatch(/CALL 5/);
+    expect(actions).toMatch(/FOLD/);
+    expect(actions.indexOf("RAISE")).toBeLessThan(actions.indexOf("CALL"));
+    expect(actions.indexOf("CALL")).toBeLessThan(actions.indexOf("FOLD"));
     expect(host.querySelector("[data-jeton-tray]")).toBeTruthy();
     expect(host.querySelector(".pm-console-notice [data-poker-turn-hint]")).toBeNull();
   });
