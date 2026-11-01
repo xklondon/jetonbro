@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { createBlackjackTable, invitePlayerFromLobby, openAs, uniqueEmail, giveJetonsFromMenu } from "./helpers";
+import { createBlackjackTable, invitePlayerFromLobby, openAs, uniqueEmail } from "./helpers";
 
 const out = join(process.cwd(), "docs", "screenshots", "classic");
 
@@ -12,7 +12,7 @@ test("two player sessions join a table and open betting", async ({ page, context
   const joEmail = uniqueEmail("jo");
 
   await openAs(context, page, ownerEmail, "Owner");
-  await createBlackjackTable(page, "Salon table");
+  await createBlackjackTable(page, "Salon table", { starting: "100" });
   await page.screenshot({ path: join(out, "app-setup-390x844.png") });
 
   await invitePlayerFromLobby(page, alexEmail);
@@ -25,7 +25,9 @@ test("two player sessions join a table and open betting", async ({ page, context
   const alexPage = await alexContext.newPage();
   await openAs(alexContext, alexPage, alexEmail, "Alex");
   await alexPage.goto(invitePath);
-  await expect(alexPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(
+    alexPage.getByText(/Waiting for the (Dealer|table) to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i),
+  ).toBeVisible({ timeout: 15_000 });
 
   const snapshot = await page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`);
   const data = (await snapshot.json()) as { setup?: { joinUrl: string | null } };
@@ -35,20 +37,24 @@ test("two player sessions join a table and open betting", async ({ page, context
   const joPage = await joContext.newPage();
   await openAs(joContext, joPage, joEmail, "Jo");
   await joPage.goto(new URL(data.setup!.joinUrl!).pathname);
-  await expect(joPage.getByText(/Waiting for the table to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i)).toBeVisible();
+  await expect(
+    joPage.getByText(/Waiting for the (Dealer|table) to open betting|Waiting for the Bank|WAITING FOR PLAYERS/i),
+  ).toBeVisible({ timeout: 15_000 });
 
   await page.reload();
-  await expect(page.locator("[data-player-row]").filter({ hasText: "Alex" })).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByText("Alex").first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
 
   await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText(/Betting is open\.|Betting open/);
-  await giveJetonsFromMenu(page);
-  await page.locator("select").last().selectOption({ label: "Alex" });
-  await page.getByPlaceholder("Jeton amount").fill("100");
-  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.locator("[data-phase-heading]")).toHaveText(/BETTING/i);
+  // Premium funds via table starting jetons; dock has no GIVE JETONS when ADD PLAYER + CHANGE GAME are both shown.
   await alexPage.reload();
-  await expect(alexPage.getByText("YOUR JETONS")).toBeVisible();
+  await expect(alexPage.locator("[data-player-wallet=true]")).toBeVisible({ timeout: 15_000 });
+  await expect(alexPage.getByText(/AVAILABLE/i).first()).toBeVisible();
+  await expect.poll(async () => {
+    const snap = (await alexPage.request
+      .get(`${alexPage.url().replace("/tables/", "/api/tables/")}/snapshot`)
+      .then((r) => r.json())) as { player?: { available?: { label: string } } };
+    return snap.player?.available?.label ?? "0";
+  }).toBe("100");
 });

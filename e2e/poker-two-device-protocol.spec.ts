@@ -74,24 +74,28 @@ test("two devices share heads-up blinds, CALL/RAISE, and reload state", async ({
   expect(ownerSnap.poker?.seats.find((seat) => seat.isBigBlind)?.name).toBe("Sam");
   expect(ownerSnap.poker?.legalActions.map((action) => action.type).sort()).toEqual(["ALL_IN", "CALL", "FOLD", "RAISE"]);
   expect(ownerSnap.poker?.legalActions.some((action) => action.type === "CHECK")).toBe(false);
-  await expect(page.getByRole("button", { name: /CALL / })).toBeVisible();
-  await expect(page.getByRole("button", { name: "RAISE" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /ALL IN / })).toBeVisible();
-  await expect(page.getByRole("button", { name: "FOLD" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "CHECK" })).toHaveCount(0);
+  // Premium dock is RAISE | CALL/CHECK | FOLD; ALL_IN remains legal via API / raise-by max.
+  await expect(page.getByRole("button", { name: /^CALL/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^RAISE/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^FOLD/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^CHECK/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /ALL.?IN/i })).toHaveCount(0);
   await page.screenshot({ path: join(out, "app-poker-call-raise-390x844.png") });
   await samPage.screenshot({ path: join(out, "app-poker-bank-player-same-actor-390x844.png") });
 
-  await page.getByRole("button", { name: /CALL / }).click();
+  await page.getByRole("button", { name: /^CALL/i }).click();
   await expect.poll(async () => (await tableSnapshot(samPage)).poker?.currentActorId).toBe(samSnap.viewerId);
-  await expect(samPage.getByRole("button", { name: "CHECK" })).toBeVisible();
-  await expect(samPage.getByRole("button", { name: "RAISE" })).toBeVisible();
-  await expect(samPage.getByRole("button", { name: /CALL / })).toHaveCount(0);
+  await expect(samPage.getByRole("button", { name: /^CHECK/i })).toBeVisible();
+  await expect(samPage.getByRole("button", { name: /^RAISE/i })).toBeVisible();
+  await expect(samPage.getByRole("button", { name: /^CALL/i })).toHaveCount(0);
   await samPage.screenshot({ path: join(out, "app-poker-check-available-390x844.png") });
 
-  await samPage.getByRole("button", { name: "RAISE" }).click();
-  await expect(samPage.locator("[data-raise-convention]")).toContainText("Raise to");
-  await samPage.getByRole("button", { name: "CONFIRM RAISE" }).click();
+  await samPage.getByRole("button", { name: /^RAISE/i }).click();
+  await expect(samPage.locator("[data-raise-compose=RAISE]")).toBeVisible();
+  await expect(samPage.getByText("RAISE BY")).toBeVisible();
+  await samPage.getByRole("button", { name: "Add 10 jetons" }).click();
+  await expect(samPage.locator("[data-poker-confirm=true]")).toBeVisible();
+  await samPage.locator("[data-poker-confirm=true]").click();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.toCall.label).not.toBe("0");
   await expect.poll(async () => (await tableSnapshot(page)).poker?.currentActorId).toBe(ownerSnap.viewerId);
 

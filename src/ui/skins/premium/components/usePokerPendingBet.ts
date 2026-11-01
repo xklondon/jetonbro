@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   pokerComposeBounds,
+  pokerRaiseAdditional,
   pokerRaiseStreetWager,
+  pokerStreetCommitted,
   pokerTrayEnabled,
   pokerTrayMinAmount,
   pokerTrayChipAct,
@@ -12,8 +14,10 @@ import {
 import type { PokerTableView } from "@/application/queries/views";
 
 /**
- * RAISE compose tracks RAISE BY (increment). Confirm submits raise-to =
- * street wager + raise-by. BET compose still uses face amount.
+ * RAISE compose tracks RAISE BY (increment above street wager).
+ * Chip face N adds exactly N to raise-by → additional payment grows by N
+ * (additional = toCall + raiseBy = raiseTo − streetContribution).
+ * Confirm submits raise-to once.
  */
 export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
   const [composeOpen, setComposeOpen] = useState(false);
@@ -30,15 +34,18 @@ export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
   const maxAmount = bounds ? Number(bounds.max) : null;
   const toCallLabel = view.toCall?.label && view.toCall.label !== "0" ? view.toCall.label : null;
   const streetWager = pokerRaiseStreetWager(view);
+  const committed = pokerStreetCommitted(view);
 
   const amountValue = useMemo(() => {
     const n = Number(amountText);
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [amountText]);
 
-  /** Felt / confirm display: raise-to for RAISE, face for BET. */
   const pendingRaiseTo = kind === "RAISE" && amountValue > 0 ? streetWager + amountValue : amountValue;
-  const pendingLabel = pendingRaiseTo > 0 ? String(pendingRaiseTo) : "";
+  const pendingAdditional =
+    kind === "RAISE" && amountValue > 0 ? pokerRaiseAdditional(view, amountValue) : amountValue;
+  /** Felt pending stack = additional leaving AVAILABLE (never re-shows committed blinds). */
+  const pendingLabel = pendingAdditional > 0 ? String(pendingAdditional) : "";
   const pendingAct =
     trayEnabled && composeOpen && amountValue > 0 ? pokerTrayChipAct(view, String(amountValue)) : null;
 
@@ -88,9 +95,12 @@ export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
     maxAmount,
     toCallLabel,
     streetWager,
+    committed,
     amountText,
     pendingChips,
     pendingAmount: amountValue,
+    pendingAdditional,
+    pendingRaiseTo,
     pendingLabel,
     pendingAct,
     openCompose,

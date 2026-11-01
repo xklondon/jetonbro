@@ -156,9 +156,16 @@ describe("Premium Poker action strip", () => {
     expect(host.querySelector("[data-poker-action-bar]")).toBeTruthy();
     expect(host.querySelector("[data-poker-wallet-stack]")).toBeTruthy();
     expect(host.querySelector("[data-action-strip-head]")).toBeTruthy();
+    expect(host.querySelector("[data-tray-turn-top]")).toBeTruthy();
     expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/TO CALL/);
     expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/5/);
     expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/YOUR TURN/i);
+    const turnEl = host.querySelector("[data-poker-turn-hint]");
+    const raiseEl = host.querySelector("[data-raise-slot]");
+    expect(turnEl && raiseEl).toBeTruthy();
+    expect(
+      Boolean(turnEl!.compareDocumentPosition(raiseEl!) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true);
     const actions = host.querySelector("[data-console-actions]")?.textContent ?? "";
     expect(actions).toMatch(/RAISE/);
     expect(actions).toMatch(/CALL 5/);

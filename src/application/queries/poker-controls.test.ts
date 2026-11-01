@@ -9,6 +9,7 @@ import {
   pokerControlIds,
   pokerControls,
   pokerDockTrio,
+  pokerRaiseAdditional,
   pokerTrayChipAct,
   pokerTrayEnabled,
   pokerTrayMinAmount,
@@ -146,23 +147,28 @@ test("dock trio shows FOLD/CALL/RAISE when facing a wager and FOLD/CHECK/BET whe
   expect(pokerActPayload(free.respond!)).toEqual({ type: "CHECK", amount: "0" });
 });
 
-test("tray chip RAISE treats face as RAISE BY; raise-to = streetWager + raiseBy", () => {
+test("tray chip RAISE: face adds to raise-by; additional = toCall + raiseBy; min raise enforced", () => {
   const acting = view({
     viewerId: "owner",
     currentActorId: "owner",
     toCall: money("25"),
     available: money("100"),
     streetWager: money("25"),
-    legalActions: actorLegal,
+    legalActions: actorLegal.map((action) =>
+      action.type === "RAISE" ? { ...action, raiseTo: money("30"), label: "RAISE" } : action,
+    ),
     seats: [
       seat({ userId: "owner", isActor: true, streetContribution: money("0", "0") }),
       seat({ userId: "sam", isBigBlind: true, streetContribution: money("25") }),
     ],
   });
-  // Chip 5 → raise-by 5 → raise-to 30 (call 25 + raise 5); do not force min raise-to.
+  // Chip 5 → raise-by 5 → raise-to 30; additional payment 30 (call 25 + raise 5).
+  expect(pokerTrayMinAmount(acting)).toBe(5);
   expect(pokerTrayChipAct(acting, "5")).toEqual({ type: "RAISE", amount: "30" });
+  expect(pokerRaiseAdditional(acting, 5)).toBe(30);
+  expect(pokerTrayChipAct(acting, "4")).toBeNull();
   expect(pokerTrayChipAct(acting, "25")).toEqual({ type: "RAISE", amount: "50" });
-  expect(pokerTrayMinAmount(acting)).toBe(1);
+  expect(pokerRaiseAdditional(acting, 10)).toBe(35);
 
   const waiting = view({
     viewerId: "sam",
@@ -230,9 +236,11 @@ test("BB preflop option maps CHECK+RAISE — never disabled BET stack", () => {
   expect(trio.aggression?.type).toBe("RAISE");
   expect(pokerAggressionLabel(trio.aggression!)).toBe("RAISE");
   expect(pokerAggressionLabel(trio.aggression!)).not.toMatch(/20|BET/);
-  expect(pokerTrayMinAmount(bb)).toBe(1);
-  // RAISE BY 10 → raise-to 20; RAISE BY 25 → raise-to 35 (streetWager 10).
+  expect(pokerTrayMinAmount(bb)).toBe(10);
+  expect(pokerTrayChipAct(bb, "5")).toBeNull();
+  // RAISE BY 10 → raise-to 20; additional = 10 (already matched BB).
   expect(pokerTrayChipAct(bb, "10")).toEqual({ type: "RAISE", amount: "20" });
+  expect(pokerRaiseAdditional(bb, 10)).toBe(10);
   expect(pokerTrayChipAct(bb, "20")).toEqual({ type: "RAISE", amount: "30" });
   expect(pokerTrayChipAct(bb, "25")).toEqual({ type: "RAISE", amount: "35" });
 });

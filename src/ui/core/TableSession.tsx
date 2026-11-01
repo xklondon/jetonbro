@@ -82,6 +82,12 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
     source.onerror = () => {
       void refresh();
     };
+    const onResume = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onResume);
+    window.addEventListener("focus", onResume);
+    window.addEventListener("online", onResume);
     const poll = window.setInterval(() => {
       void refresh();
     }, 500);
@@ -89,6 +95,9 @@ export function TableSession({ initial }: { initial: ClientSnapshot }) {
       cancelled = true;
       source.close();
       window.clearInterval(poll);
+      document.removeEventListener("visibilitychange", onResume);
+      window.removeEventListener("focus", onResume);
+      window.removeEventListener("online", onResume);
     };
   }, [applySnapshot, snapshot.tableId]);
 

@@ -107,6 +107,8 @@ export function CasinoConsole({
   composeKind = null,
   composeAmount = "",
   raiseToPreview = null,
+  additionalPreview = null,
+  committedPreview = null,
   onComposeAmount,
   onChip,
   minChipAmount = null,
@@ -129,8 +131,12 @@ export function CasinoConsole({
   composeOpen?: boolean;
   composeKind?: "RAISE" | "BET" | null;
   composeAmount?: string;
-  /** Computed raise-to while composing RAISE BY (street wager + increment). */
+  /** Raise-to total (street wager + raise-by). */
   raiseToPreview?: string | null;
+  /** Extra jetons leaving AVAILABLE this action (toCall + raise-by). */
+  additionalPreview?: string | null;
+  /** Already committed on this street (blinds / prior bets). */
+  committedPreview?: string | null;
   onComposeAmount?: (value: string) => void;
   onChip?: (value: string) => void;
   minChipAmount?: number | null;
@@ -243,8 +249,26 @@ export function CasinoConsole({
             ) : null}
           </>
         ) : (
-          /* Fixed rows: compose (always reserved) → RAISE | CALL/CHECK | FOLD → jetons. */
+          /* Fixed rows: YOUR TURN → compose → RAISE|CALL|FOLD → jetons + AVAILABLE. */
           <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true">
+            {stripHead ? (
+              <div className="pm-console-strip-head" data-action-strip-head="true" data-tray-turn-top="true">
+                {showCall ? (
+                  <div className="pm-console-call" data-to-call="true">
+                    TO CALL <strong>{toCall}</strong>
+                  </div>
+                ) : (
+                  <span className="pm-console-strip-spacer" aria-hidden="true" />
+                )}
+                {turnStatus ? (
+                  <div className="pm-console-turn" data-poker-turn-hint="true">
+                    {turnStatus}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="pm-console-strip-head is-spacer" aria-hidden="true" data-action-strip-head="reserved" />
+            )}
             <div
               className={`pm-console-compose-slot${composeActive ? " is-active" : " is-reserved"}`}
               data-raise-slot="true"
@@ -255,12 +279,22 @@ export function CasinoConsole({
                 <div className="pm-console-compose">
                   <div className="pm-console-compose-meta">
                     <small>{raiseCompose ? "RAISE BY" : composeKind === "BET" ? "BET" : "RAISE BY"}</small>
-                    {showCall ? (
-                      <span className="pm-console-compose-call" data-to-call-inline="true">
-                        TO CALL <strong>{toCall}</strong>
+                    {raiseCompose && committedPreview && committedPreview !== "0" ? (
+                      <span className="pm-console-compose-committed" data-raise-committed={committedPreview}>
+                        IN {committedPreview}
                       </span>
                     ) : null}
-                    {!raiseCompose && minChipAmount != null ? (
+                    {raiseCompose && additionalPreview ? (
+                      <span className="pm-console-compose-add" data-raise-additional={additionalPreview}>
+                        ADD {additionalPreview}
+                      </span>
+                    ) : null}
+                    {raiseCompose && raiseToPreview ? (
+                      <span className="pm-console-compose-preview" data-raise-to-preview={raiseToPreview}>
+                        TOTAL {raiseToPreview}
+                      </span>
+                    ) : null}
+                    {minChipAmount != null ? (
                       <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)}>
                         MIN {minChipAmount}
                       </span>
@@ -270,11 +304,6 @@ export function CasinoConsole({
                         MAX {maxChipAmount}
                       </span>
                     ) : null}
-                    {raiseCompose && raiseToPreview ? (
-                      <span className="pm-console-compose-preview" data-raise-to-preview={raiseToPreview}>
-                        TO {raiseToPreview}
-                      </span>
-                    ) : null}
                   </div>
                   <input
                     type="text"
@@ -282,7 +311,7 @@ export function CasinoConsole({
                     pattern="[0-9]*"
                     className="pm-console-compose-field"
                     value={composeAmount}
-                    placeholder={raiseCompose ? "0" : minChipAmount != null ? String(minChipAmount) : "0"}
+                    placeholder={minChipAmount != null ? String(minChipAmount) : "0"}
                     aria-label={raiseCompose ? "Raise by amount" : composeKind === "BET" ? "Bet amount" : "Raise by amount"}
                     data-compose-amount="true"
                     onChange={(event) => onComposeAmount?.(event.target.value)}
@@ -296,24 +325,6 @@ export function CasinoConsole({
               className={`pm-poker-action-bar${actionCount === 0 ? " is-status-only" : ""}`}
               data-poker-action-bar="true"
             >
-              {stripHead ? (
-                <div className="pm-console-strip-head" data-action-strip-head="true">
-                  {showCall ? (
-                    <div className="pm-console-call" data-to-call="true">
-                      TO CALL <strong>{toCall}</strong>
-                    </div>
-                  ) : (
-                    <span className="pm-console-strip-spacer" aria-hidden="true" />
-                  )}
-                  {turnStatus ? (
-                    <div className="pm-console-turn" data-poker-turn-hint="true">
-                      {turnStatus}
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="pm-console-strip-head is-spacer" aria-hidden="true" data-action-strip-head="reserved" />
-              )}
               <div
                 className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
                   primary && !secondary && !tertiary ? " is-single" : ""

@@ -5,6 +5,8 @@ export type PotContribution = {
   playerId: string;
   total: JetonMillis;
   folded: boolean;
+  /** True when the player is all-in; required for genuine side-pot layers. */
+  allIn?: boolean;
 };
 
 export type BuiltPot = {
@@ -14,10 +16,22 @@ export type BuiltPot = {
   eligiblePlayerIds: string[];
 };
 
-export function buildSidePots(contributions: PotContribution[]): BuiltPot[] {
+/**
+ * Side pots exist only when an all-in player is covered by a larger contribution.
+ * Unequal totals from normal betting / blinds / folds alone stay one MAIN pot.
+ */
+export function hasGenuineSidePot(contributions: PotContribution[]): boolean {
+  const allIns = contributions.filter((item) => item.allIn);
+  if (allIns.length === 0) return false;
+  return allIns.some((allIn) => contributions.some((item) => item.total > allIn.total));
+}
+
+function buildContributionLayers(contributions: PotContribution[]): BuiltPot[] {
   const positive = contributions.filter((item) => item.total > 0n);
   if (positive.length === 0) return [];
-  const caps = [...new Set(positive.map((item) => item.total))].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  const caps = [...new Set(positive.map((item) => item.total))].sort((left, right) =>
+    left < right ? -1 : left > right ? 1 : 0,
+  );
   const pots: BuiltPot[] = [];
   let previous = 0n;
   for (const cap of caps) {
@@ -37,6 +51,28 @@ export function buildSidePots(contributions: PotContribution[]): BuiltPot[] {
     previous = cap;
   }
   return pots.filter((pot) => pot.amountMillis > 0n);
+}
+
+function buildSingleMainPot(contributions: PotContribution[]): BuiltPot[] {
+  const amount = contributions.reduce((sum, item) => sum + item.total, 0n);
+  if (amount <= 0n) return [];
+  const eligible = contributions.filter((item) => !item.folded).map((item) => item.playerId);
+  const cap = contributions.reduce((max, item) => (item.total > max ? item.total : max), 0n);
+  return [
+    {
+      index: 0,
+      capMillis: cap,
+      amountMillis: amount,
+      eligiblePlayerIds: eligible,
+    },
+  ];
+}
+
+export function buildSidePots(contributions: PotContribution[]): BuiltPot[] {
+  if (!hasGenuineSidePot(contributions)) {
+    return buildSingleMainPot(contributions);
+  }
+  return buildContributionLayers(contributions);
 }
 
 export function splitPotEqually(

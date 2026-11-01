@@ -35,11 +35,17 @@ export function BlackjackTable({
         className={setup ? "pm-bj-setup" : "pm-bj-payout-zone"}
         data-table-zone={setup ? "setup" : "payout"}
         data-bj-layout={layout}
+        data-dealer-boxes={setup || layout === "play" ? "true" : undefined}
       >
         {children}
       </div>
     ) : (
-      <div className="pm-bj-boxes" data-table-zone="boxes" data-player-layer="true">
+      <div
+        className="pm-bj-boxes"
+        data-table-zone="boxes"
+        data-player-layer="true"
+        data-dealer-boxes="true"
+      >
         {children}
       </div>
     );
@@ -49,6 +55,7 @@ export function BlackjackTable({
       className="pm-bj"
       data-blackjack-table-surface="true"
       data-premium-bj-table="true"
+      data-bj-felt="true"
       data-bj-setup={setup ? "true" : "false"}
       data-bj-layout={layout}
     >

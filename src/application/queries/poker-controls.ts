@@ -118,10 +118,11 @@ export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "av
 }
 
 /**
- * Resolve a composed amount to a legal pokerAct BET/RAISE.
- * For RAISE, `chipLabel` is the RAISE BY increment; submit amount is raise-to
- * (street wager + raise-by). Does not require full min-raise size — chips may
- * build any positive increment within AVAILABLE.
+ * Resolve a composed RAISE BY / BET face to a legal pokerAct.
+ * RAISE: `chipLabel` is raise-by (increment above street wager). Submit is raise-to.
+ * Additional payment locked = raiseTo − streetContribution (= toCall + raiseBy).
+ * A 10 jeton increases that additional payment by exactly 10 — blinds already in
+ * streetContribution are not re-added. Min legal raise-to enforced unless all-in.
  */
 export function pokerTrayChipAct(
   view: PokerTableView,
@@ -133,11 +134,15 @@ export function pokerTrayChipAct(
   const chip = Number(chipLabel);
   if (!Number.isFinite(chip) || chip <= 0) return null;
   if (raise) {
-    const streetWager = Number(view.streetWager?.label ?? "0");
-    const raiseTo = (Number.isFinite(streetWager) ? streetWager : 0) + chip;
-    const max = Number(pokerComposeBounds(view, "RAISE").max);
-    if (Number.isFinite(max) && max > 0 && raiseTo > max) return null;
-    if (raiseTo <= (Number.isFinite(streetWager) ? streetWager : 0)) return null;
+    const streetWager = pokerRaiseStreetWager(view);
+    const raiseTo = streetWager + chip;
+    const bounds = pokerComposeBounds(view, "RAISE");
+    const minTo = Number(bounds.min);
+    const maxTo = Number(bounds.max);
+    if (!Number.isFinite(raiseTo) || raiseTo <= streetWager) return null;
+    if (Number.isFinite(maxTo) && maxTo > 0 && raiseTo > maxTo) return null;
+    // Below min raise-to is illegal unless this is an all-in shove to max.
+    if (Number.isFinite(minTo) && raiseTo < minTo && raiseTo < maxTo) return null;
     return { type: "RAISE", amount: String(raiseTo) };
   }
   if (bet) {
@@ -152,11 +157,17 @@ export function pokerTrayChipAct(
   return null;
 }
 
-/** Min raise-by (1) or min bet face; null when aggression unavailable. */
+/** Min raise-by (minRaiseTo − streetWager) or min bet face; null when unavailable. */
 export function pokerTrayMinAmount(view: PokerTableView): number | null {
   const legal = visiblePokerLegalActions(view);
   const raise = legal.find((action) => action.type === "RAISE");
-  if (raise) return 1;
+  if (raise) {
+    const streetWager = pokerRaiseStreetWager(view);
+    const minTo = Number(pokerComposeBounds(view, "RAISE").min);
+    if (!Number.isFinite(minTo)) return null;
+    const minBy = Math.max(1, minTo - streetWager);
+    return minBy;
+  }
   const bet = legal.find((action) => action.type === "BET");
   if (bet) {
     const min = Number(pokerComposeBounds(view, "BET").min);
@@ -169,6 +180,26 @@ export function pokerTrayMinAmount(view: PokerTableView): number | null {
 export function pokerRaiseStreetWager(view: Pick<PokerTableView, "streetWager">): number {
   const n = Number(view.streetWager?.label ?? "0");
   return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** Street contribution already committed by the viewer this street. */
+export function pokerStreetCommitted(view: Pick<PokerTableView, "seats" | "viewerId" | "contribution">): number {
+  const own = view.seats?.find((seat) => seat.userId === view.viewerId);
+  const n = Number(own?.streetContribution?.label ?? "0");
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Additional jetons leaving AVAILABLE for this RAISE (toCall + raiseBy).
+ * Does not include chips already committed on the street.
+ */
+export function pokerRaiseAdditional(view: PokerTableView, raiseBy: number): number {
+  if (!Number.isFinite(raiseBy) || raiseBy <= 0) return 0;
+  const streetWager = pokerRaiseStreetWager(view);
+  const committed = pokerStreetCommitted(view);
+  const raiseTo = streetWager + raiseBy;
+  const additional = raiseTo - committed;
+  return additional > 0 ? additional : 0;
 }
 
 export function pokerComposeSeed(

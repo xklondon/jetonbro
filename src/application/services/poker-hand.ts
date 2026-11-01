@@ -154,6 +154,7 @@ async function rebuildPots(tx: Tx, handId: string) {
       playerId: item.playerId,
       total: item.totalContributionMillis,
       folded: item.status === "FOLDED",
+      allIn: item.status === "ALL_IN",
     })),
   );
   for (const pot of pots) {

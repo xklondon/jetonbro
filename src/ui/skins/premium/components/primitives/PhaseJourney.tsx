@@ -19,6 +19,9 @@ export function PhaseJourney({ phase }: { phase: string }) {
         <span
           key={street}
           className={i < active ? "is-done" : i === active ? "is-current" : undefined}
+          data-rail-label={street}
+          data-rail-state={i < active ? "done" : i === active ? "current" : "upcoming"}
+          data-testid={`poker-rail-${street.toLowerCase()}`}
         >
           {street}
         </span>

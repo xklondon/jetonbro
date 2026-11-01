@@ -55,13 +55,37 @@ test("dealer rotates to the next ordered seat", () => {
 
 test("all-in layers create a main pot and a side pot", () => {
   const pots = buildSidePots([
-    { playerId: "short", total: 50000n, folded: false },
+    { playerId: "short", total: 50000n, folded: false, allIn: true },
     { playerId: "deep", total: 100000n, folded: false },
     { playerId: "mid", total: 100000n, folded: false },
   ]);
   expect(pots).toHaveLength(2);
   expect(pots[0]).toMatchObject({ amountMillis: 150000n, eligiblePlayerIds: ["short", "deep", "mid"] });
   expect(pots[1]).toMatchObject({ amountMillis: 100000n, eligiblePlayerIds: ["deep", "mid"] });
+});
+
+test("unequal contributions without all-in stay one MAIN pot", () => {
+  const pots = buildSidePots([
+    { playerId: "sb", total: 30000n, folded: false },
+    { playerId: "bb", total: 40000n, folded: false },
+    { playerId: "fold", total: 30000n, folded: true },
+  ]);
+  expect(pots).toHaveLength(1);
+  expect(pots[0]).toMatchObject({
+    index: 0,
+    amountMillis: 100000n,
+    eligiblePlayerIds: ["sb", "bb"],
+  });
+});
+
+test("equal all-in amounts produce one MAIN pot", () => {
+  const pots = buildSidePots([
+    { playerId: "a", total: 50000n, folded: false, allIn: true },
+    { playerId: "b", total: 50000n, folded: false, allIn: true },
+    { playerId: "c", total: 50000n, folded: false, allIn: true },
+  ]);
+  expect(pots).toHaveLength(1);
+  expect(pots[0]?.amountMillis).toBe(150000n);
 });
 
 test("folded contribution stays in the pot but cannot win it", () => {

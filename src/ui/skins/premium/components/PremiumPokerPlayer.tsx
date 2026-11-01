@@ -53,8 +53,11 @@ export function PremiumPokerPlayer({
     amountText,
     pendingChips,
     pendingAmount,
+    pendingAdditional,
+    pendingRaiseTo,
     pendingLabel,
     pendingAct,
+    committed,
     openCompose,
     setAmount,
     addChip,
@@ -118,7 +121,15 @@ export function PremiumPokerPlayer({
           composeOpen={composeOpen}
           composeKind={composeKind}
           composeAmount={amountText}
-          raiseToPreview={composeOpen && composeKind === "RAISE" && pendingLabel ? pendingLabel : null}
+          raiseToPreview={
+            composeOpen && composeKind === "RAISE" && pendingRaiseTo > 0 ? String(pendingRaiseTo) : null
+          }
+          additionalPreview={
+            composeOpen && composeKind === "RAISE" && pendingAdditional > 0
+              ? String(pendingAdditional)
+              : null
+          }
+          committedPreview={composeOpen && composeKind === "RAISE" ? String(committed) : null}
           onComposeAmount={setAmount}
           minChipAmount={minChip}
           maxChipAmount={maxChip}

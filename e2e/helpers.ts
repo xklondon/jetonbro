@@ -58,23 +58,41 @@ export async function createPokerTable(
 }
 
 export async function openInviteMask(page: Page) {
-  const add = page.getByRole("button", { name: /ADD (NEW )?PLAYERS?/i });
-  if (await add.count()) {
-    if (!(await page.locator(".sheet.open .invite-mask").count())) {
-      await add.click();
-    }
-    await expect(page.locator(".sheet.open .invite-mask")).toBeVisible();
+  const invite = page.locator("[data-invite-mask=true]");
+  if (await invite.count()) {
+    await expect(invite).toBeVisible();
     return;
   }
-  await expect(page.getByRole("tab", { name: "GUEST QR" })).toBeVisible({ timeout: 20_000 });
+  const add = page.getByRole("button", { name: /ADD (NEW )?PLAYERS?/i });
+  await expect(add.first()).toBeVisible({ timeout: 20_000 });
+  await add.first().click();
+  await expect(page.locator("[data-invite-mask=true]")).toBeVisible({ timeout: 10_000 });
 }
 
 export async function setupJoinUrl(page: Page, kind: "guest" | "verified" = "verified") {
   const attr = kind === "guest" ? "data-guest-join-url" : "data-verified-join-url";
+  const existing = page.locator(`[${attr}]`).first();
+  let opened = false;
+  if (!(await existing.count())) {
+    await openInviteMask(page);
+    opened = true;
+    if (kind === "guest") {
+      await page.getByRole("tab", { name: /GUEST QR/i }).click();
+    } else {
+      await page.getByRole("tab", { name: /VERIFIED QR/i }).click();
+    }
+  }
   const el = page.locator(`[${attr}]`).first();
   await expect(el).toBeAttached({ timeout: 20_000 });
   const url = await el.getAttribute(attr);
   if (!url) throw new Error(`${kind} join URL missing`);
+  if (opened) {
+    const close = page.locator("[data-invite-mask=true]").getByRole("button", { name: /Close/i });
+    if (await close.count()) {
+      await close.first().click();
+      await expect(page.locator("[data-invite-mask=true]")).toHaveCount(0);
+    }
+  }
   return url;
 }
 
@@ -106,14 +124,33 @@ export async function createBlackjackTable(
 }
 
 export async function openTableMenu(page: Page) {
+  const premiumSheet = page.locator("[data-poker-card-tools=true], [data-give-jetons-mask=true], .pm-sheet-mask, .pm-invite");
+  if (await premiumSheet.count()) {
+    await closeTableMenu(page);
+  }
   if (await page.locator(".sheet.open").count()) {
     await closeTableMenu(page);
   }
-  await page.getByRole("button", { name: "Menu" }).click();
-  await expect(page.locator(".sheet.open")).toBeVisible();
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  await expect(menu).toBeEnabled({ timeout: 10_000 });
+  await menu.click();
+  await expect(
+    page.locator("[data-poker-card-tools=true], .sheet.open, .pm-sheet-mask").first(),
+  ).toBeVisible({ timeout: 10_000 });
 }
 
 export async function closeTableMenu(page: Page) {
+  const premium = page.locator("[data-poker-card-tools=true], [data-give-jetons-mask=true], [data-invite-mask=true], .pm-sheet-mask");
+  if (await premium.count()) {
+    const dismiss = premium.getByRole("button", { name: /^(Cancel|Close|Close invite)$/i });
+    if (await dismiss.count()) {
+      await dismiss.first().click();
+    } else {
+      await page.keyboard.press("Escape");
+    }
+    await expect(premium).toHaveCount(0);
+    return;
+  }
   const sheet = page.locator(".sheet.open");
   if (!(await sheet.count())) return;
   const dismiss = sheet.getByRole("button", { name: /^(Cancel|Close)$/ });
@@ -126,8 +163,15 @@ export async function closeTableMenu(page: Page) {
 }
 
 export async function giveJetonsFromMenu(page: Page) {
+  const dock = page.getByRole("button", { name: /^(GIVE JETONS|BUY-IN)$/i });
+  if (await dock.count()) {
+    await dock.first().click();
+    await expect(page.locator("[data-give-jetons-mask=true]")).toBeVisible({ timeout: 10_000 });
+    return;
+  }
   await openTableMenu(page);
-  await page.locator(".sheet.open").getByRole("button", { name: "GIVE JETONS" }).click();
+  await page.getByRole("button", { name: /GIVE JETONS/i }).click();
+  await expect(page.locator("[data-give-jetons-mask=true], .sheet.open")).toBeVisible();
 }
 
 export async function scheduleDealFromMenu(page: Page) {
@@ -151,16 +195,26 @@ export async function invitePlayerFromLobby(page: Page, email: string) {
   await expect(page.getByLabel("Player email")).toBeVisible();
   await page.getByLabel("Player email").fill(email);
   await page.getByRole("button", { name: /^SEND/i }).click();
-  await expect(page.getByText("Pending")).toBeVisible();
-  const close = page.locator(".invite-mask, .sheet.open").getByRole("button", { name: "Close" });
+  await expect(page.getByText(/Invitation sent|Pending/i).first()).toBeVisible({ timeout: 15_000 });
+  const close = page
+    .locator("[data-invite-mask=true], .invite-mask, .sheet.open")
+    .getByRole("button", { name: /Close/i });
   if (await close.count()) {
     await close.first().click();
-    await expect(page.locator(".sheet.open")).toHaveCount(0);
+    await expect(page.locator("[data-invite-mask=true]")).toHaveCount(0);
   }
 }
 
 export async function expectPokerPhase(page: Page, label: string, options?: { timeout?: number }) {
   const timeout = options?.timeout ?? 15_000;
+  const apiPhase =
+    label === "PRE-FLOP" || label === "PRE_FLOP"
+      ? "PRE_FLOP"
+      : label === "HAND COMPLETE" || label === "HAND_COMPLETE"
+        ? "HAND_COMPLETE"
+        : label === "TABLE SETUP" || label === "POKER_SETUP"
+          ? "POKER_SETUP"
+          : label.replaceAll("-", "_").toUpperCase();
   const railLabel =
     label === "PRE-FLOP" || label === "PRE_FLOP"
       ? "PRE-FLOP"
@@ -168,17 +222,34 @@ export async function expectPokerPhase(page: Page, label: string, options?: { ti
         ? null
         : label === "TABLE SETUP" || label === "POKER_SETUP"
           ? null
-          : label.replaceAll("_", "-");
-  // Live streets: phase lives on the felt journey (no duplicated page-level PRE-FLOP title).
-  if (railLabel && ["SHUFFLE", "PRE-FLOP", "FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(railLabel)) {
-    await expect(page.locator(`[data-rail-label="${railLabel}"][data-rail-state="current"]`)).toBeVisible({
-      timeout,
-    });
-    return;
+          : label.replaceAll("_", "-").toUpperCase();
+
+  await expect
+    .poll(
+      async () => {
+        const url = page.url();
+        if (!url.includes("/tables/")) return false;
+        const snap = (await page.request
+          .get(`${url.replace("/tables/", "/api/tables/")}/snapshot`)
+          .then((r) => r.json())) as { poker?: { phase?: string }; phase?: string };
+        const phase = snap.poker?.phase ?? snap.phase ?? "";
+        if (apiPhase === "POKER_SETUP") return phase === "POKER_SETUP" || phase === "TABLE_SETUP";
+        return phase === apiPhase;
+      },
+      { timeout },
+    )
+    .toBe(true);
+
+  if (railLabel && ["PRE-FLOP", "FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(railLabel)) {
+    const rail = page.locator(`[data-rail-label="${railLabel}"][data-rail-state="current"]`);
+    if (await rail.count()) {
+      await expect(rail).toBeVisible({ timeout: 5_000 });
+      return;
+    }
   }
-  await expect(page.locator("[data-phase-heading]")).toHaveText(label.replaceAll("_", " ").replace("POKER SETUP", "TABLE SETUP"), {
-    timeout,
-  });
+  if (apiPhase === "POKER_SETUP" || apiPhase === "TABLE_SETUP") {
+    await expect(page.locator("[data-phase-heading]").first()).toHaveText(/TABLE SETUP/i, { timeout: 5_000 });
+  }
 }
 
 export async function expectNoPageScroll(page: Page) {

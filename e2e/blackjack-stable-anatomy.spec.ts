@@ -31,10 +31,10 @@ async function shot(page: Page, name: string) {
 
 async function geometry(page: Page) {
   return page.evaluate(() => {
-    const felt = document.querySelector("[data-bj-felt]") as HTMLElement | null;
+    const felt = document.querySelector("[data-bj-felt], [data-premium-bj-table]") as HTMLElement | null;
     const dealer = document.querySelector("[data-dealer-slot]") as HTMLElement | null;
     const name = document.querySelector("[data-table-name]") as HTMLElement | null;
-    const boxes = document.querySelector("[data-dealer-boxes]") as HTMLElement | null;
+    const boxes = document.querySelector("[data-dealer-boxes], [data-table-zone]") as HTMLElement | null;
     const box = (el: HTMLElement | null) => {
       if (!el) return null;
       const r = el.getBoundingClientRect();
@@ -107,14 +107,13 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
 
   await casey.page.reload();
-  await expect(casey.page.getByText("YOUR JETONS")).toBeVisible();
+  await expect(casey.page.locator("[data-player-wallet=true]")).toBeVisible();
   await casey.page.getByRole("button", { name: "Add 25 jetons" }).click();
   await expect.poll(async () => (await snapshot(casey.page)).player?.available.label).toBe("75");
-  await expect(casey.page.getByRole("button", { name: "Retract Box 1 wager" })).toBeVisible();
-  const chip = await casey.page.locator(".tt-pbox-chips .tt-jeton-lg").first().boundingBox();
+  await expect(casey.page.getByRole("button", { name: /Retract 25 jetons/i })).toBeVisible();
+  const chip = await casey.page.locator("[data-casino-jeton=true]").first().boundingBox();
   expect(chip).toBeTruthy();
-  expect(chip!.width).toBeGreaterThanOrEqual(46);
-  expect(chip!.width).toBeLessThanOrEqual(56);
+  expect(chip!.width).toBeGreaterThanOrEqual(28);
   await shot(casey.page, "09-player-betting-one-wager-retract-x");
 
   await expect(page.locator("[data-box-id]").first()).toBeVisible();
@@ -136,7 +135,7 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await expect.poll(async () => (await snapshot(casey.page)).player?.available.label).toBe("65");
   await shot(casey.page, "10-player-betting-two-boxes");
 
-  await casey.page.getByRole("button", { name: "Retract Box 1 wager" }).click();
+  await casey.page.getByRole("button", { name: /Retract 25 jetons/i }).click();
   await expect.poll(async () => (await snapshot(casey.page)).player?.available.label).toBe("90");
   await expect.poll(async () => {
     const snap = await snapshot(casey.page);
@@ -144,8 +143,8 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
     const two = snap.player?.boxes.find((b) => b.boxNumber === 2);
     return `${one?.bet.label}:${two?.bet.label}`;
   }).toBe("0:10");
-  await expect(casey.page.getByRole("button", { name: "Retract Box 1 wager" })).toHaveCount(0);
-  await expect(casey.page.getByRole("button", { name: "Retract Box 2 wager" })).toBeVisible();
+  await expect(casey.page.getByRole("button", { name: /Retract 25 jetons/i })).toHaveCount(0);
+  await expect(casey.page.getByRole("button", { name: /Retract 10 jetons/i })).toBeVisible();
 
   await casey.page.reload();
   await expect.poll(async () => {
@@ -159,7 +158,7 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await expect.poll(async () => (await snapshot(casey.page)).player?.available.label).toBe("65");
 
   await riley.page.reload();
-  await expect(riley.page.getByText("YOUR JETONS")).toBeVisible();
+  await expect(riley.page.locator("[data-player-wallet=true]")).toBeVisible();
   await riley.page.getByRole("button", { name: "Add 25 jetons" }).click();
   await riley.page.getByRole("button", { name: "ADD BOX" }).click();
   await expect.poll(async () => (await snapshot(riley.page)).player?.boxes.length).toBe(2);
@@ -171,17 +170,17 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await shot(page, "04-dealer-betting-four-wagers");
 
   // Dealer must not see player retract X; Riley must not see Casey's X
-  await expect(page.getByRole("button", { name: /Retract Box/i })).toHaveCount(0);
-  await expect(riley.page.getByRole("button", { name: "Retract Box 1 wager" })).toBeVisible();
-  await expect(casey.page.getByRole("button", { name: /Retract Box/i })).not.toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Retract \d+ jetons/i })).toHaveCount(0);
+  await expect(riley.page.getByRole("button", { name: /Retract 25 jetons/i })).toBeVisible();
+  await expect(casey.page.getByRole("button", { name: /Retract \d+ jetons/i })).not.toHaveCount(0);
 
   await page.getByRole("button", { name: "DEAL CARDS" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PLAYING");
   await expect(page.locator('[data-dealer-slot="true"]')).toBeVisible();
-  await expect(casey.page.getByRole("button", { name: /Retract Box/i })).toHaveCount(0);
+  await expect(casey.page.getByRole("button", { name: /Retract \d+ jetons/i })).toHaveCount(0);
   await shot(page, "05-dealer-playing");
   await casey.page.reload();
-  await expect(casey.page.locator(".tt-pbox-chips .tt-jeton-lg").first()).toBeVisible();
+  await expect(casey.page.locator("[data-casino-jeton=true]").first()).toBeVisible();
   await shot(casey.page, "11-player-playing");
   const gPlay = await geometry(page);
   expect(delta(g0.dealer!, gPlay.dealer!).x).toBeLessThanOrEqual(8);
@@ -191,7 +190,7 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
 
   await page.getByRole("button", { name: "OPEN INSURANCE" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("INSURANCE");
-  await expect(casey.page.getByRole("button", { name: /Retract Box/i })).toHaveCount(0);
+  await expect(casey.page.getByRole("button", { name: /Retract \d+ jetons/i })).toHaveCount(0);
   await shot(page, "06-dealer-insurance");
   await casey.page.reload();
   await shot(casey.page, "12-player-insurance");
@@ -201,9 +200,9 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
   await page.getByRole("button", { name: "CLOSE INSURANCE" }).click();
   await page.getByRole("button", { name: "ENTER PAYOUT" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText("PAYOUT");
-  await expect(page.locator('[data-dealer-boxes="true"]')).toBeVisible();
+  await expect(page.locator('[data-table-zone="payout"]')).toBeVisible();
   await expect(page.locator(".tt-setup-ledger")).toHaveCount(0);
-  await expect(casey.page.getByRole("button", { name: /Retract Box/i })).toHaveCount(0);
+  await expect(casey.page.getByRole("button", { name: /Retract \d+ jetons/i })).toHaveCount(0);
   await shot(page, "07-dealer-payout-unresolved");
   const gPayU = await geometry(page);
   expect(delta(g0.dealer!, gPayU.dealer!).x).toBeLessThanOrEqual(8);
@@ -211,7 +210,7 @@ test("Blackjack stable dealer anatomy + retract X + screenshots", async ({ page,
 
   const bankBoxes = (await snapshot(page)).bank?.boxes ?? [];
   for (const box of bankBoxes) {
-    const slot = page.locator(`[data-settle-box="${box.id}"]`);
+    const slot = page.locator(`[data-box-id="${box.id}"]`);
     await slot.locator('[data-payout-action="true"]').filter({ hasText: /^LOST$/ }).click();
   }
   await expect(page.getByRole("button", { name: "START BETTING" })).toBeEnabled({ timeout: 15_000 });

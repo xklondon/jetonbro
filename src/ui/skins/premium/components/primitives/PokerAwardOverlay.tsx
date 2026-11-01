@@ -1,8 +1,20 @@
 "use client";
 
 import type { PokerTableView } from "@/application/queries/views";
+import { formatJetons } from "@/domain/money";
+import { splitPotEqually } from "@/domain/poker/pots";
 
-/** Felt-overlaid showdown award — translucent horizontal seat row (matches BJ payout rail). */
+function potMillis(label: string, millis?: string): bigint {
+  try {
+    if (millis) return BigInt(millis);
+  } catch {
+    /* fall through */
+  }
+  const n = Number(label);
+  return Number.isFinite(n) ? BigInt(Math.round(n * 1000)) : 0n;
+}
+
+/** Felt-overlaid showdown award — AWARD POT (1) or SPLIT POT (2+), with payout preview. */
 export function PokerAwardOverlay({
   view,
   winners,
@@ -19,7 +31,35 @@ export function PokerAwardOverlay({
   busy?: boolean;
 }) {
   if (!view.canAward) return null;
+
   const pots = view.pots.length > 0 ? view.pots : [];
+  const domainSeats = view.seats.map((seat) => ({ playerId: seat.userId, orderIndex: seat.orderIndex }));
+  const dealerId = view.seats.find((seat) => seat.isDealer)?.userId ?? view.seats[0]?.userId ?? "";
+
+  const selections = pots.map((pot) => ({
+    pot,
+    selected: winners[pot.index] ?? pot.winnerPlayerIds,
+    awarded: pot.winnerPlayerIds.length > 0,
+  }));
+
+  const allAssigned = selections.every((item) => item.selected.length > 0 || item.awarded);
+  const multiWinner = selections.some((item) => item.selected.length > 1);
+  const confirmLabel = multiWinner ? "SPLIT POT" : "AWARD POT";
+
+  const payoutTotals = new Map<string, bigint>();
+  for (const item of selections) {
+    if (item.selected.length === 0) continue;
+    const amount = potMillis(item.pot.amount.label, item.pot.amount.millis);
+    const shares = splitPotEqually(amount, item.selected, dealerId, domainSeats);
+    for (const [playerId, share] of shares) {
+      payoutTotals.set(playerId, (payoutTotals.get(playerId) ?? 0n) + share);
+    }
+  }
+  const payoutPreview = [...payoutTotals.entries()].map(([userId, amount]) => {
+    const name = view.seats.find((seat) => seat.userId === userId)?.name ?? userId;
+    return { userId, name, label: formatJetons(amount) };
+  });
+
   return (
     <div className="pm-poker-payout" data-award-panel="true" data-payout-overlay="true">
       <section className="pm-bj-payout-panel pm-award" data-poker-award="true">
@@ -27,7 +67,9 @@ export function PokerAwardOverlay({
           <strong>
             {pots[0] ? (
               <>
-                {pots[0].index === 0 ? "MAIN POT" : `SIDE POT ${pots[0].index}`} · {pots[0].amount.label}
+                {pots.length > 1
+                  ? `${pots[0].index === 0 ? "MAIN POT" : `SIDE POT ${pots[0].index}`} · ${pots[0].amount.label}`
+                  : `MAIN POT · ${pots[0].amount.label}`}
               </>
             ) : (
               <>MAIN POT · {view.pot.label}</>
@@ -43,8 +85,8 @@ export function PokerAwardOverlay({
           return (
             <div key={pot.index} className="pm-award-pot" data-pot-index={pot.index}>
               {pots.length > 1 ? (
-                <small>
-                  {pot.index === 0 ? "MAIN" : `SIDE ${pot.index}`} · {pot.amount.label}
+                <small data-award-pot-label="true">
+                  {pot.index === 0 ? "MAIN POT" : `SIDE POT ${pot.index}`} · {pot.amount.label}
                   {awarded ? " · awarded" : ""}
                 </small>
               ) : null}
@@ -94,14 +136,24 @@ export function PokerAwardOverlay({
             </div>
           );
         })}
+        {payoutPreview.length > 0 ? (
+          <div className="pm-award-preview" data-award-preview="true">
+            {payoutPreview.map((row) => (
+              <span key={row.userId} data-award-share={row.userId}>
+                {row.name} · {row.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <button
           type="button"
           className="pm-console-btn is-primary pm-award-confirm"
           data-award-confirm="true"
-          disabled={busy}
+          data-award-mode={multiWinner ? "split" : "award"}
+          disabled={busy || !allAssigned}
           onClick={onConfirm}
         >
-          AWARD POT
+          {confirmLabel}
         </button>
       </section>
     </div>
