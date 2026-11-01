@@ -1,3 +1,48 @@
+# Premium Poker UX + E2E Premium selectors
+
+Date: 2026-11-01
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `6cfec38`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `5a5d9780-611f-43e9-8104-4f6964e49491` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: Poker integration 29/29; BJ 23/23; Playwright mobile-390 7/7 (3-device Poker journey + BJ regression); guardrails + production build. `/api/health` connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
+# Premium Poker fixed tray layout + felt pending wager
+
+Date: 2026-10-27
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `010fee7`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `f1570353-5251-48cf-9e60-bc6f45ef51ab` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 39/39; guardrails + production build. `prisma migrate deploy` on start: 16 migrations, no pending. `/api/health` connected. `/sign-in` 200. Local @390 compose screenshot skipped. Not merged. Not tagged. Staging/lite untouched.
+
+---
+# Premium Poker RAISE compose input
+
+Date: 2026-10-27
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `eb3cd97`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `586e2ede-773c-4e01-954c-730ffeb43343` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 39/39; guardrails + production build. `prisma migrate deploy` on start: 16 migrations, no pending. `/api/health` connected. `/sign-in` 200. Prod RAISE compose smoke deferred. Not merged. Not tagged. Staging/lite untouched.
+
+---
+# Premium Poker open BET min + BB option RAISE
+
+Date: 2026-10-25
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `56fdf19`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `94f1bcc2-ef7c-4af9-ab10-bdb7d60ad518` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 56/56; guardrails + production build. `prisma migrate deploy` on start: no pending. `/api/health` connected. Prod open-BET/BB-option smoke deferred. Not merged. Not tagged. Staging/lite untouched.
+
+---
+# Premium Poker final pass — tray join, RAISE, seat chrome
+
+Date: 2026-10-24
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `7b63ee1`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `9d753397-2336-48c4-9fad-f6193cba4ad1` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 50/50; guardrails + production build; local Playwright pending-confirm shots under `docs/screenshots/premium/poker-final-pass/`. `prisma migrate deploy` on start: no pending. `/api/health` connected. Prod Poker smoke deferred. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Premium Poker pending chip stack → CONFIRM raise-to
 
 Date: 2026-10-24

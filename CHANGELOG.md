@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Premium Poker UX + E2E Premium selectors (JetBro II Web)
+
+- Commit `6cfec38` on `fix/blackjack-stable-anatomy-v1` — all-in side pots, AWARD/SPLIT preview, RAISE BY tray/SSE sync; Playwright helpers/specs updated from Classic to Premium (`data-invite-mask`, phase rail, pot/side-pot hooks, RAISE BY compose).
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`5a5d9780-611f-43e9-8104-4f6964e49491`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Poker integration 29/29; BJ unit/integration 23/23; Playwright mobile-390 7/7 (`poker-and-betting`, `poker-two-device-protocol`, `blackjack-flow`, `blackjack-stable-anatomy`); guardrails + `npm run build`. `/api/health` connected. Not merged or tagged.
+
+### Premium Poker fixed tray layout + felt pending wager (JetBro II Web)
+
+- Commit `010fee7` on `fix/blackjack-stable-anatomy-v1` — dock rows fixed as compose slot (always reserved) → actions → jetons; pending chip-built wager renders on the felt beside ME until Confirm (removed from tray well).
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`f1570353-5251-48cf-9e60-bc6f45ef51ab`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 39/39; guardrails + `npm run build`. Start: `prisma migrate deploy` — 16 migrations, no pending. `/api/health` `{"ok":true,"database":"connected"}`. `/sign-in` 200. Local @390 compose screenshot skipped (`/tables/new` stuck on :3010). Not merged or tagged.
+
+### Premium Poker RAISE compose input (JetBro II Web)
+
+- Commit `eb3cd97` on `fix/blackjack-stable-anatomy-v1` — RAISE opens numeric raise-to compose (minimum as hint/placeholder only); tray chips accumulate into the field; Confirm submits once when legal and ≤ AVAILABLE; BB preflop option still RAISE via dock trio; dealer **D** on seat in setup (TURN separate); tray min-height stabilized in CSS.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`586e2ede-773c-4e01-954c-730ffeb43343`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 39/39; guardrails + `npm run build`. Start: `prisma migrate deploy` — 16 migrations, no pending. `/api/health` `{"ok":true,"database":"connected"}`. `/sign-in` 200. Production Poker RAISE compose smoke not run (no `/api/dev/session`). Not merged or tagged.
+
+### Premium Poker open BET min + BB option RAISE (JetBro II Web)
+
+- Commit `56fdf19` on `fix/blackjack-stable-anatomy-v1` — open BET uses big-blind minimum (not stack-max fixed/disabled BET); tray min no longer tied to full stack so Confirm can enable; big-blind preflop option prefers CHECK/RAISE over dead BET; ME seat top polish on felt.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`94f1bcc2-ef7c-4af9-ab10-bdb7d60ad518`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Premium Poker Vitest 56/56; guardrails + `npm run build`. Start: `prisma migrate deploy` — no pending. `/api/health` `{"ok":true,"database":"connected"}`. Production Poker open-bet smoke not run (no `/api/dev/session`). Not merged or tagged.
+
+### Premium Poker final pass — tray join, RAISE, seat chrome (JetBro II Web)
+
+- Commit `7b63ee1` on `fix/blackjack-stable-anatomy-v1` — felt–tray join CSS; shared `pokerAggressionTertiary` (RAISE visible when legal, chips → CONFIRM raise-to); ME gold seat, turn marker, distinct D dealer button; PRE_FLOP board Card Assist (up to 5) + hole max 7. Local gate: focused Premium Poker Vitest 50/50; `npm run build`; Playwright `scripts/tmp-verify-poker-pending-confirm.mjs` → `docs/screenshots/premium/poker-final-pass/`.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`9d753397-2336-48c4-9fad-f6193cba4ad1`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Start: `prisma migrate deploy` — no pending. `/api/health` `{"ok":true,"database":"connected"}`. Production Poker Playwright not run (no `/api/dev/session`). Not merged or tagged.
+
 ### Premium Poker pending chip stack → CONFIRM raise-to (JetBro II Web)
 
 - Commit `1e09c60` on `fix/blackjack-stable-anatomy-v1` — `usePokerPendingBet` accumulates tray faces; CONFIRM submits one raise-to/bet; pot chip sum styling; local verify shots under `docs/screenshots/premium/poker-pending-confirm/`.
