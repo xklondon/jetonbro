@@ -4,8 +4,9 @@
 
 ### Final Poker corrections — total wager chips, ALL IN, tray, wipe (JetBro II Web)
 
-- Chip compose is **RAISE TO / BET total street wager** (tap 25 → total 25; additional = target − streetContribution). Premium dock adds compact **ALL IN** (skull, two-tap confirm). Fixed tray rows: status → compose → actions → AVAILABLE/jetons. Dealer/blinds skip broke seats; heads-up dealer=SB. Premium Home admin **WIPE ALL TABLES** (server-auth + SSE publish).
-- Gate: focused Poker Vitest (controls/holdem/tray/action-strip/pot + wipe with `VITEST_INCLUDE_WIPE`); Playwright mobile-390 `poker-two-device-protocol`, `poker-two-hand-protocol`, `poker-turn-and-tray`, `blackjack-stable-anatomy`. Guardrails + build. Known flake: two `poker-hand.test.ts` cases when seatOrder omitted after switch (also fails on prior HEAD).
+- Commit `7355c12` on `fix/blackjack-stable-anatomy-v1` — chip compose is **RAISE TO / BET total street wager** (tap 25 → total 25; additional = target − streetContribution). Premium dock adds compact **ALL IN** (skull, two-tap confirm). Fixed tray rows: status → compose → actions → AVAILABLE/jetons. Dealer/blinds skip broke seats; heads-up dealer=SB. Premium Home admin **WIPE ALL TABLES** (server-auth + SSE publish).
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`b7938908-ca5b-4e49-8c4b-97915c981d6a`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Poker Vitest (controls/holdem/tray/action-strip/pot + wipe with `VITEST_INCLUDE_WIPE`); Playwright mobile-390 `poker-two-device-protocol`, `poker-two-hand-protocol`, `poker-turn-and-tray`, `blackjack-stable-anatomy`. Guardrails + build. `/api/health` connected. Known flake: two `poker-hand.test.ts` cases when seatOrder omitted after switch (also fails on prior HEAD). Not merged or tagged.
 
 ### Premium Poker UX + E2E Premium selectors (JetBro II Web)
 
