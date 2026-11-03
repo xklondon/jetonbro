@@ -172,6 +172,7 @@ describeDb("Texas Hold’em and game switching", () => {
       idempotencyKey: key(),
       smallBlind: "5",
       bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
     });
     const ownerSnap = await loadSnapshot(tableId, owner.id);
     const samSnap = await loadSnapshot(tableId, sam.id);
@@ -242,7 +243,11 @@ describeDb("Texas Hold’em and game switching", () => {
     expect(joMember.availableMillis).toBeGreaterThan(100000n - 10000n);
     const bank = await prisma.table.findUniqueOrThrow({ where: { id: tableId } });
     expect(bank.bankAvailableMillis).toBe(500000n);
-    await startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const between = await loadSnapshot(tableId, sam.id);
+    expect(between.poker?.canNextHand).toBe(true);
+    expect(between.poker?.nextDealerPlayerId).toBe(sam.id);
+    expect((await loadSnapshot(tableId, owner.id)).poker?.canNextHand).toBe(false);
+    await startNextPokerHand({ actorId: sam.id, tableId, idempotencyKey: key() });
     const next = await prisma.pokerHand.findFirstOrThrow({ where: { tableId }, orderBy: { number: "desc" } });
     expect(next.dealerPlayerId).toBe(sam.id);
     expect(next.smallBlindPlayerId).toBe(jo.id);
@@ -479,6 +484,7 @@ describeDb("Texas Hold’em and game switching", () => {
       idempotencyKey: key(),
       smallBlind: "5",
       bigBlind: "10",
+      seatOrder: [owner.id, sam.id, jo.id],
     });
     await pokerAct({ actorId: owner.id, tableId, type: "RAISE", amount: "20", idempotencyKey: key() });
     await pokerAct({ actorId: sam.id, tableId, type: "ALL_IN", idempotencyKey: key() });

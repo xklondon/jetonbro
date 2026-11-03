@@ -41,6 +41,7 @@ export function PremiumPokerPlayer({
   const liveStreet = !setup && !handDone && !showdown;
   const legal = visiblePokerLegalActions(view);
   const trio = pokerDockTrio(legal);
+  const canStartNext = Boolean(handDone && view.canNextHand);
   const [cardToolsOpen, setCardToolsOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
   /** Fixed tray through every Poker phase — same size/position. */
@@ -139,22 +140,29 @@ export function PremiumPokerPlayer({
           onChip={addChip}
           allIn={allIn}
           primary={
-            trio.respond
+            canStartNext
               ? {
-                  label: trio.respond.label,
-                  onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
+                  label: "START HAND",
+                  onClick: () => void onCommand("startNextPokerHand"),
                 }
-              : null
+              : trio.respond
+                ? {
+                    label: trio.respond.label,
+                    onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
+                  }
+                : null
           }
           secondary={
-            trio.fold
-              ? {
-                  label: trio.fold.label,
-                  onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
-                }
-              : null
+            canStartNext
+              ? null
+              : trio.fold
+                ? {
+                    label: trio.fold.label,
+                    onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
+                  }
+                : null
           }
-          tertiary={tertiary}
+          tertiary={canStartNext ? null : tertiary}
         />
       }
     >

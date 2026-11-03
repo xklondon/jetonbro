@@ -109,4 +109,14 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(source).not.toMatch(/onCommand\("double"/);
     expect(source).not.toMatch(/onCommand\("split"/);
   });
+
+  it("composes pending wagers locally and commits with SET", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const source = readFileSync(join(process.cwd(), "src/ui/skins/premium/components/PremiumBlackjackPlayer.tsx"), "utf8");
+    expect(source).toContain('mode: "SET"');
+    expect(source).toContain("orderBoxesForFelt");
+    expect(source).not.toContain('mode: "ADD"');
+    expect(source).toContain("Enter or tap a wager before PLACE BET");
+  });
 });

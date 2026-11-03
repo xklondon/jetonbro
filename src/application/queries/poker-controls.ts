@@ -256,8 +256,15 @@ export function pokerControls(view: PokerTableView): PokerControl[] {
   if (view.isOwner && view.canAward) {
     controls.push({ id: "assignWinners", layer: "owner", surface: "dock", label: "AWARD POT", enabled: true });
   }
-  if (view.isOwner && view.canNextHand) {
-    controls.push({ id: "nextHand", layer: "owner", surface: "dock", label: "NEXT HAND", enabled: true });
+  if (view.canNextHand) {
+    // Owner skins filter dock by layer "owner"; non-owner next dealers still need the control.
+    controls.push({
+      id: "nextHand",
+      layer: view.isOwner ? "owner" : "actor",
+      surface: "dock",
+      label: "START HAND",
+      enabled: true,
+    });
   }
   if (view.canReorderSeats) {
     controls.push({ id: "reorderSeats", layer: "owner", surface: "menu", label: "SEAT ORDER", enabled: true });

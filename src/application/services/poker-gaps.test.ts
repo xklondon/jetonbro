@@ -144,18 +144,17 @@ describeDb("Batch 3 Poker acceptance gaps", () => {
     expect(unchanged.map((seat) => seat.playerId)).toEqual([jo.id, owner.id, sam.id]);
     await startTexasHoldem({ actorId: owner.id, tableId, idempotencyKey: key(), smallBlind: "5", bigBlind: "10" });
     await foldOut(tableId, owner.id);
-    await expect(
-      configurePoker({
-        actorId: owner.id,
-        tableId,
-        idempotencyKey: key(),
-        seatOrder: [sam.id, jo.id, owner.id],
-      }),
-    ).rejects.toMatchObject({ code: "SEATS_LOCKED" });
-    const locked = await prisma.pokerSeat.findMany({ where: { tableId }, orderBy: { orderIndex: "asc" } });
-    expect(locked.map((seat) => seat.playerId)).toEqual([jo.id, owner.id, sam.id]);
-    const setup = await loadSnapshot(tableId, owner.id);
-    expect(setup.poker?.canReorderSeats).toBe(false);
+    // Between hands the owner may still reorder; the next hand uses the new seat order.
+    await configurePoker({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      seatOrder: [sam.id, jo.id, owner.id],
+    });
+    const reordered = await prisma.pokerSeat.findMany({ where: { tableId }, orderBy: { orderIndex: "asc" } });
+    expect(reordered.map((seat) => seat.playerId)).toEqual([sam.id, jo.id, owner.id]);
+    const between = await loadSnapshot(tableId, owner.id);
+    expect(between.poker?.canReorderSeats).toBe(true);
   });
 
   test("reordering is blocked during a hand and dealer rotation follows stored order", async () => {
@@ -180,7 +179,7 @@ describeDb("Batch 3 Poker acceptance gaps", () => {
     expect(first.smallBlindPlayerId).toBe(sam.id);
     expect(first.bigBlindPlayerId).toBe(owner.id);
     await foldOut(tableId, owner.id);
-    await startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await startNextPokerHand({ actorId: sam.id, tableId, idempotencyKey: key() });
     const next = await prisma.pokerHand.findFirstOrThrow({ where: { tableId }, orderBy: { number: "desc" } });
     expect(next.dealerPlayerId).toBe(sam.id);
     expect(next.smallBlindPlayerId).toBe(owner.id);
@@ -205,8 +204,8 @@ describeDb("Batch 3 Poker acceptance gaps", () => {
     const stored = await prisma.pokerHand.findUniqueOrThrow({ where: { id: completed.id } });
     expect(stored.nextHandDeadlineAt?.toISOString()).toBe(first.deadline);
 
-    await startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() });
-    await startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() }).catch(() => undefined);
+    await startNextPokerHand({ actorId: sam.id, tableId, idempotencyKey: key() });
+    await startNextPokerHand({ actorId: sam.id, tableId, idempotencyKey: key() }).catch(() => undefined);
     const hands = await prisma.pokerHand.findMany({ where: { tableId } });
     expect(hands).toHaveLength(2);
     const blinds = await prisma.ledgerEntry.count({

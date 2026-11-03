@@ -52,6 +52,7 @@ export function BlackjackBox({
   retractBusy,
   onInsurance,
   insuranceEnabled,
+  pendingLabel,
 }: {
   box: BoxView;
   selected?: boolean;
@@ -64,8 +65,12 @@ export function BlackjackBox({
   /** Place insurance for this box via existing buyInsurance command. */
   onInsurance?: () => void;
   insuranceEnabled?: boolean;
+  /** Local pending wager (not yet committed / escrowed). */
+  pendingLabel?: string | null;
 }) {
-  const stake = box.bet.label;
+  const committed = box.bet.label;
+  const pending = pendingLabel && pendingLabel !== "0" ? pendingLabel : null;
+  const stake = pending ?? committed;
   const hasStake = stake !== "0";
   const seatBankroll =
     !hasStake && bankroll && bankroll.label !== "0"
@@ -90,6 +95,8 @@ export function BlackjackBox({
       data-box-number={box.boxNumber}
       data-box-staked={hasStake ? "true" : "false"}
       data-main-amount={stake}
+      data-pending-wager={pending ? pending : undefined}
+      data-committed-wager={committed}
       role={onSelect ? "button" : undefined}
       tabIndex={onSelect ? 0 : undefined}
       aria-pressed={onSelect ? Boolean(selected) : undefined}
@@ -105,11 +112,11 @@ export function BlackjackBox({
         <div className="pm-bj-box-stakes">
           <div className="pm-bj-main-stack">
             <CasinoChipStack
-              millis={box.bet.millis}
+              millis={pending ? String(Math.round(Number(pending) * 1000)) : box.bet.millis}
               label={stake}
               size="lg"
               max={4}
-              onRetractChip={result ? undefined : onRetractChip}
+              onRetractChip={result || pending ? undefined : onRetractChip}
               retractBusy={retractBusy}
             />
             {insurance || box.insuranceResult ? (
@@ -127,7 +134,7 @@ export function BlackjackBox({
         <span className="pm-bj-spot" aria-hidden="true" />
       )}
       <span className="pm-bj-main">
-        <small>{seatBankroll ? "STACK" : "MAIN"}</small>
+        <small>{seatBankroll ? "STACK" : pending ? "PENDING" : "MAIN"}</small>
         <strong>{result ? result : seatBankroll ? seatBankroll.label : stake}</strong>
       </span>
       {showInsure ? (

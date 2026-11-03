@@ -163,4 +163,22 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html).toContain('data-tray-available="true"');
     expect(html).toContain("pm-console-tray-available");
   });
+
+  it("exposes START HAND when the viewer is the next dealer", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumPokerPlayer, {
+        view: view({
+          phase: "HAND_COMPLETE",
+          canNextHand: true,
+          nextDealerPlayerId: "v",
+          legalActions: [],
+          currentActorId: null,
+          waitingCopy: "HAND COMPLETE",
+        }),
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain("START HAND");
+    expect(html).toContain('data-start-hand="true"');
+  });
 });

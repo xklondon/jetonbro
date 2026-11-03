@@ -2,6 +2,7 @@ import { formatJetons, parseJetonInput } from "@/domain/money";
 import { legalActions, liveAmountToCall } from "@/domain/poker/actions";
 import { cardLabel, readPokerCards } from "@/domain/poker/cards";
 import { STREET_ADVANCE, isBettingStreet, pokerStreetRail, type BettingStreet } from "@/domain/poker/phases";
+import { nextHandRotation } from "@/domain/poker/rotation";
 import { allLiveAllIn, streetIsComplete } from "@/domain/poker/street";
 import { formatPokerPhaseLabel, pokerHandIsOpen, projectActiveGame } from "@/domain/tables/active-game";
 import type { MoneyView, OutcomeFxView, PokerTableView } from "./views";
@@ -140,6 +141,22 @@ export function buildPokerView(input: {
     !hand && input.seats.length > 0
       ? Math.min(...input.seats.map((seat) => seat.orderIndex))
       : null;
+  /** HAND_COMPLETE: button + blinds preview for the next eligible dealer (not the finished hand). */
+  let nextRotation: ReturnType<typeof nextHandRotation> | null = null;
+  if (phase === "HAND_COMPLETE" && hand) {
+    try {
+      nextRotation = nextHandRotation(
+        input.seats
+          .filter((seat) => !seat.sittingOut)
+          .map((seat) => ({ playerId: seat.playerId, orderIndex: seat.orderIndex })),
+        hand.dealerPlayerId,
+        (playerId) => memberById.get(playerId)?.availableMillis ?? 0n,
+      );
+    } catch {
+      nextRotation = null;
+    }
+  }
+  const nextDealerPlayerId = nextRotation?.dealerPlayerId ?? null;
   const seats: PokerTableView["seats"] = (hand
     ? hand.participants
     : input.seats.map((seat) => ({
@@ -160,6 +177,9 @@ export function buildPokerView(input: {
     .sort((left, right) => left.seatOrder - right.seatOrder)
     .map((item) => {
       const member = memberById.get(item.playerId);
+      const previewDealer = Boolean(nextRotation && item.playerId === nextRotation.dealerPlayerId);
+      const previewSb = Boolean(nextRotation && item.playerId === nextRotation.smallBlindPlayerId);
+      const previewBb = Boolean(nextRotation && item.playerId === nextRotation.bigBlindPlayerId);
       return {
         userId: item.playerId,
         name: nameOf(item.playerId),
@@ -172,9 +192,9 @@ export function buildPokerView(input: {
             : 0n,
         ),
         status: hand ? item.status : "WAITING",
-        isDealer: item.isDealer,
-        isSmallBlind: item.isSmallBlind,
-        isBigBlind: item.isBigBlind,
+        isDealer: nextRotation ? previewDealer : item.isDealer,
+        isSmallBlind: nextRotation ? previewSb : item.isSmallBlind,
+        isBigBlind: nextRotation ? previewBb : item.isBigBlind,
         isActor: actorId === item.playerId,
         sittingOut: false,
         orderIndex: item.seatOrder,
@@ -248,18 +268,24 @@ export function buildPokerView(input: {
     canDealStreet: Boolean(isOwner && nextStreet && streetComplete && !input.tableClosed && phase !== "SHOWDOWN" && phase !== "HAND_COMPLETE"),
     nextStreetLabel: isOwner && nextStreet ? nextStreet.command : null,
     canAward: Boolean(isOwner && phase === "SHOWDOWN" && !hand?.settledKey && !input.tableClosed),
-    canNextHand: Boolean(isOwner && phase === "HAND_COMPLETE" && !input.tableClosed),
-    canScheduleNextHand: Boolean(isOwner && phase === "HAND_COMPLETE" && !input.tableClosed),
+    // START HAND between hands belongs to the next dealer (button already rotated in the preview).
+    canNextHand: Boolean(
+      phase === "HAND_COMPLETE" && !input.tableClosed && nextDealerPlayerId && viewerId === nextDealerPlayerId,
+    ),
+    nextDealerPlayerId: phase === "HAND_COMPLETE" ? nextDealerPlayerId : null,
+    canScheduleNextHand: Boolean(
+      phase === "HAND_COMPLETE" &&
+        !input.tableClosed &&
+        nextDealerPlayerId &&
+        (isOwner || viewerId === nextDealerPlayerId),
+    ),
     nextHandDeadlineAt: hand?.nextHandDeadlineAt?.toISOString() ?? null,
     canSwitchGame: Boolean(isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed),
     switchBlockedReason: isOwner && pokerHandIsOpen(phase) ? "Finish or clear the current hand before switching games" : null,
     canAddPlayer: Boolean(isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed),
     canGiveJetons: Boolean(isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed),
     canReorderSeats: Boolean(
-      isOwner &&
-        phase === "POKER_SETUP" &&
-        !input.tableClosed &&
-        (input.handsStarted ?? (hand ? 1 : 0)) === 0,
+      isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed,
     ),
     streetComplete: Boolean(streetComplete),
     allInRunout,

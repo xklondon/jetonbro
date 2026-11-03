@@ -138,6 +138,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       originalStake: money(box.originalStakeMillis),
       isDoubled: box.isDoubled,
       isSplit: box.isSplitOffshoot,
+      parentBoxId: box.parentBoxId ?? null,
       insurance: insurance ? money(insurance.amountMillis) : null,
       insuranceMax: money(insuranceMaxMillis(box.originalStakeMillis || box.lockedBetMillis)),
       insuranceResult: insurance?.settledAt

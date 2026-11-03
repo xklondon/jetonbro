@@ -138,7 +138,7 @@ describeDb("Texas Hold’em two-hand acceptance", () => {
     const refreshed = await loadSnapshot(tableId, owner.id);
     expectClosedHand(refreshed);
 
-    await startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await startNextPokerHand({ actorId: sam.id, tableId, idempotencyKey: key() });
     const hand2Owner = await loadSnapshot(tableId, owner.id);
     const hand2Sam = await loadSnapshot(tableId, sam.id);
     expect(hand2Owner.poker?.phase).toBe("PRE_FLOP");
@@ -275,7 +275,7 @@ describeDb("Texas Hold’em two-hand acceptance", () => {
     });
     await pokerAct({ actorId: owner.id, tableId, type: "FOLD", idempotencyKey: key() });
     await scheduleNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() });
-    await startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await startNextPokerHand({ actorId: sam.id, tableId, idempotencyKey: key() });
     await expect(startNextPokerHand({ actorId: owner.id, tableId, idempotencyKey: key() })).rejects.toThrow();
     const hands = await prisma.pokerHand.findMany({ where: { tableId }, orderBy: { number: "asc" } });
     expect(hands).toHaveLength(2);

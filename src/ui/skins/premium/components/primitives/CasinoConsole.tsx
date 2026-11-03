@@ -230,6 +230,20 @@ export function CasinoConsole({
                 </>
               )}
             </div>
+            {variant === "blackjack" && onComposeAmount ? (
+              <label className="pm-bj-pending-wager" data-bj-pending-wager="true">
+                <span>WAGER</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  aria-label="Pending wager"
+                  value={composeAmount}
+                  placeholder="0"
+                  disabled={!trayEnabled}
+                  onChange={(event) => onComposeAmount(event.target.value)}
+                />
+              </label>
+            ) : null}
             {walletAboveTray ? (
               <div className="pm-console-available" data-player-wallet="true">
                 <span className="pm-console-available-rule" aria-hidden="true" />

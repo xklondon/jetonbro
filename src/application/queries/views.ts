@@ -44,6 +44,8 @@ export type BoxView = {
   playerName: string;
   label: string;
   boxNumber: number;
+  /** Set when this box was created by SPLIT from another box. */
+  parentBoxId?: string | null;
   bet: MoneyView;
   originalStake: MoneyView;
   isDoubled: boolean;
@@ -327,6 +329,8 @@ export type PokerTableView = {
   nextStreetLabel: string | null;
   canAward: boolean;
   canNextHand: boolean;
+  /** Authorized player for START HAND after a completed hand (next dealer). */
+  nextDealerPlayerId?: string | null;
   canScheduleNextHand: boolean;
   nextHandDeadlineAt: string | null;
   canSwitchGame: boolean;

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import type { BoxView } from "@/application/queries/views";
+import { orderBoxesForFelt } from "../blackjackBoxOrder";
 
 /** Premium payout rail — WIN → LOST → BLACKJACK → DRAW (PUSH). Domain order unchanged. */
 export const PREMIUM_PAYOUT_RAIL_ORDER: BoxOutcome[] = ["WON", "LOST", "BLACKJACK", "PUSH"];
@@ -194,7 +195,8 @@ export function BlackjackPayoutOverlay({
 }) {
   const groups = useMemo(() => {
     const map = new Map<string, { playerId: string; playerName: string; boxes: BoxView[] }>();
-    for (const box of boxes) {
+    // Preserve felt adjacency (split children beside parents) across payout.
+    for (const box of orderBoxesForFelt(boxes)) {
       const key = box.playerId || box.playerName || box.id;
       const existing = map.get(key);
       if (existing) existing.boxes.push(box);

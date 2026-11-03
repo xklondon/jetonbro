@@ -1758,7 +1758,7 @@
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body {
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   gap: 6px;
   padding: 10px 12px 8px;
   border-radius: 20px 20px 14px 14px;
@@ -1775,7 +1775,7 @@
 }
 
 [data-skin="premium"] .pm-console.is-bj.has-visible-tray .pm-console-body {
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
 }
 
 /* Notice overlays the top edge; it must not consume a grid row and crush AVAILABLE into the tray. */
@@ -2770,6 +2770,71 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
+}
+
+[data-skin="premium"] .pm-sheet-subhead {
+  margin: 12px 0 4px;
+  font: 700 13px/1.2 var(--pm-sans);
+  color: var(--pm-gold, #d4b882);
+}
+
+[data-skin="premium"] .pm-seat-order {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-seat-order li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font: 600 13px/1.2 var(--pm-sans);
+}
+
+[data-skin="premium"] .pm-seat-order-controls {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+[data-skin="premium"] .pm-seat-order-controls button {
+  border: 1px solid rgba(212, 184, 130, 0.45);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--pm-gold, #d4b882);
+  font: 700 10px/1 var(--pm-sans);
+  letter-spacing: 0.04em;
+  padding: 6px 8px;
+}
+
+[data-skin="premium"] .pm-seat-order-controls button:disabled {
+  opacity: 0.35;
+}
+
+[data-skin="premium"] .pm-bj-pending-wager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 2px;
+  font: 700 11px/1 var(--pm-sans);
+  letter-spacing: 0.06em;
+  color: rgba(243, 220, 154, 0.85);
+}
+
+[data-skin="premium"] .pm-bj-pending-wager input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(212, 184, 130, 0.4);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #f6e7c2;
+  font: 700 16px/1.1 var(--pm-sans);
+  text-align: right;
+  padding: 8px 10px;
 }
 
 [data-skin="premium"] .pm-link {

@@ -6,6 +6,7 @@ import type { BoxOutcome } from "@/domain/blackjack/payouts";
 import { blackjackDealerControls, blackjackOwnerMenu } from "@/ui/core/blackjack-phase-controls";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
+import { orderBoxesForFelt } from "./blackjackBoxOrder";
 import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
@@ -26,10 +27,6 @@ function seated(view: BankTableView) {
   return view.players.filter((player) => Boolean(player.userId));
 }
 
-function orderNewestLeft(boxes: BoxView[]) {
-  return [...boxes].sort((a, b) => b.boxNumber - a.boxNumber);
-}
-
 function boxesReady(view: BankTableView) {
   const boxes = activeBoxes(view);
   return boxes.length > 0 && boxes.every((box) => Boolean(box.outcome));
@@ -43,14 +40,14 @@ function setupDisplayBoxes(view: BankTableView): BoxView[] {
   let n = 1;
   for (const player of joined) {
     if (player.boxes.length > 0) {
-      for (const box of orderNewestLeft(player.boxes)) out.push(box);
+      out.push(...orderBoxesForFelt(player.boxes));
       n = Math.max(n, ...player.boxes.map((b) => b.boxNumber + 1));
     } else {
       out.push(setupSeatBox(player, n));
       n += 1;
     }
   }
-  return orderNewestLeft(out);
+  return orderBoxesForFelt(out);
 }
 
 export function PremiumBlackjackDealer({
@@ -76,7 +73,7 @@ export function PremiumBlackjackDealer({
   const controls = blackjackDealerControls(view);
   const joined = seated(view);
   const boxes = activeBoxes(view);
-  const staged = orderNewestLeft(boxes);
+  const staged = orderBoxesForFelt(boxes);
   const setup = view.phase === "TABLE_SETUP";
   const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const betting = view.phase === "BETTING";

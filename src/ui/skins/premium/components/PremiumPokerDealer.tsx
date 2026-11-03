@@ -337,6 +337,8 @@ export function PremiumPokerDealer({
         onClose={() => setFxSettingsOpen(false)}
         prefs={view.outcomeFx}
         onCommand={onCommand}
+        seats={view.canReorderSeats ? view.seats : null}
+        canReorderSeats={view.canReorderSeats}
       />
       {cardToolsOpen ? (
         <PremiumPokerCardToolsMenu

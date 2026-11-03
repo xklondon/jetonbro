@@ -7,6 +7,7 @@ import { replacePokerSeats } from "@/application/services/poker-seats";
 import { amountToCall, isFullRaise, legalActions, minRaiseTo, type PokerActionType } from "@/domain/poker/actions";
 import { STREET_ADVANCE, isBettingStreet, type BettingStreet, type PokerHandPhase } from "@/domain/poker/phases";
 import { buildSidePots, splitPotEqually } from "@/domain/poker/pots";
+import { nextHandRotation } from "@/domain/poker/rotation";
 import { assignBlinds, nextActorFrom, nextDealer, orderedSeats, type PokerSeat as DomainSeat } from "@/domain/poker/seats";
 import { allLiveAllIn, livePlayers, onlyOneLive, stillNeedsToAct, streetIsComplete } from "@/domain/poker/street";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, PhaseConflictError } from "@/domain/errors";
@@ -335,8 +336,9 @@ export async function configurePoker(input: {
     await prisma.$transaction(async (tx) => {
       const table = await loadPokerTable(tx, input.tableId);
       requireOwner(table, input.actorId);
+      // Blinds + seat order: owner only, and only between hands (not during an open hand).
       if (pokerHandIsOpen(table.currentPokerHand?.phase)) {
-        throw new DomainError("SEATS_LOCKED", "Seat order is locked after the first hand begins.");
+        throw new DomainError("SEATS_LOCKED", "Seat order can only change before the next hand begins.");
       }
       const small = input.smallBlind ? parseWholeJetons(input.smallBlind, "Small blind") : table.pokerSmallBlindMillis;
       const big = input.bigBlind ? parseWholeJetons(input.bigBlind, "Big blind") : table.pokerBigBlindMillis;
@@ -344,10 +346,6 @@ export async function configurePoker(input: {
         throw new DomainError("INVALID_AMOUNT", "Big blind must be greater than small blind.");
       }
       if (input.seatOrder?.length) {
-        const handsStarted = await tx.pokerHand.count({ where: { tableId: table.id } });
-        if (handsStarted > 0) {
-          throw new DomainError("SEATS_LOCKED", "Seat order is locked after the first hand begins.");
-        }
         const current = table.pokerSeats.map((seat) => seat.playerId);
         const ordered = input.seatOrder.filter((id) => current.includes(id));
         const remainder = current.filter((id) => !ordered.includes(id));
@@ -829,16 +827,34 @@ export async function awardPokerPots(input: {
   });
 }
 
+function requireNextDealer(
+  table: Awaited<ReturnType<typeof loadPokerTable>>,
+  actorId: string,
+  completedDealerId: string,
+) {
+  const rotation = nextHandRotation(
+    domainSeats(table.pokerSeats),
+    completedDealerId,
+    (playerId) => table.members.find((member) => member.userId === playerId)?.availableMillis ?? 0n,
+  );
+  if (actorId !== rotation.dealerPlayerId) {
+    throw new ForbiddenError("Only the next dealer can start the hand.");
+  }
+  return rotation.dealerPlayerId;
+}
+
 export async function startNextPokerHand(input: { actorId: string; tableId: string; idempotencyKey: string }) {
   return withIdempotency(input.actorId, input.idempotencyKey, "startNextPokerHand", input, async () => {
     clearNextHandTimer(input.tableId);
     await prisma.$transaction(async (tx) => {
       const table = await loadPokerTable(tx, input.tableId);
-      requireOwner(table, input.actorId);
       const hand = table.currentPokerHand;
       if (!hand || hand.phase !== "HAND_COMPLETE") {
         throw new PhaseConflictError("Start the next hand", hand?.phase ?? "none", "HAND_COMPLETE");
       }
+      // Authorize the previewed next dealer; createHand still rotates from this completed
+      // hand's dealerPlayerId once (idempotent retries reuse withIdempotency).
+      requireNextDealer(table, input.actorId, hand.dealerPlayerId);
       await tx.pokerHand.update({
         where: { id: hand.id },
         data: { nextHandDeadlineAt: null },
@@ -872,18 +888,42 @@ export async function scheduleNextPokerHand(input: { actorId: string; tableId: s
     });
     scheduleNextHandTimer(input.tableId, deadline, async (tableId) => {
       try {
+        const nextDealerId = await resolveNextDealerActorId(tableId);
+        if (!nextDealerId) return;
         await startNextPokerHand({
-          actorId: input.actorId,
+          actorId: nextDealerId,
           tableId,
           idempotencyKey: `auto-hand:${tableId}:${deadline.toISOString()}`,
         });
       } catch {
-        // The hand may already have started from NEXT HAND NOW or a duplicate timer.
+        // The hand may already have started from START HAND or a duplicate timer.
       }
     });
     publishTable(input.tableId);
     return { ok: true, deadline: deadline.toISOString() };
   });
+}
+
+async function resolveNextDealerActorId(tableId: string): Promise<string | null> {
+  const table = await prisma.table.findUnique({
+    where: { id: tableId },
+    include: {
+      members: { where: { leftAt: null } },
+      pokerSeats: { orderBy: { orderIndex: "asc" } },
+      currentPokerHand: true,
+    },
+  });
+  const hand = table?.currentPokerHand;
+  if (!table || !hand || hand.phase !== "HAND_COMPLETE") return null;
+  try {
+    return nextHandRotation(
+      domainSeats(table.pokerSeats),
+      hand.dealerPlayerId,
+      (playerId) => table.members.find((member) => member.userId === playerId)?.availableMillis ?? 0n,
+    ).dealerPlayerId;
+  } catch {
+    return null;
+  }
 }
 
 export async function ensureNextPokerHandIfDue(tableId: string): Promise<void> {
@@ -895,8 +935,10 @@ export async function ensureNextPokerHandIfDue(tableId: string): Promise<void> {
   const deadline = table.currentPokerHand.nextHandDeadlineAt;
   const startDue = async () => {
     try {
+      const nextDealerId = await resolveNextDealerActorId(tableId);
+      if (!nextDealerId) return;
       await startNextPokerHand({
-        actorId: table.ownerId,
+        actorId: nextDealerId,
         tableId,
         idempotencyKey: `due-hand:${table.currentPokerHand!.id}`,
       });

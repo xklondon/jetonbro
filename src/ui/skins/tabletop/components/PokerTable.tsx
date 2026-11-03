@@ -78,7 +78,9 @@ export function PokerBoard({
 
   const layout = pokerActorLayout(visiblePokerLegalActions(view));
   const menuIds = owner ? pokerControlIds(view, "owner", "menu") : [];
-  const ownerDock = owner ? pokerControls(view).filter((control) => control.layer === "owner" && control.surface === "dock") : [];
+  const ownerDock = owner
+    ? pokerControls(view).filter((control) => control.layer === "owner" && control.surface === "dock")
+    : pokerControls(view).filter((control) => control.id === "nextHand" && control.surface === "dock");
   const phaseCopy = pokerPhaseCopy({
     phase: view.phase,
     waitingCopy: view.waitingCopy,
