@@ -1,5 +1,6 @@
 import { prisma } from "@/application/db";
 import { withIdempotency } from "@/application/idempotency";
+import { publishTable } from "@/application/realtime/bus";
 import { DomainError, ForbiddenError } from "@/domain/errors";
 
 /**
@@ -70,6 +71,7 @@ export async function wipeAllTables(input: {
       },
       { timeout: 180_000, maxWait: 30_000 },
     );
+    for (const id of ids) publishTable(id);
     return { ok: true, wiped: ids.length, deleted: ids.length };
   });
 }

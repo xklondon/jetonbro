@@ -29,4 +29,14 @@ describe("PokerPot", () => {
     expect(html).toContain('data-side-pots="true"');
     expect(html).toContain("SIDE 1 · 20");
   });
+
+  it("shows POT PAID without a live chip cluster when paid", () => {
+    const html = renderToStaticMarkup(
+      createElement(PokerPot, { amount: "15", millis: "15000", paid: true }),
+    );
+    expect(html).toContain("POT PAID");
+    expect(html).toContain('data-pot-paid="true"');
+    expect(html).not.toContain("data-pot-chips");
+    expect(html).not.toContain('data-pot-amount="15"');
+  });
 });

@@ -30,18 +30,21 @@ export function PokerPot({
   amount,
   millis,
   sidePots = [],
+  paid = false,
 }: {
   amount: string;
   millis?: string;
   sidePots?: { index: number; label: string }[];
+  /** Hand complete / awarded — show POT PAID instead of live total. */
+  paid?: boolean;
 }) {
-  const showStack = Boolean(millis && millis !== "0" && amount !== "0");
+  const showStack = !paid && Boolean(millis && millis !== "0" && amount !== "0");
   const cluster = showStack ? potClusterChips(millis!) : [];
-  const extras = sidePots.filter((pot) => pot.label !== "0");
+  const extras = paid ? [] : sidePots.filter((pot) => pot.label !== "0");
   const faceSum = chipFaceSum(cluster);
 
   return (
-    <div className="pm-poker-pot" data-poker-centre="true">
+    <div className="pm-poker-pot" data-poker-centre="true" data-pot-paid={paid ? "true" : "false"}>
       {cluster.length > 0 ? (
         <div
           className="pm-poker-pot-cluster"
@@ -58,8 +61,8 @@ export function PokerPot({
         </div>
       ) : null}
       <div className="pm-poker-pot-copy">
-        <small>POT</small>
-        <strong data-pot-amount={amount}>{amount}</strong>
+        <small>{paid ? "POT PAID" : "POT"}</small>
+        {paid ? null : <strong data-pot-amount={amount}>{amount}</strong>}
       </div>
       {extras.length > 0 ? (
         <div className="pm-poker-side-pots" data-side-pots="true">

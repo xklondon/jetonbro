@@ -14,10 +14,10 @@ import {
 import type { PokerTableView } from "@/application/queries/views";
 
 /**
- * RAISE compose tracks RAISE BY (increment above street wager).
- * Chip face N adds exactly N to raise-by → additional payment grows by N
- * (additional = toCall + raiseBy = raiseTo − streetContribution).
- * Confirm submits raise-to once.
+ * Compose tracks the intended total street wager (raise-to / bet).
+ * Chip faces accumulate toward that total; the additional debit is
+ * target − streetContribution (never call + selected face).
+ * Confirm submits raise-to / bet once.
  */
 export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
   const [composeOpen, setComposeOpen] = useState(false);
@@ -41,9 +41,9 @@ export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [amountText]);
 
-  const pendingRaiseTo = kind === "RAISE" && amountValue > 0 ? streetWager + amountValue : amountValue;
-  const pendingAdditional =
-    kind === "RAISE" && amountValue > 0 ? pokerRaiseAdditional(view, amountValue) : amountValue;
+  /** Target total street wager (raise-to or bet). */
+  const pendingRaiseTo = amountValue;
+  const pendingAdditional = amountValue > 0 ? pokerRaiseAdditional(view, amountValue) : 0;
   /** Felt pending stack = additional leaving AVAILABLE (never re-shows committed blinds). */
   const pendingLabel = pendingAdditional > 0 ? String(pendingAdditional) : "";
   const pendingAct =
@@ -58,6 +58,7 @@ export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
   function openCompose() {
     if (!trayEnabled || !kind) return;
     setComposeOpen(true);
+    // Empty total — placeholder shows min. First chip sets the total; further chips accumulate.
     setAmountText("");
     setPendingChips([]);
   }
@@ -69,6 +70,11 @@ export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
     setPendingChips([]);
   }
 
+  /**
+   * Chip faces build the intended total street wager.
+   * First tap sets the total to that face; later taps accumulate.
+   * Never adds the call amount on top of the selected face.
+   */
   function addChip(face: string) {
     if (!trayEnabled) return;
     if (!composeOpen) {
@@ -78,7 +84,10 @@ export function usePokerPendingBet(view: PokerTableView, trayLive: boolean) {
     const faceN = Number(face);
     if (!Number.isFinite(faceN) || faceN <= 0) return;
     setPendingChips((prev) => [...prev, face]);
-    setAmountText((prev) => String((Number(prev) || 0) + faceN));
+    setAmountText((prev) => {
+      const current = Number(prev) || 0;
+      return String(current <= 0 ? faceN : current + faceN);
+    });
   }
 
   function clearPending() {

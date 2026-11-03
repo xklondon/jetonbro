@@ -20,6 +20,7 @@ import { pokerAggressionTertiary } from "./pokerAggressionTertiary";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerAwardOverlay } from "./primitives/PokerAwardOverlay";
 import { PokerTable } from "./primitives/PokerTable";
+import { usePokerAllInConfirm } from "./usePokerAllInConfirm";
 import { usePokerPendingBet } from "./usePokerPendingBet";
 
 export function PremiumPokerDealer({
@@ -138,10 +139,11 @@ export function PremiumPokerDealer({
   let primary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
   let secondary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
   let tertiary: { label: string; disabled?: boolean; title?: string; onClick?: () => void } | null = null;
+  const acting = Boolean(trio.respond || trio.fold || trio.aggression || composeOpen);
 
   if (showdown) {
     primary = null;
-  } else if (trio.respond || trio.fold || trio.aggression || composeOpen) {
+  } else if (acting) {
     primary = trio.respond
       ? {
           label: trio.respond.label,
@@ -220,10 +222,23 @@ export function PremiumPokerDealer({
     };
   }
 
-  const turnStatus =
-    !setup && !showdown && phaseCopy.instruction ? phaseCopy.instruction : null;
+  const turnStatus = setup
+    ? phaseCopy.instruction ?? "TABLE SETUP"
+    : view.phase === "HAND_COMPLETE"
+      ? "HAND COMPLETE"
+      : !showdown && phaseCopy.instruction
+        ? phaseCopy.instruction
+        : null;
   /** Seat / error notices only — turn status lives in the compact strip head. */
   const dockNotice = seatNotice ?? notice ?? null;
+  const allIn = usePokerAllInConfirm(
+    acting && !composeOpen ? trio.allIn : null,
+    `${view.handNumber}-${view.turnNumber}-${view.currentActorId}`,
+    (action) => {
+      clearPending();
+      void onCommand("pokerAct", pokerActPayload(action));
+    },
+  );
 
   return (
     <PremiumShell
@@ -241,7 +256,7 @@ export function PremiumPokerDealer({
               </div>
             ) : null
           }
-          turnStatus={liveStreet && ownerSeated ? turnStatus : null}
+          turnStatus={ownerSeated || setup ? turnStatus : null}
           toCall={liveStreet && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
           available={ownerSeated ? view.available.label : undefined}
           showTray={showTray}
@@ -250,19 +265,14 @@ export function PremiumPokerDealer({
           composeOpen={composeOpen}
           composeKind={composeKind}
           composeAmount={amountText}
-          raiseToPreview={
-            composeOpen && composeKind === "RAISE" && pendingRaiseTo > 0 ? String(pendingRaiseTo) : null
-          }
-          additionalPreview={
-            composeOpen && composeKind === "RAISE" && pendingAdditional > 0
-              ? String(pendingAdditional)
-              : null
-          }
-          committedPreview={composeOpen && composeKind === "RAISE" ? String(committed) : null}
+          raiseToPreview={composeOpen && pendingRaiseTo > 0 ? String(pendingRaiseTo) : null}
+          additionalPreview={composeOpen && pendingAdditional > 0 ? String(pendingAdditional) : null}
+          committedPreview={composeOpen ? String(committed) : null}
           onComposeAmount={setAmount}
           minChipAmount={minChip}
           maxChipAmount={maxChip}
           onChip={addChip}
+          allIn={allIn}
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}
@@ -276,6 +286,7 @@ export function PremiumPokerDealer({
           phase={view.phase}
           pot={view.pot.label}
           potMillis={view.pot.millis}
+          potPaid={view.potPaid}
           pots={view.pots}
           communityCards={view.communityCards}
           seats={view.seats}

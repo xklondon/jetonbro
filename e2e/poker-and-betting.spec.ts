@@ -268,7 +268,10 @@ async function seatedDirectPoker(
   await shot(page, "app-poker-create-table-390x844.png");
   await page.getByRole("button", { name: "START TABLE" }).click();
   await expect(page.locator("[data-phase-heading]")).toHaveText(/TABLE SETUP/i, { timeout: 20_000 });
-  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator("[data-table-board=POKER_DEALER]")).toBeVisible({ timeout: 20_000 });
+  await expect(
+    page.locator('[data-start-hand="true"]').or(page.getByRole("button", { name: "START HAND", exact: true })),
+  ).toBeVisible({ timeout: 20_000 });
   const joinPath = new URL(joinUrl!).pathname;
   const tableId = page.url().split("/tables/")[1]!.split("?")[0]!;
 

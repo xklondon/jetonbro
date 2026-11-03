@@ -25,7 +25,10 @@ export function nextDealer(seats: PokerSeat[], previousDealerId: string | null):
     throw new DomainError("POKER_SEATS", "Texas Hold’em needs at least two Players.");
   }
   if (!previousDealerId) return ordered[0]!;
-  return nextSeat(ordered, previousDealerId);
+  const index = ordered.findIndex((seat) => seat.playerId === previousDealerId);
+  // Previous dealer may have been skipped (broke / left). Resume from seat 0, not seat 1.
+  if (index < 0) return ordered[0]!;
+  return ordered[(index + 1) % ordered.length]!;
 }
 
 export type BlindAssignment = {

@@ -40,6 +40,7 @@ export function PokerTable({
   phase,
   pot,
   potMillis,
+  potPaid = false,
   pots = [],
   communityCards = [],
   seats,
@@ -53,6 +54,7 @@ export function PokerTable({
   phase: string;
   pot: string;
   potMillis?: string;
+  potPaid?: boolean;
   pots?: PokerPotView[];
   communityCards?: PokerCardView[];
   seats: PokerSeatView[];
@@ -68,7 +70,7 @@ export function PokerTable({
   });
   const layout = seatLayout(ordered.length);
   const setup = phase === "POKER_SETUP" || phase === "TABLE_SETUP";
-  const showPot = !setup && pot !== "0";
+  const showPot = !setup && (potPaid || pot !== "0");
   /**
    * Side-pot labels only when a real side pot exists (all-in split).
    * Never re-list main-pot slices during a normal multi-way street.
@@ -110,7 +112,7 @@ export function PokerTable({
             </div>
           )}
           <PhaseJourney phase={phase} />
-          {showPot ? <PokerPot amount={pot} millis={potMillis} sidePots={sidePots} /> : null}
+          {showPot ? <PokerPot amount={pot} millis={potMillis} sidePots={sidePots} paid={potPaid} /> : null}
           {communityCards.length > 0 ? (
             <div className="pm-poker-board" data-community-cards="true" aria-label="Board cards">
               {communityCards.map((card, index) => (

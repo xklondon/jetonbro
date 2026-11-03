@@ -53,6 +53,12 @@ test("dealer rotates to the next ordered seat", () => {
   expect(nextDealer(seats, "b").playerId).toBe("d");
 });
 
+test("dealer resumes at first eligible seat when previous dealer is gone", () => {
+  const remaining = seats.filter((seat) => seat.playerId !== "d");
+  expect(nextDealer(remaining, "d").playerId).toBe("a");
+  expect(nextDealer(remaining, null).playerId).toBe("a");
+});
+
 test("all-in layers create a main pot and a side pot", () => {
   const pots = buildSidePots([
     { playerId: "short", total: 50000n, folded: false, allIn: true },

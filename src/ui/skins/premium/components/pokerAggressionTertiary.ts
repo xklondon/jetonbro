@@ -9,8 +9,8 @@ type DockAction = {
 
 /**
  * RAISE/BET opens compose (no fixed amount on the button).
- * Confirm appears once compose has a legal amount (typed or chip-built).
- * For RAISE, pendingAmount is RAISE BY; pendingAct.amount is raise-to.
+ * Confirm appears once compose has a legal target street wager (typed or chip-built).
+ * For RAISE/BET, pendingAmount is the intended total street wager; pendingAct.amount is raise-to/bet.
  */
 export function pokerAggressionTertiary(input: {
   trio: PokerDockTrio;
@@ -50,7 +50,7 @@ export function pokerAggressionTertiary(input: {
           : overMax && maxChip != null
             ? `Maximum ${maxChip}`
             : trio.aggression?.type === "RAISE"
-              ? "Add chips or type a raise-by amount"
+              ? "Add chips or type a raise-to total"
               : minChip != null
                 ? `Enter bet (min ${minChip})`
                 : "Enter a legal amount"
@@ -67,7 +67,7 @@ export function pokerAggressionTertiary(input: {
     return {
       label: kind,
       disabled: false,
-      title: kind === "RAISE" ? "Open raise-by amount" : "Open bet amount",
+      title: kind === "RAISE" ? "Open raise-to total" : "Open bet amount",
       onClick: onOpenCompose,
     };
   }

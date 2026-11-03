@@ -9,6 +9,7 @@ const raiseTrio: PokerDockTrio = {
   fold: { type: "FOLD", amount: money("0"), label: "FOLD" },
   respond: { type: "CALL", amount: money("5"), label: "CALL 5" },
   aggression: { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE" },
+  allIn: { type: "ALL_IN", amount: money("95"), label: "ALL IN 95" },
 };
 
 describe("pokerAggressionTertiary", () => {

@@ -96,6 +96,7 @@ function view(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, actorId: 
             { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
             { type: "CALL", amount: money("5"), label: "CALL 5" },
             { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE" },
+            { type: "ALL_IN", amount: money("95"), label: "ALL IN 95" },
           ]
         : [],
     currentActorName: actorId === "owner" ? "Bank" : "Vi",
@@ -167,9 +168,11 @@ describe("Premium Poker action strip", () => {
       Boolean(turnEl!.compareDocumentPosition(raiseEl!) & Node.DOCUMENT_POSITION_FOLLOWING),
     ).toBe(true);
     const actions = host.querySelector("[data-console-actions]")?.textContent ?? "";
+    expect(actions).toMatch(/ALL IN/);
     expect(actions).toMatch(/RAISE/);
     expect(actions).toMatch(/CALL 5/);
     expect(actions).toMatch(/FOLD/);
+    expect(host.querySelector("[data-poker-all-in]")).toBeTruthy();
     expect(actions.indexOf("RAISE")).toBeLessThan(actions.indexOf("CALL"));
     expect(actions.indexOf("CALL")).toBeLessThan(actions.indexOf("FOLD"));
     expect(host.querySelector("[data-jeton-tray]")).toBeTruthy();

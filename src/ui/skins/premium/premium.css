@@ -3142,3 +3142,46 @@
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console .pm-console-tray.is-reserved {
   display: none;
 }
+
+/* Compact ALL IN (skull) beside RAISE / CALL / FOLD */
+[data-skin="premium"] .pm-console-btn.is-allin,
+[data-skin="premium"] .pm-console-btn.is-compact-allin {
+  min-width: 0;
+  padding: 0 4px;
+  color: #f0d6a8;
+  border-color: rgba(180, 40, 40, 0.55);
+  background: linear-gradient(180deg, rgba(90, 18, 18, 0.92), rgba(42, 10, 10, 0.96));
+}
+[data-skin="premium"] .pm-console-allin-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+[data-skin="premium"] .pm-console-allin-skull {
+  font-size: 12px;
+  line-height: 1;
+}
+[data-skin="premium"] .pm-console-actions.is-quad {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-quad .pm-console-btn,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-quad .pm-console-btn {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 3px;
+  font-size: 8px;
+  letter-spacing: 0.03em;
+}
+[data-skin="premium"] .pm-wipe-link {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  text-align: center;
+  color: #c9a27a;
+  background: transparent;
+  border: 0;
+  font: 600 11px/1.2 var(--pm-sans, system-ui);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}

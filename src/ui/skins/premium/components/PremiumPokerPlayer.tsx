@@ -16,6 +16,7 @@ import { PremiumShell } from "./PremiumShell";
 import { pokerAggressionTertiary } from "./pokerAggressionTertiary";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerTable } from "./primitives/PokerTable";
+import { usePokerAllInConfirm } from "./usePokerAllInConfirm";
 import { usePokerPendingBet } from "./usePokerPendingBet";
 
 export function PremiumPokerPlayer({
@@ -96,6 +97,14 @@ export function PremiumPokerPlayer({
       clearPending();
     },
   });
+  const allIn = usePokerAllInConfirm(
+    composeOpen ? null : trio.allIn,
+    `${view.handNumber}-${view.turnNumber}-${view.currentActorId}`,
+    (action) => {
+      clearPending();
+      void onCommand("pokerAct", pokerActPayload(action));
+    },
+  );
 
   return (
     <PremiumShell
@@ -112,7 +121,7 @@ export function PremiumPokerPlayer({
               </div>
             ) : null
           }
-          turnStatus={turnStatus}
+          turnStatus={turnStatus ?? (setup ? phaseCopy.instruction : handDone ? "HAND COMPLETE" : null)}
           toCall={liveStreet && view.toCall.label !== "0" ? view.toCall.label : null}
           available={view.available.label}
           showTray={showTray}
@@ -121,19 +130,14 @@ export function PremiumPokerPlayer({
           composeOpen={composeOpen}
           composeKind={composeKind}
           composeAmount={amountText}
-          raiseToPreview={
-            composeOpen && composeKind === "RAISE" && pendingRaiseTo > 0 ? String(pendingRaiseTo) : null
-          }
-          additionalPreview={
-            composeOpen && composeKind === "RAISE" && pendingAdditional > 0
-              ? String(pendingAdditional)
-              : null
-          }
-          committedPreview={composeOpen && composeKind === "RAISE" ? String(committed) : null}
+          raiseToPreview={composeOpen && pendingRaiseTo > 0 ? String(pendingRaiseTo) : null}
+          additionalPreview={composeOpen && pendingAdditional > 0 ? String(pendingAdditional) : null}
+          committedPreview={composeOpen ? String(committed) : null}
           onComposeAmount={setAmount}
           minChipAmount={minChip}
           maxChipAmount={maxChip}
           onChip={addChip}
+          allIn={allIn}
           primary={
             trio.respond
               ? {
@@ -160,6 +164,7 @@ export function PremiumPokerPlayer({
         phase={view.phase}
         pot={view.pot.label}
         potMillis={view.pot.millis}
+        potPaid={view.potPaid}
         pots={view.pots}
         communityCards={view.communityCards}
         seats={view.seats}

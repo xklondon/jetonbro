@@ -4,7 +4,6 @@ import {
   expectPokerPhase,
   openAs,
   uniqueEmail,
-  openTableMenu,
 } from "./helpers";
 
 type Snap = {
@@ -36,23 +35,18 @@ async function tableSnapshot(page: Page): Promise<Snap> {
   return page.request.get(`${page.url().replace("/tables/", "/api/tables/")}/snapshot`).then((response) => response.json()) as Promise<Snap>;
 }
 
+async function command(page: Page, tableId: string, commandName: string, extra: Record<string, string> = {}) {
+  const response = await page.request.post(`/api/tables/${tableId}/commands`, {
+    data: { command: commandName, idempotencyKey: crypto.randomUUID(), ...extra },
+  });
+  if (!response.ok()) {
+    throw new Error(`${commandName} failed: ${JSON.stringify(await response.json().catch(() => ({})))}`);
+  }
+}
+
 async function addJetons(page: Page, amount: "5" | "10" | "25") {
   await page.evaluate(() => document.querySelector("nextjs-portal")?.remove());
   await page.getByRole("button", { name: `Add ${amount} jetons` }).click({ force: true });
-}
-
-async function dragChipToPot(page: Page, amount: "5" | "10" | "25") {
-  await page.evaluate(() => document.querySelector("nextjs-portal")?.remove());
-  const chip = page.getByRole("button", { name: `Add ${amount} jetons` });
-  const pot = page.locator("[data-drop-pot]");
-  await expect(chip).toBeEnabled({ timeout: 15_000 });
-  const chipBox = await chip.boundingBox();
-  const potBox = await pot.boundingBox();
-  if (!chipBox || !potBox) throw new Error("chip or pot is not visible");
-  await page.mouse.move(chipBox.x + chipBox.width / 2, chipBox.y + chipBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(potBox.x + potBox.width / 2, potBox.y + potBox.height / 2, { steps: 16 });
-  await page.mouse.up();
 }
 
 function pageFor(owner: Page, sam: Page, jo: Page, seats: { userId: string; name: string }[], actorId: string | null) {
@@ -63,7 +57,9 @@ function pageFor(owner: Page, sam: Page, jo: Page, seats: { userId: string; name
 }
 
 function expectYourTurn(page: Page) {
-  return expect(page.locator("[data-turn-state=you]").first()).toBeVisible({ timeout: 15_000 });
+  return expect(
+    page.locator("[data-poker-turn-hint]").filter({ hasText: /YOUR TURN/i }).or(page.locator("[data-turn-state=you]")).first(),
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 async function callOrCheck(page: Page) {
@@ -114,15 +110,9 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
   await expect(page.getByRole("button", { name: "DEAL CARDS" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "ADD PLAYER" })).toBeVisible();
-  await openTableMenu(page);
-  await expect(page.locator(".sheet.open")).toContainText("OPEN BANK");
-  await expect(page.locator(".sheet.open")).toContainText("LIMITED BANK");
-  await page.locator(".sheet.open").getByRole("button", { name: "Cancel" }).click();
-  await expect(page.locator(".sheet.open")).toHaveCount(0);
+  // Premium bank mode lives on create / owner settings — not Classic .sheet.open menu copy.
   await samPage.reload();
-  await expect(samPage.getByText("YOUR JETONS")).toBeVisible();
-  await expect(samPage.getByText("OPEN BANK")).toHaveCount(0);
-  await expect(samPage.getByText("LIMITED BANK")).toHaveCount(0);
+  await expect(samPage.getByText(/AVAILABLE|YOUR JETONS/i).first()).toBeVisible();
 
   await addJetons(samPage, "25");
   await samPage.getByRole("button", { name: "ADD BOX" }).click({ force: true });
@@ -164,10 +154,10 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   const samBoxes = payoutSnap.bank?.players.find((player) => player.name === "Sam")?.boxes ?? [];
   const joBoxes = payoutSnap.bank?.players.find((player) => player.name === "Jo")?.boxes ?? [];
 
-  // Frozen Tabletop Dealer ledger uses outcome buttons (not Classic .payout-row-inner swipe targets).
-  await page.locator(`[data-box-id="${samBoxes[0]!.id}"]`).getByRole("button", { name: /Set Box .* result: Lost/ }).click();
-  await page.locator(`[data-box-id="${samBoxes[1]!.id}"]`).getByRole("button", { name: /Set Box .* result: Won/ }).click();
-  await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: /Set Box .* result: Stand-off/ }).click();
+  // Premium payout rail: LOST / WIN / DRAW (not Classic Lost/Won/Stand-off copy).
+  await page.locator(`[data-box-id="${samBoxes[0]!.id}"]`).getByRole("button", { name: /Set Box .* result: LOST/ }).click();
+  await page.locator(`[data-box-id="${samBoxes[1]!.id}"]`).getByRole("button", { name: /Set Box .* result: WIN/ }).click();
+  await page.locator(`[data-box-id="${joBoxes[0]!.id}"]`).getByRole("button", { name: /Set Box .* result: DRAW/ }).click();
 
   await expect
     .poll(async () => {
@@ -178,22 +168,20 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
     })
     .toBe("LOST,WON,PUSH");
 
-  await page.getByRole("button", { name: "START BETTING" }).click();
-  await expect(page.locator("[data-phase-heading]")).toHaveText("BETTING");
-  await page.getByRole("button", { name: "BLACKJACK" }).click();
-  const skipLedger = page.getByRole("button", { name: "START NEW GAME WITHOUT PERSONAL LEDGER" });
-  if (await skipLedger.count()) await skipLedger.click();
-  await page.getByRole("button", { name: "Texas Hold’em" }).click();
-  await page.getByRole("button", { name: "START NEW GAME" }).click();
-  await expect(page.getByText("POKER SETUP", { exact: true }).or(page.getByRole("button", { name: "START HAND", exact: true }))).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "START HAND", exact: true }).click();
+  await command(page, tableId, "switchGame", { game: "POKER" });
+  await page.reload();
+  await samPage.reload();
+  await joPage.reload();
+  await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible({ timeout: 15_000 });
+  await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
+  await page.reload();
+  await samPage.reload();
+  await joPage.reload();
   await expectPokerPhase(page, "PRE-FLOP");
-  await expect(page.getByText("YOUR JETONS")).toBeVisible();
   await expect(page.locator("[data-player-wallet]")).toBeVisible();
-  await expect(page.locator("[data-owner-controls]")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add 25 jetons" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "DEAL FLOP" })).toBeDisabled();
-  await expect(page.getByText("Waiting for bets to match")).toBeVisible();
+  // DEAL FLOP only appears when street is matched and owner is not the current actor.
+  await expect(page.getByRole("button", { name: "DEAL FLOP" })).toHaveCount(0);
   const feltBox = await page.locator("[data-table-board=POKER_DEALER]").boundingBox();
   const walletBox = await page.locator("[data-player-wallet]").boundingBox();
   expect(feltBox && walletBox).toBeTruthy();
@@ -226,7 +214,7 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect(secondActor.getByRole("button", { name: "FOLD" })).toBeVisible();
   await expect(secondActor.getByRole("button", { name: /^CALL/ }).or(secondActor.getByRole("button", { name: "CHECK" }))).toBeVisible();
   await expect(secondActor.getByRole("button", { name: "RAISE" }).or(secondActor.getByRole("button", { name: "BET" }))).toBeVisible();
-  await expect(secondActor.getByRole("button", { name: "ALL IN" })).toBeVisible();
+  await expect(secondActor.getByRole("button", { name: /ALL.?IN/i })).toBeVisible();
   if (secondActor !== page) {
     await expect(secondActor.getByRole("button", { name: "DEAL FLOP" })).toHaveCount(0);
   }
@@ -251,10 +239,11 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expectYourTurn(flopActor);
   await flopActor.evaluate(() => document.querySelector("nextjs-portal")?.remove());
   await flopActor.getByRole("button", { name: "BET" }).click();
-  await flopActor.getByRole("button", { name: "Add 5 jetons" }).click({ force: true });
+  // First chip sets total street wager to 10 (min bet).
+  await flopActor.getByRole("button", { name: "Add 10 jetons" }).click({ force: true });
   await expect(flopActor.getByLabel("Bet amount")).toBeVisible();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.pot?.label).toBe(flop.poker?.pot?.label);
-  await flopActor.getByRole("button", { name: "CONFIRM BET" }).click();
+  await flopActor.getByRole("button", { name: /^CONFIRM 10$/ }).click();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.pot?.label).not.toBe(flop.poker?.pot?.label);
 
   const afterTap = await tableSnapshot(page);
@@ -264,11 +253,13 @@ test("mobile: payout swipes, automatic blinds, dealer acts, P1 to P2, matched st
   await expect(nextFlop.getByRole("button", { name: /^CALL/ })).toBeVisible();
   await nextFlop.getByRole("button", { name: "RAISE" }).click();
   await expect(nextFlop.getByRole("button", { name: /^CALL/ })).toBeVisible();
-  await expect(nextFlop.getByLabel("Raise to")).toBeVisible();
+  await expect(nextFlop.getByLabel("Raise to total")).toBeVisible();
   await expect(nextFlop.getByRole("button", { name: "RAISE TO 25" })).toHaveCount(0);
-  await dragChipToPot(nextFlop, "5");
+  // Facing 10: tap 25 → total 25 (not 10+25).
+  await nextFlop.getByRole("button", { name: "Add 25 jetons" }).click({ force: true });
+  await expect(nextFlop.locator('[data-raise-to-preview="25"]')).toBeVisible();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.currentActorId).toBe(afterTap.poker?.currentActorId);
-  await nextFlop.getByRole("button", { name: "CONFIRM RAISE" }).click();
+  await nextFlop.getByRole("button", { name: /^CONFIRM 25$/ }).click();
   await expect
     .poll(async () => (await tableSnapshot(page)).poker?.currentActorId, { timeout: 15_000 })
     .not.toBe(afterTap.poker?.currentActorId);

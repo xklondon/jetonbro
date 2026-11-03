@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Final Poker corrections — total wager chips, ALL IN, tray, wipe (JetBro II Web)
+
+- Chip compose is **RAISE TO / BET total street wager** (tap 25 → total 25; additional = target − streetContribution). Premium dock adds compact **ALL IN** (skull, two-tap confirm). Fixed tray rows: status → compose → actions → AVAILABLE/jetons. Dealer/blinds skip broke seats; heads-up dealer=SB. Premium Home admin **WIPE ALL TABLES** (server-auth + SSE publish).
+- Gate: focused Poker Vitest (controls/holdem/tray/action-strip/pot + wipe with `VITEST_INCLUDE_WIPE`); Playwright mobile-390 `poker-two-device-protocol`, `poker-two-hand-protocol`, `poker-turn-and-tray`, `blackjack-stable-anatomy`. Guardrails + build. Known flake: two `poker-hand.test.ts` cases when seatOrder omitted after switch (also fails on prior HEAD).
+
 ### Premium Poker UX + E2E Premium selectors (JetBro II Web)
 
 - Commit `6cfec38` on `fix/blackjack-stable-anatomy-v1` — all-in side pots, AWARD/SPLIT preview, RAISE BY tray/SSE sync; Playwright helpers/specs updated from Classic to Premium (`data-invite-mask`, phase rail, pot/side-pot hooks, RAISE BY compose).

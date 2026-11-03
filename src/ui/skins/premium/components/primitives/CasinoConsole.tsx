@@ -8,6 +8,7 @@ const CHIPS = ["5", "10", "25", "50", "100"] as const;
 
 function pokerActionTone(label: string): string {
   const upper = label.toUpperCase();
+  if (upper.includes("ALL IN") || upper.startsWith("CONFIRM ALL")) return " is-allin";
   if (upper.startsWith("FOLD")) return " is-fold";
   if (upper.startsWith("CHECK")) return " is-check";
   if (upper.startsWith("BET") || upper.startsWith("RAISE") || upper.startsWith("CONFIRM")) return " is-bet";
@@ -18,15 +19,18 @@ function pokerActionTone(label: string): string {
 function ActionButton({
   action,
   kind,
+  allIn = false,
 }: {
   action: DockAction;
   kind: "primary" | "ghost";
+  allIn?: boolean;
 }) {
   const tone = pokerActionTone(action.label);
+  const isAllIn = allIn || tone === " is-allin";
   return (
     <button
       type="button"
-      className={`pm-console-btn is-${kind === "primary" ? "primary" : "ghost"}${tone}`}
+      className={`pm-console-btn is-${kind === "primary" ? "primary" : "ghost"}${tone}${isAllIn ? " is-compact-allin" : ""}`}
       disabled={action.disabled}
       title={action.title}
       onClick={action.onClick}
@@ -35,8 +39,18 @@ function ActionButton({
       data-add-player-dock={action.label === "ADD PLAYER" ? "true" : undefined}
       data-change-game={action.label === "CHANGE GAME" ? "true" : undefined}
       data-poker-confirm={action.label.toUpperCase().startsWith("CONFIRM") ? "true" : undefined}
+      data-poker-all-in={isAllIn ? "true" : undefined}
     >
-      {action.label}
+      {isAllIn ? (
+        <span className="pm-console-allin-label">
+          <span className="pm-console-allin-skull" aria-hidden="true">
+            ☠
+          </span>
+          <span>{action.label}</span>
+        </span>
+      ) : (
+        action.label
+      )}
     </button>
   );
 }
@@ -59,7 +73,6 @@ function TrayChips({
       {CHIPS.map((value) => {
         const selected = selectedChip === value;
         const chipDisabled = !trayEnabled;
-        const raiseBy = composeKind === "RAISE";
         return (
           <button
             key={value}
@@ -71,11 +84,11 @@ function TrayChips({
             title={
               chipDisabled
                 ? "Waiting for your turn"
-                : raiseBy
-                  ? `Add ${value} to raise-by`
-                  : minChipAmount != null && Number(value) < minChipAmount
-                    ? `Adds ${value} toward min ${minChipAmount}`
-                    : `Add ${value} to bet amount`
+                : minChipAmount != null && Number(value) < minChipAmount
+                  ? `Adds ${value} toward min total ${minChipAmount}`
+                  : composeKind
+                    ? `Add ${value} toward street wager total`
+                    : `Add ${value} jetons`
             }
             onClick={() => onChip?.(value)}
           >
@@ -97,6 +110,7 @@ export function CasinoConsole({
   primary,
   secondary,
   tertiary,
+  allIn = null,
   notice,
   turnStatus = null,
   toCall,
@@ -121,6 +135,8 @@ export function CasinoConsole({
   primary?: DockAction | null;
   secondary?: DockAction | null;
   tertiary?: DockAction | null;
+  /** Compact ALL IN control (skull) beside RAISE / CALL / FOLD. */
+  allIn?: DockAction | null;
   notice?: ReactNode;
   turnStatus?: string | null;
   toCall?: string | null;
@@ -131,9 +147,9 @@ export function CasinoConsole({
   composeOpen?: boolean;
   composeKind?: "RAISE" | "BET" | null;
   composeAmount?: string;
-  /** Raise-to total (street wager + raise-by). */
+  /** Target street wager total (raise-to / bet). */
   raiseToPreview?: string | null;
-  /** Extra jetons leaving AVAILABLE this action (toCall + raise-by). */
+  /** Extra jetons leaving AVAILABLE this action (target − streetContribution). */
   additionalPreview?: string | null;
   /** Already committed on this street (blinds / prior bets). */
   committedPreview?: string | null;
@@ -153,9 +169,10 @@ export function CasinoConsole({
   /** AVAILABLE sits beside jetons whenever the tray is visible (BJ + Poker). */
   const walletInTray = showWallet && trayVisible;
   const walletAboveTray = showWallet && compact && !trayVisible;
-  const actionCount = [primary, secondary, tertiary].filter(Boolean).length;
+  const actionCount = [allIn, primary, secondary, tertiary].filter(Boolean).length;
   const showCall = toCall != null && toCall !== "0";
-  const stripHead = !compact && (showCall || Boolean(turnStatus));
+  /** Always reserve the status strip in poker so tray height does not jump. */
+  const stripHead = !compact;
   const composeActive = !compact && composeOpen;
   const raiseCompose = composeActive && composeKind === "RAISE";
 
@@ -249,10 +266,15 @@ export function CasinoConsole({
             ) : null}
           </>
         ) : (
-          /* Fixed rows: YOUR TURN → compose → RAISE|CALL|FOLD → jetons + AVAILABLE. */
+          /* Fixed rows: status → compose → ALL IN|RAISE|CALL|FOLD → jetons + AVAILABLE. */
           <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true">
             {stripHead ? (
-              <div className="pm-console-strip-head" data-action-strip-head="true" data-tray-turn-top="true">
+              <div
+                className={`pm-console-strip-head${showCall || turnStatus ? "" : " is-spacer"}`}
+                data-action-strip-head="true"
+                data-tray-turn-top="true"
+                aria-hidden={showCall || turnStatus ? undefined : true}
+              >
                 {showCall ? (
                   <div className="pm-console-call" data-to-call="true">
                     TO CALL <strong>{toCall}</strong>
@@ -266,9 +288,7 @@ export function CasinoConsole({
                   </div>
                 ) : null}
               </div>
-            ) : (
-              <div className="pm-console-strip-head is-spacer" aria-hidden="true" data-action-strip-head="reserved" />
-            )}
+            ) : null}
             <div
               className={`pm-console-compose-slot${composeActive ? " is-active" : " is-reserved"}`}
               data-raise-slot="true"
@@ -278,18 +298,18 @@ export function CasinoConsole({
               {composeActive ? (
                 <div className="pm-console-compose">
                   <div className="pm-console-compose-meta">
-                    <small>{raiseCompose ? "RAISE BY" : composeKind === "BET" ? "BET" : "RAISE BY"}</small>
-                    {raiseCompose && committedPreview && committedPreview !== "0" ? (
+                    <small>{raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}</small>
+                    {committedPreview && committedPreview !== "0" ? (
                       <span className="pm-console-compose-committed" data-raise-committed={committedPreview}>
                         IN {committedPreview}
                       </span>
                     ) : null}
-                    {raiseCompose && additionalPreview ? (
+                    {additionalPreview ? (
                       <span className="pm-console-compose-add" data-raise-additional={additionalPreview}>
                         ADD {additionalPreview}
                       </span>
                     ) : null}
-                    {raiseCompose && raiseToPreview ? (
+                    {raiseToPreview ? (
                       <span className="pm-console-compose-preview" data-raise-to-preview={raiseToPreview}>
                         TOTAL {raiseToPreview}
                       </span>
@@ -299,7 +319,7 @@ export function CasinoConsole({
                         MIN {minChipAmount}
                       </span>
                     ) : null}
-                    {maxChipAmount != null && !raiseCompose ? (
+                    {maxChipAmount != null ? (
                       <span className="pm-console-compose-max" data-raise-max={String(maxChipAmount)}>
                         MAX {maxChipAmount}
                       </span>
@@ -309,10 +329,12 @@ export function CasinoConsole({
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
+                    enterKeyHint="done"
+                    autoComplete="off"
                     className="pm-console-compose-field"
                     value={composeAmount}
                     placeholder={minChipAmount != null ? String(minChipAmount) : "0"}
-                    aria-label={raiseCompose ? "Raise by amount" : composeKind === "BET" ? "Bet amount" : "Raise by amount"}
+                    aria-label={raiseCompose ? "Raise to total" : composeKind === "BET" ? "Bet amount" : "Raise to total"}
                     data-compose-amount="true"
                     onChange={(event) => onComposeAmount?.(event.target.value)}
                   />
@@ -326,11 +348,14 @@ export function CasinoConsole({
               data-poker-action-bar="true"
             >
               <div
-                className={`pm-console-actions${primary || secondary || tertiary ? "" : " is-empty"}${
-                  primary && !secondary && !tertiary ? " is-single" : ""
-                }${secondary && primary && tertiary ? " is-trio" : ""}`}
+                className={`pm-console-actions${primary || secondary || tertiary || allIn ? "" : " is-empty"}${
+                  primary && !secondary && !tertiary && !allIn ? " is-single" : ""
+                }${secondary && primary && tertiary && !allIn ? " is-trio" : ""}${
+                  allIn && (primary || secondary || tertiary) ? " is-quad" : ""
+                }`}
                 data-console-actions="true"
               >
+                {allIn ? <ActionButton action={allIn} kind="ghost" allIn /> : null}
                 {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
                 {primary ? <ActionButton action={primary} kind="primary" /> : null}
                 {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}

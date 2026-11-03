@@ -66,7 +66,12 @@ test("two devices share a fold-complete hand and a rotated next hand", async ({ 
   await expect(samPage.locator("[data-table-board]")).toBeVisible({ timeout: 20_000 });
   await command(page, tableId, "giveJetons", { userId: ownerId, amount: "100" });
   await command(page, tableId, "switchGame", { game: "POKER" });
-  await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
+  const samId = (await tableSnapshot(samPage)).viewerId;
+  await command(page, tableId, "startTexasHoldem", {
+    smallBlind: "5",
+    bigBlind: "10",
+    seatOrder: `${ownerId},${samId}`,
+  });
   await page.reload();
   await samPage.reload();
   await expectPokerPhase(page, "PRE-FLOP");
@@ -95,8 +100,9 @@ test("two devices share a fold-complete hand and a rotated next hand", async ({ 
   expect(folded.poker?.winners?.[0]?.amount.label).toBe("15");
   expect(foldedSam.poker?.currentActorId).toBeNull();
   expect(foldedSam.poker?.toCall.label).toBe("0");
+  await expect(page.locator('[data-pot-paid="true"]')).toBeVisible();
   await expect(page.getByText("POT PAID")).toBeVisible();
-  await expect(page.getByText(/WON 15/)).toBeVisible();
+  expect(folded.poker?.winners?.[0]?.amount.label).toBe("15");
   await expect(page.getByRole("button", { name: "FOLD" })).toHaveCount(0);
   await expect(page.getByText("TO CALL")).toHaveCount(0);
   await page.screenshot({ path: join(out, "app-poker-fold-winner-390x844.png") });
@@ -127,7 +133,9 @@ test("two devices share a fold-complete hand and a rotated next hand", async ({ 
   await page.getByRole("button", { name: "CHECK" }).click();
   await expect.poll(async () => (await tableSnapshot(samPage)).poker?.currentActorId).toBe(samSnap.viewerId);
   await samPage.getByRole("button", { name: "BET" }).click();
-  await samPage.getByRole("button", { name: "CONFIRM BET" }).click();
+  await samPage.getByRole("button", { name: "Add 10 jetons" }).click();
+  await expect(samPage.getByRole("button", { name: /^CONFIRM 10$/ })).toBeVisible();
+  await samPage.getByRole("button", { name: /^CONFIRM 10$/ }).click();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.toCall.label).toBe("10");
   await expect(page.getByRole("button", { name: /CALL 10/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "RAISE" })).toBeVisible();
@@ -163,7 +171,12 @@ test("two-player complete hand conserves 200, pays once, and rotates", async ({ 
   await samPage.reload();
   await expect(page.getByRole("button", { name: "START HAND", exact: true })).toBeVisible();
   await page.screenshot({ path: join(out, "app-poker-setup-owner-390x844.png") });
-  await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
+  const samViewer = (await tableSnapshot(samPage)).viewerId;
+  await command(page, tableId, "startTexasHoldem", {
+    smallBlind: "5",
+    bigBlind: "10",
+    seatOrder: `${ownerId},${samViewer}`,
+  });
   await page.reload();
   await samPage.reload();
   await expectPokerPhase(page, "PRE-FLOP");
@@ -193,8 +206,9 @@ test("two-player complete hand conserves 200, pays once, and rotates", async ({ 
       if (!(await current.getByRole("button", { name: "BET" }).count())) await current.reload();
       await expect(current.getByRole("button", { name: "BET" })).toBeVisible({ timeout: 15_000 });
       await current.getByRole("button", { name: "BET" }).click();
-      await expect(current.getByRole("button", { name: "CONFIRM BET" })).toBeVisible();
-      await current.getByRole("button", { name: "CONFIRM BET" }).click();
+      await current.getByRole("button", { name: "Add 10 jetons" }).click();
+      await expect(current.getByRole("button", { name: /^CONFIRM 10$/ })).toBeVisible();
+      await current.getByRole("button", { name: /^CONFIRM 10$/ }).click();
       return;
     }
     if (type === "CALL") {
@@ -250,6 +264,7 @@ test("two-player complete hand conserves 200, pays once, and rotates", async ({ 
   await page.getByRole("button", { name: winnerName, exact: true }).click();
   await page.getByRole("button", { name: "AWARD POT", exact: true }).click();
   await expect(page.getByText("HAND COMPLETE", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-pot-paid="true"]')).toBeVisible();
   await expect(page.getByText("POT PAID")).toBeVisible();
   await expect(page.locator("[data-turn-state]")).toHaveCount(0);
   await expect(page.getByText("TO CALL")).toHaveCount(0);
@@ -264,7 +279,8 @@ test("two-player complete hand conserves 200, pays once, and rotates", async ({ 
   await samPage.reload();
   await samPage.screenshot({ path: join(out, "app-poker-complete-player-390x844.png") });
   const firstDealer = done.poker?.seats.find((seat) => seat.isDealer)?.name;
-  await page.getByRole("button", { name: "NEXT HAND", exact: true }).click();
+  // Premium docks next hand as START HAND (same control as opening a hand).
+  await page.getByRole("button", { name: "START HAND", exact: true }).click();
   await expectPokerPhase(page, "PRE-FLOP");
   await page.reload();
   await samPage.reload();

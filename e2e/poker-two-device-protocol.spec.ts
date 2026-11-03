@@ -61,7 +61,12 @@ test("two devices share heads-up blinds, CALL/RAISE, and reload state", async ({
   await expect(samPage.locator("[data-table-board]")).toBeVisible({ timeout: 20_000 });
   await command(page, tableId, "giveJetons", { userId: ownerId, amount: "100" });
   await command(page, tableId, "switchGame", { game: "POKER" });
-  await command(page, tableId, "startTexasHoldem", { smallBlind: "5", bigBlind: "10" });
+  const samId = (await tableSnapshot(samPage)).viewerId;
+  await command(page, tableId, "startTexasHoldem", {
+    smallBlind: "5",
+    bigBlind: "10",
+    seatOrder: `${ownerId},${samId}`,
+  });
   await page.reload();
   await samPage.reload();
   await expectPokerPhase(page, "PRE-FLOP");
@@ -71,15 +76,16 @@ test("two devices share heads-up blinds, CALL/RAISE, and reload state", async ({
   expect(ownerSnap.poker?.pot.label).toBe(samSnap.poker?.pot.label);
   expect(ownerSnap.poker?.currentActorId).toBe(samSnap.poker?.currentActorId);
   expect(ownerSnap.poker?.seats.find((seat) => seat.isDealer)?.isSmallBlind).toBe(true);
+  expect(ownerSnap.poker?.seats.find((seat) => seat.isDealer)?.name).toBe("Owner");
   expect(ownerSnap.poker?.seats.find((seat) => seat.isBigBlind)?.name).toBe("Sam");
   expect(ownerSnap.poker?.legalActions.map((action) => action.type).sort()).toEqual(["ALL_IN", "CALL", "FOLD", "RAISE"]);
   expect(ownerSnap.poker?.legalActions.some((action) => action.type === "CHECK")).toBe(false);
-  // Premium dock is RAISE | CALL/CHECK | FOLD; ALL_IN remains legal via API / raise-by max.
+  // Premium dock: ALL IN | RAISE | CALL/CHECK | FOLD
   await expect(page.getByRole("button", { name: /^CALL/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /^RAISE/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /^FOLD/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /^CHECK/i })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /ALL.?IN/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /ALL.?IN/i })).toBeVisible();
   await page.screenshot({ path: join(out, "app-poker-call-raise-390x844.png") });
   await samPage.screenshot({ path: join(out, "app-poker-bank-player-same-actor-390x844.png") });
 
@@ -92,8 +98,10 @@ test("two devices share heads-up blinds, CALL/RAISE, and reload state", async ({
 
   await samPage.getByRole("button", { name: /^RAISE/i }).click();
   await expect(samPage.locator("[data-raise-compose=RAISE]")).toBeVisible();
-  await expect(samPage.getByText("RAISE BY")).toBeVisible();
-  await samPage.getByRole("button", { name: "Add 10 jetons" }).click();
+  await expect(samPage.getByText("RAISE TO")).toBeVisible();
+  // Facing BB 10, tap 25 → total street wager 25 (not call+25).
+  await samPage.getByRole("button", { name: "Add 25 jetons" }).click();
+  await expect(samPage.locator('[data-raise-to-preview="25"]')).toBeVisible();
   await expect(samPage.locator("[data-poker-confirm=true]")).toBeVisible();
   await samPage.locator("[data-poker-confirm=true]").click();
   await expect.poll(async () => (await tableSnapshot(page)).poker?.toCall.label).not.toBe("0");

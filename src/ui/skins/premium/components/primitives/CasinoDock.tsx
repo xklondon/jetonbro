@@ -21,6 +21,7 @@ export function CasinoDock({
   notice?: ReactNode;
   children?: ReactNode;
 }) {
+  // children: optional admin links (e.g. WIPE ALL TABLES) below primary actions
   const single = Boolean(primary && !secondary);
   return (
     <footer className="pm-dock" data-premium-dock="true">

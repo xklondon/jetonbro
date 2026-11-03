@@ -234,7 +234,11 @@ async function createHand(
   actorId: string,
   previousDealerId: string | null,
 ) {
-  const seats = domainSeats(table.pokerSeats);
+  // Only funded, non-sitting-out seats play the next hand (dealer/blinds skip broke players).
+  const seats = domainSeats(table.pokerSeats).filter((seat) => {
+    const member = table.members.find((item) => item.userId === seat.playerId);
+    return Boolean(member && member.availableMillis > 0n);
+  });
   if (seats.length < 2) throw new DomainError("POKER_SEATS", "Texas Hold’em needs at least two Players.");
   const dealer = nextDealer(seats, previousDealerId);
   const blinds = assignBlinds(seats, dealer.playerId);

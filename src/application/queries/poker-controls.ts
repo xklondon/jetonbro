@@ -46,12 +46,13 @@ export function pokerActorActions(legal: PokerLegalActionView[]): PokerLegalActi
   return [layout.primary, ...layout.secondary].filter((action): action is PokerLegalActionView => Boolean(action));
 }
 
-/** Premium dock trio: FOLD + CHECK/CALL + BET/RAISE (chips still submit legal BET/RAISE amounts). */
+/** Premium dock: FOLD + CHECK/CALL + BET/RAISE + ALL IN (chips submit legal target street wagers). */
 export type PokerDockTrio = {
   owed: boolean;
   fold: PokerLegalActionView | null;
   respond: PokerLegalActionView | null;
   aggression: PokerLegalActionView | null;
+  allIn: PokerLegalActionView | null;
 };
 
 export function pokerDockTrio(legal: PokerLegalActionView[]): PokerDockTrio {
@@ -60,11 +61,12 @@ export function pokerDockTrio(legal: PokerLegalActionView[]): PokerDockTrio {
   const check = legal.find((action) => action.type === "CHECK") ?? null;
   const bet = legal.find((action) => action.type === "BET") ?? null;
   const raise = legal.find((action) => action.type === "RAISE") ?? null;
+  const allIn = legal.find((action) => action.type === "ALL_IN") ?? null;
   if (call) {
-    return { owed: true, fold, respond: call, aggression: raise };
+    return { owed: true, fold, respond: call, aggression: raise, allIn };
   }
   // Prefer RAISE whenever legal (BB option). Never substitute BET for RAISE.
-  return { owed: false, fold, respond: check, aggression: raise ?? bet };
+  return { owed: false, fold, respond: check, aggression: raise ?? bet, allIn };
 }
 
 export function pokerActPayload(action: PokerLegalActionView): { type: string; amount: string } {
@@ -118,11 +120,10 @@ export function pokerTrayEnabled(view: Pick<PokerTableView, "legalActions" | "av
 }
 
 /**
- * Resolve a composed RAISE BY / BET face to a legal pokerAct.
- * RAISE: `chipLabel` is raise-by (increment above street wager). Submit is raise-to.
- * Additional payment locked = raiseTo − streetContribution (= toCall + raiseBy).
- * A 10 jeton increases that additional payment by exactly 10 — blinds already in
- * streetContribution are not re-added. Min legal raise-to enforced unless all-in.
+ * Resolve a composed target street wager to a legal pokerAct.
+ * `chipLabel` is the intended total street wager (raise-to for RAISE, bet size for BET).
+ * Additional payment locked = target − streetContribution. Never adds the call on top of the selected total.
+ * Min legal raise-to / bet enforced unless the target is an all-in (max).
  */
 export function pokerTrayChipAct(
   view: PokerTableView,
@@ -131,42 +132,38 @@ export function pokerTrayChipAct(
   const legal = visiblePokerLegalActions(view);
   const raise = legal.find((action) => action.type === "RAISE");
   const bet = legal.find((action) => action.type === "BET");
-  const chip = Number(chipLabel);
-  if (!Number.isFinite(chip) || chip <= 0) return null;
+  const target = Number(chipLabel);
+  if (!Number.isFinite(target) || target <= 0) return null;
   if (raise) {
     const streetWager = pokerRaiseStreetWager(view);
-    const raiseTo = streetWager + chip;
     const bounds = pokerComposeBounds(view, "RAISE");
     const minTo = Number(bounds.min);
     const maxTo = Number(bounds.max);
-    if (!Number.isFinite(raiseTo) || raiseTo <= streetWager) return null;
-    if (Number.isFinite(maxTo) && maxTo > 0 && raiseTo > maxTo) return null;
+    if (target <= streetWager) return null;
+    if (Number.isFinite(maxTo) && maxTo > 0 && target > maxTo) return null;
     // Below min raise-to is illegal unless this is an all-in shove to max.
-    if (Number.isFinite(minTo) && raiseTo < minTo && raiseTo < maxTo) return null;
-    return { type: "RAISE", amount: String(raiseTo) };
+    if (Number.isFinite(minTo) && target < minTo && target < maxTo) return null;
+    return { type: "RAISE", amount: String(target) };
   }
   if (bet) {
     // Min bet is big blind / compose bounds — not the stack-max stored on BET.amount.
     const bounds = pokerComposeBounds(view, "BET");
     const min = Number(bounds.min);
     const max = Number(bounds.max);
-    if (!Number.isFinite(min) || chip < min) return null;
-    if (Number.isFinite(max) && max > 0 && chip > max) return null;
-    return { type: "BET", amount: String(chip) };
+    if (!Number.isFinite(min) || target < min) return null;
+    if (Number.isFinite(max) && max > 0 && target > max) return null;
+    return { type: "BET", amount: String(target) };
   }
   return null;
 }
 
-/** Min raise-by (minRaiseTo − streetWager) or min bet face; null when unavailable. */
+/** Min raise-to (or min bet) face; null when unavailable. */
 export function pokerTrayMinAmount(view: PokerTableView): number | null {
   const legal = visiblePokerLegalActions(view);
   const raise = legal.find((action) => action.type === "RAISE");
   if (raise) {
-    const streetWager = pokerRaiseStreetWager(view);
     const minTo = Number(pokerComposeBounds(view, "RAISE").min);
-    if (!Number.isFinite(minTo)) return null;
-    const minBy = Math.max(1, minTo - streetWager);
-    return minBy;
+    return Number.isFinite(minTo) ? minTo : null;
   }
   const bet = legal.find((action) => action.type === "BET");
   if (bet) {
@@ -176,7 +173,7 @@ export function pokerTrayMinAmount(view: PokerTableView): number | null {
   return null;
 }
 
-/** Street wager the raise-by increment stacks on (raise-to = streetWager + raiseBy). */
+/** Current street wager facing the table (raise-to must exceed this). */
 export function pokerRaiseStreetWager(view: Pick<PokerTableView, "streetWager">): number {
   const n = Number(view.streetWager?.label ?? "0");
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -190,15 +187,13 @@ export function pokerStreetCommitted(view: Pick<PokerTableView, "seats" | "viewe
 }
 
 /**
- * Additional jetons leaving AVAILABLE for this RAISE (toCall + raiseBy).
- * Does not include chips already committed on the street.
+ * Additional jetons leaving AVAILABLE for a target street wager.
+ * Does not include chips already committed on the street (blinds / prior bets).
  */
-export function pokerRaiseAdditional(view: PokerTableView, raiseBy: number): number {
-  if (!Number.isFinite(raiseBy) || raiseBy <= 0) return 0;
-  const streetWager = pokerRaiseStreetWager(view);
+export function pokerRaiseAdditional(view: PokerTableView, targetStreetWager: number): number {
+  if (!Number.isFinite(targetStreetWager) || targetStreetWager <= 0) return 0;
   const committed = pokerStreetCommitted(view);
-  const raiseTo = streetWager + raiseBy;
-  const additional = raiseTo - committed;
+  const additional = targetStreetWager - committed;
   return additional > 0 ? additional : 0;
 }
 
