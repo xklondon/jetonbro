@@ -1,3 +1,12 @@
+# Dealer handover + BJ split adjacency + PLACE BET
+
+Date: 2026-11-03
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `1f45ad1`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `3b83fb83-ccbf-4e31-a875-72da6ce62f5a` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Vitest 65/65 (dealer handover, seat reorder, rotation, BJ box order/PLACE BET SET path, Poker raise/all-in suites); guardrails + production build. `/api/health` connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Premium Poker UX + E2E Premium selectors
 
 Date: 2026-11-01

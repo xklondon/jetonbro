@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Dealer handover + BJ split adjacency + PLACE BET (JetBro II Web)
+
+- Commit `1f45ad1` on `fix/blackjack-stable-anatomy-v1` — Poker START HAND transfers to the next button dealer (server-auth, no double-rotate); owner MOVE UP/DOWN seat order between hands; Premium BJ split boxes stay adjacent by parent; PLACE BET uses local pending chip/typed compose then a single SET commit (fixes false insufficient / double ADD).
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`3b83fb83-ccbf-4e31-a875-72da6ce62f5a`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Vitest 65/65 (rotation, handover, gaps, protocol, BJ round, Premium player/dealer/order); guardrails + `npm run build`. `/api/health` connected. Not merged or tagged.
+
 ### Final Poker corrections — total wager chips, ALL IN, tray, wipe (JetBro II Web)
 
 - Commit `7355c12` on `fix/blackjack-stable-anatomy-v1` — chip compose is **RAISE TO / BET total street wager** (tap 25 → total 25; additional = target − streetContribution). Premium dock adds compact **ALL IN** (skull, two-tap confirm). Fixed tray rows: status → compose → actions → AVAILABLE/jetons. Dealer/blinds skip broke seats; heads-up dealer=SB. Premium Home admin **WIPE ALL TABLES** (server-auth + SSE publish).
