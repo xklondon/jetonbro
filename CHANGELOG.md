@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Owner controls, tray ADD CARDS, EXIT TABLE, CHANGE GAME balances (JetBro II Web)
+
+- Commit `10e3801` on `fix/blackjack-stable-anatomy-v1` — Owner BUY IN / INVITE / CHANGE GAME / SETTINGS / ASSIGN DEALER stay owner-only after Poker dealer rotation and BJ dealer assignment; ADD CARDS moved into Premium tray (Poker 0–5, BJ PLAYING-gated, privacy preserved); EXIT TABLE between hands with confirmation (owner must close); CHANGE GAME preserves balances by default with optional RESET checkbox + ledger audit.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`f19749db-8bf6-4fe8-89c5-11c7561836e6`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest owner-dealer-exit-switch + poker cards/handover/hand/min-raise + Premium dealer/cards suites; guardrails + `npm run build`. Migration `poker_seat_assist_cards`. `/api/health` ok, database connected. Not merged or tagged.
+
 ### NLHE min-raise increment (JetBro II Web)
 
 - Commit `7f820fc` on `fix/blackjack-stable-anatomy-v1` — shared `raise-sizing` domain: `minRaiseTo = streetWager + lastRaiseSize`; opening bet sets the increment; short all-in does not reset/reopen; compose bounds follow the same formula (BB 10 → raise to 30 → min 50; open 25 → min 50).

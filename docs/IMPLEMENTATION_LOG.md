@@ -1,3 +1,12 @@
+# Owner controls, tray ADD CARDS, EXIT TABLE, CHANGE GAME balances
+
+Date: 2026-11-08
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `10e3801`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `f19749db-8bf6-4fe8-89c5-11c7561836e6` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest owner/exit/switch + Poker cards/handover/hand + Premium BJ/Poker card tray suites; guardrails + production build; migration `20261108220000_poker_seat_assist_cards`. `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # NLHE min-raise increment
 
 Date: 2026-11-08
