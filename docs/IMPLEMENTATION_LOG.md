@@ -1,3 +1,12 @@
+# NLHE min-raise increment
+
+Date: 2026-11-08
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `7f820fc`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `737ba183-8133-4c4e-9f5c-98ec85786fe2` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest 43/43 (raise-sizing, poker-min-raise, poker-hand, protocol, controls); guardrails + production build. `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Dealer handover + BJ split adjacency + PLACE BET
 
 Date: 2026-11-03

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### NLHE min-raise increment (JetBro II Web)
+
+- Commit `7f820fc` on `fix/blackjack-stable-anatomy-v1` — shared `raise-sizing` domain: `minRaiseTo = streetWager + lastRaiseSize`; opening bet sets the increment; short all-in does not reset/reopen; compose bounds follow the same formula (BB 10 → raise to 30 → min 50; open 25 → min 50).
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`737ba183-8133-4c4e-9f5c-98ec85786fe2`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest 43/43 (raise-sizing, poker-min-raise, poker-hand, poker-protocol-acceptance, poker-controls); guardrails + `npm run build`. `/api/health` ok, database connected. Not merged or tagged.
+
 ### Dealer handover + BJ split adjacency + PLACE BET (JetBro II Web)
 
 - Commit `1f45ad1` on `fix/blackjack-stable-anatomy-v1` — Poker START HAND transfers to the next button dealer (server-auth, no double-rotate); owner MOVE UP/DOWN seat order between hands; Premium BJ split boxes stay adjacent by parent; PLACE BET uses local pending chip/typed compose then a single SET commit (fixes false insufficient / double ADD).
