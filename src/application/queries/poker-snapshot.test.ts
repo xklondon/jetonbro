@@ -143,6 +143,10 @@ test("pre-flop blinds show pot 15 and CALL 5 for the small blind", () => {
   expect(view.potPaid).toBe(false);
   expect(view.toCall.label).toBe("5");
   expect(view.currentActorId).toBe("a");
+  expect(view.streetWager.label).toBe("10");
+  expect(view.lastRaiseSize?.label).toBe("10");
+  expect(view.minRaiseTo?.label).toBe("20");
   expect(view.legalActions.map((action) => action.type)).toEqual(["FOLD", "CALL", "RAISE", "ALL_IN"]);
   expect(view.legalActions.find((action) => action.type === "CALL")?.label).toBe("CALL 5");
+  expect(view.legalActions.find((action) => action.type === "RAISE")?.raiseTo?.label).toBe("20");
 });

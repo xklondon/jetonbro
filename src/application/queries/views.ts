@@ -317,6 +317,10 @@ export type PokerTableView = {
   smallBlind: MoneyView;
   bigBlind: MoneyView;
   streetWager: MoneyView;
+  /** Last full bet/raise increment for this street (BB at street start). */
+  lastRaiseSize?: MoneyView;
+  /** Authoritative minimum raise-to = streetWager + lastRaiseSize. */
+  minRaiseTo?: MoneyView;
   viewerStatus: "ACTIVE" | "FOLDED" | "ALL_IN" | "WAITING";
   seats: PokerSeatView[];
   pots: PokerPotView[];

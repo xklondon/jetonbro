@@ -1,5 +1,8 @@
 import { formatJetons, type JetonMillis } from "../money";
 import { isBettingStreet } from "./phases";
+import { isFullRaise, minRaiseTo } from "./raise-sizing";
+
+export { isFullRaise, minBetSize, minRaiseTo, nextLastRaiseSize } from "./raise-sizing";
 
 export const POKER_ACTION_TYPES = ["FOLD", "CHECK", "CALL", "BET", "RAISE", "ALL_IN"] as const;
 export type PokerActionType = (typeof POKER_ACTION_TYPES)[number];
@@ -32,15 +35,6 @@ export function liveAmountToCall(
 ): JetonMillis {
   if (!isBettingStreet(phase)) return 0n;
   return amountToCall(streetWager, streetContribution);
-}
-
-export function minRaiseTo(streetWager: JetonMillis, lastRaiseSize: JetonMillis): JetonMillis {
-  const increment = lastRaiseSize > 0n ? lastRaiseSize : 0n;
-  return streetWager + increment;
-}
-
-export function isFullRaise(raiseTo: JetonMillis, streetWager: JetonMillis, lastRaiseSize: JetonMillis): boolean {
-  return raiseTo - streetWager >= (lastRaiseSize > 0n ? lastRaiseSize : 0n) && raiseTo > streetWager;
 }
 
 export function legalActions(ctx: ActionContext): LegalPokerAction[] {

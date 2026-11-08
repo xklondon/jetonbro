@@ -1,4 +1,5 @@
 import { formatJetons } from "@/domain/money";
+import { minBetSize, minRaiseTo as domainMinRaiseTo } from "@/domain/poker/raise-sizing";
 import type { PokerLegalActionView, PokerTableView } from "./views";
 
 export type PokerControlLayer = "owner" | "actor";
@@ -198,21 +199,38 @@ export function pokerRaiseAdditional(view: PokerTableView, targetStreetWager: nu
 }
 
 export function pokerComposeSeed(
-  view: Pick<PokerTableView, "legalActions" | "bigBlind" | "available" | "seats" | "viewerId">,
+  view: Pick<
+    PokerTableView,
+    "legalActions" | "bigBlind" | "available" | "seats" | "viewerId" | "streetWager" | "lastRaiseSize" | "minRaiseTo"
+  >,
   kind: PokerComposeKind,
 ): string {
   return pokerComposeBounds(view, kind).min;
 }
 
+/**
+ * Compose bounds share the domain min-raise formula with pokerAct.
+ * Prefer snapshot minRaiseTo / lastRaiseSize; fall back to legalActions.raiseTo.
+ */
 export function pokerComposeBounds(
-  view: Pick<PokerTableView, "legalActions" | "bigBlind" | "available" | "seats" | "viewerId">,
+  view: Pick<
+    PokerTableView,
+    "legalActions" | "bigBlind" | "available" | "seats" | "viewerId" | "streetWager" | "lastRaiseSize" | "minRaiseTo"
+  >,
   kind: PokerComposeKind,
 ): { min: string; max: string; minMillis: bigint; maxMillis: bigint; convention: "Raise to" | "Bet" } {
   const own = view.seats?.find((seat) => seat.userId === view.viewerId);
   const maxTo = millis(own?.streetContribution.millis) + millis(view.available.millis);
   const maxMillis = maxTo > 0n ? maxTo : millis(view.available.millis);
   if (kind === "RAISE") {
-    const minMillis = millis(view.legalActions.find((action) => action.type === "RAISE")?.raiseTo?.millis ?? view.bigBlind.millis);
+    const fromDomain =
+      view.minRaiseTo?.millis != null
+        ? millis(view.minRaiseTo.millis)
+        : view.streetWager && view.lastRaiseSize
+          ? domainMinRaiseTo(millis(view.streetWager.millis), millis(view.lastRaiseSize.millis))
+          : 0n;
+    const fromLegal = millis(view.legalActions.find((action) => action.type === "RAISE")?.raiseTo?.millis);
+    const minMillis = fromDomain > 0n ? fromDomain : fromLegal > 0n ? fromLegal : millis(view.bigBlind.millis);
     return {
       min: formatJetons(minMillis),
       max: formatJetons(maxMillis),
@@ -221,9 +239,9 @@ export function pokerComposeBounds(
       convention: "Raise to",
     };
   }
-  const minMillis = millis(view.bigBlind.millis);
+  const minMillis = minBetSize(millis(view.lastRaiseSize?.millis), millis(view.bigBlind.millis));
   return {
-    min: view.bigBlind.label,
+    min: formatJetons(minMillis),
     max: view.available.label,
     minMillis,
     maxMillis: millis(view.available.millis),

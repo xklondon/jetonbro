@@ -120,13 +120,45 @@ test("actor controls keep CALL available and open BET/RAISE separately", () => {
   const owed = pokerActorLayout(actorLegal);
   expect(owed.primary?.type).toBe("CALL");
   expect(owed.secondary.map((action) => action.type)).toEqual(["FOLD", "RAISE", "ALL_IN"]);
-  expect(pokerComposeSeed(view({ legalActions: actorLegal }), "RAISE")).toBe("20");
+  expect(
+    pokerComposeSeed(
+      view({ legalActions: actorLegal, streetWager: money("10"), lastRaiseSize: money("10"), minRaiseTo: money("20") }),
+      "RAISE",
+    ),
+  ).toBe("20");
   expect(pokerComposeSeed(view({ legalActions: checkLegal }), "BET")).toBe("10");
   expect(pokerActorActions(bbOptionLegal).map((action) => action.type)).toEqual(["CHECK", "RAISE", "ALL_IN", "FOLD"]);
-  expect(pokerComposeBounds(view({ legalActions: actorLegal }), "RAISE")).toMatchObject({
+  expect(
+    pokerComposeBounds(
+      view({ legalActions: actorLegal, streetWager: money("10"), lastRaiseSize: money("10"), minRaiseTo: money("20") }),
+      "RAISE",
+    ),
+  ).toMatchObject({
     convention: "Raise to",
     min: "20",
   });
+});
+
+test("compose min raise-to uses streetWager + lastRaiseSize, not double raise-to", () => {
+  // After raise 10→30, last increment is 20 → min is 50 (not 60).
+  const facing = view({
+    viewerId: "owner",
+    currentActorId: "owner",
+    streetWager: money("30"),
+    lastRaiseSize: money("20"),
+    minRaiseTo: money("50"),
+    available: money("100"),
+    legalActions: [{ type: "RAISE", amount: money("100"), raiseTo: money("50"), label: "RAISE" }],
+    seats: [
+      seat({ userId: "owner", isActor: true, streetContribution: money("0", "0"), available: money("100") }),
+      seat({ userId: "sam", streetContribution: money("30") }),
+    ],
+  });
+  expect(pokerComposeBounds(facing, "RAISE").min).toBe("50");
+  expect(pokerTrayMinAmount(facing)).toBe(50);
+  expect(pokerTrayChipAct(facing, "50")).toEqual({ type: "RAISE", amount: "50" });
+  expect(pokerTrayChipAct(facing, "40")).toBeNull();
+  expect(pokerTrayChipAct(facing, "60")).toEqual({ type: "RAISE", amount: "60" });
 });
 
 test("dock trio shows FOLD/CALL/RAISE/ALL IN when facing a wager and FOLD/CHECK/BET/ALL IN when not", () => {
@@ -156,6 +188,8 @@ test("tray chip RAISE: face is target street wager; additional = target − cont
     toCall: money("10"),
     available: money("100"),
     streetWager: money("10"),
+    lastRaiseSize: money("10"),
+    minRaiseTo: money("20"),
     legalActions: actorLegal.map((action) =>
       action.type === "RAISE" ? { ...action, raiseTo: money("20"), label: "RAISE" } : action,
     ),

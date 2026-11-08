@@ -4,7 +4,15 @@ import { publishTable } from "@/application/realtime/bus";
 import { appendLedger, creditTableAvailable } from "@/application/services/ledger";
 import { clearNextHandTimer, scheduleNextHandTimer } from "@/application/services/deal-timer";
 import { replacePokerSeats } from "@/application/services/poker-seats";
-import { amountToCall, isFullRaise, legalActions, minRaiseTo, type PokerActionType } from "@/domain/poker/actions";
+import {
+  amountToCall,
+  isFullRaise,
+  legalActions,
+  minBetSize,
+  minRaiseTo,
+  nextLastRaiseSize,
+  type PokerActionType,
+} from "@/domain/poker/actions";
 import { STREET_ADVANCE, isBettingStreet, type BettingStreet, type PokerHandPhase } from "@/domain/poker/phases";
 import { buildSidePots, splitPotEqually } from "@/domain/poker/pots";
 import { nextHandRotation } from "@/domain/poker/rotation";
@@ -500,7 +508,7 @@ export async function pokerAct(input: {
           if (hand.streetWagerMillis !== participant.streetContributionMillis && hand.streetWagerMillis !== 0n) {
             throw new DomainError("ILLEGAL_ACTION", "Bet is only available when nothing is wagered this street.", 409);
           }
-          const minBet = hand.lastRaiseSizeMillis > 0n ? hand.lastRaiseSizeMillis : table.pokerBigBlindMillis;
+          const minBet = minBetSize(hand.lastRaiseSizeMillis, table.pokerBigBlindMillis);
           if (requested > member.availableMillis) {
             throw new DomainError("INSUFFICIENT_FUNDS", "You do not have enough jetons");
           }
@@ -512,6 +520,7 @@ export async function pokerAct(input: {
           if (requested > maxTo) {
             throw new DomainError("INSUFFICIENT_FUNDS", "You do not have enough jetons");
           }
+          // RAISE amount is raise-to (total street wager), never raise-by.
           const minTo = minRaiseTo(hand.streetWagerMillis, hand.lastRaiseSizeMillis);
           if (requested < minTo && requested < maxTo) {
             throw new DomainError("ILLEGAL_ACTION", "Raise must meet the minimum legal raise unless All In.", 409);
@@ -548,12 +557,16 @@ export async function pokerAct(input: {
           key: `${input.idempotencyKey}:ledger`,
           description: `AVAILABLE → LOCKED_POKER · ${input.type.toLowerCase()} ${formatJetons(pay)}`,
         });
+        const previousStreetWager = hand.streetWagerMillis;
+        const previousLastRaise = hand.lastRaiseSizeMillis;
         const nextStreet = participant.streetContributionMillis + pay;
         const nextTotal = participant.totalContributionMillis + pay;
-        const nextWager = nextStreet > hand.streetWagerMillis ? nextStreet : hand.streetWagerMillis;
+        const nextWager = nextStreet > previousStreetWager ? nextStreet : previousStreetWager;
+        // Full raise uses raise-to vs prior street wager — never treat raise-to as the new increment.
         const fullRaise =
           (input.type === "BET" || input.type === "RAISE" || input.type === "ALL_IN") &&
-          isFullRaise(nextStreet, hand.streetWagerMillis, hand.lastRaiseSizeMillis);
+          isFullRaise(nextStreet, previousStreetWager, previousLastRaise);
+        const nextLastRaise = nextLastRaiseSize(nextStreet, previousStreetWager, previousLastRaise);
         if (fullRaise) {
           await tx.pokerParticipant.updateMany({
             where: { handId: hand.id, status: "ACTIVE", id: { not: participant.id } },
@@ -582,11 +595,12 @@ export async function pokerAct(input: {
           where: { id: hand.id },
           data: {
             streetWagerMillis: nextWager,
-            lastRaiseSizeMillis: fullRaise ? nextStreet - hand.streetWagerMillis : hand.lastRaiseSizeMillis,
+            lastRaiseSizeMillis: nextLastRaise,
             lastAggressorPlayerId: fullRaise ? input.actorId : hand.lastAggressorPlayerId,
           },
         });
         hand.streetWagerMillis = nextWager;
+        hand.lastRaiseSizeMillis = nextLastRaise;
       }
       await tx.pokerAction.create({
         data: {

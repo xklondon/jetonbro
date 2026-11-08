@@ -198,6 +198,8 @@ test("a non-actor has no legal actions", () => {
 test("a full raise is at least the previous raise size", () => {
   expect(isFullRaise(20000n, 10000n, 10000n)).toBe(true);
   expect(isFullRaise(15000n, 10000n, 10000n)).toBe(false);
+  // Raise-to 30 over 10 with last=10 → increment 20, not absolute 30.
+  expect(isFullRaise(30000n, 10000n, 10000n)).toBe(true);
 });
 
 test("the street completes only after every live actor matches and has acted", () => {

@@ -1,5 +1,5 @@
 import { formatJetons, parseJetonInput } from "@/domain/money";
-import { legalActions, liveAmountToCall } from "@/domain/poker/actions";
+import { legalActions, liveAmountToCall, minRaiseTo } from "@/domain/poker/actions";
 import { cardLabel, readPokerCards } from "@/domain/poker/cards";
 import { STREET_ADVANCE, isBettingStreet, pokerStreetRail, type BettingStreet } from "@/domain/poker/phases";
 import { nextHandRotation } from "@/domain/poker/rotation";
@@ -247,6 +247,14 @@ export function buildPokerView(input: {
     smallBlind: money(input.smallBlind),
     bigBlind: money(input.bigBlind),
     streetWager: money(isBettingStreet(phase) ? (hand?.streetWagerMillis ?? 0n) : 0n),
+    lastRaiseSize: money(
+      isBettingStreet(phase) ? (hand?.lastRaiseSizeMillis ?? input.bigBlind) : 0n,
+    ),
+    minRaiseTo: money(
+      isBettingStreet(phase)
+        ? minRaiseTo(hand?.streetWagerMillis ?? 0n, hand?.lastRaiseSizeMillis ?? input.bigBlind)
+        : 0n,
+    ),
     viewerStatus: viewerPart?.status ?? "WAITING",
     seats,
     pots: (hand?.pots ?? []).map((pot) => ({
