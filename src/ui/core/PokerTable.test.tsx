@@ -95,6 +95,7 @@ function pokerView(overrides: Partial<PokerTableView> = {}): PokerTableView {
     communityCards: [],
     canEditCommunity: false,
     canEditHole: false,
+    canLeaveTable: false,
     streetRail: [
       { id: "DEAL", state: "done" },
       { id: "PRE-FLOP", state: "current" },
@@ -555,6 +556,7 @@ test("Poker card assistance stays in the table menu and off the felt", () => {
     createElement(ClassicPokerPlayer, {
       view: pokerView({
         canEditHole: true,
+    canLeaveTable: false,
         canEditCommunity: false,
         viewerId: "owner",
         seats: pokerView().seats.map((seat) =>

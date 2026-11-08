@@ -10,6 +10,7 @@ import {
   endAndDelete,
   distributeJetons,
   finalizeSetup,
+  leaveTable,
   removeMember,
   saveTable,
   setOutcomeFx,
@@ -230,6 +231,8 @@ async function dispatch(
       return assignBankDealer({ ...ctx, userId: String(p.userId) });
     case "removePlayer":
       return removeMember({ ...ctx, userId: String(p.userId) });
+    case "leaveTable":
+      return leaveTable(ctx);
     case "updateSettings":
       return updateTableSettings({
         ...ctx,
@@ -317,6 +320,7 @@ async function dispatch(
         seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
         savePersonalLedger: p.savePersonalLedger === true || p.savePersonalLedger === "true" ? "true" : p.savePersonalLedger === false || p.savePersonalLedger === "false" ? "false" : undefined,
         startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
+        resetBalances: p.resetBalances === true || p.resetBalances === "true",
         participantUserIds: typeof p.participantUserIds === "string" ? p.participantUserIds.split(",").filter(Boolean) : undefined,
         stakeType: p.stakeType ? String(p.stakeType) : undefined,
         currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,
@@ -335,6 +339,7 @@ async function dispatch(
         seatOrder: typeof p.seatOrder === "string" ? p.seatOrder.split(",").filter(Boolean) : undefined,
         savePersonalLedger: p.savePersonalLedger === true || p.savePersonalLedger === "true" ? "true" : p.savePersonalLedger === false || p.savePersonalLedger === "false" ? "false" : undefined,
         startingJetonsPerPlayer: p.startingJetonsPerPlayer ? String(p.startingJetonsPerPlayer) : undefined,
+        resetBalances: p.resetBalances === true || p.resetBalances === "true",
         participantUserIds: typeof p.participantUserIds === "string" ? p.participantUserIds.split(",").filter(Boolean) : undefined,
         stakeType: p.stakeType ? String(p.stakeType) : undefined,
         currencyCode: p.currencyCode ? String(p.currencyCode) : undefined,

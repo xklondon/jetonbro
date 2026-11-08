@@ -7,16 +7,18 @@ import { blackjackDealerControls, blackjackOwnerMenu } from "@/ui/core/blackjack
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
 import { orderBoxesForFelt } from "./blackjackBoxOrder";
+import { PremiumBlackjackCardSheet } from "./PremiumBlackjackCardSheet";
 import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
 import { PremiumShell } from "./PremiumShell";
+import { PremiumTrayCards } from "./PremiumTrayCards";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
 import { BlackjackBox, setupSeatBox } from "./primitives/BlackjackBox";
 import { BlackjackPayoutOverlay } from "./primitives/BlackjackSettlementBar";
 
-type Sheet = "closed" | "menu" | "dealer" | "pick" | "poker";
+type Sheet = "closed" | "menu" | "dealer" | "pick" | "poker" | "exit";
 
 function activeBoxes(view: BankTableView): BoxView[] {
   const fromPlayers = view.players.flatMap((player) => player.boxes);
@@ -67,6 +69,8 @@ export function PremiumBlackjackDealer({
   const [sheet, setSheet] = useState<Sheet>("closed");
   const [smallBlind, setSmallBlind] = useState("1");
   const [bigBlind, setBigBlind] = useState("2");
+  const [resetBalances, setResetBalances] = useState(false);
+  const [dealerCardsOpen, setDealerCardsOpen] = useState(false);
   const [dealerId, setDealerId] = useState(
     () => members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "",
   );
@@ -94,7 +98,8 @@ export function PremiumBlackjackDealer({
     seatedPlayerCount: joined.length,
   });
 
-  const showAddPlayer = setup || betting || payout;
+  // Owner INVITE stays available between hands / betting / payout — server still enforces owner-only.
+  const showAddPlayer = Boolean(view.isOwner && (setup || betting || payout));
   const showGiveJetons = Boolean(view.isOwner && view.actions.giveJetons && (setup || betting));
   /** Tray Change Game: Betting/Setup when safe; Payout always visible for owner (may be disabled). */
   const showChangeGame =
@@ -107,8 +112,13 @@ export function PremiumBlackjackDealer({
 
   function openChangeGame() {
     if (!changeGameEnabled) return;
+    setResetBalances(false);
     setSheet("pick");
   }
+
+  const dealerCardEnabled = Boolean(view.dealerHand?.canEdit);
+  const dealerRanks = view.dealerHand?.ranks ?? [];
+  const showExit = Boolean(view.actions.leaveTable && (setup || view.phase === "ROUND_COMPLETE"));
 
   function openDealer() {
     if (!ownerMenu.changeDealer) return;
@@ -262,7 +272,22 @@ export function PremiumBlackjackDealer({
             tertiary ??
             (showGiveJetons && showAddPlayer
               ? { label: "GIVE JETONS", onClick: () => setGiveOpen(true) }
-              : null)
+              : showExit
+                ? { label: "EXIT TABLE", onClick: () => setSheet("exit") }
+                : null)
+          }
+          trayCards={
+            <PremiumTrayCards
+              cards={dealerRanks}
+              enabled={dealerCardEnabled}
+              label="DEALER CARDS"
+              onAdd={() => setDealerCardsOpen(true)}
+              onRemoveLast={
+                dealerCardEnabled && dealerRanks.length
+                  ? () => void onCommand("removeCard", { dealer: "true" })
+                  : undefined
+              }
+            />
           }
         />
       }
@@ -403,7 +428,8 @@ export function PremiumBlackjackDealer({
             ) : null}
             {sheet === "poker" ? (
               <>
-                <h3>Texas Hold’em</h3>
+                <h3>CHANGE GAME</h3>
+                <p className="pm-sheet-hint">New game: POKER</p>
                 <label className="pm-sheet-field">
                   Small blind
                   <input
@@ -422,28 +448,74 @@ export function PremiumBlackjackDealer({
                     inputMode="decimal"
                   />
                 </label>
+                <label className="pm-sheet-check">
+                  <input
+                    type="checkbox"
+                    checked={resetBalances}
+                    onChange={(event) => setResetBalances(event.target.checked)}
+                    data-reset-balances="true"
+                  />
+                  <span>RESET ALL PLAYER BALANCES to {view.startingJetons?.label ?? "100"}</span>
+                </label>
+                {resetBalances ? (
+                  <p className="pm-sheet-warn">Every player will be reset to the starting allocation.</p>
+                ) : null}
                 <button
                   type="button"
                   className="pm-console-btn is-primary"
+                  data-change-game-confirm="true"
                   onClick={() => {
                     void onCommand("switchGame", {
                       game: "POKER",
                       smallBlind,
                       bigBlind,
                       seatOrder: members.map((member) => member.userId).join(","),
+                      resetBalances: resetBalances ? "true" : "false",
                     });
                     setSheet("closed");
                   }}
                 >
-                  SWITCH TO TEXAS HOLD’EM
+                  CONFIRM CHANGE
                 </button>
                 <button type="button" className="pm-sheet-cancel" onClick={() => setSheet("pick")}>
                   Back
                 </button>
               </>
             ) : null}
+            {sheet === "exit" ? (
+              <>
+                <h3>Exit table?</h3>
+                <p className="pm-sheet-hint">You will leave seating for future hands. Ledger history is kept.</p>
+                <div className="pm-sheet-actions">
+                  <button
+                    type="button"
+                    className="pm-console-btn is-primary"
+                    data-exit-confirm="true"
+                    onClick={() => {
+                      void onCommand("leaveTable");
+                      setSheet("closed");
+                    }}
+                  >
+                    CONFIRM EXIT
+                  </button>
+                  <button type="button" className="pm-sheet-cancel" onClick={() => setSheet("closed")}>
+                    CANCEL
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
+      ) : null}
+      {dealerCardsOpen ? (
+        <PremiumBlackjackCardSheet
+          title="Dealer cards"
+          ranks={dealerRanks}
+          enabled={dealerCardEnabled}
+          onAdd={(rank) => void onCommand("addCard", { dealer: "true", rank })}
+          onRemoveLast={() => void onCommand("removeCard", { dealer: "true" })}
+          onClose={() => setDealerCardsOpen(false)}
+        />
       ) : null}
     </PremiumShell>
   );

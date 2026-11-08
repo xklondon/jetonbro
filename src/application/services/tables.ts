@@ -989,13 +989,8 @@ export async function distributeJetons(input: {
     throw new DomainError("INVALID_AMOUNT", "Enter a jeton amount greater than zero.");
   }
   return withIdempotency(input.actorId, input.idempotencyKey, "distributeJetons", input, async () => {
-    // Poker buy-ins are Owner-only between hands; Blackjack still allows Owner or Bank/Dealer.
-    const peek = await prisma.table.findUnique({ where: { id: input.tableId } });
-    if (!peek) throw new NotFoundError("Table not found.");
-    const table =
-      peek.game === "POKER"
-        ? await requireOwner(input.tableId, input.actorId)
-        : await requireOwnerOrBank(input.tableId, input.actorId);
+    // BUY IN / allocate jetons is permanently Owner-only (independent of dealer rotation).
+    const table = await requireOwner(input.tableId, input.actorId);
     if (table.game === "POKER") {
       const hand = table.currentPokerHandId
         ? await prisma.pokerHand.findUnique({ where: { id: table.currentPokerHandId } })
@@ -1092,8 +1087,8 @@ export async function removeMember(input: {
       if (pokerHandIsOpen(hand?.phase ?? "POKER_SETUP")) {
         throw new ConflictError("Players can only be removed between hands.");
       }
-    } else if (table.currentPhase !== "TABLE_SETUP") {
-      throw new ConflictError("Players can only be removed before a round starts.");
+    } else if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
+      throw new ConflictError("Players can only be removed between hands.");
     }
     if (input.userId === table.ownerId) {
       throw new DomainError("CANNOT_REMOVE_OWNER", "The table owner cannot be removed.");
@@ -1114,6 +1109,72 @@ export async function removeMember(input: {
         await tx.tableMember.updateMany({
           where: { tableId: input.tableId, userId: table.ownerId },
           data: { isBankDealer: true },
+        });
+      }
+    });
+    publishTable(input.tableId);
+    return { ok: true };
+  });
+}
+
+/**
+ * Self-service EXIT TABLE between hands. Owner must CLOSE TABLE instead —
+ * ownership is never transferred silently.
+ */
+export async function leaveTable(input: {
+  actorId: string;
+  tableId: string;
+  idempotencyKey: string;
+}) {
+  return withIdempotency(input.actorId, input.idempotencyKey, "leaveTable", input, async () => {
+    const table = await prisma.table.findUnique({
+      where: { id: input.tableId },
+      include: {
+        members: { where: { leftAt: null } },
+        currentPokerHand: true,
+        pokerSeats: { orderBy: { orderIndex: "asc" } },
+      },
+    });
+    if (!table) throw new NotFoundError("Table not found.");
+    if (table.status === "ARCHIVED") throw new DomainError("TABLE_CLOSED", "This table is closed.");
+    const member = table.members.find((row) => row.userId === input.actorId);
+    if (!member) throw new DomainError("NOT_A_MEMBER", "You are not at this table.");
+    if (table.ownerId === input.actorId) {
+      throw new DomainError(
+        "OWNER_MUST_CLOSE",
+        "Table owners cannot exit. Close the table from Table Settings instead.",
+      );
+    }
+    if (table.game === "POKER") {
+      const phase = table.currentPokerHand?.phase ?? "POKER_SETUP";
+      if (pokerHandIsOpen(phase)) {
+        throw new ConflictError("You can only exit between hands.");
+      }
+    } else if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
+      throw new ConflictError("You can only exit between hands.");
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.tableMember.update({
+        where: { id: member.id },
+        data: { leftAt: new Date(), isBankDealer: false },
+      });
+      if (table.game === "POKER") {
+        await dropPokerSeat(tx, input.tableId, input.actorId);
+      }
+      if (table.bankDealerId === input.actorId) {
+        // Dealer left — ownership stays; bank/dealer authority returns to the owner so the next hand can start.
+        await tx.table.update({
+          where: { id: input.tableId },
+          data: { bankDealerId: table.ownerId, updatedAt: new Date() },
+        });
+        await tx.tableMember.updateMany({
+          where: { tableId: input.tableId, userId: table.ownerId, leftAt: null },
+          data: { isBankDealer: true },
+        });
+      } else {
+        await tx.table.update({
+          where: { id: input.tableId },
+          data: { updatedAt: new Date() },
         });
       }
     });

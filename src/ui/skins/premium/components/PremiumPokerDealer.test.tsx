@@ -109,6 +109,7 @@ function dealerView(extra: Partial<PokerTableView> = {}): PokerTableView {
     communityCards: [],
     canEditCommunity: false,
     canEditHole: false,
+    canLeaveTable: false,
     streetRail: [],
     ...extra,
   };

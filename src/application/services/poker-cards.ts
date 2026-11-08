@@ -1,9 +1,18 @@
 import { prisma } from "@/application/db";
 import { withIdempotency } from "@/application/idempotency";
 import { publishTable } from "@/application/realtime/bus";
-import { DomainError, ForbiddenError, NotFoundError, PhaseConflictError } from "@/domain/errors";
+import { ForbiddenError, NotFoundError, PhaseConflictError } from "@/domain/errors";
 import { assertCommunityCards, assertHoleCards, parsePokerCards } from "@/domain/poker/cards";
 import { pokerHandIsOpen } from "@/domain/tables/active-game";
+
+function holeAssistPhases(phase: string | null | undefined): boolean {
+  if (!phase) return true; // POKER_SETUP before first hand
+  return (
+    phase === "POKER_SETUP" ||
+    phase === "HAND_COMPLETE" ||
+    pokerHandIsOpen(phase)
+  );
+}
 
 export async function setPokerCommunityCards(input: {
   actorId: string;
@@ -45,19 +54,38 @@ export async function setPokerHoleCards(input: {
     await prisma.$transaction(async (tx) => {
       const table = await tx.table.findUnique({
         where: { id: input.tableId },
-        include: { currentPokerHand: { include: { participants: true } } },
+        include: {
+          currentPokerHand: { include: { participants: true } },
+          pokerSeats: true,
+        },
       });
       if (!table) throw new NotFoundError("Table not found.");
-      if (table.game !== "POKER" || !table.currentPokerHand || !pokerHandIsOpen(table.currentPokerHand.phase)) {
-        throw new PhaseConflictError("Enter hole cards", table.currentPokerHand?.phase ?? "none", "an active Hold’em hand");
+      if (table.game !== "POKER") {
+        throw new PhaseConflictError("Enter hole cards", "none", "Poker");
       }
-      const participant = table.currentPokerHand.participants.find((item) => item.playerId === input.actorId);
-      if (!participant) throw new ForbiddenError("Only seated Players can enter hole cards.");
+      const phase = table.currentPokerHand?.phase ?? "POKER_SETUP";
+      if (!holeAssistPhases(phase) || table.status === "ARCHIVED") {
+        throw new PhaseConflictError("Enter hole cards", phase, "an eligible Hold’em stage");
+      }
+      const seat = table.pokerSeats.find((item) => item.playerId === input.actorId);
+      if (!seat) throw new ForbiddenError("Only seated Players can enter hole cards.");
       const cards = parsePokerCards(input.cards);
       assertHoleCards(cards);
-      await tx.pokerParticipant.update({
-        where: { id: participant.id },
-        data: { holeCards: cards },
+      const participant = table.currentPokerHand?.participants.find((item) => item.playerId === input.actorId);
+      if (participant && pokerHandIsOpen(phase)) {
+        await tx.pokerParticipant.update({
+          where: { id: participant.id },
+          data: { holeCards: cards },
+        });
+      } else if (participant && phase === "HAND_COMPLETE") {
+        await tx.pokerParticipant.update({
+          where: { id: participant.id },
+          data: { holeCards: cards },
+        });
+      }
+      await tx.pokerSeat.update({
+        where: { id: seat.id },
+        data: { assistCards: cards },
       });
       await tx.table.update({ where: { id: table.id }, data: { updatedAt: new Date() } });
     });

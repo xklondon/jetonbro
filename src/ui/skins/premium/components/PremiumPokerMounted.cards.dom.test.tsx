@@ -120,6 +120,7 @@ function baseView(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, extra
     communityCards: [],
     canEditCommunity: false,
     canEditHole: true,
+    canLeaveTable: false,
     streetRail: [],
     ...extra,
   };
@@ -153,6 +154,7 @@ describe("Premium Poker mounted tray + card entry", () => {
           legalActions: [],
           currentActorId: null,
           canEditHole: false,
+    canLeaveTable: false,
           seats: [
             seat("owner", "Bank", 0, { status: "WAITING" }),
             seat("p1", "Vi", 1, { status: "WAITING" }),
@@ -202,7 +204,7 @@ describe("Premium Poker mounted tray + card entry", () => {
     const commands: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerDealer, {
-        view: baseView("POKER_DEALER", "owner", { canEditHole: true, canEditCommunity: false }),
+        view: baseView("POKER_DEALER", "owner", { canEditHole: true, canLeaveTable: false, canEditCommunity: false }),
         members,
         onCommand: (command, payload = {}) => {
           commands.push({ command, payload });
@@ -211,15 +213,10 @@ describe("Premium Poker mounted tray + card entry", () => {
       }),
     );
     await flush();
-    const menu = host.querySelector('button[aria-label="Menu"]') as HTMLButtonElement | null;
-    expect(menu).toBeTruthy();
-    expect(menu?.disabled).toBe(false);
-    menu!.click();
+    expect(host.querySelector('[data-tray-add-cards="true"]')).toBeTruthy();
+    (host.querySelector('[data-tray-add-cards="true"]') as HTMLButtonElement).click();
     await flush();
-    expect(host.querySelector('[data-poker-card-tools="true"]')).toBeTruthy();
-    (host.querySelector('[data-edit-hole="true"]') as HTMLButtonElement).click();
-    await flush();
-    expect(host.querySelector('[data-poker-card-sheet="Hole cards"]')).toBeTruthy();
+    expect(host.querySelector('[data-poker-card-sheet="Your cards"]')).toBeTruthy();
     (host.querySelector('[data-card-save="true"]') as HTMLButtonElement).click();
     await flush();
     expect(commands.some((c) => c.command === "setPokerHoleCards")).toBe(true);
@@ -231,6 +228,7 @@ describe("Premium Poker mounted tray + card entry", () => {
       createElement(PremiumPokerPlayer, {
         view: baseView("POKER_PLAYER", "p1", {
           canEditHole: true,
+    canLeaveTable: false,
           seats: [
             seat("owner", "Bank", 0, {
               isDealer: true,
@@ -259,11 +257,10 @@ describe("Premium Poker mounted tray + card entry", () => {
     expect(host.querySelector('[data-hole-cards="true"]')).toBeTruthy();
     expect(host.querySelector('[data-poker-card="AS"]')).toBeTruthy();
     expect(host.querySelector('[data-hole-cards="hidden"]')).toBeTruthy();
-    (host.querySelector('button[aria-label="Menu"]') as HTMLButtonElement).click();
+    expect(host.querySelector('[data-tray-card-faces="true"]')?.textContent).toContain("A♠");
+    (host.querySelector('[data-tray-add-cards="true"]') as HTMLButtonElement).click();
     await flush();
-    (host.querySelector('[data-edit-hole="true"]') as HTMLButtonElement).click();
-    await flush();
-    expect(host.querySelector('[data-poker-card-sheet="Hole cards"]')).toBeTruthy();
+    expect(host.querySelector('[data-poker-card-sheet="Your cards"]')).toBeTruthy();
     (host.querySelector('[data-card-save="true"]') as HTMLButtonElement).click();
     await flush();
     expect(commands.some((c) => c.command === "setPokerHoleCards")).toBe(true);
@@ -276,6 +273,7 @@ describe("Premium Poker mounted tray + card entry", () => {
         view: baseView("POKER_DEALER", "owner", {
           phase: "FLOP",
           canEditHole: true,
+          canLeaveTable: false,
           canEditCommunity: true,
           legalActions: [],
           currentActorId: null,
@@ -288,9 +286,11 @@ describe("Premium Poker mounted tray + card entry", () => {
       }),
     );
     await flush();
-    (host.querySelector('button[aria-label="Menu"]') as HTMLButtonElement).click();
-    await flush();
-    (host.querySelector('[data-edit-board="true"]') as HTMLButtonElement).click();
+    const boardAdd = [...host.querySelectorAll('[data-tray-add-cards="true"]')].find((btn) =>
+      btn.closest('[data-tray-cards="true"]')?.textContent?.includes("BOARD"),
+    ) as HTMLButtonElement | undefined;
+    expect(boardAdd).toBeTruthy();
+    boardAdd!.click();
     await flush();
     expect(host.querySelector('[data-poker-card-sheet="Board cards"]')).toBeTruthy();
     (host.querySelector('[data-card-save="true"]') as HTMLButtonElement).click();

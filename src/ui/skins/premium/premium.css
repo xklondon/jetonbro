@@ -1332,6 +1332,90 @@
   font-size: 10px;
 }
 
+[data-skin="premium"] .pm-tray-cards {
+  display: grid;
+  gap: 4px;
+  padding: 4px 2px 2px;
+  border-top: 1px solid rgba(212, 184, 130, 0.18);
+  min-height: 2.6rem;
+}
+
+[data-skin="premium"] .pm-tray-cards-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+[data-skin="premium"] .pm-tray-cards-head small {
+  font: 700 9px/1 var(--pm-sans);
+  letter-spacing: 0.08em;
+  color: rgba(232, 220, 190, 0.72);
+}
+
+[data-skin="premium"] .pm-tray-cards-actions {
+  display: flex;
+  gap: 4px;
+}
+
+[data-skin="premium"] .pm-tray-cards-btn {
+  min-height: 1.55rem;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--pm-ivory);
+  font: 700 9px/1 var(--pm-sans);
+  letter-spacing: 0.06em;
+}
+
+[data-skin="premium"] .pm-tray-cards-btn.is-primary {
+  border-color: rgba(212, 184, 130, 0.7);
+  background: rgba(212, 184, 130, 0.16);
+  color: var(--pm-gold-hi);
+}
+
+[data-skin="premium"] .pm-tray-cards-btn:disabled {
+  opacity: 0.45;
+}
+
+[data-skin="premium"] .pm-tray-cards-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  min-height: 1.7rem;
+}
+
+[data-skin="premium"] .pm-tray-cards-empty {
+  font: 600 11px/1 var(--pm-sans);
+  color: rgba(232, 220, 190, 0.4);
+}
+
+[data-skin="premium"] .pm-exit-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+[data-skin="premium"] .pm-sheet-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font: 600 12px/1.35 var(--pm-sans);
+  color: var(--pm-ivory);
+}
+
+[data-skin="premium"] .pm-sheet-check input {
+  margin-top: 2px;
+}
+
+[data-skin="premium"] .pm-sheet-warn {
+  margin: 0;
+  font: 600 11px/1.35 var(--pm-sans);
+  color: #f0c27a;
+}
+
 [data-skin="premium"] .pm-playing-card.is-back {
   background:
     repeating-linear-gradient(45deg, rgba(80, 20, 20, 0.55) 0 2px, transparent 2px 5px),

@@ -93,6 +93,7 @@ function awardView(overrides: Partial<PokerTableView> = {}): PokerTableView {
     communityCards: [],
     canEditCommunity: false,
     canEditHole: false,
+    canLeaveTable: false,
     streetRail: [],
     ...overrides,
   };

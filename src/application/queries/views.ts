@@ -93,6 +93,12 @@ export type PlayerPermittedActions = {
   double: boolean;
   split: boolean;
   insurance: boolean;
+  /** Owner-only management (independent of dealer assignment). */
+  addPlayer?: boolean;
+  giveJetons?: boolean;
+  changeBank?: boolean;
+  switchGame?: boolean;
+  leaveTable?: boolean;
 };
 
 export type BankPlayerGroupView = {
@@ -137,6 +143,7 @@ export type BankPermittedActions = {
   saveTable: boolean;
   closeTable: boolean;
   switchGame: boolean;
+  leaveTable?: boolean;
 };
 
 export type OutcomeFxView = {
@@ -163,6 +170,13 @@ export type PlayerTableView = {
   bankLimitReached?: boolean;
   isOwner?: boolean;
   canSwitchGame?: boolean;
+  canLeaveTable?: boolean;
+  switchBlockedReason?: string | null;
+  guestJoinUrl?: string | null;
+  verifiedJoinUrl?: string | null;
+  invitations?: InvitationView[];
+  emailConfigured?: boolean;
+  startingJetons?: MoneyView;
   closePreview?: CloseTablePreview | null;
   gameSession?: GameSessionView | null;
 };
@@ -350,6 +364,8 @@ export type PokerTableView = {
   communityCards: PokerCardView[];
   canEditCommunity: boolean;
   canEditHole: boolean;
+  /** EXIT TABLE between hands (not during an open hand). Owner must close instead. */
+  canLeaveTable: boolean;
   streetRail: PokerStreetRailView[];
   gameSession?: GameSessionView | null;
   outcomeFx?: OutcomeFxView;

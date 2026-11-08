@@ -122,6 +122,7 @@ function view(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, actorId: 
     communityCards: [],
     canEditCommunity: false,
     canEditHole: true,
+    canLeaveTable: false,
     streetRail: [],
   };
 }

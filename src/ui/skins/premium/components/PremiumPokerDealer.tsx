@@ -14,8 +14,9 @@ import { communityCardLimit, POKER_ASSIST_HOLE_MAX } from "@/domain/poker/cards"
 import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
-import { PremiumPokerCardSheet, PremiumPokerCardToolsMenu } from "./PremiumPokerCardSheet";
+import { PremiumPokerCardSheet } from "./PremiumPokerCardSheet";
 import { PremiumShell } from "./PremiumShell";
+import { PremiumTrayCards } from "./PremiumTrayCards";
 import { pokerAggressionTertiary } from "./pokerAggressionTertiary";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerAwardOverlay } from "./primitives/PokerAwardOverlay";
@@ -60,10 +61,11 @@ export function PremiumPokerDealer({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [giveOpen, setGiveOpen] = useState(false);
   const [fxSettingsOpen, setFxSettingsOpen] = useState(false);
-  const [cardToolsOpen, setCardToolsOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
+  const [exitOpen, setExitOpen] = useState(false);
+  const [changeOpen, setChangeOpen] = useState(false);
+  const [resetBalances, setResetBalances] = useState(false);
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
-  const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
   const controls = pokerControls(view);
   const startHand = controls.find((control) => control.id === "startHand");
   const nextHand = controls.find((control) => control.id === "nextHand");
@@ -197,8 +199,10 @@ export function PremiumPokerDealer({
     };
   }
 
-  const showAdd = Boolean(view.canAddPlayer && (setup || view.phase === "HAND_COMPLETE"));
-  const showGive = Boolean(giveJetons && (setup || betweenHands));
+  const showAdd = Boolean(view.isOwner && view.canAddPlayer && (setup || view.phase === "HAND_COMPLETE"));
+  const showGive = Boolean(view.isOwner && giveJetons && (setup || betweenHands));
+  const showChange = Boolean(view.isOwner && view.canSwitchGame && (setup || betweenHands));
+  const showExit = Boolean(view.canLeaveTable && (setup || betweenHands));
   if (showAdd && !secondary) {
     secondary = {
       label: "ADD PLAYER",
@@ -219,6 +223,26 @@ export function PremiumPokerDealer({
     secondary = {
       label: "BUY-IN",
       onClick: () => setGiveOpen(true),
+    };
+  }
+  if (showChange && !tertiary) {
+    tertiary = {
+      label: "CHANGE GAME",
+      onClick: () => {
+        setResetBalances(false);
+        setChangeOpen(true);
+      },
+    };
+  }
+  if (showExit && !secondary) {
+    secondary = {
+      label: "EXIT TABLE",
+      onClick: () => setExitOpen(true),
+    };
+  } else if (showExit && !tertiary) {
+    tertiary = {
+      label: "EXIT TABLE",
+      onClick: () => setExitOpen(true),
     };
   }
 
@@ -245,7 +269,6 @@ export function PremiumPokerDealer({
       title="JETONBRO"
       badges={badges}
       board="POKER_DEALER"
-      onMenu={showCardTools ? () => setCardToolsOpen(true) : undefined}
       dock={
         <CasinoConsole
           variant="default"
@@ -273,6 +296,33 @@ export function PremiumPokerDealer({
           maxChipAmount={maxChip}
           onChip={addChip}
           allIn={allIn}
+          trayCards={
+            <>
+              {ownerSeated ? (
+                <PremiumTrayCards
+                  cards={ownHole}
+                  enabled={view.canEditHole}
+                  onAdd={() => setCards("hole")}
+                  onRemoveLast={
+                    view.canEditHole && ownHole.length
+                      ? () =>
+                          void onCommand("setPokerHoleCards", {
+                            cards: JSON.stringify(ownHole.slice(0, -1).map((c) => ({ rank: c.rank, suit: c.suit }))),
+                          })
+                      : undefined
+                  }
+                />
+              ) : null}
+              {view.canEditCommunity ? (
+                <PremiumTrayCards
+                  cards={view.communityCards}
+                  enabled={view.canEditCommunity}
+                  label="BOARD"
+                  onAdd={() => setCards("board")}
+                />
+              ) : null}
+            </>
+          }
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}
@@ -340,21 +390,6 @@ export function PremiumPokerDealer({
         seats={view.canReorderSeats ? view.seats : null}
         canReorderSeats={view.canReorderSeats}
       />
-      {cardToolsOpen ? (
-        <PremiumPokerCardToolsMenu
-          canEditHole={view.canEditHole}
-          canEditCommunity={view.canEditCommunity}
-          onHole={() => {
-            setCardToolsOpen(false);
-            setCards("hole");
-          }}
-          onBoard={() => {
-            setCardToolsOpen(false);
-            setCards("board");
-          }}
-          onClose={() => setCardToolsOpen(false)}
-        />
-      ) : null}
       {cards === "board" ? (
         <PremiumPokerCardSheet
           title="Board cards"
@@ -366,12 +401,75 @@ export function PremiumPokerDealer({
       ) : null}
       {cards === "hole" ? (
         <PremiumPokerCardSheet
-          title="Hole cards"
+          title="Your cards"
           cards={ownHole}
           max={POKER_ASSIST_HOLE_MAX}
           onSave={(next) => void onCommand("setPokerHoleCards", { cards: JSON.stringify(next) })}
           onClose={() => setCards(null)}
         />
+      ) : null}
+      {exitOpen ? (
+        <div className="pm-sheet-mask" role="dialog" aria-modal="true" aria-label="Exit table">
+          <div className="pm-sheet">
+            <h3>Exit table?</h3>
+            <p className="pm-sheet-hint">You will leave seating for future hands. Ledger history is kept.</p>
+            <div className="pm-sheet-actions">
+              <button
+                type="button"
+                className="pm-console-btn is-primary"
+                data-exit-confirm="true"
+                onClick={() => {
+                  void onCommand("leaveTable");
+                  setExitOpen(false);
+                }}
+              >
+                CONFIRM EXIT
+              </button>
+              <button type="button" className="pm-sheet-cancel" onClick={() => setExitOpen(false)}>
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {changeOpen ? (
+        <div className="pm-sheet-mask" role="dialog" aria-modal="true" aria-label="Change game">
+          <div className="pm-sheet">
+            <h3>CHANGE GAME</h3>
+            <p className="pm-sheet-hint">New game: BLACKJACK</p>
+            <label className="pm-sheet-check">
+              <input
+                type="checkbox"
+                checked={resetBalances}
+                onChange={(event) => setResetBalances(event.target.checked)}
+                data-reset-balances="true"
+              />
+              <span>RESET ALL PLAYER BALANCES to {startingJetons ?? "100"}</span>
+            </label>
+            {resetBalances ? (
+              <p className="pm-sheet-warn">Every player will be reset to the starting allocation.</p>
+            ) : null}
+            <div className="pm-sheet-actions">
+              <button
+                type="button"
+                className="pm-console-btn is-primary"
+                data-change-game-confirm="true"
+                onClick={() => {
+                  void onCommand("switchGame", {
+                    game: "BLACKJACK",
+                    resetBalances: resetBalances ? "true" : "false",
+                  });
+                  setChangeOpen(false);
+                }}
+              >
+                CONFIRM CHANGE
+              </button>
+              <button type="button" className="pm-sheet-cancel" onClick={() => setChangeOpen(false)}>
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </PremiumShell>
   );

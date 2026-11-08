@@ -130,6 +130,7 @@ export function CasinoConsole({
   showTray = false,
   reserveTray = false,
   variant = "default",
+  trayCards = null,
   children,
 }: {
   primary?: DockAction | null;
@@ -160,6 +161,8 @@ export function CasinoConsole({
   showTray?: boolean;
   reserveTray?: boolean;
   variant?: "default" | "blackjack" | "setup";
+  /** Compact YOUR CARDS / ADD CARDS strip above the jeton tray. */
+  trayCards?: ReactNode;
   children?: ReactNode;
 }) {
   const trayVisible = showTray;
@@ -254,6 +257,7 @@ export function CasinoConsole({
                 <span className="pm-console-available-rule" aria-hidden="true" />
               </div>
             ) : null}
+            {trayCards}
             {trayVisible ? (
               <div
                 className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
@@ -375,6 +379,7 @@ export function CasinoConsole({
                 {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
               </div>
             </div>
+            {trayCards}
             {trayVisible ? (
               <div
                 className={`pm-console-tray${walletInTray ? " has-available" : ""}`}

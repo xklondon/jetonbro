@@ -121,6 +121,7 @@ function actingView(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string): Po
     communityCards: [],
     canEditCommunity: false,
     canEditHole: false,
+    canLeaveTable: false,
     streetRail: [],
   };
 }

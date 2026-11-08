@@ -401,11 +401,13 @@ model BettingBox {
 }
 
 model PokerSeat {
-  id         String  @id @default(cuid())
-  tableId    String
-  playerId   String
-  orderIndex Int
-  sittingOut Boolean @default(false)
+  id          String  @id @default(cuid())
+  tableId     String
+  playerId    String
+  orderIndex  Int
+  sittingOut  Boolean @default(false)
+  /** Display-only Card Assist ranks between hands / before the first deal. */
+  assistCards Json?
 
   table  Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
   player User  @relation(fields: [playerId], references: [id])

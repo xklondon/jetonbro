@@ -228,6 +228,7 @@ function poker(extra: Partial<PokerTableView> = {}): PokerTableView {
     communityCards: [],
     canEditCommunity: false,
     canEditHole: false,
+    canLeaveTable: false,
     streetRail: [
       { id: "PRE_FLOP", state: "current" },
       { id: "FLOP", state: "next" },

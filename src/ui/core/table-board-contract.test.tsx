@@ -444,6 +444,7 @@ test("Poker Dealer and Player boards stay unmerged", () => {
     communityCards: [],
     canEditCommunity: false,
     canEditHole: false,
+    canLeaveTable: false,
     streetRail: [{ id: "PRE-FLOP", state: "current" }],
   };
   const dealer = renderToStaticMarkup(

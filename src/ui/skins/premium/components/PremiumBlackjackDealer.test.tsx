@@ -233,7 +233,8 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(source).toContain("smallBlind");
     expect(source).toContain("bigBlind");
     expect(source).toContain("seatOrder");
-    expect(source).toContain("SWITCH TO TEXAS HOLD’EM");
+    expect(source).toContain("CONFIRM CHANGE");
+    expect(source).toContain("resetBalances");
     expect(source).toContain('onCommand("assignBank"');
   });
 

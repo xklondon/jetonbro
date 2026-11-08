@@ -11,8 +11,9 @@ import { pokerPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
 import { communityCardLimit, POKER_ASSIST_HOLE_MAX } from "@/domain/poker/cards";
 import { PremiumOutcomeFx } from "./PremiumOutcomeFx";
-import { PremiumPokerCardSheet, PremiumPokerCardToolsMenu } from "./PremiumPokerCardSheet";
+import { PremiumPokerCardSheet } from "./PremiumPokerCardSheet";
 import { PremiumShell } from "./PremiumShell";
+import { PremiumTrayCards } from "./PremiumTrayCards";
 import { pokerAggressionTertiary } from "./pokerAggressionTertiary";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { PokerTable } from "./primitives/PokerTable";
@@ -42,8 +43,8 @@ export function PremiumPokerPlayer({
   const legal = visiblePokerLegalActions(view);
   const trio = pokerDockTrio(legal);
   const canStartNext = Boolean(handDone && view.canNextHand);
-  const [cardToolsOpen, setCardToolsOpen] = useState(false);
   const [cards, setCards] = useState<"hole" | "board" | null>(null);
+  const [exitOpen, setExitOpen] = useState(false);
   /** Fixed tray through every Poker phase — same size/position. */
   const showTray = true;
   const {
@@ -67,7 +68,6 @@ export function PremiumPokerPlayer({
   } = usePokerPendingBet(view, liveStreet);
   const turnStatus = liveStreet && phaseCopy.instruction ? phaseCopy.instruction : null;
   const ownHole = view.seats.find((seat) => seat.userId === view.viewerId)?.holeCards ?? [];
-  const showCardTools = Boolean(view.canEditHole || view.canEditCommunity);
   const [fxSeed, setFxSeed] = useState("");
   const [fxTone, setFxTone] = useState<"win" | "loss">("win");
   const [fxActive, setFxActive] = useState(false);
@@ -107,11 +107,19 @@ export function PremiumPokerPlayer({
     },
   );
 
+  const betweenHands = setup || handDone;
+  const exitControl =
+    betweenHands && view.canLeaveTable
+      ? {
+          label: "EXIT TABLE",
+          onClick: () => setExitOpen(true),
+        }
+      : null;
+
   return (
     <PremiumShell
       title="JETONBRO"
       board="POKER_PLAYER"
-      onMenu={showCardTools ? () => setCardToolsOpen(true) : undefined}
       dock={
         <CasinoConsole
           variant="default"
@@ -139,6 +147,21 @@ export function PremiumPokerPlayer({
           maxChipAmount={maxChip}
           onChip={addChip}
           allIn={allIn}
+          trayCards={
+            <PremiumTrayCards
+              cards={ownHole}
+              enabled={view.canEditHole}
+              onAdd={() => setCards("hole")}
+              onRemoveLast={
+                view.canEditHole && ownHole.length
+                  ? () =>
+                      void onCommand("setPokerHoleCards", {
+                        cards: JSON.stringify(ownHole.slice(0, -1).map((c) => ({ rank: c.rank, suit: c.suit }))),
+                      })
+                  : undefined
+              }
+            />
+          }
           primary={
             canStartNext
               ? {
@@ -150,17 +173,19 @@ export function PremiumPokerPlayer({
                     label: trio.respond.label,
                     onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
                   }
-                : null
+                : exitControl
           }
           secondary={
             canStartNext
-              ? null
+              ? exitControl
               : trio.fold
                 ? {
                     label: trio.fold.label,
                     onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
                   }
-                : null
+                : exitControl && !trio.respond
+                  ? exitControl
+                  : null
           }
           tertiary={canStartNext ? null : tertiary}
         />
@@ -181,21 +206,6 @@ export function PremiumPokerPlayer({
         pendingChips={composeOpen ? pendingChips : []}
       />
       <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
-      {cardToolsOpen ? (
-        <PremiumPokerCardToolsMenu
-          canEditHole={view.canEditHole}
-          canEditCommunity={view.canEditCommunity}
-          onHole={() => {
-            setCardToolsOpen(false);
-            setCards("hole");
-          }}
-          onBoard={() => {
-            setCardToolsOpen(false);
-            setCards("board");
-          }}
-          onClose={() => setCardToolsOpen(false)}
-        />
-      ) : null}
       {cards === "board" ? (
         <PremiumPokerCardSheet
           title="Board cards"
@@ -207,12 +217,36 @@ export function PremiumPokerPlayer({
       ) : null}
       {cards === "hole" ? (
         <PremiumPokerCardSheet
-          title="Hole cards"
+          title="Your cards"
           cards={ownHole}
           max={POKER_ASSIST_HOLE_MAX}
           onSave={(next) => void onCommand("setPokerHoleCards", { cards: JSON.stringify(next) })}
           onClose={() => setCards(null)}
         />
+      ) : null}
+      {exitOpen ? (
+        <div className="pm-sheet-mask" role="dialog" aria-modal="true" aria-label="Exit table">
+          <div className="pm-sheet">
+            <h3>Exit table?</h3>
+            <p className="pm-sheet-hint">You will leave seating for future hands. Ledger history is kept.</p>
+            <div className="pm-sheet-actions">
+              <button
+                type="button"
+                className="pm-console-btn is-primary"
+                data-exit-confirm="true"
+                onClick={() => {
+                  void onCommand("leaveTable");
+                  setExitOpen(false);
+                }}
+              >
+                CONFIRM EXIT
+              </button>
+              <button type="button" className="pm-sheet-cancel" onClick={() => setExitOpen(false)}>
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </PremiumShell>
   );

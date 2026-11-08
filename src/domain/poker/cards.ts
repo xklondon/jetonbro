@@ -71,8 +71,8 @@ export function assertCommunityCards(phase: string, cards: PokerCard[]) {
   }
 }
 
-/** Card Assist may record more than two ranks (display-only); hard cap keeps payloads bounded. */
-export const POKER_ASSIST_HOLE_MAX = 7;
+/** Display-only Card Assist for a player: 0–5 ranks (never evaluates hands). */
+export const POKER_ASSIST_HOLE_MAX = 5;
 
 export function assertHoleCards(cards: PokerCard[]) {
   if (cards.length > POKER_ASSIST_HOLE_MAX) {

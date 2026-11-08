@@ -182,25 +182,32 @@ async function allocateSession(
     tableId: string;
     sessionId: string;
     actorId: string;
+    /** Default / reset allocation when amountsByUserId omits a member. */
     amount: bigint;
+    /** Optional per-player carry-forward (preserve balances across game switch). */
+    amountsByUserId?: Map<string, bigint>;
+    resetBalances: boolean;
     members: { id: string; userId: string }[];
     dealerId: string | null;
   },
 ): Promise<void> {
   for (const member of input.members) {
-    if (input.amount > 0n) {
-      const { before, after } = await creditTableAvailable(tx, member.id, input.amount);
+    const amount = input.amountsByUserId?.get(member.userId) ?? input.amount;
+    if (amount > 0n) {
+      const { before, after } = await creditTableAvailable(tx, member.id, amount);
       await appendLedger(tx, {
         playerId: member.userId,
         actorId: input.actorId,
         tableId: input.tableId,
         gameSessionId: input.sessionId,
         transactionType: "GAME_SESSION_OPEN",
-        amountMillis: input.amount,
+        amountMillis: amount,
         balanceBeforeMillis: before,
         balanceAfterMillis: after,
         idempotencyKey: `game-session-open:${input.sessionId}:${member.userId}`,
-        description: `GAME_SESSION_OPEN · ${formatJetons(input.amount)}`,
+        description: input.resetBalances
+          ? `GAME_SESSION_OPEN · reset ${formatJetons(amount)}`
+          : `GAME_SESSION_OPEN · carry ${formatJetons(amount)}`,
       });
     }
     await tx.tableMember.update({
@@ -215,7 +222,7 @@ async function allocateSession(
         verifiedUserId: user.isGuest ? null : user.id,
         displayName: displayName(user),
         playedAsDealer: member.userId === input.dealerId,
-        startingBalanceMillis: input.amount,
+        startingBalanceMillis: amount,
       },
     });
   }
@@ -228,6 +235,8 @@ export async function startNewGame(input: {
   game: string;
   participantUserIds?: string[];
   startingJetonsPerPlayer?: string;
+  /** When true, every player is reset to the starting allocation. Default: preserve balances. */
+  resetBalances?: boolean | string;
   savePersonalLedger?: boolean | string;
   stakeType?: string;
   currencyCode?: string;
@@ -245,6 +254,7 @@ export async function startNewGame(input: {
     }
     const stake = parseStakeSpec(input);
     const publishPersonal = input.savePersonalLedger === true || input.savePersonalLedger === "true";
+    const resetBalances = input.resetBalances === true || input.resetBalances === "true";
     await prisma.$transaction(async (tx) => {
       const table = await requireOwnerTable(tx, input.tableId, input.actorId);
       assertUnlocked(table);
@@ -265,6 +275,8 @@ export async function startNewGame(input: {
       if (selected.length === 0) {
         throw new DomainError("NO_PLAYERS", "Select at least one participant.");
       }
+      // Capture available balances before close zeros them (default: carry into the next game).
+      const preserved = new Map(selected.map((member) => [member.userId, member.availableMillis]));
       await closeCurrentSession(tx, table, input.actorId, publishPersonal);
 
       const stakeFields = stakePersistFields(stake);
@@ -285,6 +297,10 @@ export async function startNewGame(input: {
           : input.game === "POKER"
             ? selected[0]!.userId
             : table.bankDealerId;
+
+      const amountsByUserId = resetBalances ? undefined : preserved;
+      const fundedAmountFor = (userId: string) =>
+        resetBalances ? starting : (preserved.get(userId) ?? 0n);
 
       if (input.game === "POKER") {
         if (selected.length < 2) {
@@ -319,10 +335,15 @@ export async function startNewGame(input: {
           sessionId: session.id,
           actorId: input.actorId,
           amount: starting,
+          amountsByUserId,
+          resetBalances,
           members: selected,
           dealerId: dealerUserId,
         });
-        const funded = selected.map((member) => ({ playerId: member.userId, availableMillis: starting }));
+        const funded = selected.map((member) => ({
+          playerId: member.userId,
+          availableMillis: fundedAmountFor(member.userId),
+        }));
         assertFundedPokerDealer({ dealerPlayerId: dealerUserId!, seats: funded, sessionStarting: true });
         return;
       }
@@ -345,6 +366,8 @@ export async function startNewGame(input: {
         sessionId: session.id,
         actorId: input.actorId,
         amount: starting,
+        amountsByUserId,
+        resetBalances,
         members: selected,
         dealerId: dealerUserId,
       });

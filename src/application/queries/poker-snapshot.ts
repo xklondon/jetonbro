@@ -90,7 +90,7 @@ export function buildPokerView(input: {
   smallBlind: bigint;
   bigBlind: bigint;
   members: { userId: string; availableMillis: bigint; user: { name: string | null; email: string } }[];
-  seats: { playerId: string; orderIndex: number; sittingOut: boolean }[];
+  seats: { playerId: string; orderIndex: number; sittingOut: boolean; assistCards?: unknown }[];
   hand: Hand | null;
   tableClosed: boolean;
   handsStarted?: number;
@@ -98,8 +98,10 @@ export function buildPokerView(input: {
 }): PokerTableView {
   const { hand, viewerId, isOwner } = input;
   const memberById = new Map(input.members.map((member) => [member.userId, member]));
+  const seatById = new Map(input.seats.map((seat) => [seat.playerId, seat]));
   const nameOf = (id: string) => displayName(memberById.get(id)?.user ?? { name: null, email: id });
   const phase = hand?.phase ?? "POKER_SETUP";
+  const viewerSeated = seatById.has(viewerId);
   const players = (hand?.participants ?? []).map((item) => ({
     playerId: item.playerId,
     status: item.status,
@@ -198,11 +200,20 @@ export function buildPokerView(input: {
         isActor: actorId === item.playerId,
         sittingOut: false,
         orderIndex: item.seatOrder,
-        hasHoleCards: Boolean("holeCards" in item && readPokerCards(item.holeCards ?? []).length),
+        hasHoleCards: (() => {
+          const fromHand = "holeCards" in item ? readPokerCards(item.holeCards ?? []).length : 0;
+          const fromSeat = readPokerCards(seatById.get(item.playerId)?.assistCards ?? []).length;
+          return Boolean(fromHand || fromSeat);
+        })(),
         holeCards:
-          item.playerId === viewerId && "holeCards" in item
+          item.playerId === viewerId
             ? (() => {
-                const cards = readPokerCards(item.holeCards ?? []).map((card) => ({ ...card, label: cardLabel(card) }));
+                const fromHand = "holeCards" in item ? readPokerCards(item.holeCards ?? []) : [];
+                const fromSeat = readPokerCards(seatById.get(item.playerId)?.assistCards ?? []);
+                const cards = (fromHand.length ? fromHand : fromSeat).map((card) => ({
+                  ...card,
+                  label: cardLabel(card),
+                }));
                 return cards.length ? cards : null;
               })()
             : null,
@@ -304,7 +315,21 @@ export function buildPokerView(input: {
     canEditCommunity: Boolean(
       isOwner && ["PRE_FLOP", "FLOP", "TURN", "RIVER", "SHOWDOWN"].includes(phase) && !input.tableClosed,
     ),
-    canEditHole: Boolean(viewerPart && pokerHandIsOpen(phase) && !input.tableClosed),
+    // Card Assist in tray: setup → streets → showdown → between hands (privacy: own seat only).
+    canEditHole: Boolean(
+      viewerSeated &&
+        !input.tableClosed &&
+        (phase === "POKER_SETUP" ||
+          phase === "HAND_COMPLETE" ||
+          phase === "SHOWDOWN" ||
+          pokerHandIsOpen(phase)),
+    ),
+    canLeaveTable: Boolean(
+      viewerSeated &&
+        !isOwner &&
+        !input.tableClosed &&
+        (phase === "POKER_SETUP" || phase === "HAND_COMPLETE"),
+    ),
     streetRail: pokerStreetRail(phase),
     outcomeFx: input.outcomeFx ?? { ...DEFAULT_OUTCOME_FX_PREFS },
   };

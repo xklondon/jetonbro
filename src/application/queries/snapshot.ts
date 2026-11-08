@@ -423,6 +423,21 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             double: table.currentPhase === "PLAYING",
             split: table.currentPhase === "PLAYING",
             insurance: table.currentPhase === "PLAYING" && insuranceOpen && table.insuranceEnabled,
+            addPlayer: isOwner && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+            giveJetons: isOwner && !tableClosed && (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+            changeBank:
+              isOwner &&
+              !tableClosed &&
+              (table.currentPhase === "BETTING" ||
+                table.currentPhase === "ROUND_COMPLETE" ||
+                (table.currentPhase === "PAYOUT" && canNextHand)),
+            switchGame:
+              isOwner &&
+              !fundingLocked &&
+              !pokerOpen &&
+              !tableClosed &&
+              (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+            leaveTable: !isOwner && !tableClosed && table.currentPhase === "ROUND_COMPLETE",
           },
           cardAssist: table.cardAssist,
           outcomeFx: outcomeFxPrefsFromTable(table),
@@ -436,6 +451,24 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             !pokerOpen &&
             !tableClosed &&
             (table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE"),
+          canLeaveTable: !isOwner && !tableClosed && table.currentPhase === "ROUND_COMPLETE",
+          switchBlockedReason: fundingLocked || pokerOpen || table.currentPhase === "PLAYING" || table.currentPhase === "PAYOUT"
+            ? "Finish or clear the current hand before switching games"
+            : null,
+          guestJoinUrl: isOwner ? guestUrl : null,
+          verifiedJoinUrl: isOwner ? verifiedUrl : null,
+          invitations: isOwner
+            ? table.invitations
+                .filter((invite) => invite.kind === "EMAIL")
+                .map((invite) => ({
+                  id: invite.id,
+                  kind: invite.kind,
+                  email: invite.email,
+                  pending: !invite.usedAt && !invite.revokedAt,
+                }))
+            : undefined,
+          emailConfigured: isOwner ? isEmailDeliveryConfigured() : undefined,
+          startingJetons: isOwner ? money(table.startingJetonsPerPlayerMillis) : undefined,
           closePreview: isOwner ? closePreview : null,
         }
       : table.currentPhase === "TABLE_SETUP" && !isOwner && !isBank
@@ -499,12 +532,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
               settleBoxes: false,
               settleDealerWon: false,
               settleInsurance: false,
-              addPlayer: (isOwner || isBank) && !tableClosed,
-              giveJetons: (isOwner || isBank) && !tableClosed,
+              addPlayer: isOwner && !tableClosed,
+              giveJetons: isOwner && !tableClosed,
               changeBank: isOwner && !tableClosed,
               saveTable: isOwner && !tableClosed,
               closeTable: isOwner && !tableClosed,
               switchGame: isOwner && !tableClosed,
+              leaveTable: !isOwner && isBank && !tableClosed,
             },
             insuranceSettleActions: [],
             bettingCloseDeadlineAt: null,
@@ -577,8 +611,12 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             !tableClosed &&
             boxes.some((box) => !box.outcome),
           settleInsurance: table.currentPhase === "PAYOUT" && unresolvedInsurance && !tableClosed,
-          addPlayer: (isOwner || isBank) && table.currentPhase === "BETTING" && !tableClosed,
-          giveJetons: table.currentPhase === "BETTING" && table.bankMayDistributeJetons && !tableClosed,
+          addPlayer: isOwner && table.currentPhase === "BETTING" && !tableClosed,
+          giveJetons:
+            isOwner &&
+            table.currentPhase === "BETTING" &&
+            table.bankMayDistributeJetons &&
+            !tableClosed,
           changeBank:
             isOwner &&
             !tableClosed &&
@@ -595,6 +633,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             (table.currentPhase === "BETTING" ||
               table.currentPhase === "ROUND_COMPLETE" ||
               (table.currentPhase === "PAYOUT" && canNextHand)),
+          leaveTable: !isOwner && isBank && !tableClosed && table.currentPhase === "ROUND_COMPLETE",
         },
         insuranceSettleActions: [
           { id: "DEALER_BLACKJACK", label: "INSURANCE WON" },

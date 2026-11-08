@@ -75,12 +75,26 @@ describeDb("optional Poker cards", () => {
       bigBlind: "10",
       seatOrder: [owner.id, sam.id],
     });
+    // PRE_FLOP may stage up to a full board (display-only); hard cap is 5.
+    await setPokerCommunityCards({
+      actorId: owner.id,
+      tableId,
+      idempotencyKey: key(),
+      cards: [{ rank: "A", suit: "S" }, { rank: "K", suit: "H" }, { rank: "Q", suit: "D" }],
+    });
     await expect(
       setPokerCommunityCards({
         actorId: owner.id,
         tableId,
         idempotencyKey: key(),
-        cards: [{ rank: "A", suit: "S" }, { rank: "K", suit: "H" }, { rank: "Q", suit: "D" }],
+        cards: [
+          { rank: "A", suit: "S" },
+          { rank: "K", suit: "H" },
+          { rank: "Q", suit: "D" },
+          { rank: "J", suit: "C" },
+          { rank: "10", suit: "S" },
+          { rank: "9", suit: "H" },
+        ],
       }),
     ).rejects.toMatchObject({ code: "CARD_LIMIT" });
 
