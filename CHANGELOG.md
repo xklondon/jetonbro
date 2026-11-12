@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker tray single-row spacing (JetBro II Web)
+
+- Commit `455dfb6` on `fix/blackjack-stable-anatomy-v1` — CSS/layout only: betting composer is one content-height row (TOTAL STREET BET | wager input | ADDITIONAL TO PAY); YOUR CARDS is one inline row (label | cards | + CARDS); reserved compose/empty action/height-reserve bands collapse so the felt reclaims space. No gameplay, accounting, backend, permissions, or Blackjack changes.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`b2546385-216d-4816-ad72-ccb4da010d9b`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker tray/chip/cards/ActionStrip 15/15; guardrails + `npm run build`. Local gallery visual @390 + desktop: compose ≤34px, cards ≤27px. `/api/health` ok, database connected. Not merged or tagged.
+
 ### Owner controls, tray ADD CARDS, EXIT TABLE, CHANGE GAME balances (JetBro II Web)
 
 - Commit `10e3801` on `fix/blackjack-stable-anatomy-v1` — Owner BUY IN / INVITE / CHANGE GAME / SETTINGS / ASSIGN DEALER stay owner-only after Poker dealer rotation and BJ dealer assignment; ADD CARDS moved into Premium tray (Poker 0–5, BJ PLAYING-gated, privacy preserved); EXIT TABLE between hands with confirmation (owner must close); CHANGE GAME preserves balances by default with optional RESET checkbox + ledger audit.

@@ -1,3 +1,12 @@
+# Premium Poker tray single-row spacing
+
+Date: 2026-11-12
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `455dfb6`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `b2546385-216d-4816-ad72-ccb4da010d9b` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker tray DOM 15/15; guardrails + production build; local /dev/premium spacing gate @390 + desktop (compose ≤34px, cards ≤27px). `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Owner controls, tray ADD CARDS, EXIT TABLE, CHANGE GAME balances
 
 Date: 2026-11-08
