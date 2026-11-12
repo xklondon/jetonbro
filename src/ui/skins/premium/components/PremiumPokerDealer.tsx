@@ -300,6 +300,7 @@ export function PremiumPokerDealer({
             <>
               {ownerSeated ? (
                 <PremiumTrayCards
+                  layout="inline"
                   cards={ownHole}
                   enabled={view.canEditHole}
                   onAdd={() => setCards("hole")}
@@ -315,6 +316,7 @@ export function PremiumPokerDealer({
               ) : null}
               {view.canEditCommunity ? (
                 <PremiumTrayCards
+                  layout="inline"
                   cards={view.communityCards}
                   enabled={view.canEditCommunity}
                   label="BOARD"

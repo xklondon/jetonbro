@@ -149,6 +149,7 @@ export function PremiumPokerPlayer({
           allIn={allIn}
           trayCards={
             <PremiumTrayCards
+              layout="inline"
               cards={ownHole}
               enabled={view.canEditHole}
               onAdd={() => setCards("hole")}

@@ -144,7 +144,7 @@ export function CasinoConsole({
   available?: string;
   trayEnabled?: boolean;
   selectedChip?: string | null;
-  /** RAISE/BET compose — row is always reserved; active when composeOpen. */
+  /** RAISE/BET compose — content-height single row when composeOpen; collapsed otherwise. */
   composeOpen?: boolean;
   composeKind?: "RAISE" | "BET" | null;
   composeAmount?: string;
@@ -314,35 +314,13 @@ export function CasinoConsole({
               aria-hidden={composeActive ? undefined : true}
             >
               {composeActive ? (
-                <div className="pm-console-compose">
-                  <div className="pm-console-compose-meta">
-                    <small>{raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}</small>
-                    {committedPreview && committedPreview !== "0" ? (
-                      <span className="pm-console-compose-committed" data-raise-committed={committedPreview}>
-                        IN {committedPreview}
-                      </span>
-                    ) : null}
-                    {additionalPreview ? (
-                      <span className="pm-console-compose-add" data-raise-additional={additionalPreview}>
-                        ADD {additionalPreview}
-                      </span>
-                    ) : null}
+                <div className="pm-console-compose is-inline-row" data-compose-row="true">
+                  <span className="pm-console-compose-total-label">
+                    TOTAL STREET BET
                     {raiseToPreview ? (
-                      <span className="pm-console-compose-preview" data-raise-to-preview={raiseToPreview}>
-                        TOTAL {raiseToPreview}
-                      </span>
+                      <strong data-raise-to-preview={raiseToPreview}>{raiseToPreview}</strong>
                     ) : null}
-                    {minChipAmount != null ? (
-                      <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)}>
-                        MIN {minChipAmount}
-                      </span>
-                    ) : null}
-                    {maxChipAmount != null ? (
-                      <span className="pm-console-compose-max" data-raise-max={String(maxChipAmount)}>
-                        MAX {maxChipAmount}
-                      </span>
-                    ) : null}
-                  </div>
+                  </span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -356,10 +334,34 @@ export function CasinoConsole({
                     data-compose-amount="true"
                     onChange={(event) => onComposeAmount?.(event.target.value)}
                   />
+                  <span
+                    className="pm-console-compose-add"
+                    data-raise-additional={additionalPreview ?? undefined}
+                  >
+                    ADDITIONAL TO PAY
+                    <strong>{additionalPreview && additionalPreview !== "0" ? additionalPreview : "0"}</strong>
+                  </span>
+                  {/* Keep min/max hooks for tests and a11y without a second row. */}
+                  {minChipAmount != null ? (
+                    <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)} hidden>
+                      MIN {minChipAmount}
+                    </span>
+                  ) : null}
+                  {maxChipAmount != null ? (
+                    <span className="pm-console-compose-max" data-raise-max={String(maxChipAmount)} hidden>
+                      MAX {maxChipAmount}
+                    </span>
+                  ) : null}
+                  {committedPreview && committedPreview !== "0" ? (
+                    <span className="pm-console-compose-committed" data-raise-committed={committedPreview} hidden>
+                      IN {committedPreview}
+                    </span>
+                  ) : null}
+                  <span className="pm-console-compose-kind" hidden>
+                    {raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}
+                  </span>
                 </div>
-              ) : (
-                <div className="pm-console-compose is-placeholder" />
-              )}
+              ) : null}
             </div>
             <div
               className={`pm-poker-action-bar${actionCount === 0 ? " is-status-only" : ""}`}

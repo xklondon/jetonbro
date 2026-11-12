@@ -194,7 +194,7 @@ describe("Premium Poker action strip", () => {
     expect(host.querySelector("[data-jeton-tray]")).toBeTruthy();
   });
 
-  it("both roles open hole card entry from menu", async () => {
+  it("both roles open hole card entry from tray ADD CARDS", async () => {
     root.render(
       createElement(PremiumPokerPlayer, {
         view: view("POKER_PLAYER", "p1", "p1"),
@@ -202,11 +202,10 @@ describe("Premium Poker action strip", () => {
       }),
     );
     await flush();
-    (host.querySelector('button[aria-label="Menu"]') as HTMLButtonElement).click();
+    expect(host.querySelector('[data-tray-cards-layout="inline"]')).toBeTruthy();
+    expect(host.querySelector('[data-tray-add-cards="true"]')).toBeTruthy();
+    (host.querySelector('[data-tray-add-cards="true"]') as HTMLButtonElement).click();
     await flush();
-    expect(host.querySelector("[data-poker-card-tools]")).toBeTruthy();
-    (host.querySelector("[data-edit-hole]") as HTMLButtonElement).click();
-    await flush();
-    expect(host.querySelector('[data-poker-card-sheet="Hole cards"]')).toBeTruthy();
+    expect(host.querySelector('[data-poker-card-sheet="Your cards"]')).toBeTruthy();
   });
 });
