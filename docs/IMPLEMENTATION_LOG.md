@@ -1,3 +1,12 @@
+# Premium Poker felt-integrated casino tray visual
+
+Date: 2026-11-15
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `775b208`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `f0220697-b2ab-41d0-9b46-8e81b6c9b449` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker tray DOM 15/15; guardrails + production build; visual @390/1440 (`docs/screenshots/premium/poker-tray-visual-ref/`). `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Premium Poker tray single-row spacing
 
 Date: 2026-11-12

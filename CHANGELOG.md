@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker felt-integrated casino tray visual (JetBro II Web)
+
+- Commit `775b208` on `fix/blackjack-stable-anatomy-v1` — presentation only: compact four-row Poker console (YOUR TURN + RAISE TO compose, RAISE|CALL|FOLD|☠ ALL IN, AVAILABLE+jetons, YOUR CARDS), curved felt lip, gold separators; removed TOTAL STREET BET / ADDITIONAL TO PAY / TO CALL chrome. No gameplay, accounting, backend, permissions, or Blackjack changes.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`f0220697-b2ab-41d0-9b46-8e81b6c9b449`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker tray/chip/cards/ActionStrip 15/15; guardrails + `npm run build`. Visual @390 + 1440 in `docs/screenshots/premium/poker-tray-visual-ref/`. `/api/health` ok, database connected. Not merged or tagged.
+
 ### Premium Poker tray single-row spacing (JetBro II Web)
 
 - Commit `455dfb6` on `fix/blackjack-stable-anatomy-v1` — CSS/layout only: betting composer is one content-height row (TOTAL STREET BET | wager input | ADDITIONAL TO PAY); YOUR CARDS is one inline row (label | cards | + CARDS); reserved compose/empty action/height-reserve bands collapse so the felt reclaims space. No gameplay, accounting, backend, permissions, or Blackjack changes.
