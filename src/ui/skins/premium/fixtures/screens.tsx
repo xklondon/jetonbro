@@ -194,7 +194,16 @@ function poker(extra: Partial<PokerTableView> = {}): PokerTableView {
     streetWager: money("10"),
     viewerStatus: "ACTIVE",
     seats: [
-      pokerSeat("v", "Vi", 0, { isActor: true, isDealer: true, streetContribution: money("0", "0") }),
+      pokerSeat("v", "Vi", 0, {
+        isActor: true,
+        isDealer: true,
+        streetContribution: money("0", "0"),
+        hasHoleCards: true,
+        holeCards: [
+          { rank: "A", suit: "S", label: "A♠" },
+          { rank: "K", suit: "H", label: "K♥" },
+        ],
+      }),
       pokerSeat("s", "Sam", 1, { isSmallBlind: true, streetContribution: money("5") }),
       pokerSeat("a", "Alex", 2, { isBigBlind: true, streetContribution: money("10") }),
       pokerSeat("b", "Blair", 3, { streetContribution: money("20") }),
@@ -204,6 +213,7 @@ function poker(extra: Partial<PokerTableView> = {}): PokerTableView {
       { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
       { type: "CALL", amount: money("10"), label: "CALL 10" },
       { type: "RAISE", amount: money("90"), raiseTo: money("20"), label: "RAISE" },
+      { type: "ALL_IN", amount: money("95"), label: "ALL IN 95" },
     ],
     currentActorName: "Vi",
     currentActorId: "v",

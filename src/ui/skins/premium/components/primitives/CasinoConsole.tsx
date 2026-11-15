@@ -284,42 +284,35 @@ export function CasinoConsole({
             ) : null}
           </>
         ) : (
-          /* Fixed rows: status → compose → ALL IN|RAISE|CALL|FOLD → jetons + AVAILABLE. */
+          /* Compact casino console: status+compose → RAISE|CALL|FOLD|ALL IN → jetons → cards. */
           <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true">
-            {stripHead ? (
-              <div
-                className={`pm-console-strip-head${showCall || turnStatus ? "" : " is-spacer"}`}
-                data-action-strip-head="true"
-                data-tray-turn-top="true"
-                aria-hidden={showCall || turnStatus ? undefined : true}
-              >
-                {showCall ? (
-                  <div className="pm-console-call" data-to-call="true">
-                    TO CALL <strong>{toCall}</strong>
-                  </div>
-                ) : (
-                  <span className="pm-console-strip-spacer" aria-hidden="true" />
-                )}
-                {turnStatus ? (
-                  <div className="pm-console-turn" data-poker-turn-hint="true">
-                    {turnStatus}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
             <div
-              className={`pm-console-compose-slot${composeActive ? " is-active" : " is-reserved"}`}
+              className={`pm-console-strip-head${turnStatus || composeActive ? "" : " is-spacer"}${
+                composeActive ? " has-compose" : ""
+              }`}
+              data-action-strip-head="true"
+              data-tray-turn-top="true"
               data-raise-slot="true"
               data-raise-input={composeActive ? "true" : undefined}
-              aria-hidden={composeActive ? undefined : true}
+              aria-hidden={turnStatus || composeActive ? undefined : true}
             >
+              {turnStatus ? (
+                <div className="pm-console-turn" data-poker-turn-hint="true">
+                  <span className="pm-console-turn-mark" aria-hidden="true">
+                    ♠
+                  </span>
+                  {turnStatus}
+                </div>
+              ) : (
+                <span className="pm-console-strip-spacer" aria-hidden="true" />
+              )}
               {composeActive ? (
                 <div className="pm-console-compose is-inline-row" data-compose-row="true">
-                  <span className="pm-console-compose-total-label">
-                    TOTAL STREET BET
-                    {raiseToPreview ? (
-                      <strong data-raise-to-preview={raiseToPreview}>{raiseToPreview}</strong>
-                    ) : null}
+                  <span className="pm-console-compose-kind" data-compose-kind="true">
+                    <span className="pm-console-compose-chip-mark" aria-hidden="true">
+                      ◆
+                    </span>
+                    {raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}
                   </span>
                   <input
                     type="text"
@@ -338,10 +331,13 @@ export function CasinoConsole({
                     className="pm-console-compose-add"
                     data-raise-additional={additionalPreview ?? undefined}
                   >
-                    ADDITIONAL TO PAY
-                    <strong>{additionalPreview && additionalPreview !== "0" ? additionalPreview : "0"}</strong>
+                    +{additionalPreview && additionalPreview !== "0" ? additionalPreview : "0"} TO PAY
                   </span>
-                  {/* Keep min/max hooks for tests and a11y without a second row. */}
+                  {raiseToPreview ? (
+                    <span data-raise-to-preview={raiseToPreview} hidden>
+                      {raiseToPreview}
+                    </span>
+                  ) : null}
                   {minChipAmount != null ? (
                     <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)} hidden>
                       MIN {minChipAmount}
@@ -357,10 +353,13 @@ export function CasinoConsole({
                       IN {committedPreview}
                     </span>
                   ) : null}
-                  <span className="pm-console-compose-kind" hidden>
-                    {raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}
-                  </span>
                 </div>
+              ) : null}
+              {/* Keep toCall in DOM for tests/a11y without a visible TO CALL row. */}
+              {showCall ? (
+                <span data-to-call="true" hidden>
+                  TO CALL {toCall}
+                </span>
               ) : null}
             </div>
             <div
@@ -375,13 +374,12 @@ export function CasinoConsole({
                 }`}
                 data-console-actions="true"
               >
-                {allIn ? <ActionButton action={allIn} kind="ghost" allIn /> : null}
                 {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
                 {primary ? <ActionButton action={primary} kind="primary" /> : null}
                 {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
+                {allIn ? <ActionButton action={allIn} kind="ghost" allIn /> : null}
               </div>
             </div>
-            {trayCards}
             {trayVisible ? (
               <div
                 className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
@@ -408,6 +406,7 @@ export function CasinoConsole({
             ) : (
               <div className="pm-console-tray is-height-reserve" data-jeton-tray="reserved" aria-hidden="true" />
             )}
+            {trayCards}
           </div>
         )}
         {children}

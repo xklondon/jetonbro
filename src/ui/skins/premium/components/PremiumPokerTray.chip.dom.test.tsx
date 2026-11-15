@@ -237,20 +237,22 @@ describe("Premium Poker tray chip accumulate → Confirm raise-to", () => {
 
     expect(host.querySelector("[data-raise-slot]")).toBeTruthy();
     expect(host.querySelector("[data-raise-input]")).toBeTruthy();
-    // YOUR TURN sits above the raise composer.
+    // YOUR TURN and RAISE TO share one status/composer row.
     const turn = host.querySelector("[data-poker-turn-hint]");
     const raiseSlot = host.querySelector("[data-raise-slot]");
+    const field = host.querySelector('[data-compose-amount="true"]') as HTMLInputElement | null;
     expect(turn).toBeTruthy();
     expect(raiseSlot).toBeTruthy();
+    expect(raiseSlot!.contains(turn!)).toBe(true);
+    expect(field).toBeTruthy();
     expect(
-      Boolean(
-        turn!.compareDocumentPosition(raiseSlot!) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ),
+      Boolean(turn!.compareDocumentPosition(field!) & Node.DOCUMENT_POSITION_FOLLOWING),
     ).toBe(true);
     expect(host.querySelector("[data-raise-min]")?.getAttribute("data-raise-min")).toBe("20");
     expect(host.textContent).toMatch(/RAISE TO/);
-    const field = host.querySelector('[data-compose-amount="true"]') as HTMLInputElement | null;
-    expect(field).toBeTruthy();
+    expect(host.textContent).toMatch(/TO PAY/);
+    expect(host.textContent).not.toMatch(/TOTAL STREET BET/);
+    expect(host.textContent).not.toMatch(/ADDITIONAL TO PAY/);
     expect(field!.value).toBe("");
 
     // Facing 10, select total 25 → ADD 20 (owner streetContrib 5). Never 10+25=35.

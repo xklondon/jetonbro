@@ -1,6 +1,6 @@
 /**
  * @vitest-environment happy-dom
- * Compact action strip: TO CALL + turn status one row; Fold/Call/Raise present.
+ * Compact casino tray: status+compose, RAISE|CALL|FOLD|ALL IN, jetons, cards.
  */
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -146,7 +146,7 @@ describe("Premium Poker action strip", () => {
     await new Promise((r) => setTimeout(r, 0));
   }
 
-  it("acting dealer: strip head aligns TO CALL + YOUR TURN above Fold/Call/Raise", async () => {
+  it("acting dealer: YOUR TURN above RAISE|CALL|FOLD|ALL IN with jetons then cards", async () => {
     root.render(
       createElement(PremiumPokerDealer, {
         view: view("POKER_DEALER", "owner", "owner"),
@@ -159,16 +159,16 @@ describe("Premium Poker action strip", () => {
     expect(host.querySelector("[data-poker-wallet-stack]")).toBeTruthy();
     expect(host.querySelector("[data-action-strip-head]")).toBeTruthy();
     expect(host.querySelector("[data-tray-turn-top]")).toBeTruthy();
-    expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/TO CALL/);
-    expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/5/);
     expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/YOUR TURN/i);
+    expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/TO CALL/);
+    expect(host.querySelector("[data-to-call]")?.getAttribute("hidden")).not.toBeNull();
     const turnEl = host.querySelector("[data-poker-turn-hint]");
-    const raiseEl = host.querySelector("[data-raise-slot]");
-    expect(turnEl && raiseEl).toBeTruthy();
+    const actionsEl = host.querySelector("[data-console-actions]");
+    expect(turnEl && actionsEl).toBeTruthy();
     expect(
-      Boolean(turnEl!.compareDocumentPosition(raiseEl!) & Node.DOCUMENT_POSITION_FOLLOWING),
+      Boolean(turnEl!.compareDocumentPosition(actionsEl!) & Node.DOCUMENT_POSITION_FOLLOWING),
     ).toBe(true);
-    const actions = host.querySelector("[data-console-actions]")?.textContent ?? "";
+    const actions = actionsEl?.textContent ?? "";
     expect(actions).toMatch(/ALL IN/);
     expect(actions).toMatch(/RAISE/);
     expect(actions).toMatch(/CALL 5/);
@@ -176,7 +176,11 @@ describe("Premium Poker action strip", () => {
     expect(host.querySelector("[data-poker-all-in]")).toBeTruthy();
     expect(actions.indexOf("RAISE")).toBeLessThan(actions.indexOf("CALL"));
     expect(actions.indexOf("CALL")).toBeLessThan(actions.indexOf("FOLD"));
-    expect(host.querySelector("[data-jeton-tray]")).toBeTruthy();
+    expect(actions.indexOf("FOLD")).toBeLessThan(actions.indexOf("ALL IN"));
+    const tray = host.querySelector("[data-jeton-tray]");
+    const cards = host.querySelector("[data-tray-cards]");
+    expect(tray && cards).toBeTruthy();
+    expect(Boolean(tray!.compareDocumentPosition(cards!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
     expect(host.querySelector(".pm-console-notice [data-poker-turn-hint]")).toBeNull();
   });
 
