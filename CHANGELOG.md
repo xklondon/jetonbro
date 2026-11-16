@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker tray fixed height + turn status (JetBro II Web)
+
+- Commit `d33c81b` on `fix/blackjack-stable-anatomy-v1` — presentation only: fixed four-row tray height across Poker phases; YOUR TURN · CHECK / TO CALL N from snapshot `toCall`; single EXIT TABLE control. No gameplay, accounting, backend, permissions, or Blackjack changes.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`4dce08b4-ad55-44cf-91e7-a346bd50be0f`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker tray/status 19/19; guardrails + `npm run build`. Fixed-height visual @390 across setup/preflop/raise/flop/complete (tray top/bottom/height identical). `/api/health` ok, database connected. Not merged or tagged.
+
 ### Premium Poker felt-integrated casino tray visual (JetBro II Web)
 
 - Commit `775b208` on `fix/blackjack-stable-anatomy-v1` — presentation only: compact four-row Poker console (YOUR TURN + RAISE TO compose, RAISE|CALL|FOLD|☠ ALL IN, AVAILABLE+jetons, YOUR CARDS), curved felt lip, gold separators; removed TOTAL STREET BET / ADDITIONAL TO PAY / TO CALL chrome. No gameplay, accounting, backend, permissions, or Blackjack changes.

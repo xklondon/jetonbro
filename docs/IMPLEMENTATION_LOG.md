@@ -1,3 +1,12 @@
+# Premium Poker tray fixed height + turn status
+
+Date: 2026-11-16
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `d33c81b`.
+- Railway: tranquil-unity / production / JetBro II Web only — deployment `4dce08b4-ad55-44cf-91e7-a346bd50be0f` SUCCESS. https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker tray/status 19/19; guardrails + production build; fixed-height visual @390 (tray bounds identical across phases). `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
+
+---
 # Premium Poker felt-integrated casino tray visual
 
 Date: 2026-11-15
