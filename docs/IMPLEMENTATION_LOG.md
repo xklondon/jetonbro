@@ -3,7 +3,7 @@
 - Branch `fix/blackjack-stable-anatomy-v1` — Premium presentation only.
 - Root cause: (A) ME hole faces rendered on the felt near the seat (looked like board cards) and dealer BOARD tray also mirrored community faces; (B) action grid classes used slot combinations that marked 3-button ALL IN layouts as `is-quad`, leaving a blank column / left-biased strip; (C) START/DEAL HAND lived in the action strip instead of the status row.
 - Fix: PokerSeat ME → tray backs only; dealer BOARD tray `cards={[]}`; CasinoConsole duo/trio/quad from `actionCount`; `statusAction` DEAL HAND from existing start/next controls (dealer + next-dealer player).
-- Gate: Vitest Premium Poker 29/29; guardrails + production build; `docs/screenshots/premium/poker-final-pass/` @390/1440 (tray 226px fixed). Railway JetBro II Web after ship. Not merged. Not tagged. Staging/lite untouched.
+- Gate: Vitest Premium Poker 29/29; guardrails + production build; `docs/screenshots/premium/poker-final-pass/` @390/1440 (tray 226px fixed). Railway: tranquil-unity / production / JetBro II Web only — deployment `1499df55-0e7f-4532-8b66-81940c1d03ed` SUCCESS. https://jetbro-ii-web-production.up.railway.app `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
 
 # Premium Poker tray fixed height + turn status
 

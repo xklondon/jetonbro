@@ -4,9 +4,9 @@
 
 ### Premium Poker dealer cards / actions / DEAL HAND (JetBro II Web)
 
-- Commit pending on `fix/blackjack-stable-anatomy-v1` — presentation only: ME hole faces stay in YOUR CARDS (felt shows backs only); BOARD faces stay on the community rail (tray BOARD control is faces-free); action strip uses equal-width centered columns from live button count; DEAL HAND sits in the status row via existing start/next-hand callbacks. No gameplay, accounting, backend, permissions, or Blackjack changes.
-- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only. URL https://jetbro-ii-web-production.up.railway.app
-- Gate: Vitest Premium Poker 29/29; guardrails + `npm run build`. Visual @390 + 1440 tray height 226 identical; board on felt; DEAL HAND in status row. Deploy + health after ship.
+- Commit `e8af166` on `fix/blackjack-stable-anatomy-v1` — presentation only: ME hole faces stay in YOUR CARDS (felt shows backs only); BOARD faces stay on the community rail (tray BOARD control is faces-free); action strip uses equal-width centered columns from live button count; DEAL HAND sits in the status row via existing start/next-hand callbacks. No gameplay, accounting, backend, permissions, or Blackjack changes.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only (`1499df55-0e7f-4532-8b66-81940c1d03ed`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker 29/29; guardrails + `npm run build`. Visual @390 + 1440 tray height 226 identical; board on felt; DEAL HAND in status row. `/api/health` ok, database connected. Not merged or tagged.
 
 ### Premium Poker tray fixed height + turn status (JetBro II Web)
 
