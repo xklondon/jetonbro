@@ -15,7 +15,22 @@ function StartingStack({ millis, label }: { millis: string; label: string }) {
   );
 }
 
-function HoleCards({ seat }: { seat: PokerSeatView }) {
+function HoleCards({ seat, isMe = false }: { seat: PokerSeatView; isMe?: boolean }) {
+  /**
+   * Viewer hole faces live in the tray YOUR CARDS strip — never on the felt
+   * (avoids looking like community/board cards near the ME seat).
+   */
+  if (isMe) {
+    if (seat.hasHoleCards || (seat.holeCards?.length ?? 0) > 0) {
+      return (
+        <div className="pm-poker-hole is-hidden" data-hole-cards="tray" aria-label="Your cards are in the tray">
+          <span className="pm-playing-card is-mini is-back" />
+          <span className="pm-playing-card is-mini is-back" />
+        </div>
+      );
+    }
+    return null;
+  }
   const visible = seat.holeCards ?? [];
   if (visible.length > 0) {
     return (
@@ -111,7 +126,7 @@ export function PokerSeat({
       {showStartingStack ? (
         <StartingStack millis={seat.available.millis} label={seat.available.label} />
       ) : null}
-      <HoleCards seat={seat} />
+      <HoleCards seat={seat} isMe={isMe} />
       <div className="pm-poker-seat-medal" aria-hidden="true">
         {isMe ? "ME" : initial}
       </div>

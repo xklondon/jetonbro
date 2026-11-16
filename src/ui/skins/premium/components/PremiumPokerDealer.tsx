@@ -180,24 +180,27 @@ export function PremiumPokerDealer({
             }
           : null,
     });
-  } else if (startHand) {
-    primary = {
-      label: "START HAND",
-      disabled: !startEnabled,
-      onClick: () => void onCommand("startTexasHoldem"),
-    };
-  } else if (nextHand) {
-    primary = {
-      label: "START HAND",
-      disabled: !nextHand.enabled,
-      onClick: () => void onCommand("startNextPokerHand"),
-    };
   } else if (view.canDealStreet) {
     primary = {
       label: view.nextStreetLabel || "DEAL",
       onClick: () => void onCommand("advancePokerStreet"),
     };
   }
+
+  /** DEAL HAND lives in the status row — never duplicate it in the action strip. */
+  const dealHandAction = startHand
+    ? {
+        label: "DEAL HAND",
+        disabled: !startEnabled,
+        onClick: () => void onCommand("startTexasHoldem"),
+      }
+    : nextHand
+      ? {
+          label: "DEAL HAND",
+          disabled: !nextHand.enabled,
+          onClick: () => void onCommand("startNextPokerHand"),
+        }
+      : null;
 
   const showAdd = Boolean(view.isOwner && view.canAddPlayer && (setup || view.phase === "HAND_COMPLETE"));
   const showGive = Boolean(view.isOwner && giveJetons && (setup || betweenHands));
@@ -318,10 +321,11 @@ export function PremiumPokerDealer({
                   }
                 />
               ) : null}
+              {/* Board faces live only on the felt — tray keeps a faces-free entry control. */}
               {view.canEditCommunity ? (
                 <PremiumTrayCards
                   layout="inline"
-                  cards={view.communityCards}
+                  cards={[]}
                   enabled={view.canEditCommunity}
                   label="BOARD"
                   onAdd={() => setCards("board")}
@@ -329,6 +333,7 @@ export function PremiumPokerDealer({
               ) : null}
             </>
           }
+          statusAction={dealHandAction}
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}

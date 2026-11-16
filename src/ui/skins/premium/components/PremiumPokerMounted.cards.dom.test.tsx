@@ -254,10 +254,12 @@ describe("Premium Poker mounted tray + card entry", () => {
       }),
     );
     await flush();
-    expect(host.querySelector('[data-hole-cards="true"]')).toBeTruthy();
-    expect(host.querySelector('[data-poker-card="AS"]')).toBeTruthy();
+    // Own faces live in YOUR CARDS tray only — felt shows backs for ME, backs for opponent.
+    expect(host.querySelector('[data-hole-cards="tray"]')).toBeTruthy();
     expect(host.querySelector('[data-hole-cards="hidden"]')).toBeTruthy();
+    expect(host.querySelector('[data-seat-me="true"] [data-poker-card="AS"]')).toBeNull();
     expect(host.querySelector('[data-tray-card-faces="true"]')?.textContent).toContain("A♠");
+    expect(host.querySelector('[data-community-cards="true"]')).toBeNull();
     (host.querySelector('[data-tray-add-cards="true"]') as HTMLButtonElement).click();
     await flush();
     expect(host.querySelector('[data-poker-card-sheet="Your cards"]')).toBeTruthy();
@@ -266,7 +268,7 @@ describe("Premium Poker mounted tray + card entry", () => {
     expect(commands.some((c) => c.command === "setPokerHoleCards")).toBe(true);
   });
 
-  it("owner can open board-card sheet on FLOP", async () => {
+  it("owner can open board-card sheet on FLOP; board faces stay on felt only", async () => {
     const commands: { command: string; payload: Record<string, string> }[] = [];
     root.render(
       createElement(PremiumPokerDealer, {
@@ -277,6 +279,11 @@ describe("Premium Poker mounted tray + card entry", () => {
           canEditCommunity: true,
           legalActions: [],
           currentActorId: null,
+          communityCards: [
+            { rank: "A", suit: "S", label: "A♠" },
+            { rank: "K", suit: "H", label: "K♥" },
+            { rank: "2", suit: "D", label: "2♦" },
+          ],
         }),
         members,
         onCommand: (command, payload = {}) => {
@@ -286,11 +293,15 @@ describe("Premium Poker mounted tray + card entry", () => {
       }),
     );
     await flush();
-    const boardAdd = [...host.querySelectorAll('[data-tray-add-cards="true"]')].find((btn) =>
-      btn.closest('[data-tray-cards="true"]')?.textContent?.includes("BOARD"),
-    ) as HTMLButtonElement | undefined;
+    const boardStrip = [...host.querySelectorAll('[data-tray-cards="true"]')].find((el) =>
+      el.textContent?.includes("BOARD"),
+    );
+    expect(boardStrip).toBeTruthy();
+    expect(boardStrip!.querySelector('[data-poker-card]')).toBeNull();
+    expect(host.querySelector('[data-community-cards="true"]')?.textContent).toMatch(/A.*K.*2/);
+    const boardAdd = boardStrip!.querySelector('[data-tray-add-cards="true"]') as HTMLButtonElement;
     expect(boardAdd).toBeTruthy();
-    boardAdd!.click();
+    boardAdd.click();
     await flush();
     expect(host.querySelector('[data-poker-card-sheet="Board cards"]')).toBeTruthy();
     (host.querySelector('[data-card-save="true"]') as HTMLButtonElement).click();

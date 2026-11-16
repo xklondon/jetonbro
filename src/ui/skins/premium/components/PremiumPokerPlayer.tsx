@@ -115,9 +115,10 @@ export function PremiumPokerPlayer({
           onClick: () => setExitOpen(true),
         }
       : null;
-  const startControl = canStartNext
+  /** DEAL HAND lives in the status row when this player is next dealer — never in the action strip. */
+  const dealHandAction = canStartNext
     ? {
-        label: "START HAND",
+        label: "DEAL HAND",
         onClick: () => void onCommand("startNextPokerHand"),
       }
     : null;
@@ -133,9 +134,9 @@ export function PremiumPokerPlayer({
         onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
       }
     : null;
-  /** Exactly one EXIT TABLE — prefer beside START HAND; never duplicate as primary+secondary. */
-  const primary = startControl ?? respondControl ?? (!foldControl ? exitControl : null);
-  const secondary = startControl ? exitControl : foldControl;
+  /** Exactly one EXIT TABLE — never duplicate as primary+secondary. */
+  const primary = respondControl ?? (!foldControl ? exitControl : null);
+  const secondary = foldControl ?? (respondControl ? exitControl : null);
   const statusInstruction =
     turnStatus ?? (setup ? phaseCopy.instruction : handDone ? "HAND COMPLETE" : null);
 
@@ -186,9 +187,10 @@ export function PremiumPokerPlayer({
               }
             />
           }
+          statusAction={dealHandAction}
           primary={primary}
           secondary={secondary}
-          tertiary={canStartNext ? null : tertiary}
+          tertiary={tertiary}
         />
       }
     >

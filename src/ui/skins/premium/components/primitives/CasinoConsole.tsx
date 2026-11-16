@@ -132,6 +132,7 @@ export function CasinoConsole({
   reserveTray = false,
   variant = "default",
   trayCards = null,
+  statusAction = null,
   children,
 }: {
   primary?: DockAction | null;
@@ -164,6 +165,8 @@ export function CasinoConsole({
   variant?: "default" | "blackjack" | "setup";
   /** Compact YOUR CARDS / ADD CARDS strip above the jeton tray. */
   trayCards?: ReactNode;
+  /** Dealer DEAL HAND — compact control in the status row (not a second tray row). */
+  statusAction?: DockAction | null;
   children?: ReactNode;
 }) {
   const trayVisible = showTray;
@@ -180,6 +183,10 @@ export function CasinoConsole({
   const composeActive = !compact && composeOpen;
   const raiseCompose = composeActive && composeKind === "RAISE";
   const turnHint = !compact ? formatPokerTurnStatus(turnStatus, toCall) : turnStatus;
+  const single = actionCount === 1;
+  const duo = actionCount === 2;
+  const trio = actionCount === 3;
+  const quad = actionCount === 4;
 
   return (
     <footer
@@ -305,6 +312,21 @@ export function CasinoConsole({
               ) : (
                 <span className="pm-console-strip-spacer" aria-hidden="true" />
               )}
+              {statusAction && !composeActive ? (
+                <button
+                  type="button"
+                  className="pm-console-status-action"
+                  disabled={statusAction.disabled}
+                  title={statusAction.title}
+                  onClick={statusAction.onClick}
+                  data-deal-hand="true"
+                  data-start-hand={
+                    statusAction.label === "DEAL HAND" || statusAction.label === "START HAND" ? "true" : undefined
+                  }
+                >
+                  {statusAction.label}
+                </button>
+              ) : null}
               <div
                 className={`pm-console-compose-slot${composeActive ? " is-active" : " is-reserved"}`}
                 data-compose-slot="true"
@@ -372,10 +394,8 @@ export function CasinoConsole({
             >
               <div
                 className={`pm-console-actions${primary || secondary || tertiary || allIn ? "" : " is-empty"}${
-                  primary && !secondary && !tertiary && !allIn ? " is-single" : ""
-                }${secondary && primary && tertiary && !allIn ? " is-trio" : ""}${
-                  allIn && (primary || secondary || tertiary) ? " is-quad" : ""
-                }`}
+                  single ? " is-single" : ""
+                }${duo ? " is-duo" : ""}${trio ? " is-trio" : ""}${quad ? " is-quad" : ""}`}
                 data-console-actions="true"
               >
                 {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}

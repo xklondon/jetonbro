@@ -177,11 +177,38 @@ describe("Premium Poker action strip", () => {
     expect(actions.indexOf("RAISE")).toBeLessThan(actions.indexOf("CALL"));
     expect(actions.indexOf("CALL")).toBeLessThan(actions.indexOf("FOLD"));
     expect(actions.indexOf("FOLD")).toBeLessThan(actions.indexOf("ALL IN"));
+    expect(host.querySelector("[data-console-actions]")?.className).toMatch(/is-quad/);
     const tray = host.querySelector("[data-jeton-tray]");
     const cards = host.querySelector("[data-tray-cards]");
     expect(tray && cards).toBeTruthy();
     expect(Boolean(tray!.compareDocumentPosition(cards!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
     expect(host.querySelector(".pm-console-notice [data-poker-turn-hint]")).toBeNull();
+  });
+
+  it("check/fold/all-in uses equal-width trio grid (no blank fourth slot)", async () => {
+    root.render(
+      createElement(PremiumPokerPlayer, {
+        view: {
+          ...view("POKER_PLAYER", "p1", "p1"),
+          toCall: { label: "0", millis: "0" },
+          legalActions: [
+            { type: "FOLD", amount: money("0", "0"), label: "FOLD" },
+            { type: "CHECK", amount: money("0", "0"), label: "CHECK" },
+            { type: "ALL_IN", amount: money("100"), label: "ALL IN" },
+          ],
+        },
+        onCommand: () => undefined,
+      }),
+    );
+    await flush();
+    const actionsEl = host.querySelector("[data-console-actions]");
+    expect(actionsEl?.className).toMatch(/is-trio/);
+    expect(actionsEl?.className).not.toMatch(/is-quad/);
+    const labels = [...(actionsEl?.querySelectorAll("button") ?? [])].map((b) => b.textContent ?? "");
+    expect(labels).toHaveLength(3);
+    expect(labels.some((t) => /CHECK/i.test(t))).toBe(true);
+    expect(labels.some((t) => /FOLD/i.test(t))).toBe(true);
+    expect(labels.some((t) => /ALL IN/i.test(t))).toBe(true);
   });
 
   it("waiting player: turn status above jetons, no YOUR TURN; tray stays fixed", async () => {

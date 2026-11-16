@@ -146,12 +146,15 @@ describe("PremiumPokerDealer setup wiring", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html).toContain("START HAND");
+    expect(html).toContain("DEAL HAND");
+    expect(html).toContain('data-deal-hand="true"');
     expect(html).toContain("ADD PLAYER");
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-tray-available="true"');
     expect(html).toContain("AVAILABLE");
     expect(html).toContain("pm-console-tray-available");
+    // DEAL HAND is status-row only — not duplicated in the action strip.
+    expect(html.match(/DEAL HAND/g)?.length ?? 0).toBe(1);
   });
 
   it("HAND_COMPLETE dock keeps fixed tray with AVAILABLE", () => {
@@ -169,7 +172,8 @@ describe("PremiumPokerDealer setup wiring", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html).toContain("START HAND");
+    expect(html).toContain("DEAL HAND");
+    expect(html).toContain('data-deal-hand="true"');
     expect(html).toContain("ADD PLAYER");
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain("AVAILABLE");

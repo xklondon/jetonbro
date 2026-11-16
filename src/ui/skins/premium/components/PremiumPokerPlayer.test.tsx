@@ -165,7 +165,7 @@ describe("PremiumPokerPlayer live tray", () => {
     expect(html).toContain("pm-console-tray-available");
   });
 
-  it("exposes START HAND when the viewer is the next dealer", () => {
+  it("exposes DEAL HAND in the status row when the viewer is the next dealer", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumPokerPlayer, {
         view: view({
@@ -179,7 +179,9 @@ describe("PremiumPokerPlayer live tray", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html).toContain("START HAND");
+    expect(html).toContain("DEAL HAND");
+    expect(html).toContain('data-deal-hand="true"');
     expect(html).toContain('data-start-hand="true"');
+    expect(html.match(/DEAL HAND/g)?.length ?? 0).toBe(1);
   });
 });

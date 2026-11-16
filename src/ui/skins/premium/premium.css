@@ -1294,15 +1294,18 @@
   color: #f3dc9a;
 }
 
+/* Dedicated community-card rail — between pot and street journey, never seat-owned. */
 [data-skin="premium"] .pm-poker-board {
   position: absolute;
   left: 50%;
-  top: 48%;
+  top: 47%;
   transform: translate(-50%, -50%);
   display: flex;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
   z-index: 4;
   pointer-events: none;
+  max-width: min(88%, 16rem);
 }
 
 [data-skin="premium"] .pm-poker-hole {
@@ -3314,36 +3317,50 @@
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions {
+  width: 100%;
   min-height: 0 !important;
   height: auto;
   gap: 6px;
   align-content: stretch;
+  justify-content: center;
   overflow: visible;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-duo,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-duo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-trio,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-trio {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+[data-skin="premium"] .pm-console-actions.is-quad,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-quad,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-quad {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-single,
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
 }
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-btn,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-btn {
   min-height: 40px;
   height: 40px;
-  padding: 0 8px;
+  width: 100%;
+  padding: 0 6px;
   font-size: 11px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   border-radius: 999px;
 }
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-trio .pm-console-btn,
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-trio .pm-console-btn {
-  min-height: 40px;
-  height: 40px;
-  padding: 0 6px;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-}
-
-[data-skin="premium"] .pm-console-actions.is-quad {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1.05fr);
-}
-
+[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-trio .pm-console-btn,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions.is-quad .pm-console-btn,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-actions.is-quad .pm-console-btn {
   min-height: 40px;
@@ -3351,6 +3368,34 @@
   padding: 0 4px;
   font-size: 9px;
   letter-spacing: 0.04em;
+}
+
+/* Compact DEAL HAND in the status row — does not add tray height. */
+[data-skin="premium"] .pm-console-status-action {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 184, 130, 0.55);
+  background: linear-gradient(180deg, #f6e4b0 0%, #e0c078 45%, #b89248 100%);
+  color: #1a1208;
+  font: 700 10px/1 var(--pm-sans);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.55);
+}
+
+[data-skin="premium"] .pm-console-status-action:disabled {
+  opacity: 0.45;
+}
+
+[data-skin="premium"] .pm-poker-wallet-stack > .pm-console-strip-head:has(.pm-console-status-action) .pm-console-compose-slot.is-reserved {
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  margin: 0;
 }
 
 /* Row 3 — AVAILABLE + jetons (fixed track) */
