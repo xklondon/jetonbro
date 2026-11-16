@@ -234,16 +234,19 @@ export function PremiumPokerDealer({
       },
     };
   }
-  if (showExit && !secondary) {
-    secondary = {
-      label: "EXIT TABLE",
-      onClick: () => setExitOpen(true),
-    };
-  } else if (showExit && !tertiary) {
-    tertiary = {
-      label: "EXIT TABLE",
-      onClick: () => setExitOpen(true),
-    };
+  const hasExitAlready = [primary, secondary, tertiary].some((action) => action?.label === "EXIT TABLE");
+  if (showExit && !hasExitAlready) {
+    if (!secondary) {
+      secondary = {
+        label: "EXIT TABLE",
+        onClick: () => setExitOpen(true),
+      };
+    } else if (!tertiary) {
+      tertiary = {
+        label: "EXIT TABLE",
+        onClick: () => setExitOpen(true),
+      };
+    }
   }
 
   const turnStatus = setup
@@ -253,6 +256,7 @@ export function PremiumPokerDealer({
       : !showdown && phaseCopy.instruction
         ? phaseCopy.instruction
         : null;
+  const dealerIsActor = Boolean(ownerSeated && view.currentActorId === view.viewerId);
   /** Seat / error notices only — turn status lives in the compact strip head. */
   const dockNotice = seatNotice ?? notice ?? null;
   const allIn = usePokerAllInConfirm(
@@ -280,7 +284,7 @@ export function PremiumPokerDealer({
             ) : null
           }
           turnStatus={ownerSeated || setup ? turnStatus : null}
-          toCall={liveStreet && ownerSeated && view.toCall.label !== "0" ? view.toCall.label : null}
+          toCall={liveStreet && dealerIsActor ? view.toCall.label : null}
           available={ownerSeated ? view.available.label : undefined}
           showTray={showTray}
           reserveTray={Boolean(ownerSeated)}

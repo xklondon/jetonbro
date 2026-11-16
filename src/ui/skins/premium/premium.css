@@ -3104,16 +3104,29 @@
 }
 
 [data-skin="premium"] .pm-poker-wallet-stack {
+  --pm-poker-status-h: 44px;
+  --pm-poker-action-h: 52px;
+  --pm-poker-jeton-h: 58px;
+  /* Sized for max content: hole + optional board strip. */
+  --pm-poker-cards-h: 72px;
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows:
+    var(--pm-poker-status-h)
+    var(--pm-poker-action-h)
+    var(--pm-poker-jeton-h)
+    var(--pm-poker-cards-h);
   gap: 0;
   margin-top: 8px;
   border-radius: 22px 22px 14px 14px;
   overflow: hidden;
-  min-height: 0;
-  height: auto;
+  min-height: calc(
+    var(--pm-poker-status-h) + var(--pm-poker-action-h) + var(--pm-poker-jeton-h) + var(--pm-poker-cards-h)
+  );
+  height: calc(
+    var(--pm-poker-status-h) + var(--pm-poker-action-h) + var(--pm-poker-jeton-h) + var(--pm-poker-cards-h)
+  );
   flex-grow: 0;
   border: 1px solid rgba(212, 184, 130, 0.55);
   background:
@@ -3124,7 +3137,7 @@
     0 8px 18px rgba(0, 0, 0, 0.4);
 }
 
-/* Row 1 — YOUR TURN + RAISE TO [n] + TO PAY */
+/* Row 1 — YOUR TURN · CHECK/TO CALL + reserved compose track */
 [data-skin="premium"] .pm-poker-wallet-stack > .pm-console-strip-head {
   display: flex;
   flex-direction: row;
@@ -3132,16 +3145,18 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 6px 12px 4px;
-  min-height: 40px;
-  height: auto;
+  padding: 0 12px;
+  min-height: var(--pm-poker-status-h);
+  height: var(--pm-poker-status-h);
+  max-height: var(--pm-poker-status-h);
+  box-sizing: border-box;
   border-radius: 0;
   border: 0;
   border-bottom: 1px solid rgba(212, 184, 130, 0.28);
   background:
     linear-gradient(180deg, rgba(10, 72, 52, 0.55) 0%, rgba(18, 28, 20, 0.2) 70%, transparent 100%);
   box-shadow: none;
-  flex: 0 0 auto;
+  overflow: hidden;
 }
 
 [data-skin="premium"] .pm-poker-wallet-stack > .pm-console-strip-head .pm-console-turn {
@@ -3166,14 +3181,23 @@
 }
 
 [data-skin="premium"] .pm-console-strip-head.is-spacer {
-  display: none;
-  height: 0;
-  min-height: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  opacity: 0;
-  overflow: hidden;
+  /* Keep status track height even when empty — never collapse the tray. */
+  opacity: 1;
+}
+
+[data-skin="premium"] .pm-poker-wallet-stack .pm-console-compose-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+[data-skin="premium"] .pm-poker-wallet-stack .pm-console-compose-slot.is-reserved {
+  /* Reserve compose width/height without an empty bordered panel. */
+  visibility: hidden;
   pointer-events: none;
 }
 
@@ -3186,10 +3210,9 @@
   gap: 6px;
   flex: 1 1 auto;
   min-width: 0;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 32px;
   margin: 0;
-  margin-left: auto;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -3258,33 +3281,35 @@
   color: rgba(243, 220, 154, 0.35);
 }
 
-/* Row 2 — RAISE | CALL | FOLD | ALL IN */
+/* Row 2 — RAISE | CALL | FOLD | ALL IN (always reserved height) */
 [data-skin="premium"] .pm-poker-action-bar {
   position: relative;
   z-index: 2;
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 0;
-  min-height: 0;
-  height: auto;
-  flex: 0 0 auto;
+  min-height: var(--pm-poker-action-h);
+  height: var(--pm-poker-action-h);
+  max-height: var(--pm-poker-action-h);
+  box-sizing: border-box;
   padding: 6px 10px;
   background: transparent;
   border-bottom: 1px solid rgba(212, 184, 130, 0.28);
   box-shadow: none;
-}
-
-[data-skin="premium"] .pm-poker-action-bar.is-status-only {
-  display: none;
-  height: 0;
-  min-height: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
   overflow: hidden;
 }
 
+[data-skin="premium"] .pm-poker-action-bar.is-status-only {
+  /* Keep the action track; do not collapse between phases. */
+  display: flex;
+}
+
 [data-skin="premium"] .pm-poker-action-bar .pm-console-actions.is-empty {
-  display: none;
+  display: grid;
+  opacity: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
 
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-actions,
@@ -3328,17 +3353,11 @@
   letter-spacing: 0.04em;
 }
 
-/* Row 3 — AVAILABLE + jetons */
+/* Row 3 — AVAILABLE + jetons (fixed track) */
 [data-skin="premium"] .pm-poker-wallet-stack > .pm-console-tray {
-  flex: 0 0 auto;
-}
-
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console.is-poker-wallet .pm-console-tray,
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console.is-poker-wallet .pm-console-tray {
-  flex: 0 0 auto;
-  min-height: 56px !important;
-  height: auto;
-  max-height: none;
+  min-height: var(--pm-poker-jeton-h) !important;
+  height: var(--pm-poker-jeton-h) !important;
+  max-height: var(--pm-poker-jeton-h) !important;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -3349,40 +3368,43 @@
   border-bottom: 1px solid rgba(212, 184, 130, 0.28);
   border-radius: 0 !important;
   background: transparent !important;
-}
-
-[data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console .pm-console-tray,
-[data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console .pm-console-tray {
   position: relative;
   z-index: 1;
-}
-
-[data-skin="premium"] .pm-console-tray.is-height-reserve {
-  display: none;
-  height: 0;
-  min-height: 0;
-  max-height: 0;
-  padding: 0;
-  margin: 0;
-  opacity: 0;
-  pointer-events: none;
   overflow: hidden;
 }
 
+[data-skin="premium"] .pm-poker-wallet-stack > .pm-console-tray.is-height-reserve,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_PLAYER"] .pm-console .pm-console-tray.is-reserved,
 [data-skin="premium"] .pm-shell[data-table-board="POKER_DEALER"] .pm-console .pm-console-tray.is-reserved {
-  display: none;
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* Row 4 — YOUR CARDS | faces | + CARDS */
-[data-skin="premium"] .pm-poker-wallet-stack > .pm-tray-cards {
-  flex: 0 0 auto;
+[data-skin="premium"] .pm-poker-wallet-stack > .pm-poker-cards-slot {
+  min-height: var(--pm-poker-cards-h);
+  height: var(--pm-poker-cards-h);
+  max-height: var(--pm-poker-cards-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 2px 0;
 }
 
-[data-skin="premium"] .pm-poker-wallet-stack > .pm-tray-cards.is-inline {
-  min-height: 36px;
-  padding: 4px 12px 6px;
+[data-skin="premium"] .pm-poker-wallet-stack > .pm-poker-cards-slot > .pm-tray-cards,
+[data-skin="premium"] .pm-poker-wallet-stack > .pm-poker-cards-slot > .pm-tray-cards.is-inline {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  max-height: 34px;
+  padding: 0 12px;
   border-top: 0;
+  box-sizing: border-box;
 }
 
 [data-skin="premium"] .pm-poker-pending-wager {

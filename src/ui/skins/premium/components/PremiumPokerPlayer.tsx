@@ -115,6 +115,29 @@ export function PremiumPokerPlayer({
           onClick: () => setExitOpen(true),
         }
       : null;
+  const startControl = canStartNext
+    ? {
+        label: "START HAND",
+        onClick: () => void onCommand("startNextPokerHand"),
+      }
+    : null;
+  const respondControl = trio.respond
+    ? {
+        label: trio.respond.label,
+        onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
+      }
+    : null;
+  const foldControl = trio.fold
+    ? {
+        label: trio.fold.label,
+        onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
+      }
+    : null;
+  /** Exactly one EXIT TABLE — prefer beside START HAND; never duplicate as primary+secondary. */
+  const primary = startControl ?? respondControl ?? (!foldControl ? exitControl : null);
+  const secondary = startControl ? exitControl : foldControl;
+  const statusInstruction =
+    turnStatus ?? (setup ? phaseCopy.instruction : handDone ? "HAND COMPLETE" : null);
 
   return (
     <PremiumShell
@@ -130,8 +153,8 @@ export function PremiumPokerPlayer({
               </div>
             ) : null
           }
-          turnStatus={turnStatus ?? (setup ? phaseCopy.instruction : handDone ? "HAND COMPLETE" : null)}
-          toCall={liveStreet && view.toCall.label !== "0" ? view.toCall.label : null}
+          turnStatus={statusInstruction}
+          toCall={liveStreet && isActor ? view.toCall.label : null}
           available={view.available.label}
           showTray={showTray}
           reserveTray
@@ -163,31 +186,8 @@ export function PremiumPokerPlayer({
               }
             />
           }
-          primary={
-            canStartNext
-              ? {
-                  label: "START HAND",
-                  onClick: () => void onCommand("startNextPokerHand"),
-                }
-              : trio.respond
-                ? {
-                    label: trio.respond.label,
-                    onClick: () => void onCommand("pokerAct", pokerActPayload(trio.respond!)),
-                  }
-                : exitControl
-          }
-          secondary={
-            canStartNext
-              ? exitControl
-              : trio.fold
-                ? {
-                    label: trio.fold.label,
-                    onClick: () => void onCommand("pokerAct", { type: "FOLD", amount: "0" }),
-                  }
-                : exitControl && !trio.respond
-                  ? exitControl
-                  : null
-          }
+          primary={primary}
+          secondary={secondary}
           tertiary={canStartNext ? null : tertiary}
         />
       }

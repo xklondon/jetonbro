@@ -146,7 +146,7 @@ describe("Premium Poker action strip", () => {
     await new Promise((r) => setTimeout(r, 0));
   }
 
-  it("acting dealer: YOUR TURN above RAISE|CALL|FOLD|ALL IN with jetons then cards", async () => {
+  it("acting dealer: YOUR TURN · TO CALL above RAISE|CALL|FOLD|ALL IN with jetons then cards", async () => {
     root.render(
       createElement(PremiumPokerDealer, {
         view: view("POKER_DEALER", "owner", "owner"),
@@ -156,12 +156,12 @@ describe("Premium Poker action strip", () => {
     );
     await flush();
     expect(host.querySelector("[data-poker-action-bar]")).toBeTruthy();
-    expect(host.querySelector("[data-poker-wallet-stack]")).toBeTruthy();
+    expect(host.querySelector('[data-poker-tray-fixed="true"]')).toBeTruthy();
     expect(host.querySelector("[data-action-strip-head]")).toBeTruthy();
     expect(host.querySelector("[data-tray-turn-top]")).toBeTruthy();
-    expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/YOUR TURN/i);
+    expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/YOUR TURN/);
+    expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/TO CALL\s*5/);
     expect(host.querySelector("[data-to-call]")?.textContent).toMatch(/TO CALL/);
-    expect(host.querySelector("[data-to-call]")?.getAttribute("hidden")).not.toBeNull();
     const turnEl = host.querySelector("[data-poker-turn-hint]");
     const actionsEl = host.querySelector("[data-console-actions]");
     expect(turnEl && actionsEl).toBeTruthy();
@@ -184,7 +184,7 @@ describe("Premium Poker action strip", () => {
     expect(host.querySelector(".pm-console-notice [data-poker-turn-hint]")).toBeNull();
   });
 
-  it("waiting player: action bar shows turn status above jetons, no YOUR TURN", async () => {
+  it("waiting player: turn status above jetons, no YOUR TURN; tray stays fixed", async () => {
     root.render(
       createElement(PremiumPokerPlayer, {
         view: view("POKER_PLAYER", "p1", "owner"),
@@ -193,9 +193,32 @@ describe("Premium Poker action strip", () => {
     );
     await flush();
     expect(host.querySelector("[data-poker-action-bar].is-status-only")).toBeTruthy();
+    expect(host.querySelector('[data-poker-tray-fixed="true"]')).toBeTruthy();
     expect(host.querySelector("[data-poker-turn-hint]")?.textContent).toMatch(/TURN/i);
     expect(host.querySelector("[data-poker-turn-hint]")?.textContent).not.toMatch(/YOUR TURN/i);
     expect(host.querySelector("[data-jeton-tray]")).toBeTruthy();
+  });
+
+  it("player setup exposes a single EXIT TABLE control", async () => {
+    root.render(
+      createElement(PremiumPokerPlayer, {
+        view: {
+          ...view("POKER_PLAYER", "p1", "owner"),
+          phase: "POKER_SETUP",
+          phaseLabel: "SETUP",
+          legalActions: [],
+          waitingCopy: null,
+          canLeaveTable: true,
+          canNextHand: false,
+        },
+        onCommand: () => undefined,
+      }),
+    );
+    await flush();
+    const exits = [...host.querySelectorAll("[data-console-actions] button")].filter((btn) =>
+      /EXIT TABLE/i.test(btn.textContent ?? ""),
+    );
+    expect(exits).toHaveLength(1);
   });
 
   it("both roles open hole card entry from tray ADD CARDS", async () => {

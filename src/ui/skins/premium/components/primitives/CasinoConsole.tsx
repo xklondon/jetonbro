@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { formatPokerTurnStatus } from "../pokerTurnStatus";
 import type { DockAction } from "./CasinoDock";
 import { CasinoJeton } from "./CasinoJeton";
 
@@ -178,6 +179,7 @@ export function CasinoConsole({
   const stripHead = !compact;
   const composeActive = !compact && composeOpen;
   const raiseCompose = composeActive && composeKind === "RAISE";
+  const turnHint = !compact ? formatPokerTurnStatus(turnStatus, toCall) : turnStatus;
 
   return (
     <footer
@@ -284,79 +286,81 @@ export function CasinoConsole({
             ) : null}
           </>
         ) : (
-          /* Compact casino console: status+compose → RAISE|CALL|FOLD|ALL IN → jetons → cards. */
-          <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true">
+          /* Fixed-height casino console: status+compose → actions → jetons → cards. */
+          <div className="pm-poker-wallet-stack" data-poker-wallet-stack="true" data-poker-tray-fixed="true">
             <div
-              className={`pm-console-strip-head${turnStatus || composeActive ? "" : " is-spacer"}${
-                composeActive ? " has-compose" : ""
-              }`}
+              className={`pm-console-strip-head${composeActive ? " has-compose" : ""}`}
               data-action-strip-head="true"
               data-tray-turn-top="true"
               data-raise-slot="true"
               data-raise-input={composeActive ? "true" : undefined}
-              aria-hidden={turnStatus || composeActive ? undefined : true}
             >
-              {turnStatus ? (
+              {turnHint ? (
                 <div className="pm-console-turn" data-poker-turn-hint="true">
                   <span className="pm-console-turn-mark" aria-hidden="true">
                     ♠
                   </span>
-                  {turnStatus}
+                  {turnHint}
                 </div>
               ) : (
                 <span className="pm-console-strip-spacer" aria-hidden="true" />
               )}
-              {composeActive ? (
-                <div className="pm-console-compose is-inline-row" data-compose-row="true">
-                  <span className="pm-console-compose-kind" data-compose-kind="true">
-                    <span className="pm-console-compose-chip-mark" aria-hidden="true">
-                      ◆
+              <div
+                className={`pm-console-compose-slot${composeActive ? " is-active" : " is-reserved"}`}
+                data-compose-slot="true"
+                aria-hidden={composeActive ? undefined : true}
+              >
+                {composeActive ? (
+                  <div className="pm-console-compose is-inline-row" data-compose-row="true">
+                    <span className="pm-console-compose-kind" data-compose-kind="true">
+                      <span className="pm-console-compose-chip-mark" aria-hidden="true">
+                        ◆
+                      </span>
+                      {raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}
                     </span>
-                    {raiseCompose ? "RAISE TO" : composeKind === "BET" ? "BET" : "RAISE TO"}
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    enterKeyHint="done"
-                    autoComplete="off"
-                    className="pm-console-compose-field"
-                    value={composeAmount}
-                    placeholder={minChipAmount != null ? String(minChipAmount) : "0"}
-                    aria-label={raiseCompose ? "Raise to total" : composeKind === "BET" ? "Bet amount" : "Raise to total"}
-                    data-compose-amount="true"
-                    onChange={(event) => onComposeAmount?.(event.target.value)}
-                  />
-                  <span
-                    className="pm-console-compose-add"
-                    data-raise-additional={additionalPreview ?? undefined}
-                  >
-                    +{additionalPreview && additionalPreview !== "0" ? additionalPreview : "0"} TO PAY
-                  </span>
-                  {raiseToPreview ? (
-                    <span data-raise-to-preview={raiseToPreview} hidden>
-                      {raiseToPreview}
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      enterKeyHint="done"
+                      autoComplete="off"
+                      className="pm-console-compose-field"
+                      value={composeAmount}
+                      placeholder={minChipAmount != null ? String(minChipAmount) : "0"}
+                      aria-label={raiseCompose ? "Raise to total" : composeKind === "BET" ? "Bet amount" : "Raise to total"}
+                      data-compose-amount="true"
+                      onChange={(event) => onComposeAmount?.(event.target.value)}
+                    />
+                    <span
+                      className="pm-console-compose-add"
+                      data-raise-additional={additionalPreview ?? undefined}
+                    >
+                      +{additionalPreview && additionalPreview !== "0" ? additionalPreview : "0"} TO PAY
                     </span>
-                  ) : null}
-                  {minChipAmount != null ? (
-                    <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)} hidden>
-                      MIN {minChipAmount}
-                    </span>
-                  ) : null}
-                  {maxChipAmount != null ? (
-                    <span className="pm-console-compose-max" data-raise-max={String(maxChipAmount)} hidden>
-                      MAX {maxChipAmount}
-                    </span>
-                  ) : null}
-                  {committedPreview && committedPreview !== "0" ? (
-                    <span className="pm-console-compose-committed" data-raise-committed={committedPreview} hidden>
-                      IN {committedPreview}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              {/* Keep toCall in DOM for tests/a11y without a visible TO CALL row. */}
-              {showCall ? (
+                    {raiseToPreview ? (
+                      <span data-raise-to-preview={raiseToPreview} hidden>
+                        {raiseToPreview}
+                      </span>
+                    ) : null}
+                    {minChipAmount != null ? (
+                      <span className="pm-console-compose-min" data-raise-min={String(minChipAmount)} hidden>
+                        MIN {minChipAmount}
+                      </span>
+                    ) : null}
+                    {maxChipAmount != null ? (
+                      <span className="pm-console-compose-max" data-raise-max={String(maxChipAmount)} hidden>
+                        MAX {maxChipAmount}
+                      </span>
+                    ) : null}
+                    {committedPreview && committedPreview !== "0" ? (
+                      <span className="pm-console-compose-committed" data-raise-committed={committedPreview} hidden>
+                        IN {committedPreview}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              {toCall != null ? (
                 <span data-to-call="true" hidden>
                   TO CALL {toCall}
                 </span>
@@ -380,21 +384,24 @@ export function CasinoConsole({
                 {allIn ? <ActionButton action={allIn} kind="ghost" allIn /> : null}
               </div>
             </div>
-            {trayVisible ? (
-              <div
-                className={`pm-console-tray${walletInTray ? " has-available" : ""}`}
-                data-jeton-tray="true"
-              >
-                {walletInTray ? (
-                  <div
-                    className="pm-console-tray-available"
-                    data-player-wallet="true"
-                    data-tray-available="true"
-                  >
-                    <small>AVAILABLE</small>
-                    <strong>{available}</strong>
-                  </div>
-                ) : null}
+            <div
+              className={`pm-console-tray${walletInTray ? " has-available" : ""}${
+                trayVisible ? "" : " is-height-reserve"
+              }`}
+              data-jeton-tray={trayVisible ? "true" : "reserved"}
+              aria-hidden={trayVisible ? undefined : true}
+            >
+              {trayVisible && walletInTray ? (
+                <div
+                  className="pm-console-tray-available"
+                  data-player-wallet="true"
+                  data-tray-available="true"
+                >
+                  <small>AVAILABLE</small>
+                  <strong>{available}</strong>
+                </div>
+              ) : null}
+              {trayVisible ? (
                 <TrayChips
                   trayEnabled={trayEnabled}
                   selectedChip={selectedChip}
@@ -402,11 +409,11 @@ export function CasinoConsole({
                   onChip={onChip}
                   composeKind={composeKind}
                 />
-              </div>
-            ) : (
-              <div className="pm-console-tray is-height-reserve" data-jeton-tray="reserved" aria-hidden="true" />
-            )}
-            {trayCards}
+              ) : null}
+            </div>
+            <div className="pm-poker-cards-slot" data-poker-cards-slot="true">
+              {trayCards}
+            </div>
           </div>
         )}
         {children}
