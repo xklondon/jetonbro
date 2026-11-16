@@ -1431,8 +1431,16 @@
 }
 
 [data-skin="premium"] .pm-tray-cards.is-inline .pm-tray-cards-btn {
-  min-height: 1.35rem;
-  padding: 0 7px;
+  min-height: 28px;
+  min-width: 44px;
+  padding: 0 8px;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+[data-skin="premium"] .pm-tray-cards.is-inline.has-board-add .pm-tray-cards-btn {
+  min-width: 0;
+  padding: 0 6px;
 }
 
 [data-skin="premium"] .pm-tray-cards.is-inline .pm-playing-card.is-mini {

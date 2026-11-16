@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker felt hole cards removed + single ADD row (JetBro II Web)
+
+- Commit pending on `fix/blackjack-stable-anatomy-v1` — presentation only: no hole cards (faces or backs) on the felt for any seat; remove BOARD tray row; dealer YOUR CARDS is one row with UNDO / + MINE / + BOARD; community faces stay on the felt. Fixed 226px tray preserved. No gameplay, accounting, backend, permissions, or Blackjack changes.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only. URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker 29/29; guardrails + `npm run build`. Visual @390/1440 tray 226; no felt holes; + MINE/+ BOARD one row. Deploy after ship.
+
 ### Premium Poker dealer cards / actions / DEAL HAND (JetBro II Web)
 
 - Commit `e8af166` on `fix/blackjack-stable-anatomy-v1` — presentation only: ME hole faces stay in YOUR CARDS (felt shows backs only); BOARD faces stay on the community rail (tray BOARD control is faces-free); action strip uses equal-width centered columns from live button count; DEAL HAND sits in the status row via existing start/next-hand callbacks. No gameplay, accounting, backend, permissions, or Blackjack changes.

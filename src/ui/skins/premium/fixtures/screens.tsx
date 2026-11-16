@@ -346,7 +346,14 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
           isOwner: true,
           pot: money("45"),
           seats: [
-            pokerSeat("v", "Dee", 0, { isDealer: true }),
+            pokerSeat("v", "Dee", 0, {
+              isDealer: true,
+              hasHoleCards: true,
+              holeCards: [
+                { rank: "Q", suit: "c", label: "Qc" },
+                { rank: "J", suit: "d", label: "Jd" },
+              ],
+            }),
             pokerSeat("s", "Sam", 1, { isSmallBlind: true, streetContribution: money("15"), isActor: true }),
             pokerSeat("t", "Tom", 2, { isBigBlind: true, streetContribution: money("15") }),
           ],
@@ -354,6 +361,8 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
           currentActorId: "s",
           canDealStreet: true,
           nextStreetLabel: "DEAL TURN",
+          canEditHole: true,
+          canEditCommunity: true,
           streetRail: [
             { id: "PRE_FLOP", state: "done" },
             { id: "FLOP", state: "current" },

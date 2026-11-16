@@ -304,34 +304,23 @@ export function PremiumPokerDealer({
           onChip={addChip}
           allIn={allIn}
           trayCards={
-            <>
-              {ownerSeated ? (
-                <PremiumTrayCards
-                  layout="inline"
-                  cards={ownHole}
-                  enabled={view.canEditHole}
-                  onAdd={() => setCards("hole")}
-                  onRemoveLast={
-                    view.canEditHole && ownHole.length
-                      ? () =>
-                          void onCommand("setPokerHoleCards", {
-                            cards: JSON.stringify(ownHole.slice(0, -1).map((c) => ({ rank: c.rank, suit: c.suit }))),
-                          })
-                      : undefined
-                  }
-                />
-              ) : null}
-              {/* Board faces live only on the felt — tray keeps a faces-free entry control. */}
-              {view.canEditCommunity ? (
-                <PremiumTrayCards
-                  layout="inline"
-                  cards={[]}
-                  enabled={view.canEditCommunity}
-                  label="BOARD"
-                  onAdd={() => setCards("board")}
-                />
-              ) : null}
-            </>
+            ownerSeated || view.canEditCommunity ? (
+              <PremiumTrayCards
+                layout="inline"
+                cards={ownerSeated ? ownHole : []}
+                enabled={Boolean(ownerSeated && view.canEditHole)}
+                onAdd={ownerSeated ? () => setCards("hole") : undefined}
+                onAddBoard={view.canEditCommunity ? () => setCards("board") : undefined}
+                onRemoveLast={
+                  ownerSeated && view.canEditHole && ownHole.length
+                    ? () =>
+                        void onCommand("setPokerHoleCards", {
+                          cards: JSON.stringify(ownHole.slice(0, -1).map((c) => ({ rank: c.rank, suit: c.suit }))),
+                        })
+                    : undefined
+                }
+              />
+            ) : null
           }
           statusAction={dealHandAction}
           primary={primary}

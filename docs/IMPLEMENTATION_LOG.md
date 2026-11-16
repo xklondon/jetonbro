@@ -1,3 +1,10 @@
+# Premium Poker felt hole cards removed + single ADD row
+
+- Branch `fix/blackjack-stable-anatomy-v1` — Premium presentation only.
+- Root cause: `PokerSeat` still rendered hole backs/faces on the felt; dealer tray mounted a second BOARD strip.
+- Fix: remove all felt hole-card rendering; single `PremiumTrayCards` row with optional `onAddBoard` (+ MINE / + BOARD); community faces remain on felt only.
+- Gate: Vitest Premium Poker 29/29; guardrails + production build; `docs/screenshots/premium/poker-cards-felt-final/` @390/1440 (tray 226px). Railway JetBro II Web after ship. Not merged. Not tagged. Staging/lite untouched.
+
 # Premium Poker dealer cards / actions / DEAL HAND
 
 - Branch `fix/blackjack-stable-anatomy-v1` — Premium presentation only.
