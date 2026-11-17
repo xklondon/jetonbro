@@ -207,6 +207,8 @@ export function PremiumPokerPlayer({
         viewerId={view.viewerId}
         pendingWager={composeOpen && pendingLabel ? pendingLabel : null}
         pendingChips={composeOpen ? pendingChips : []}
+        smallBlind={view.smallBlind.label}
+        bigBlind={view.bigBlind.label}
       />
       <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
       {cards === "board" ? (

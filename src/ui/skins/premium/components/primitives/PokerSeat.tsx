@@ -14,28 +14,40 @@ function StartingStack({ millis, label }: { millis: string; label: string }) {
   );
 }
 
-function RoleBadge({
-  kind,
-  label,
-}: {
-  kind: "dealer" | "sb" | "bb";
-  label: string;
-}) {
+function DealerBadge() {
   return (
     <span
-      className={`pm-poker-role-badge is-${kind}`}
-      data-dealer-button={kind === "dealer" ? "true" : undefined}
-      data-blind-badge={kind === "dealer" ? undefined : kind}
-      aria-label={kind === "dealer" ? "Dealer button" : kind === "sb" ? "Small blind" : "Big blind"}
+      className="pm-poker-role-badge is-dealer"
+      data-dealer-button="true"
+      aria-label="Dealer button"
     >
-      {label}
+      D
+    </span>
+  );
+}
+
+function BlindJeton({
+  kind,
+  amount,
+}: {
+  kind: "sb" | "bb";
+  amount: string;
+}) {
+  if (!amount || amount === "0") return null;
+  return (
+    <span
+      className="pm-poker-blind-jeton"
+      data-blind-badge={kind}
+      aria-label={kind === "sb" ? `Small blind ${amount}` : `Big blind ${amount}`}
+    >
+      <CasinoJeton denomination={amount} size="sm" label={amount} />
     </span>
   );
 }
 
 /**
  * Compact cockpit seat — same structure for every player including the local viewer.
- * D / SB / BB live as external badges; active turn is a red panel border only.
+ * D is a gold badge; blinds use CasinoJeton at the top-right corner.
  */
 export function PokerSeat({
   seat,
@@ -45,6 +57,8 @@ export function PokerSeat({
   toneIndex = 0,
   pendingWager = null,
   pendingChips = [],
+  smallBlind = null,
+  bigBlind = null,
 }: {
   seat: PokerSeatView;
   style: CSSProperties;
@@ -55,6 +69,10 @@ export function PokerSeat({
   /** Compose wager shown on the felt beside ME until Confirm. */
   pendingWager?: string | null;
   pendingChips?: string[];
+  /** Configured table small-blind label (e.g. "5"). */
+  smallBlind?: string | null;
+  /** Configured table big-blind label (e.g. "10"). */
+  bigBlind?: string | null;
 }) {
   const displayName = isMe ? "YOU" : seat.name;
   const tone = isMe ? "me" : String(toneIndex % 4);
@@ -73,9 +91,9 @@ export function PokerSeat({
       data-seat-actor={seat.isActor ? "true" : undefined}
       data-seat-dealer={seat.isDealer ? "true" : undefined}
     >
-      {seat.isDealer ? <RoleBadge kind="dealer" label="D" /> : null}
-      {seat.isSmallBlind ? <RoleBadge kind="sb" label="SB" /> : null}
-      {seat.isBigBlind ? <RoleBadge kind="bb" label="BB" /> : null}
+      {seat.isDealer ? <DealerBadge /> : null}
+      {seat.isSmallBlind ? <BlindJeton kind="sb" amount={smallBlind ?? ""} /> : null}
+      {seat.isBigBlind ? <BlindJeton kind="bb" amount={bigBlind ?? ""} /> : null}
       {showPending ? (
         <div
           className="pm-poker-pending-wager"

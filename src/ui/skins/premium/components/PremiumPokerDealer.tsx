@@ -343,6 +343,8 @@ export function PremiumPokerDealer({
           viewerId={view.viewerId}
           pendingWager={composeOpen && pendingLabel ? pendingLabel : null}
           pendingChips={composeOpen ? pendingChips : []}
+          smallBlind={view.smallBlind.label}
+          bigBlind={view.bigBlind.label}
         />
         {showdown ? (
           <div className="pm-poker-payout-zone">

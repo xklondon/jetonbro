@@ -65,6 +65,8 @@ export function PokerTable({
   viewerId,
   pendingWager = null,
   pendingChips = [],
+  smallBlind = null,
+  bigBlind = null,
 }: {
   tableName: string;
   /** Setup-only short instruction — never a live phase heading. */
@@ -80,6 +82,9 @@ export function PokerTable({
   /** Compose wager beside ME until Confirm (then clears; pot updates from server). */
   pendingWager?: string | null;
   pendingChips?: string[];
+  /** Configured table blind labels for seat-corner CasinoJetons. */
+  smallBlind?: string | null;
+  bigBlind?: string | null;
 }) {
   const ordered = [...seats].sort((a, b) => {
     if (a.userId === viewerId) return -1;
@@ -157,6 +162,8 @@ export function PokerTable({
                 showStartingStack={false}
                 pendingWager={isMe ? pendingWager : null}
                 pendingChips={isMe ? pendingChips : []}
+                smallBlind={smallBlind}
+                bigBlind={bigBlind}
                 style={{ left: pos.left, top: pos.top }}
               />
             );

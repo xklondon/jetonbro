@@ -1645,17 +1645,28 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
-/* D top-left; SB/BB top-right — both overlap the panel border, never stack. */
+/* D top-left — overlaps the panel border. */
 [data-skin="premium"] .pm-poker-role-badge.is-dealer {
   top: -0.4rem;
   left: -0.35rem;
 }
 
-[data-skin="premium"] .pm-poker-role-badge.is-sb,
-[data-skin="premium"] .pm-poker-role-badge.is-bb {
-  top: -0.4rem;
-  right: -0.35rem;
-  left: auto;
+/* Blind amount CasinoJeton — top-right corner, same anchor as former SB/BB badge. */
+[data-skin="premium"] .pm-poker-blind-jeton {
+  position: absolute;
+  top: -0.55rem;
+  right: -0.55rem;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
+[data-skin="premium"] .pm-poker-blind-jeton .pm-jeton {
+  width: 22px;
+  height: 22px;
+  font-size: 8px;
 }
 
 [data-skin="premium"] .pm-poker-seat-status {
