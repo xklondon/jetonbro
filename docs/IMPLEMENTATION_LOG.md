@@ -1,3 +1,9 @@
+# Premium Poker seat badge corners + no avatars
+
+- Branch `fix/blackjack-stable-anatomy-v1` — Premium Poker seat presentation only.
+- SB/BB move to top-right corner tokens; D stays top-left; remove circular initials medals from cockpit panels.
+- Gate: Vitest 19/19 seat-focused; build; visual @390/1440. Railway JetBro II Web `f4279513-b540-4344-bcc3-c46395ec2ab9` SUCCESS. `/api/health` ok. Not merged. Not tagged.
+
 # Premium Poker cockpit table visual
 
 - Branch `fix/blackjack-stable-anatomy-v1` — Premium Poker felt/table presentation only.

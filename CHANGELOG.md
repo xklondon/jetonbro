@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker seat badge corners + no avatars (JetBro II Web)
+
+- Commit `6765eb5` on `fix/blackjack-stable-anatomy-v1` — presentation only: SB/BB gold tokens on the top-right panel corner; D on the top-left; circular seat avatars removed. Tray/pot/board/gameplay untouched.
+- Target: Railway project `tranquil-unity` / production / **JetBro II Web** only (`f4279513-b540-4344-bcc3-c46395ec2ab9`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker seat/dealer/player/cards 19/19; production build; visual @390/1440 (`docs/screenshots/premium/poker-seat-badges/`). `/api/health` ok. Not merged or tagged.
+
 ### Premium Poker cockpit table visual (JetBro II Web)
 
 - Commit `17d6b69` on `fix/blackjack-stable-anatomy-v1` — Premium Poker felt only: compact cockpit seats (name + jeton balance), external D/SB/BB badges, red actor border (no seat YOUR TURN), pot amount above layered jetons without "POT" word, compact street rail. Tray unchanged (226px @390). No gameplay, accounting, backend, permissions, or Blackjack changes.
