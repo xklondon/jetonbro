@@ -14,16 +14,18 @@ export function PhaseJourney({ phase }: { phase: string }) {
   const active = index >= 0 ? index : current.includes("FLOP") ? 1 : current.includes("TURN") ? 2 : current.includes("RIVER") ? 3 : current.includes("SHOW") || current.includes("COMPLETE") ? 4 : 0;
 
   return (
-    <div className="pm-phase-journey" data-phase-journey="true" aria-hidden="true">
+    <div className="pm-phase-journey is-inline-rail" data-phase-journey="true" aria-hidden="true">
       {STREETS.map((street, i) => (
-        <span
-          key={street}
-          className={i < active ? "is-done" : i === active ? "is-current" : undefined}
-          data-rail-label={street}
-          data-rail-state={i < active ? "done" : i === active ? "current" : "upcoming"}
-          data-testid={`poker-rail-${street.toLowerCase()}`}
-        >
-          {street}
+        <span key={street} className="pm-phase-journey-item">
+          {i > 0 ? <span className="pm-phase-journey-sep">|</span> : null}
+          <span
+            className={i < active ? "is-done" : i === active ? "is-current" : undefined}
+            data-rail-label={street}
+            data-rail-state={i < active ? "done" : i === active ? "current" : "upcoming"}
+            data-testid={`poker-rail-${street.toLowerCase()}`}
+          >
+            {street}
+          </span>
         </span>
       ))}
     </div>

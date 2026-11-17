@@ -173,7 +173,7 @@ describe("Premium Poker mounted tray + card entry", () => {
     expect(host.querySelector('[data-pot-chips="true"]')).toBeNull();
   });
 
-  it("active hand shows pot cluster + POT and stable tray for dealer and player", async () => {
+  it("active hand shows pot amount + jeton cluster and stable tray for dealer and player", async () => {
     root.render(
       createElement(PremiumPokerDealer, {
         view: baseView("POKER_DEALER", "owner"),

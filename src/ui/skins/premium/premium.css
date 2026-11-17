@@ -1186,47 +1186,62 @@
 [data-skin="premium"] .pm-phase-journey {
   position: absolute;
   left: 50%;
-  /* Below pot on live hands; clear of setup copy band. */
-  top: 56%;
+  /* Below community cards; clear of pot and seat cockpits. */
+  top: 58%;
   transform: translateX(-50%);
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 0;
   pointer-events: none;
   z-index: 2;
+  max-width: min(94%, 22rem);
 }
 
 [data-skin="premium"] .pm-poker-overlay.is-setup .pm-phase-journey {
   top: 54%;
 }
 
-[data-skin="premium"] .pm-phase-journey span {
-  font-size: 8px;
-  letter-spacing: 0.06em;
-  color: rgba(244, 234, 213, 0.35);
+[data-skin="premium"] .pm-phase-journey-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+[data-skin="premium"] .pm-phase-journey-sep {
+  font-size: 7px;
+  color: rgba(244, 234, 213, 0.28);
+  padding: 0;
+  border: 0;
+}
+
+[data-skin="premium"] .pm-phase-journey [data-rail-label] {
+  font-size: 7px;
+  letter-spacing: 0.05em;
+  color: rgba(244, 234, 213, 0.38);
   padding: 2px 5px;
   border-radius: 999px;
   border: 1px solid transparent;
   white-space: nowrap;
 }
 
-[data-skin="premium"] .pm-phase-journey span.is-current {
+[data-skin="premium"] .pm-phase-journey [data-rail-label].is-current {
   color: var(--pm-gold-hi);
-  border-color: rgba(212, 184, 130, 0.45);
-  background: rgba(4, 18, 14, 0.45);
+  border-color: rgba(212, 184, 130, 0.55);
+  background: rgba(4, 18, 14, 0.4);
 }
 
-[data-skin="premium"] .pm-phase-journey span.is-done {
+[data-skin="premium"] .pm-phase-journey [data-rail-label].is-done {
   color: rgba(212, 184, 130, 0.55);
 }
 
 [data-skin="premium"] .pm-poker-pot {
   position: absolute;
   left: 50%;
-  top: 36%;
+  top: 34%;
   transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 6px;
   min-width: 0;
   max-width: min(86%, 12rem);
   padding: 0;
@@ -1239,7 +1254,7 @@
   pointer-events: none;
 }
 
-/* Poker0: mixed jeton mound above clear POT / total */
+/* Layered jetons sit under the pot total (no "POT" word). */
 [data-skin="premium"] .pm-poker-pot-cluster {
   position: relative;
   width: 7.2rem;
@@ -1280,8 +1295,8 @@
 [data-skin="premium"] .pm-poker-pot small,
 [data-skin="premium"] .pm-poker-pot-copy small {
   display: block;
-  font: 700 12px/1.15 var(--pm-sans);
-  letter-spacing: 0.28em;
+  font: 700 11px/1.15 var(--pm-sans);
+  letter-spacing: 0.22em;
   color: #f3dc9a;
   text-transform: uppercase;
 }
@@ -1289,16 +1304,17 @@
 [data-skin="premium"] .pm-poker-pot strong,
 [data-skin="premium"] .pm-poker-pot-copy strong {
   display: block;
-  margin-top: 3px;
-  font: 700 34px/1.05 var(--pm-serif);
-  color: #f3dc9a;
+  margin: 0;
+  font: 700 36px/1 var(--pm-serif);
+  color: #f7f3ea;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
 }
 
 /* Dedicated community-card rail — between pot and street journey, never seat-owned. */
 [data-skin="premium"] .pm-poker-board {
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 48%;
   transform: translate(-50%, -50%);
   display: flex;
   justify-content: center;
@@ -1533,53 +1549,68 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-/* Compact seats — clear of table name / street rail / pot */
+/* Compact cockpit seats — same structure for every player including YOU. */
 [data-skin="premium"] .pm-poker-seat {
   position: absolute;
-  width: clamp(3.4rem, 14cqi, 4.4rem);
+  width: clamp(4.4rem, 18cqi, 5.4rem);
   transform: translate(-50%, -50%);
   display: grid;
   justify-items: center;
-  gap: 1px;
+  gap: 0;
   pointer-events: auto;
   z-index: 3;
 }
 
 [data-skin="premium"] .pm-poker-seat.is-me {
-  width: clamp(5.2rem, 20cqi, 6.8rem);
   z-index: 5;
-  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+[data-skin="premium"] .pm-poker-seat-cockpit {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 6px 8px 7px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(28, 24, 18, 0.96) 0%, rgba(10, 10, 10, 0.94) 100%);
+  border: 1.5px solid rgba(212, 184, 130, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(244, 220, 170, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+[data-skin="premium"] .pm-poker-seat.is-actor .pm-poker-seat-cockpit {
+  border-color: rgba(210, 56, 56, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(180, 30, 30, 0.55),
+    0 0 14px rgba(220, 40, 40, 0.55),
+    inset 0 1px 0 rgba(255, 180, 180, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 [data-skin="premium"] .pm-poker-seat-medal {
-  width: clamp(2rem, 8.5cqi, 2.6rem);
-  height: clamp(2rem, 8.5cqi, 2.6rem);
+  width: 1.7rem;
+  height: 1.7rem;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font: 700 12px/1 var(--pm-serif);
+  font: 700 11px/1 var(--pm-sans);
   color: var(--pm-ivory);
   background:
     radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
     linear-gradient(160deg, #2a8f68, #0c4634);
   border: 1.5px solid rgba(212, 184, 130, 0.7);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 [data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-medal {
-  width: clamp(3.1rem, 12.5cqi, 3.9rem);
-  height: clamp(3.1rem, 12.5cqi, 3.9rem);
-  font: 700 12px/1 var(--pm-serif);
-  letter-spacing: 0.08em;
   color: #1a1208;
   background:
     radial-gradient(circle at 32% 28%, rgba(255, 248, 220, 0.85), transparent 42%),
     linear-gradient(155deg, #f6e2a4 0%, #d4b05a 46%, #8a6a28 100%);
-  border: 2px solid rgba(244, 220, 150, 0.98);
-  box-shadow:
-    0 0 0 1px rgba(90, 60, 20, 0.4),
-    0 0 0 4px rgba(18, 72, 48, 0.28),
-    0 8px 18px rgba(0, 0, 0, 0.5);
+  border-color: rgba(244, 220, 150, 0.95);
 }
 
 [data-skin="premium"] .pm-poker-seat.is-tone-0 .pm-poker-seat-medal {
@@ -1606,31 +1637,52 @@
     linear-gradient(160deg, #2a8f68, #0c4634);
 }
 
-[data-skin="premium"] .pm-poker-seat.is-actor .pm-poker-seat-medal {
-  box-shadow:
-    0 0 0 2px rgba(223, 189, 105, 0.45),
-    0 0 12px rgba(223, 189, 105, 0.5),
-    0 4px 10px rgba(0, 0, 0, 0.4);
+[data-skin="premium"] .pm-poker-seat-name {
+  display: block;
+  max-width: 100%;
+  font: 600 10px/1.1 var(--pm-sans);
+  color: var(--pm-ivory);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-[data-skin="premium"] .pm-poker-seat.is-me.is-actor .pm-poker-seat-medal {
-  box-shadow:
-    0 0 0 2px rgba(244, 220, 150, 0.65),
-    0 0 16px rgba(223, 189, 105, 0.55),
-    0 6px 14px rgba(0, 0, 0, 0.45);
+[data-skin="premium"] .pm-poker-seat-balance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 100%;
+  font: 600 10px/1 var(--pm-sans);
+  color: rgba(243, 220, 154, 0.95);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-[data-skin="premium"] .pm-poker-dealer-btn {
+[data-skin="premium"] .pm-poker-seat-chip-ico {
+  flex: 0 0 auto;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 248, 220, 0.95), transparent 42%),
+    linear-gradient(160deg, #f0d78a 0%, #b8924a 100%);
+  border: 1px solid rgba(90, 60, 20, 0.55);
+  box-shadow: inset 0 0 0 1.5px rgba(90, 60, 20, 0.25);
+}
+
+/* External D / SB / BB badges — outside the cockpit panel. */
+[data-skin="premium"] .pm-poker-role-badge {
   position: absolute;
-  top: -0.15rem;
-  right: -0.35rem;
   z-index: 6;
-  width: 1.15rem;
+  min-width: 1.15rem;
   height: 1.15rem;
+  padding: 0 3px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font: 700 8px/1 var(--pm-sans);
+  font: 700 7px/1 var(--pm-sans);
   letter-spacing: 0.02em;
   color: #1a1208;
   background:
@@ -1640,86 +1692,20 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
-[data-skin="premium"] .pm-poker-turn-marker {
-  position: absolute;
-  top: -1.05rem;
+[data-skin="premium"] .pm-poker-role-badge.is-dealer {
+  top: -0.4rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font: 700 7px/1 var(--pm-sans);
-  letter-spacing: 0.14em;
-  color: #1a1208;
-  background: linear-gradient(180deg, #f3dc9a 0%, #d4b882 100%);
-  border: 1px solid rgba(90, 60, 20, 0.45);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  white-space: nowrap;
 }
 
-[data-skin="premium"] .pm-poker-seat.is-me .pm-poker-turn-marker {
-  top: -1.2rem;
-  font-size: 8px;
-  padding: 3px 8px;
+[data-skin="premium"] .pm-poker-role-badge.is-sb {
+  left: -0.45rem;
+  top: 0.45rem;
 }
 
-[data-skin="premium"] .pm-poker-seat-plaque {
-  min-width: 3.6rem;
-  max-width: 4.6rem;
-  padding: 2px 5px;
-  border-radius: 7px;
-  background: rgba(8, 10, 8, 0.78);
-  border: 1px solid rgba(212, 184, 130, 0.35);
-  text-align: center;
-  overflow: hidden;
-}
-
-[data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-plaque {
-  min-width: 5.4rem;
-  max-width: 7rem;
-  padding: 5px 10px;
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(52, 40, 22, 0.94) 0%, rgba(14, 12, 10, 0.92) 100%);
-  border: 1.5px solid rgba(232, 198, 120, 0.65);
-  box-shadow:
-    inset 0 1px 0 rgba(244, 220, 170, 0.12),
-    0 5px 14px rgba(0, 0, 0, 0.45);
-}
-
-[data-skin="premium"] .pm-poker-seat-plaque strong {
-  display: block;
-  font: 600 10px/1.1 var(--pm-sans);
-  color: var(--pm-ivory);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-[data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-plaque strong {
-  font: 700 12px/1.15 var(--pm-serif);
-  letter-spacing: 0.08em;
-  color: #f3dc9a;
-}
-
-[data-skin="premium"] .pm-poker-seat-plaque span {
-  display: block;
-  font-size: 9px;
-  color: rgba(212, 184, 130, 0.85);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-[data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-plaque span {
-  font-size: 11px;
-  color: rgba(243, 220, 154, 0.95);
-}
-
-[data-skin="premium"] .pm-poker-seat-markers {
-  font: 700 8px/1.15 var(--pm-sans);
-  letter-spacing: 0.04em;
-  color: var(--pm-gold-hi);
+[data-skin="premium"] .pm-poker-role-badge.is-bb {
+  right: -0.45rem;
+  top: 0.45rem;
 }
 
 [data-skin="premium"] .pm-poker-seat-status {

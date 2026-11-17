@@ -8,29 +8,47 @@ import { PokerSeat } from "./PokerSeat";
 
 /**
  * Stable portrait seat anchors (percent of stage).
- * Index 0 = viewer (ME) at bottom-center, clear of pot and tray.
- * Centre corridor reserved for name / journey / pot (+ pot chips).
+ * Index 0 = local viewer at bottom-center, clear of pot and above the tray.
+ * Centre corridor reserved for pot / board / street rail. Adapts to 2–6 seats.
  */
 function seatLayout(count: number): { left: string; top: string }[] {
-  // ME (index 0) sits bottom-center on the felt rail, clear of pot and above the tray.
   if (count <= 2) {
     return [
-      { left: "50%", top: "74%" },
-      { left: "50%", top: "12%" },
+      { left: "50%", top: "82%" },
+      { left: "50%", top: "13%" },
     ];
   }
   if (count === 3) {
     return [
-      { left: "50%", top: "74%" },
-      { left: "12%", top: "38%" },
-      { left: "88%", top: "38%" },
+      { left: "50%", top: "82%" },
+      { left: "13%", top: "36%" },
+      { left: "87%", top: "36%" },
+    ];
+  }
+  if (count === 4) {
+    return [
+      { left: "50%", top: "82%" },
+      { left: "12%", top: "44%" },
+      { left: "50%", top: "12%" },
+      { left: "88%", top: "44%" },
+    ];
+  }
+  if (count === 5) {
+    return [
+      { left: "50%", top: "82%" },
+      { left: "12%", top: "54%" },
+      { left: "16%", top: "18%" },
+      { left: "84%", top: "18%" },
+      { left: "88%", top: "54%" },
     ];
   }
   return [
-    { left: "50%", top: "74%" },
-    { left: "10%", top: "42%" },
+    { left: "50%", top: "82%" },
+    { left: "11%", top: "56%" },
+    { left: "14%", top: "22%" },
     { left: "50%", top: "10%" },
-    { left: "90%", top: "42%" },
+    { left: "86%", top: "22%" },
+    { left: "89%", top: "56%" },
   ];
 }
 

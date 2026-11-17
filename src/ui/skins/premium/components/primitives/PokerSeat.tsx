@@ -14,6 +14,29 @@ function StartingStack({ millis, label }: { millis: string; label: string }) {
   );
 }
 
+function RoleBadge({
+  kind,
+  label,
+}: {
+  kind: "dealer" | "sb" | "bb";
+  label: string;
+}) {
+  return (
+    <span
+      className={`pm-poker-role-badge is-${kind}`}
+      data-dealer-button={kind === "dealer" ? "true" : undefined}
+      data-blind-badge={kind === "dealer" ? undefined : kind}
+      aria-label={kind === "dealer" ? "Dealer button" : kind === "sb" ? "Small blind" : "Big blind"}
+    >
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Compact cockpit seat — same structure for every player including the local viewer.
+ * D / SB / BB live as external badges; active turn is a red panel border only.
+ */
 export function PokerSeat({
   seat,
   style,
@@ -34,13 +57,13 @@ export function PokerSeat({
   pendingChips?: string[];
 }) {
   const initial = (seat.name || "?").slice(0, 1).toUpperCase();
-  const blindMarkers = [seat.isSmallBlind ? "SB" : null, seat.isBigBlind ? "BB" : null].filter(Boolean).join(" · ");
+  const displayName = isMe ? "YOU" : seat.name;
   const tone = isMe ? "me" : String(toneIndex % 4);
   const showPending = Boolean(isMe && pendingWager && pendingWager !== "0");
 
   return (
     <div
-      className={`pm-poker-seat${seat.isActor ? " is-actor" : ""}${isMe ? " is-me" : ""}${
+      className={`pm-poker-seat is-cockpit${seat.isActor ? " is-actor" : ""}${isMe ? " is-me" : ""}${
         seat.isDealer ? " is-dealer" : ""
       }${showPending ? " has-pending-wager" : ""} is-tone-${tone}`}
       style={style}
@@ -51,16 +74,9 @@ export function PokerSeat({
       data-seat-actor={seat.isActor ? "true" : undefined}
       data-seat-dealer={seat.isDealer ? "true" : undefined}
     >
-      {seat.isDealer ? (
-        <span className="pm-poker-dealer-btn" data-dealer-button="true" aria-label="Dealer button">
-          D
-        </span>
-      ) : null}
-      {seat.isActor ? (
-        <span className="pm-poker-turn-marker" data-turn-marker="true">
-          TURN
-        </span>
-      ) : null}
+      {seat.isDealer ? <RoleBadge kind="dealer" label="D" /> : null}
+      {seat.isSmallBlind ? <RoleBadge kind="sb" label="SB" /> : null}
+      {seat.isBigBlind ? <RoleBadge kind="bb" label="BB" /> : null}
       {showPending ? (
         <div
           className="pm-poker-pending-wager"
@@ -81,13 +97,15 @@ export function PokerSeat({
       {showStartingStack ? (
         <StartingStack millis={seat.available.millis} label={seat.available.label} />
       ) : null}
-      <div className="pm-poker-seat-medal" aria-hidden="true">
-        {isMe ? "ME" : initial}
-      </div>
-      <div className="pm-poker-seat-plaque">
-        <strong>{isMe ? "ME" : seat.name}</strong>
-        <span data-seat-balance="true">{seat.available.label}</span>
-        {blindMarkers ? <span className="pm-poker-seat-markers">{blindMarkers}</span> : null}
+      <div className="pm-poker-seat-cockpit" data-seat-cockpit="true">
+        <div className="pm-poker-seat-medal" aria-hidden="true">
+          {isMe ? "Y" : initial}
+        </div>
+        <strong className="pm-poker-seat-name">{displayName}</strong>
+        <span className="pm-poker-seat-balance" data-seat-balance="true">
+          <span className="pm-poker-seat-chip-ico" aria-hidden="true" />
+          {seat.available.label}
+        </span>
         {seat.status && seat.status !== "ACTIVE" ? (
           <span className="pm-poker-seat-status">{seat.status.replace(/_/g, " ")}</span>
         ) : null}

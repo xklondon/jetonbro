@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker cockpit table visual (JetBro II Web)
+
+- Commit pending on `fix/blackjack-stable-anatomy-v1` — Premium Poker felt only: compact cockpit seats (name + jeton balance), external D/SB/BB badges, red actor border (no seat YOUR TURN), pot amount above layered jetons without "POT" word, compact street rail. Tray unchanged (226px @390). No gameplay, accounting, backend, permissions, or Blackjack changes.
+- Target: Railway project `tranquil-unity` (dashboard **JetBro-II**) / environment `production` / service **JetBro II Web** only. URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest Premium Poker seat/pot/dealer/player/cards/ActionStrip; guardrails + `npm run build`. Visual @390/1440 in `docs/screenshots/premium/poker-table-cockpit/`. Deploy after ship.
+
 ### Premium Poker felt hole cards removed + single ADD row (JetBro II Web)
 
 - Commit `d0d35a6` on `fix/blackjack-stable-anatomy-v1` — presentation only: no hole cards (faces or backs) on the felt for any seat; remove BOARD tray row; dealer YOUR CARDS is one row with UNDO / + MINE / + BOARD; community faces stay on the felt. Fixed 226px tray preserved. No gameplay, accounting, backend, permissions, or Blackjack changes.

@@ -11,11 +11,13 @@ describe("PokerPot", () => {
     expect(html).toContain('data-pot-chips="true"');
     expect(html).toContain('data-pot-chip-sum="60"');
     expect(html).toContain("pm-poker-pot-cluster");
-    expect(html).toContain(">POT<");
+    expect(html).not.toContain(">POT<");
     expect(html).toContain('data-pot-amount="60"');
     expect(html).toContain("data-casino-jeton");
     expect(html).not.toContain("data-side-pots");
     expect(html).not.toContain("-pad-");
+    // Amount precedes the jeton cluster in the DOM.
+    expect(html.indexOf('data-pot-amount="60"')).toBeLessThan(html.indexOf('data-pot-chips="true"'));
   });
 
   it("shows side-pot labels only when side pots exist", () => {

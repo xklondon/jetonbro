@@ -264,6 +264,7 @@ export const PREMIUM_FIXTURE_IDS = [
   "12-poker-hand-complete",
   "13-poker-setup-starting-stack",
   "14-bj-player-betting-no-stake",
+  "15-poker-six-player-flop",
 ] as const;
 
 export type PremiumFixtureId = (typeof PREMIUM_FIXTURE_IDS)[number];
@@ -430,6 +431,59 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
           streetRail: [
             { id: "PRE_FLOP", state: "next" },
             { id: "FLOP", state: "next" },
+          ],
+        }),
+        onCommand: noop,
+      });
+    case "15-poker-six-player-flop":
+      return createElement(PremiumPokerPlayer, {
+        view: poker({
+          phase: "FLOP",
+          phaseLabel: "FLOP",
+          pot: money("50"),
+          toCall: money("0", "0"),
+          available: money("95"),
+          seats: [
+            pokerSeat("v", "You", 0, {
+              isDealer: false,
+              available: money("95"),
+              streetContribution: money("10"),
+            }),
+            pokerSeat("a", "Alex", 1, {
+              isBigBlind: true,
+              available: money("120"),
+              streetContribution: money("10"),
+            }),
+            pokerSeat("x", "xklondon", 2, {
+              isDealer: true,
+              available: money("200"),
+            }),
+            pokerSeat("m", "Maria", 3, {
+              isSmallBlind: true,
+              available: money("85"),
+              streetContribution: money("5"),
+            }),
+            pokerSeat("j", "Jordan", 4, { available: money("150") }),
+            pokerSeat("c", "Carlos", 5, {
+              isActor: true,
+              available: money("110"),
+              streetContribution: money("10"),
+            }),
+          ],
+          communityCards: [
+            { rank: "2", suit: "s", label: "2♠" },
+            { rank: "4", suit: "s", label: "4♠" },
+            { rank: "9", suit: "s", label: "9♠" },
+          ],
+          legalActions: [],
+          currentActorName: "Carlos",
+          currentActorId: "c",
+          waitingCopy: "TURN · Carlos",
+          streetRail: [
+            { id: "PRE_FLOP", state: "done" },
+            { id: "FLOP", state: "current" },
+            { id: "TURN", state: "next" },
+            { id: "RIVER", state: "next" },
           ],
         }),
         onCommand: noop,

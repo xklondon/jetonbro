@@ -25,7 +25,7 @@ function chipFaceSum(chips: { label: string }[]): number {
   }, 0);
 }
 
-/** Central pot — jeton cluster above POT label + total; side pots only when present. */
+/** Central pot — prominent total, layered casino jetons below. No "POT" label on live hands. */
 export function PokerPot({
   amount,
   millis,
@@ -45,6 +45,9 @@ export function PokerPot({
 
   return (
     <div className="pm-poker-pot" data-poker-centre="true" data-pot-paid={paid ? "true" : "false"}>
+      <div className="pm-poker-pot-copy">
+        {paid ? <small>POT PAID</small> : <strong data-pot-amount={amount}>{amount}</strong>}
+      </div>
       {cluster.length > 0 ? (
         <div
           className="pm-poker-pot-cluster"
@@ -60,10 +63,6 @@ export function PokerPot({
           ))}
         </div>
       ) : null}
-      <div className="pm-poker-pot-copy">
-        <small>{paid ? "POT PAID" : "POT"}</small>
-        {paid ? null : <strong data-pot-amount={amount}>{amount}</strong>}
-      </div>
       {extras.length > 0 ? (
         <div className="pm-poker-side-pots" data-side-pots="true">
           {extras.map((pot) => (
