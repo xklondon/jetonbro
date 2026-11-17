@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Premium Poker blind badges → CasinoJetons (JetBro II Web)
+
+- Commit `4e02037` on `fix/blackjack-stable-anatomy-v1` — presentation only: replace SB/BB gold text badges with compact `CasinoJeton` chips at the top-right seat corner using the table’s configured blind amounts. Dealer D badge unchanged. No panel/layout/gameplay/accounting changes.
+- Target: Railway project `tranquil-unity` / production / **JetBro II Web** only (`9b340f1b-e0f8-473f-9cc9-df7b6cc1dbb3`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest PokerSeat 4/4; production build; visual @390/1440 (`docs/screenshots/premium/poker-blind-jetons/`) SB denom 5 / BB denom 10, tray 226. `/api/health` ok. Not merged or tagged.
+
 ### Premium Poker seat badge corners + no avatars (JetBro II Web)
 
 - Commit `6765eb5` on `fix/blackjack-stable-anatomy-v1` — presentation only: SB/BB gold tokens on the top-right panel corner; D on the top-left; circular seat avatars removed. Tray/pot/board/gameplay untouched.

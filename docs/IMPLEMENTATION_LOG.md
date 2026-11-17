@@ -1,3 +1,9 @@
+# Premium Poker blind badges → CasinoJetons
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `4e02037` — Premium Poker seat presentation only.
+- Replace SB/BB gold circular text badges with compact `CasinoJeton` using `view.smallBlind.label` / `view.bigBlind.label`; D stays top-left.
+- Gate: Vitest PokerSeat 4/4; build; visual @390/1440 (`docs/screenshots/premium/poker-blind-jetons/`). Railway JetBro II Web `9b340f1b-e0f8-473f-9cc9-df7b6cc1dbb3` SUCCESS. `/api/health` ok. Not merged. Not tagged.
+
 # Premium Poker seat badge corners + no avatars
 
 - Branch `fix/blackjack-stable-anatomy-v1` — Premium Poker seat presentation only.
