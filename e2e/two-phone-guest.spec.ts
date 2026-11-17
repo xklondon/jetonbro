@@ -198,24 +198,19 @@ test("email invitation uses the verified path and joins the intended table", asy
   const mail = (await mailbox.json()) as { messages: { url?: string }[] };
   const inviteUrl = mail.messages.find((item) => item.url)?.url;
   expect(inviteUrl).toBeTruthy();
-  expect(inviteUrl).toContain("/join/verified/");
-  expect(inviteUrl).not.toMatch(/localhost|railway\.internal/i);
+  // One-click: invitation email is the Auth.js magic link with join callback.
+  expect(inviteUrl).toContain("/api/auth/callback/email");
+  expect(decodeURIComponent(inviteUrl!)).toContain("/join/verified/");
+  expect(inviteUrl).not.toMatch(/railway\.internal/i);
+  expectPublicVerifiedInvite(inviteUrl!);
 
   const playerContext = await browser.newContext();
   const playerPage = await playerContext.newPage();
   await playerPage.setViewportSize({ width: 390, height: 844 });
-  await playerPage.goto(new URL(inviteUrl!).pathname);
-  await expect(playerPage.getByText("Verified player")).toBeVisible();
-  await playerPage.getByRole("button", { name: "Email me a link" }).click();
-  await expect(playerPage.getByText(/link is on its way/i)).toBeVisible();
-  const magicBox = await page.request.get(`/api/dev/mailbox?to=${encodeURIComponent(playerEmail)}`);
-  const magicMail = (await magicBox.json()) as { messages: { url?: string }[] };
-  const magic = magicMail.messages.find((item) => item.url?.includes("/api/auth/callback/"))?.url
-    ?? magicMail.messages.find((item) => item.url?.includes("/join/verified/"))?.url;
-  expect(magic).toBeTruthy();
-  expectPublicVerifiedInvite(magic!);
-  await playerPage.goto(localAppUrl(magic!));
+  await playerPage.goto(localAppUrl(inviteUrl!));
   await expect(playerPage).toHaveURL(/\/tables\//, { timeout: 20_000 });
+  await expect(playerPage.getByText("Verified player")).toHaveCount(0);
+  await expect(playerPage.getByRole("button", { name: "Email me a link" })).toHaveCount(0);
   await expectJoinedName(page, playerEmail.split("@")[0]!);
   await playerContext.close();
 });

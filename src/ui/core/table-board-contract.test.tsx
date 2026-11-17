@@ -436,6 +436,7 @@ test("Poker Dealer and Player boards stay unmerged", () => {
     canAddPlayer: false,
     canGiveJetons: false,
     canReorderSeats: false,
+    canEditBlinds: false,
     streetComplete: false,
     allInRunout: false,
     turnNumber: 1,

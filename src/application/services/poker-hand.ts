@@ -343,10 +343,17 @@ export async function configurePoker(input: {
   return withIdempotency(input.actorId, input.idempotencyKey, "configurePoker", input, async () => {
     await prisma.$transaction(async (tx) => {
       const table = await loadPokerTable(tx, input.tableId);
-      requireOwner(table, input.actorId);
-      // Blinds + seat order: owner only, and only between hands (not during an open hand).
+      const isOwner = table.ownerId === input.actorId;
+      const isBankDealer = table.bankDealerId === input.actorId;
+      // Blinds: owner or Bank/Dealer. Seat order: owner only. Only between hands.
+      if (!isOwner && !isBankDealer) {
+        throw new ForbiddenError("Only the table owner or Bank/Dealer can do that.");
+      }
+      if (input.seatOrder?.length && !isOwner) {
+        throw new ForbiddenError("Only the table owner can change seat order.");
+      }
       if (pokerHandIsOpen(table.currentPokerHand?.phase)) {
-        throw new DomainError("SEATS_LOCKED", "Seat order can only change before the next hand begins.");
+        throw new DomainError("SEATS_LOCKED", "Blinds can only change before the next hand begins.");
       }
       const small = input.smallBlind ? parseWholeJetons(input.smallBlind, "Small blind") : table.pokerSmallBlindMillis;
       const big = input.bigBlind ? parseWholeJetons(input.bigBlind, "Big blind") : table.pokerBigBlindMillis;

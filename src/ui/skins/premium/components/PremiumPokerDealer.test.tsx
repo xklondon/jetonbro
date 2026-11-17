@@ -101,6 +101,7 @@ function dealerView(extra: Partial<PokerTableView> = {}): PokerTableView {
     canAddPlayer: true,
     canGiveJetons: true,
     canReorderSeats: false,
+    canEditBlinds: true,
     streetComplete: false,
     allInRunout: false,
     turnNumber: 1,
@@ -149,6 +150,9 @@ describe("PremiumPokerDealer setup wiring", () => {
     expect(html).toContain("DEAL HAND");
     expect(html).toContain('data-deal-hand="true"');
     expect(html).toContain("ADD PLAYER");
+    expect(html).toContain("CHANGE GAME");
+    expect(html).toContain('data-change-game="true"');
+    expect(html).toContain("BUY-IN");
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-tray-available="true"');
     expect(html).toContain("AVAILABLE");

@@ -112,6 +112,7 @@ function baseView(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, extra
     canAddPlayer: true,
     canGiveJetons: true,
     canReorderSeats: false,
+    canEditBlinds: false,
     streetComplete: false,
     allInRunout: false,
     turnNumber: 1,

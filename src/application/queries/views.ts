@@ -356,6 +356,8 @@ export type PokerTableView = {
   canAddPlayer: boolean;
   canGiveJetons: boolean;
   canReorderSeats: boolean;
+  /** Owner or Bank/Dealer may edit blinds between hands. */
+  canEditBlinds: boolean;
   streetComplete: boolean;
   allInRunout: boolean;
   turnNumber: number;

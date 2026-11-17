@@ -85,6 +85,7 @@ function awardView(overrides: Partial<PokerTableView> = {}): PokerTableView {
     canAddPlayer: false,
     canGiveJetons: false,
     canReorderSeats: false,
+    canEditBlinds: false,
     streetComplete: true,
     allInRunout: false,
     turnNumber: 1,

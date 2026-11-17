@@ -24,7 +24,7 @@ function moveSeatOrder(ids: string[], index: number, delta: -1 | 1): string {
   return next.join(",");
 }
 
-/** Table Settings — outcome FX + owner seat order (persisted on the table). */
+/** Table Settings — blinds, outcome FX + owner seat order (persisted on the table). */
 export function PremiumCelebrationSettings({
   open,
   onClose,
@@ -32,6 +32,9 @@ export function PremiumCelebrationSettings({
   onCommand,
   seats = null,
   canReorderSeats = false,
+  smallBlind = "5",
+  bigBlind = "10",
+  canEditBlinds = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -39,14 +42,21 @@ export function PremiumCelebrationSettings({
   onCommand: (command: string, payload?: Record<string, string>) => void | boolean | Promise<void | boolean>;
   seats?: PokerSeatView[] | null;
   canReorderSeats?: boolean;
+  smallBlind?: string;
+  bigBlind?: string;
+  canEditBlinds?: boolean;
 }) {
   const [prefs, setPrefs] = useState<OutcomeFxPrefs>(prefsProp ?? DEFAULT_OUTCOME_FX_PREFS);
   const [busy, setBusy] = useState(false);
+  const [sb, setSb] = useState(smallBlind);
+  const [bb, setBb] = useState(bigBlind);
 
   useEffect(() => {
     if (!open) return;
     setPrefs(prefsProp ?? DEFAULT_OUTCOME_FX_PREFS);
-  }, [open, prefsProp]);
+    setSb(smallBlind);
+    setBb(bigBlind);
+  }, [open, prefsProp, smallBlind, bigBlind]);
 
   if (!open) return null;
 
@@ -72,12 +82,58 @@ export function PremiumCelebrationSettings({
     }
   }
 
+  async function saveBlinds() {
+    setBusy(true);
+    try {
+      await onCommand("configurePoker", { smallBlind: sb, bigBlind: bb });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const showSeats = Boolean(canReorderSeats && seats && seats.length > 0);
 
   return (
     <div className="pm-sheet-mask" data-celebration-settings="true" role="dialog" aria-modal="true" aria-label="Table settings">
       <div className="pm-sheet">
         <h3>Table settings</h3>
+        {canEditBlinds ? (
+          <>
+            <h4 className="pm-sheet-subhead">Blinds</h4>
+            <p className="pm-muted">Change only between hands. Applies to the next deal.</p>
+            <label className="pm-sheet-field">
+              Small blind
+              <input
+                value={sb}
+                onChange={(event) => setSb(event.target.value)}
+                aria-label="Small blind"
+                inputMode="decimal"
+                data-blind-edit="sb"
+                disabled={busy}
+              />
+            </label>
+            <label className="pm-sheet-field">
+              Big blind
+              <input
+                value={bb}
+                onChange={(event) => setBb(event.target.value)}
+                aria-label="Big blind"
+                inputMode="decimal"
+                data-blind-edit="bb"
+                disabled={busy}
+              />
+            </label>
+            <button
+              type="button"
+              className="pm-console-btn is-ghost"
+              data-blind-save="true"
+              disabled={busy}
+              onClick={() => void saveBlinds()}
+            >
+              SAVE BLINDS
+            </button>
+          </>
+        ) : null}
         {showSeats ? (
           <>
             <h4 className="pm-sheet-subhead">Player order</h4>

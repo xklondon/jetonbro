@@ -114,6 +114,7 @@ function view(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string, actorId: 
     canAddPlayer: true,
     canGiveJetons: true,
     canReorderSeats: false,
+    canEditBlinds: false,
     streetComplete: false,
     allInRunout: false,
     turnNumber: 1,

@@ -1,7 +1,7 @@
+import { invitationEmailUrl } from "@/application/auth-invite";
 import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
-import { verifiedJoinUrl } from "@/application/invite-urls";
 import { sendInvitationEmail } from "@/application/mail";
 import { publishTable } from "@/application/realtime/bus";
 import { rateLimit } from "@/application/rate-limit";
@@ -61,7 +61,7 @@ export async function inviteByEmail(input: {
           createdById: input.actorId,
         },
       });
-      const url = verifiedJoinUrl(input.origin, token);
+      const url = await invitationEmailUrl(input.origin, email, token);
       try {
         await sendInvitationEmail({
           to: email,

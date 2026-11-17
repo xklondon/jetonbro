@@ -75,6 +75,7 @@ function view(extra: Partial<PokerTableView> = {}): PokerTableView {
     canAddPlayer: true,
     canGiveJetons: true,
     canReorderSeats: false,
+    canEditBlinds: false,
     streetComplete: false,
     allInRunout: false,
     turnNumber: 1,

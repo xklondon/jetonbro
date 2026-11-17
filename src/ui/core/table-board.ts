@@ -41,14 +41,15 @@ export function selectTableBoard(snapshot: TableBoardSnapshot): TableBoardId {
 
   if (snapshot.game === "POKER" && (pokerPhase === "POKER_SETUP" || snapshot.phase === "TABLE_SETUP")) {
     // Poker Phase 0 uses the same oval PokerBoard as live phases (not the BJ PhaseZero ledger).
-    if (owner) return "POKER_DEALER";
-    if (seated || dealer) return "POKER_PLAYER";
+    // Owner or Bank/Dealer runs the dealer surface; seated players stay on the player board.
+    if (owner || dealer) return "POKER_DEALER";
+    if (seated) return "POKER_PLAYER";
     return "WAITING";
   }
 
   if (snapshot.game === "POKER") {
-    if (owner) return "POKER_DEALER";
-    if (seated || dealer) return "POKER_PLAYER";
+    if (owner || dealer) return "POKER_DEALER";
+    if (seated) return "POKER_PLAYER";
     return "WAITING";
   }
 

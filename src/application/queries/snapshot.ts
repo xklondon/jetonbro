@@ -689,6 +689,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       ? buildPokerView({
           tableName: table.name,
           isOwner,
+          isBank,
           viewerId,
           smallBlind: table.pokerSmallBlindMillis,
           bigBlind: table.pokerBigBlindMillis,

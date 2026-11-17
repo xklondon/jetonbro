@@ -56,7 +56,7 @@ export function VerifiedJoinClient({
       title="Verified player"
       copy={
         emailBound
-          ? `Confirm ${emailBound} with a magic link. You will return to this table.`
+          ? `Open the invitation link from your email to join as ${emailBound}. If that link expired, request a new one below.`
           : "Scan, enter your email, then confirm the magic link. You will return to this table."
       }
       actionLabel="Email me a link"

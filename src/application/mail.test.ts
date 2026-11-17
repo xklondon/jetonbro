@@ -137,9 +137,13 @@ test("Auth.js and invitations share the mail adapter", () => {
   const root = join(process.cwd(), "src");
   const auth = readFileSync(join(root, "application/auth.ts"), "utf8");
   const invitations = readFileSync(join(root, "application/services/invitations.ts"), "utf8");
+  const inviteAuth = readFileSync(join(root, "application/auth-invite.ts"), "utf8");
   expect(auth).toContain("sendMagicLinkEmail");
   expect(auth).not.toContain("nodemailer");
   expect(auth).not.toContain("EMAIL_SERVER");
   expect(auth).not.toContain("smtp://");
   expect(invitations).toContain("sendInvitationEmail");
+  expect(invitations).toContain("invitationEmailUrl");
+  expect(inviteAuth).toContain("createInviteSignInUrl");
+  expect(inviteAuth).toContain("/api/auth/callback/email");
 });

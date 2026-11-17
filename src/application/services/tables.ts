@@ -1,7 +1,7 @@
 import { prisma } from "@/application/db";
 import { hoursFromNow, randomToken } from "@/application/ids";
 import { withIdempotency } from "@/application/idempotency";
-import { verifiedJoinUrl } from "@/application/invite-urls";
+import { invitationEmailUrl } from "@/application/auth-invite";
 import { sendInvitationEmail } from "@/application/mail";
 import { appendLedger, creditPlayerPocket, creditTableAvailable } from "@/application/services/ledger";
 import { publishTable } from "@/application/realtime/bus";
@@ -304,7 +304,7 @@ export async function createTable(input: {
           await sendInvitationEmail({
             to: invite.email,
             tableName: table.name,
-            url: verifiedJoinUrl(input.origin, invite.token),
+            url: await invitationEmailUrl(input.origin, invite.email, invite.token),
           });
         } catch {
           console.error("[jetonbro-command] command=createTable table=" + table.id + " actor=" + input.actorId + " phase=TABLE_SETUP code=INVITE_EMAIL_FAILED");
@@ -472,7 +472,7 @@ export async function finalizeSetup(input: {
           await sendInvitationEmail({
             to: invite.email,
             tableName: input.name.trim(),
-            url: verifiedJoinUrl(input.origin, invite.token),
+            url: await invitationEmailUrl(input.origin, invite.email, invite.token),
           });
         } catch {
           console.error(

@@ -120,20 +120,27 @@ export function PremiumPokerDealer({
 
   const badges = (
     <>
-      {view.isOwner ? (
+      {view.isOwner || view.canEditBlinds ? (
         <button
           type="button"
           className="pm-badge is-action"
-          data-owner-badge="true"
+          data-owner-badge={view.isOwner ? "true" : undefined}
+          data-dealer-settings="true"
           aria-label="Table settings"
           onClick={() => setFxSettingsOpen(true)}
         >
-          OWNER
+          {view.isOwner ? "OWNER" : "DEALER"}
         </button>
+      ) : (
+        <span className="pm-badge" data-dealer-badge="true">
+          DEALER
+        </span>
+      )}
+      {view.isOwner ? (
+        <span className="pm-badge" data-dealer-badge="true">
+          DEALER
+        </span>
       ) : null}
-      <span className="pm-badge" data-dealer-badge="true">
-        DEALER
-      </span>
     </>
   );
 
@@ -206,49 +213,93 @@ export function PremiumPokerDealer({
   const showGive = Boolean(view.isOwner && giveJetons && (setup || betweenHands));
   const showChange = Boolean(view.isOwner && view.canSwitchGame && (setup || betweenHands));
   const showExit = Boolean(view.canLeaveTable && (setup || betweenHands));
-  if (showAdd && !secondary) {
-    secondary = {
-      label: "ADD PLAYER",
-      onClick: () => setInviteOpen(true),
-    };
-  } else if (showAdd && secondary && !tertiary) {
-    tertiary = {
-      label: "ADD PLAYER",
-      onClick: () => setInviteOpen(true),
-    };
-  }
-  if (showGive && !tertiary) {
-    tertiary = {
-      label: "BUY-IN",
-      onClick: () => setGiveOpen(true),
-    };
-  } else if (showGive && !secondary) {
-    secondary = {
-      label: "BUY-IN",
-      onClick: () => setGiveOpen(true),
-    };
-  }
-  if (showChange && !tertiary) {
-    tertiary = {
-      label: "CHANGE GAME",
-      onClick: () => {
-        setResetBalances(false);
-        setChangeOpen(true);
-      },
-    };
-  }
-  const hasExitAlready = [primary, secondary, tertiary].some((action) => action?.label === "EXIT TABLE");
-  if (showExit && !hasExitAlready) {
-    if (!secondary) {
-      secondary = {
-        label: "EXIT TABLE",
-        onClick: () => setExitOpen(true),
-      };
-    } else if (!tertiary) {
+  /** Owner setup/between-hands dock: BUY-IN · ADD PLAYER · CHANGE GAME (EXIT only if a slot remains). */
+  if ((setup || betweenHands) && !acting && !showdown) {
+    if (showGive) {
       tertiary = {
-        label: "EXIT TABLE",
-        onClick: () => setExitOpen(true),
+        label: "BUY-IN",
+        onClick: () => setGiveOpen(true),
       };
+    }
+    if (showAdd) {
+      secondary = {
+        label: "ADD PLAYER",
+        onClick: () => setInviteOpen(true),
+      };
+    }
+    if (showChange) {
+      primary = {
+        label: "CHANGE GAME",
+        onClick: () => {
+          setResetBalances(false);
+          setChangeOpen(true);
+        },
+      };
+    }
+    const hasExitAlready = [primary, secondary, tertiary].some((action) => action?.label === "EXIT TABLE");
+    if (showExit && !hasExitAlready) {
+      if (!tertiary) {
+        tertiary = {
+          label: "EXIT TABLE",
+          onClick: () => setExitOpen(true),
+        };
+      } else if (!secondary) {
+        secondary = {
+          label: "EXIT TABLE",
+          onClick: () => setExitOpen(true),
+        };
+      } else if (!primary) {
+        primary = {
+          label: "EXIT TABLE",
+          onClick: () => setExitOpen(true),
+        };
+      }
+    }
+  } else {
+    if (showAdd && !secondary) {
+      secondary = {
+        label: "ADD PLAYER",
+        onClick: () => setInviteOpen(true),
+      };
+    } else if (showAdd && secondary && !tertiary) {
+      tertiary = {
+        label: "ADD PLAYER",
+        onClick: () => setInviteOpen(true),
+      };
+    }
+    if (showGive && !tertiary) {
+      tertiary = {
+        label: "BUY-IN",
+        onClick: () => setGiveOpen(true),
+      };
+    } else if (showGive && !secondary) {
+      secondary = {
+        label: "BUY-IN",
+        onClick: () => setGiveOpen(true),
+      };
+    }
+    if (showChange && !tertiary) {
+      tertiary = {
+        label: "CHANGE GAME",
+        onClick: () => {
+          setResetBalances(false);
+          setChangeOpen(true);
+        },
+      };
+    }
+    const hasExitAlready = [primary, secondary, tertiary].some((action) => action?.label === "EXIT TABLE");
+    if (showExit && !hasExitAlready) {
+      if (!secondary) {
+        secondary = {
+          label: "EXIT TABLE",
+          onClick: () => setExitOpen(true),
+        };
+      } else if (!tertiary) {
+        tertiary = {
+          label: "EXIT TABLE",
+          onClick: () => setExitOpen(true),
+        };
+      }
     }
   }
 
@@ -391,6 +442,9 @@ export function PremiumPokerDealer({
         onCommand={onCommand}
         seats={view.canReorderSeats ? view.seats : null}
         canReorderSeats={view.canReorderSeats}
+        smallBlind={view.smallBlind.label}
+        bigBlind={view.bigBlind.label}
+        canEditBlinds={Boolean(view.canEditBlinds)}
       />
       {cards === "board" ? (
         <PremiumPokerCardSheet

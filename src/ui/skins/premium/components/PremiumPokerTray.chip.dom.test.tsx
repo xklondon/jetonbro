@@ -113,6 +113,7 @@ function actingView(role: "POKER_DEALER" | "POKER_PLAYER", viewerId: string): Po
     canAddPlayer: true,
     canGiveJetons: true,
     canReorderSeats: false,
+    canEditBlinds: false,
     streetComplete: false,
     allInRunout: false,
     turnNumber: 1,

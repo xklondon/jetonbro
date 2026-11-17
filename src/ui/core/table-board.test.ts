@@ -178,3 +178,16 @@ test("Poker Owner and Player boards stay distinct", () => {
     }),
   ).toBe("POKER_PLAYER");
 });
+
+test("Poker Bank/Dealer who is not the owner still uses the dealer board", () => {
+  expect(
+    selectTableBoard({
+      isOwner: false,
+      isDealer: true,
+      isSeatedPlayer: true,
+      game: "POKER",
+      phase: "HAND_COMPLETE",
+      poker: { phase: "HAND_COMPLETE" },
+    }),
+  ).toBe("POKER_DEALER");
+});

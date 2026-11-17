@@ -86,6 +86,8 @@ type Hand = {
 export function buildPokerView(input: {
   tableName: string;
   isOwner: boolean;
+  /** Bank/Dealer for this table (may differ from owner). */
+  isBank?: boolean;
   viewerId: string;
   smallBlind: bigint;
   bigBlind: bigint;
@@ -97,6 +99,7 @@ export function buildPokerView(input: {
   outcomeFx?: OutcomeFxView;
 }): PokerTableView {
   const { hand, viewerId, isOwner } = input;
+  const isBank = Boolean(input.isBank);
   const memberById = new Map(input.members.map((member) => [member.userId, member]));
   const seatById = new Map(input.seats.map((seat) => [seat.playerId, seat]));
   const nameOf = (id: string) => displayName(memberById.get(id)?.user ?? { name: null, email: id });
@@ -242,8 +245,9 @@ export function buildPokerView(input: {
     blackjackPhase: "TABLE_SETUP",
     pokerPhase: phase,
   });
+  const betweenHands = phase === "POKER_SETUP" || phase === "HAND_COMPLETE";
   return {
-    role: isOwner ? "POKER_DEALER" : "POKER_PLAYER",
+    role: isOwner || isBank ? "POKER_DEALER" : "POKER_PLAYER",
     phase,
     phaseLabel: formatPokerPhaseLabel(phase),
     headline: active.headline,
@@ -306,6 +310,7 @@ export function buildPokerView(input: {
     canReorderSeats: Boolean(
       isOwner && (phase === "POKER_SETUP" || phase === "HAND_COMPLETE") && !input.tableClosed,
     ),
+    canEditBlinds: Boolean((isOwner || isBank) && betweenHands && !input.tableClosed),
     streetComplete: Boolean(streetComplete),
     allInRunout,
     turnNumber: hand?.actionCount ?? 0,
