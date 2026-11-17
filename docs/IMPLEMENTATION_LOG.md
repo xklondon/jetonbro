@@ -3,7 +3,7 @@
 - Branch `fix/blackjack-stable-anatomy-v1` — Premium Poker felt/table presentation only.
 - Replace large medals + plaques with compact cockpit panels; D/SB/BB as external circular badges; actor = red panel border only; pot shows amount then layered CasinoJetons (no live "POT" word); adaptive 2–6 seat layout; street rail stays compact inline.
 - Tray / CasinoConsole untouched. No gameplay or shared non-Poker changes.
-- Gate: focused Vitest seat/pot + Premium Poker suites; guardrails + production build; `docs/screenshots/premium/poker-table-cockpit/` @390/1440 (tray 226px). Railway JetBro II Web after ship. Not merged. Not tagged. Staging/lite untouched.
+- Gate: focused Vitest seat/pot + Premium Poker suites; guardrails + production build; `docs/screenshots/premium/poker-table-cockpit/` @390/1440 (tray 226px). Railway: tranquil-unity / production / JetBro II Web only — deployment `8e7cc17f-7c5f-42b8-952c-837f91c6440e` SUCCESS. https://jetbro-ii-web-production.up.railway.app `/api/health` ok, database connected. Not merged. Not tagged. Staging/lite untouched.
 
 # Premium Poker felt hole cards removed + single ADD row
 
