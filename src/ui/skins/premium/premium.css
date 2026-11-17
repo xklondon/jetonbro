@@ -1590,53 +1590,6 @@
     0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
-[data-skin="premium"] .pm-poker-seat-medal {
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font: 700 11px/1 var(--pm-sans);
-  color: var(--pm-ivory);
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
-    linear-gradient(160deg, #2a8f68, #0c4634);
-  border: 1.5px solid rgba(212, 184, 130, 0.7);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-[data-skin="premium"] .pm-poker-seat.is-me .pm-poker-seat-medal {
-  color: #1a1208;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 248, 220, 0.85), transparent 42%),
-    linear-gradient(155deg, #f6e2a4 0%, #d4b05a 46%, #8a6a28 100%);
-  border-color: rgba(244, 220, 150, 0.95);
-}
-
-[data-skin="premium"] .pm-poker-seat.is-tone-0 .pm-poker-seat-medal {
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
-    linear-gradient(160deg, #3a9fd0, #14506e);
-}
-
-[data-skin="premium"] .pm-poker-seat.is-tone-1 .pm-poker-seat-medal {
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
-    linear-gradient(160deg, #c45a6a, #6e2030);
-}
-
-[data-skin="premium"] .pm-poker-seat.is-tone-2 .pm-poker-seat-medal {
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
-    linear-gradient(160deg, #6a8fd4, #243868);
-}
-
-[data-skin="premium"] .pm-poker-seat.is-tone-3 .pm-poker-seat-medal {
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 45%),
-    linear-gradient(160deg, #2a8f68, #0c4634);
-}
-
 [data-skin="premium"] .pm-poker-seat-name {
   display: block;
   max-width: 100%;
@@ -1692,20 +1645,17 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
+/* D top-left; SB/BB top-right — both overlap the panel border, never stack. */
 [data-skin="premium"] .pm-poker-role-badge.is-dealer {
   top: -0.4rem;
-  left: 50%;
-  transform: translateX(-50%);
+  left: -0.35rem;
 }
 
-[data-skin="premium"] .pm-poker-role-badge.is-sb {
-  left: -0.45rem;
-  top: 0.45rem;
-}
-
+[data-skin="premium"] .pm-poker-role-badge.is-sb,
 [data-skin="premium"] .pm-poker-role-badge.is-bb {
-  right: -0.45rem;
-  top: 0.45rem;
+  top: -0.4rem;
+  right: -0.35rem;
+  left: auto;
 }
 
 [data-skin="premium"] .pm-poker-seat-status {

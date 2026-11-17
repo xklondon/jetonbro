@@ -36,6 +36,7 @@ describe("Premium PokerSeat", () => {
     expect(html).toContain('data-dealer-button="true"');
     expect(html).toContain('data-seat-cockpit="true"');
     expect(html).toContain("is-actor");
+    expect(html).not.toContain("pm-poker-seat-medal");
     expect(html).not.toContain('data-turn-marker="true"');
     expect(html).not.toContain("YOUR TURN");
     expect(html).not.toContain('data-street-wager="true"');
@@ -43,7 +44,7 @@ describe("Premium PokerSeat", () => {
     expect(html).not.toContain("pm-poker-seat-markers");
   });
 
-  it("shows SB/BB as external badges and YOU for the local player", () => {
+  it("shows SB/BB as corner badges and YOU without an avatar medal", () => {
     const html = renderToStaticMarkup(
       createElement(PokerSeat, {
         seat: {
@@ -70,6 +71,8 @@ describe("Premium PokerSeat", () => {
     expect(html).toContain(">YOU<");
     expect(html).toContain('data-blind-badge="sb"');
     expect(html).toContain(">SB<");
+    expect(html).toContain("pm-poker-role-badge is-sb");
+    expect(html).not.toContain("pm-poker-seat-medal");
     expect(html).not.toContain("pm-poker-seat-markers");
     expect(html).toContain('data-seat-balance="true"');
     expect(html).toContain("pm-poker-seat-chip-ico");

@@ -56,7 +56,6 @@ export function PokerSeat({
   pendingWager?: string | null;
   pendingChips?: string[];
 }) {
-  const initial = (seat.name || "?").slice(0, 1).toUpperCase();
   const displayName = isMe ? "YOU" : seat.name;
   const tone = isMe ? "me" : String(toneIndex % 4);
   const showPending = Boolean(isMe && pendingWager && pendingWager !== "0");
@@ -98,9 +97,6 @@ export function PokerSeat({
         <StartingStack millis={seat.available.millis} label={seat.available.label} />
       ) : null}
       <div className="pm-poker-seat-cockpit" data-seat-cockpit="true">
-        <div className="pm-poker-seat-medal" aria-hidden="true">
-          {isMe ? "Y" : initial}
-        </div>
         <strong className="pm-poker-seat-name">{displayName}</strong>
         <span className="pm-poker-seat-balance" data-seat-balance="true">
           <span className="pm-poker-seat-chip-ico" aria-hidden="true" />
