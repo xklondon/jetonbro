@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### One-click email invites + dealer blinds (JetBro II Web)
+
+- Commit `ee88a7d` on `fix/blackjack-stable-anatomy-v1` — invitation emails are Auth.js magic links with `/join/verified/{token}` callbacks (no second email); bank dealers may edit blinds between hands; CHANGE GAME remains owner-only; compact D badge + owner CHANGE GAME dock retained from the same Premium pass.
+- Target: Railway project `tranquil-unity` / production / **JetBro II Web** only (`1f04bd44-a87e-45d0-8a4f-99bec6002aa5`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: Vitest 49/49 focused (auth-invite, blinds-dealer, poker-gaps, mail, board, Premium Poker); one-click invite Playwright smoke; production build. `/api/health` ok. Not merged or tagged.
+
 ### Premium Poker blind badges → CasinoJetons (JetBro II Web)
 
 - Commit `4e02037` on `fix/blackjack-stable-anatomy-v1` — presentation only: replace SB/BB gold text badges with compact `CasinoJeton` chips at the top-right seat corner using the table’s configured blind amounts. Dealer D badge unchanged. No panel/layout/gameplay/accounting changes.

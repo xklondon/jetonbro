@@ -1,3 +1,9 @@
+# One-click email invites + dealer blinds
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `ee88a7d`.
+- Invite emails mint Auth.js callback URLs (`callbackUrl=/join/verified/{token}`); invitation `usedAt` only after join. Bank/Dealer can `configurePoker` blinds between hands; seat order + CHANGE GAME stay owner-only.
+- Gate: Vitest 49/49 focused; one-click invite smoke (session + `/tables/{id}`); build. Railway JetBro II Web `1f04bd44-a87e-45d0-8a4f-99bec6002aa5` SUCCESS. `/api/health` ok. Not merged. Not tagged.
+
 # Premium Poker blind badges → CasinoJetons
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `4e02037` — Premium Poker seat presentation only.
