@@ -164,6 +164,7 @@ model User {
   ledgerAsActor      LedgerEntry[]        @relation("LedgerActor")
   boxes              BettingBox[]
   insuranceBets      InsuranceBet[]
+  stagedBlackjackBets StagedBlackjackBet[]
   pokerSeats         PokerSeat[]
   pokerParticipants  PokerParticipant[]
   pokerActions       PokerAction[]
@@ -262,6 +263,7 @@ model Table {
   pokerSeats       PokerSeat[]
   pokerHands       PokerHand[]    @relation("TablePokerHands")
   ledgerEntries    LedgerEntry[]
+  stagedBlackjackBets StagedBlackjackBet[]
 }
 
 model TableMember {
@@ -398,6 +400,25 @@ model BettingBox {
   ledgerEntries LedgerEntry[]
 
   @@unique([roundId, playerId, boxNumber])
+}
+
+/** Confirmed next-round Blackjack stakes prepared during PAYOUT / ROUND_COMPLETE. */
+model StagedBlackjackBet {
+  id                   String    @id @default(cuid())
+  tableId              String
+  playerId             String
+  boxNumber            Int
+  amountMillis         BigInt
+  preparedFromRoundId  String
+  appliedToRoundId     String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  player User @relation(fields: [playerId], references: [id])
+
+  @@unique([tableId, playerId, boxNumber])
+  @@index([tableId, preparedFromRoundId])
 }
 
 model PokerSeat {

@@ -114,6 +114,13 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   const dealerHand = handView(table.currentRound?.dealerRanks, false, table.currentRound?.dealerCompletedAt ?? null);
   const insuranceSuggestion = suggestedInsuranceResolution(dealerRanks);
 
+  const stagedNextBets = await prisma.stagedBlackjackBet.findMany({
+    where: { tableId, appliedToRoundId: null },
+  });
+  const stagedByPlayerBox = new Map(
+    stagedNextBets.map((row) => [`${row.playerId}:${row.boxNumber}`, row.amountMillis] as const),
+  );
+
   const boxes: BoxView[] = (table.currentRound?.boxes ?? []).map((box) => {
     const player = table.members.find((member) => member.userId === box.playerId)?.user;
     const insurance = table.currentRound?.insuranceBets.find((bet) => bet.boxId === box.id);
@@ -124,6 +131,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       ? suggestedBoxOutcome(playerHand.ranks, dealerRanks, box.isSplitOffshoot)
       : null;
     const nextBet = (box.lockedBetMillis || 0n) + 5000n;
+    const stagedMillis = stagedByPlayerBox.get(`${box.playerId}:${box.boxNumber}`) ?? 0n;
     return {
       id: box.id,
       playerId: box.playerId,
@@ -149,6 +157,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       outcome: box.outcome,
       returned: box.returnedMillis !== null ? money(box.returnedMillis) : null,
       settledKey: box.settledKey,
+      nextRoundBet: stagedMillis > 0n ? money(stagedMillis) : null,
       payoutActions: payoutActions(box.lockedBetMillis || box.originalStakeMillis, table.blackjackPayout),
       hand: showHand
         ? {
@@ -413,9 +422,14 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           insuranceWindowOpen: insuranceOpen,
           bettingCloseDeadlineAt: table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null,
           nextRoundDeadlineAt: nextRoundDeadline,
+          minBet: table.minBetMillis !== null ? money(table.minBetMillis) : null,
           actions: {
             bet: table.currentPhase === "BETTING",
-            retract: table.currentPhase === "BETTING",
+            retract:
+              table.currentPhase === "BETTING" ||
+              table.currentPhase === "PAYOUT" ||
+              table.currentPhase === "ROUND_COMPLETE",
+            nextRoundBet: table.currentPhase === "PAYOUT" || table.currentPhase === "ROUND_COMPLETE",
             addBox:
               table.currentPhase === "BETTING" &&
               ownBoxes.filter((box) => !box.isSplit).length < table.maxBoxesPerPlayer,

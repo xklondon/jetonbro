@@ -25,6 +25,8 @@ export type BlackjackPlayerPresentation = {
   phaseLabel: string;
   instruction: string;
   placeBet: boolean;
+  /** Confirm next-round stake during PAYOUT / ROUND_COMPLETE. */
+  nextRoundBet: boolean;
   retract: boolean;
   addBox: boolean;
   double: boolean;
@@ -195,7 +197,11 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
   const betting = view.phase === "BETTING";
   const playing = view.phase === "PLAYING";
   const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const nextRound = Boolean(view.actions.nextRoundBet) && payout;
   const owned = Boolean(selected && selected.playerId);
+  const nextRoundStake = Boolean(
+    selected?.nextRoundBet && selected.nextRoundBet.label !== "0",
+  );
   return {
     phaseLabel: blackjackPhaseLabel({
       role: "PLAYER",
@@ -210,7 +216,10 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
       hasStake: stakePresent(selected) || view.boxes.some((box) => stakePresent(box)),
     }),
     placeBet: betting && view.actions.bet,
-    retract: betting && view.actions.retract && stakePresent(selected),
+    nextRoundBet: nextRound && owned && !selected?.isSplit,
+    retract:
+      (betting && view.actions.retract && stakePresent(selected)) ||
+      (nextRound && view.actions.retract && nextRoundStake),
     addBox: betting && view.actions.addBox,
     double: playing && view.actions.double && owned && selected?.coverage?.double !== false,
     split: playing && view.actions.split && owned && selected?.coverage?.split !== false,
@@ -220,8 +229,9 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
       view.insuranceWindowOpen &&
       owned &&
       selected?.coverage?.insurance !== false,
-    trayEnabled: betting && view.actions.bet && selected?.coverage?.bet !== false,
-    payoutIdle: payout,
+    trayEnabled:
+      ((betting && view.actions.bet) || nextRound) && selected?.coverage?.bet !== false,
+    payoutIdle: payout && !nextRound,
   };
 }
 

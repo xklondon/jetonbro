@@ -47,18 +47,22 @@ export function BlackjackBox({
   selected,
   showPlayerName,
   bankroll,
+  showAvailable = false,
   onSelect,
   onRetractChip,
   retractBusy,
   onInsurance,
   insuranceEnabled,
   pendingLabel,
+  nextRoundLabel,
 }: {
   box: BoxView;
   selected?: boolean;
   showPlayerName?: boolean;
   /** Allocated seat jetons shown before betting opens (setup / empty box). */
   bankroll?: { millis: string; label: string } | null;
+  /** When true, show AVAILABLE caption even while a MAIN bet is visible (dealer board). */
+  showAvailable?: boolean;
   onSelect?: () => void;
   onRetractChip?: (amountLabel: string) => void;
   retractBusy?: boolean;
@@ -67,15 +71,21 @@ export function BlackjackBox({
   insuranceEnabled?: boolean;
   /** Local pending wager (not yet committed / escrowed). */
   pendingLabel?: string | null;
+  /** Confirmed next-round stake prepared during PAYOUT. */
+  nextRoundLabel?: string | null;
 }) {
   const committed = box.bet.label;
   const pending = pendingLabel && pendingLabel !== "0" ? pendingLabel : null;
+  const nextRound = nextRoundLabel && nextRoundLabel !== "0" ? nextRoundLabel : null;
   const stake = pending ?? committed;
   const hasStake = stake !== "0";
+  /** Empty-box stack chip only when no stake; AVAILABLE caption can still show beside a bet. */
   const seatBankroll =
     !hasStake && bankroll && bankroll.label !== "0"
       ? bankroll
       : null;
+  const availableCaption =
+    showAvailable && bankroll && bankroll.label !== "0" ? bankroll : null;
   const result = box.outcome;
   const insurance = box.insurance && box.insurance.label !== "0" ? box.insurance : null;
   const showInsure = Boolean(onInsurance) && !result && !insurance && !box.insuranceResult;
@@ -137,6 +147,18 @@ export function BlackjackBox({
         <small>{seatBankroll ? "STACK" : pending ? "PENDING" : "MAIN"}</small>
         <strong>{result ? result : seatBankroll ? seatBankroll.label : stake}</strong>
       </span>
+      {availableCaption ? (
+        <span className="pm-bj-available" data-box-available="true">
+          <small>AVAILABLE</small>
+          <strong>{availableCaption.label}</strong>
+        </span>
+      ) : null}
+      {nextRound ? (
+        <span className="pm-bj-next-round" data-next-round-bet="true">
+          <small>NEXT ROUND</small>
+          <strong>{nextRound}</strong>
+        </span>
+      ) : null}
       {showInsure ? (
         <button
           type="button"

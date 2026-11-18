@@ -70,6 +70,8 @@ export function CreateTable({
   const [pending, setPending] = useState(false);
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
+  const [minBetDirty, setMinBetDirty] = useState(false);
+  const [minBet, setMinBet] = useState(view?.minBet?.label ?? "");
   const [inviteMethod, setInviteMethod] = useState<InviteTab | null>(null);
   const [stake, setStake] = useState<StakeModeValue>(DEFAULT_STAKE_MODE);
   const stakeRef = useRef(stake);
@@ -80,6 +82,7 @@ export function CreateTable({
     if (!view) return;
     if (!nameDirty) setName(view.tableName);
     if (!startingDirty) setStartingJetonsPerPlayer(view.startingJetonsPerPlayer.label);
+    if (!minBetDirty) setMinBet(view.minBet?.label ?? "");
     setBankFundingMode(view.bankFundingMode ?? "OPEN");
     if (view.bankFundingMode === "LIMITED" && view.startingBank?.label) setStartingBank(limitedReserve(view.startingBank.label));
     setDealerId(view.members.find((member) => member.isBankDealer)?.userId ?? "");
@@ -87,7 +90,7 @@ export function CreateTable({
     if (!stakeTouched && (sessionStake === "FUN_ONLY" || sessionStake === "MONEY" || sessionStake === "CUSTOM")) {
       setStake((current) => ({ ...current, stakeType: sessionStake }));
     }
-  }, [view, nameDirty, startingDirty, stakeTouched]);
+  }, [view, nameDirty, startingDirty, minBetDirty, stakeTouched]);
 
   async function persist(payload: Record<string, string>) {
     if (!onCommand) return;
@@ -113,6 +116,9 @@ export function CreateTable({
           try {
             if (onCommand && view) {
               await persist(stakeModeToPayload(stakeRef.current, startingJetonsPerPlayer));
+              if (game === "BLACKJACK") {
+                await persist({ minBet: minBet.trim() });
+              }
               await onCommand("finalizeSetup", {
                 name,
                 startingJetonsPerPlayer,
@@ -213,6 +219,25 @@ export function CreateTable({
               />
             </label>
           </div>
+          {game === "BLACKJACK" ? (
+            <label className="tt-field">
+              Minimum bet
+              <input
+                className="tt-input"
+                name="minBet"
+                aria-label="Minimum bet"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                enterKeyHint="done"
+                value={minBet}
+                onChange={(event) => {
+                  setMinBetDirty(true);
+                  setMinBet(event.target.value);
+                }}
+                onBlur={() => void persist({ minBet: minBet.trim() })}
+              />
+            </label>
+          ) : null}
           {needsHostName || !view?.ownerName ? (
             <label className="tt-field">
               Owner / host name

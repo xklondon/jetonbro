@@ -239,16 +239,21 @@ export function CasinoConsole({
                   <div className="pm-console-slot is-primary">
                     {primary ? <ActionButton action={primary} kind="primary" /> : null}
                   </div>
+                  {allIn ? (
+                    <div className="pm-console-slot is-allin">
+                      <ActionButton action={allIn} kind="ghost" allIn />
+                    </div>
+                  ) : null}
                 </>
               )}
             </div>
             {variant === "blackjack" && onComposeAmount ? (
               <label className="pm-bj-pending-wager" data-bj-pending-wager="true">
-                <span>WAGER</span>
+                <span>{primary?.label === "NEXT ROUND" ? "NEXT ROUND" : "WAGER"}</span>
                 <input
                   type="text"
                   inputMode="decimal"
-                  aria-label="Pending wager"
+                  aria-label={primary?.label === "NEXT ROUND" ? "Next-round wager" : "Pending wager"}
                   value={composeAmount}
                   placeholder="0"
                   disabled={!trayEnabled}

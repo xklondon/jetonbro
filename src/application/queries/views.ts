@@ -56,6 +56,8 @@ export type BoxView = {
   outcome: BoxOutcome | null;
   returned: MoneyView | null;
   settledKey?: string | null;
+  /** Confirmed next-round stake prepared during PAYOUT / ROUND_COMPLETE. */
+  nextRoundBet?: MoneyView | null;
   payoutActions: PayoutActionView[];
   hand?: HandView;
   coverage?: { bet: boolean; double: boolean; split: boolean; insurance: boolean };
@@ -93,6 +95,8 @@ export type PlayerPermittedActions = {
   double: boolean;
   split: boolean;
   insurance: boolean;
+  /** Prepare confirmed stakes for the next round during PAYOUT / ROUND_COMPLETE. */
+  nextRoundBet?: boolean;
   /** Owner-only management (independent of dealer assignment). */
   addPlayer?: boolean;
   giveJetons?: boolean;
@@ -163,6 +167,8 @@ export type PlayerTableView = {
   insuranceWindowOpen: boolean;
   bettingCloseDeadlineAt: string | null;
   nextRoundDeadlineAt: string | null;
+  /** Table minimum bet (for ALL IN short-stack UX and tray hints). */
+  minBet?: MoneyView | null;
   cardAssist?: "OFF" | "CONFIRM" | "AUTO";
   outcomeFx?: OutcomeFxView;
   bankroll?: BankrollView;

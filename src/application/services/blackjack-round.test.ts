@@ -419,4 +419,114 @@ describeDb("Blackjack table flow", () => {
     });
     expect(wins).toBe(1);
   }, 30_000);
+
+  test("min-bet top-up, short-stack ALL IN, and next-round staging", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Owner");
+    const alex = await user(`alex-${randomUUID()}@jetonbro.test`, "Alex");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: key(),
+      name: "Next-round table",
+      startingAllocation: "0",
+      minBet: "10",
+    });
+    const tableId = created.tableId;
+    const qr = await prisma.invitation.findFirstOrThrow({
+      where: { tableId, kind: "QR", revokedAt: null },
+    });
+    await joinWithToken({ userId: alex.id, token: qr.token, userEmail: alex.email });
+    await distributeJetons({
+      actorId: owner.id,
+      tableId,
+      userId: alex.id,
+      amount: "7",
+      idempotencyKey: key(),
+    });
+
+    await startBetting({ actorId: owner.id, tableId, idempotencyKey: key() });
+    let alexMember = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: alex.id } },
+    });
+    expect(alexMember.availableMillis).toBe(10000n);
+    const topUps = await prisma.ledgerEntry.count({
+      where: {
+        tableId,
+        playerId: alex.id,
+        transactionType: "BANK_DISTRIBUTION",
+        description: { contains: "min-bet top-up" },
+      },
+    });
+    expect(topUps).toBe(1);
+
+    const boxId = (await loadSnapshot(tableId, alex.id)).player!.boxes[0]!.id;
+    await placeOrRetractBet({
+      actorId: alex.id,
+      tableId,
+      boxId,
+      amount: "10",
+      mode: "SET",
+      idempotencyKey: key(),
+    });
+    await dealCards({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await enterPayout({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await settleBox({
+      actorId: owner.id,
+      tableId,
+      boxId,
+      outcome: "LOST",
+      idempotencyKey: key(),
+    });
+
+    const afterLoss = await prisma.table.findUniqueOrThrow({ where: { id: tableId } });
+    expect(afterLoss.currentPhase).toBe("ROUND_COMPLETE");
+    alexMember = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: alex.id } },
+    });
+    expect(alexMember.availableMillis).toBe(0n);
+
+    // Short-stack ALL IN below min during next-round prep after a tiny credit.
+    await distributeJetons({
+      actorId: owner.id,
+      tableId,
+      userId: alex.id,
+      amount: "4",
+      idempotencyKey: key(),
+      mode: "BANK_DISTRIBUTION",
+    });
+    await placeOrRetractBet({
+      actorId: alex.id,
+      tableId,
+      boxId,
+      amount: "4",
+      mode: "SET",
+      idempotencyKey: key(),
+    });
+    const stagedSnap = await loadSnapshot(tableId, alex.id);
+    expect(stagedSnap.player?.actions.nextRoundBet).toBe(true);
+    expect(stagedSnap.player?.boxes[0]?.nextRoundBet?.label).toBe("4");
+    alexMember = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: alex.id } },
+    });
+    expect(alexMember.availableMillis).toBe(0n);
+
+    const lockedBefore = await prisma.bettingBox.findUniqueOrThrow({ where: { id: boxId } });
+    expect(lockedBefore.lockedBetMillis).toBe(0n);
+
+    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: key() });
+    const nextSnap = await loadSnapshot(tableId, alex.id);
+    expect(nextSnap.phase).toBe("BETTING");
+    expect(nextSnap.player?.boxes[0]?.bet.label).toBe("4");
+    expect(nextSnap.player?.boxes[0]?.nextRoundBet ?? null).toBeNull();
+    alexMember = await prisma.tableMember.findUniqueOrThrow({
+      where: { tableId_userId: { tableId, userId: alex.id } },
+    });
+    // Top-up sees staged 4 already reserved → credits 6 to reach min 10 effective before apply,
+    // then apply moves the staged 4 onto the box without a second debit.
+    expect(alexMember.availableMillis).toBe(6000n);
+
+    const stagedLeft = await prisma.stagedBlackjackBet.count({
+      where: { tableId, appliedToRoundId: null },
+    });
+    expect(stagedLeft).toBe(0);
+  }, 30_000);
 });

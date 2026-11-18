@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DEFAULT_OUTCOME_FX_PREFS,
   shouldPlayOutcomeFx,
@@ -25,6 +25,10 @@ export function PremiumOutcomeFx({
   const [copy, setCopy] = useState("");
   const [motion, setMotion] = useState("pop");
   const [id, setId] = useState("fx-win-01");
+  /** Latch play/pick decisions per settlement seed so snapshot polls do not re-roll. */
+  const latchRef = useRef<{ seed: string; play: boolean; copy: string; motion: string; id: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!active) {
@@ -36,14 +40,30 @@ export function PremiumOutcomeFx({
         ? prefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)"))
         : false;
     const prefs = prefsProp ?? DEFAULT_OUTCOME_FX_PREFS;
-    if (!shouldPlayOutcomeFx(prefs, reduced)) {
+    if (!latchRef.current || latchRef.current.seed !== seed) {
+      const play = shouldPlayOutcomeFx(prefs, reduced);
+      if (!play) {
+        latchRef.current = { seed, play: false, copy: "", motion: "pop", id: "fx-skip" };
+        setShow(false);
+        return;
+      }
+      const pick = pickFunnyOutcomeFx(tone, seed);
+      latchRef.current = {
+        seed,
+        play: true,
+        copy: pick.copy,
+        motion: pick.motion,
+        id: pick.id,
+      };
+    }
+    const latch = latchRef.current;
+    if (!latch.play) {
       setShow(false);
       return;
     }
-    const pick = pickFunnyOutcomeFx(tone, seed);
-    setCopy(pick.copy);
-    setMotion(pick.motion);
-    setId(pick.id);
+    setCopy(latch.copy);
+    setMotion(latch.motion);
+    setId(latch.id);
     setShow(true);
     const timer = window.setTimeout(() => setShow(false), 1600);
     return () => window.clearTimeout(timer);

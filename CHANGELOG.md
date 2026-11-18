@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Blackjack fixes + next-round betting (JetBro II Web)
+
+- Commit pending on `fix/blackjack-stable-anatomy-v1` — Blackjack-only: dealer phase button contrast; AVAILABLE once per player on dealer board; BJ tray safe-area/dvh clearance; pirate-skull ALL IN with short-stack exception; Create Table min-bet + dirty numeric fields; min-bet top-up via `BANK_DISTRIBUTION` (OPEN+LIMITED, no LIMITED bank debit); next-round bets during PAYOUT/ROUND_COMPLETE with `StagedBlackjackBet` + carry-once on `startBetting`; outcome FX latched per settlement seed.
+- Poker unchanged.
+- Gate: focused Blackjack Vitest (round/ledger/phase/UI); guardrails; production build. Railway deploy + health recorded after push.
+
 ### One-click email invites + dealer blinds (JetBro II Web)
 
 - Commit `ee88a7d` on `fix/blackjack-stable-anatomy-v1` — invitation emails are Auth.js magic links with `/join/verified/{token}` callbacks (no second email); bank dealers may edit blinds between hands; CHANGE GAME remains owner-only; compact D badge + owner CHANGE GAME dock retained from the same Premium pass.

@@ -95,6 +95,8 @@ export function PremiumCreateTable({
   const [dealerId, setDealerId] = useState(view?.members.find((m) => m.isBankDealer)?.userId ?? "");
   const [nameDirty, setNameDirty] = useState(false);
   const [startingDirty, setStartingDirty] = useState(false);
+  const [minBetDirty, setMinBetDirty] = useState(false);
+  const [minBet, setMinBet] = useState(view?.minBet?.label ?? "");
   const [pending, setPending] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -107,6 +109,7 @@ export function PremiumCreateTable({
     if (!view) return;
     if (!nameDirty) setName(view.tableName);
     if (!startingDirty) setStarting(view.startingJetonsPerPlayer.label);
+    if (!minBetDirty) setMinBet(view.minBet?.label ?? "");
     if (view.gameId === "POKER" || view.gameId === "BLACKJACK") setGame(view.gameId);
     setBankFundingMode(view.bankFundingMode ?? "OPEN");
     if (view.bankFundingMode === "LIMITED" && view.startingBank?.label) {
@@ -117,7 +120,7 @@ export function PremiumCreateTable({
     if (!stakeTouched && (sessionStake === "FUN_ONLY" || sessionStake === "MONEY" || sessionStake === "CUSTOM")) {
       setStake((current) => ({ ...current, stakeType: sessionStake }));
     }
-  }, [view, nameDirty, startingDirty, stakeTouched]);
+  }, [view, nameDirty, startingDirty, minBetDirty, stakeTouched]);
 
   async function persist(payload: Record<string, string>) {
     if (!onCommand) return;
@@ -131,6 +134,9 @@ export function PremiumCreateTable({
     try {
       if (onCommand && view) {
         await persist(stakeModeToPayload(stakeRef.current, starting));
+        if (game === "BLACKJACK") {
+          await persist({ minBet: minBet.trim() });
+        }
         await onCommand("finalizeSetup", {
           name,
           startingJetonsPerPlayer: starting,
@@ -230,6 +236,24 @@ export function PremiumCreateTable({
             />
           </label>
         </div>
+
+        {game === "BLACKJACK" ? (
+          <label className="pm-field">
+            Minimum bet
+            <input
+              className="pm-input"
+              value={minBet}
+              onChange={(e) => {
+                setMinBetDirty(true);
+                setMinBet(e.target.value);
+              }}
+              onBlur={() => void persist({ minBet: minBet.trim() })}
+              aria-label="Minimum bet"
+              inputMode="numeric"
+              enterKeyHint="done"
+            />
+          </label>
+        ) : null}
 
         {(needsHostName || !view?.ownerName) && (
           <label className="pm-field">

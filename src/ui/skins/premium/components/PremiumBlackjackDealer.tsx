@@ -207,7 +207,26 @@ export function PremiumBlackjackDealer({
       />
     );
   } else if (play && staged.length > 0) {
-    layer = staged.map((box) => <BlackjackBox key={box.id} box={box} showPlayerName />);
+    const shownAvailable = new Set<string>();
+    layer = staged.map((box) => {
+      const player = joined.find((item) => item.userId === box.playerId);
+      const showAvailableOnce = Boolean(player?.userId) && !shownAvailable.has(player!.userId);
+      if (showAvailableOnce && player?.userId) shownAvailable.add(player.userId);
+      return (
+        <BlackjackBox
+          key={box.id}
+          box={box}
+          showPlayerName
+          bankroll={player?.available ?? null}
+          showAvailable={showAvailableOnce}
+          nextRoundLabel={
+            box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
+              ? box.nextRoundBet.label
+              : null
+          }
+        />
+      );
+    });
   } else if (!setup) {
     layer = (
       <p className="pm-bj-empty" data-dealer-empty="true">

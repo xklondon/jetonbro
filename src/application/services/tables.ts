@@ -999,8 +999,12 @@ export async function distributeJetons(input: {
       if (pokerPhase !== "POKER_SETUP" && pokerPhase !== "HAND_COMPLETE") {
         throw new ConflictError("Jetons can only be distributed between hands.");
       }
-    } else if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "BETTING") {
-      throw new ConflictError("Jetons can only be distributed before cards are dealt.");
+    } else if (
+      table.currentPhase !== "TABLE_SETUP" &&
+      table.currentPhase !== "BETTING" &&
+      table.currentPhase !== "ROUND_COMPLETE"
+    ) {
+      throw new ConflictError("Jetons can only be distributed between rounds.");
     }
     if (
       table.currentPhase === "BETTING" &&
@@ -1154,6 +1158,15 @@ export async function leaveTable(input: {
       throw new ConflictError("You can only exit between hands.");
     }
     await prisma.$transaction(async (tx) => {
+      if (table.game === "BLACKJACK") {
+        const { refundStagedBlackjackBets } = await import("@/application/services/blackjack-round");
+        await refundStagedBlackjackBets(tx, {
+          tableId: input.tableId,
+          playerId: input.actorId,
+          actorId: input.actorId,
+          reason: "leave",
+        });
+      }
       await tx.tableMember.update({
         where: { id: member.id },
         data: { leftAt: new Date(), isBankDealer: false },

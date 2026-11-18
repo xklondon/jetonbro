@@ -45,7 +45,8 @@ function player(phase: PlayerTableView["phase"], extra: Partial<PlayerTableView>
     nextRoundDeadlineAt: null,
     actions: {
       bet: phase === "BETTING",
-      retract: phase === "BETTING",
+      retract: phase === "BETTING" || phase === "PAYOUT" || phase === "ROUND_COMPLETE",
+      nextRoundBet: phase === "PAYOUT" || phase === "ROUND_COMPLETE",
       addBox: phase === "BETTING",
       removeEmptyBox: false,
       double: phase === "PLAYING",
@@ -180,11 +181,12 @@ test("Player controls are legal-only by phase", () => {
   expect(ins.insurance).toBe(true);
   expect(ins.double).toBe(true);
   const payout = blackjackPlayerControls(player("PAYOUT"), box());
-  expect(payout.payoutIdle).toBe(true);
+  expect(payout.payoutIdle).toBe(false);
   expect(payout.placeBet).toBe(false);
+  expect(payout.nextRoundBet).toBe(true);
   expect(payout.double).toBe(false);
   expect(payout.insurance).toBe(false);
-  expect(payout.trayEnabled).toBe(false);
+  expect(payout.trayEnabled).toBe(true);
 });
 
 test("Owner dealer/game chrome is interactive only at safe Blackjack boundaries", () => {

@@ -105,12 +105,204 @@ function assertBetLimits(
   resulting: bigint,
   minBet: bigint | null,
   maxBet: bigint | null,
+  opts?: { shortStackAllIn?: boolean },
 ) {
-  if (minBet !== null && resulting < minBet && resulting !== 0n) {
+  if (minBet !== null && resulting < minBet && resulting !== 0n && !opts?.shortStackAllIn) {
     throw new DomainError("BELOW_MINIMUM", `The minimum bet is ${formatJetons(minBet)} jetons.`);
   }
   if (maxBet !== null && resulting > maxBet) {
     throw new DomainError("ABOVE_MAXIMUM", `The maximum bet is ${formatJetons(maxBet)} jetons.`);
+  }
+}
+
+/** Credit AVAILABLE up to exactly one minimum bet from BANK_VIRTUAL_RESERVE (no LIMITED bank debit). */
+async function topUpPlayersToMinBet(
+  tx: Tx,
+  input: {
+    tableId: string;
+    actorId: string;
+    roundId: string;
+    minBetMillis: bigint | null;
+    members: { id: string; userId: string; availableMillis: bigint }[];
+    stagedByPlayer: Map<string, bigint>;
+  },
+) {
+  if (input.minBetMillis === null || input.minBetMillis <= 0n) return;
+  for (const member of input.members) {
+    const staged = input.stagedByPlayer.get(member.userId) ?? 0n;
+    const effective = member.availableMillis + staged;
+    if (effective >= input.minBetMillis) continue;
+    const credit = input.minBetMillis - effective;
+    if (credit <= 0n) continue;
+    const ledgerKey = `min-bet-topup:${input.tableId}:${input.roundId}:${member.userId}`;
+    const existing = await tx.ledgerEntry.findUnique({ where: { idempotencyKey: ledgerKey } });
+    if (existing) continue;
+    const { before, after } = await creditTableAvailable(tx, member.id, credit);
+    member.availableMillis = after;
+    await appendLedger(tx, {
+      playerId: member.userId,
+      actorId: input.actorId,
+      tableId: input.tableId,
+      roundId: input.roundId,
+      transactionType: "BANK_DISTRIBUTION",
+      amountMillis: credit,
+      balanceBeforeMillis: before,
+      balanceAfterMillis: after,
+      idempotencyKey: ledgerKey,
+      description: `BANK_VIRTUAL_RESERVE → AVAILABLE · min-bet top-up ${formatJetons(credit)}`,
+    });
+  }
+}
+
+async function applyStagedBetsToRound(
+  tx: Tx,
+  input: {
+    table: Awaited<ReturnType<typeof loadTableForUpdate>> & {
+      bankFundingMode: string;
+      bankAvailableMillis: bigint;
+      bankLockedExposureMillis: bigint;
+      blackjackPayout: "THREE_TWO" | "SIX_FIVE";
+      maxBoxesPerPlayer: number;
+    };
+    actorId: string;
+    roundId: string;
+    participatingUserIds: Set<string>;
+  },
+) {
+  const staged = await tx.stagedBlackjackBet.findMany({
+    where: { tableId: input.table.id, appliedToRoundId: null },
+  });
+  if (staged.length === 0) return;
+
+  for (const row of staged) {
+    if (!input.participatingUserIds.has(row.playerId)) {
+      // Player left or is now dealer — refund reservation.
+      const member = await lockMember(tx, input.table.id, row.playerId).catch(() => null);
+      if (member && row.amountMillis > 0n) {
+        const { before, after } = await creditTableAvailable(tx, member.id, row.amountMillis);
+        await appendLedger(tx, {
+          playerId: row.playerId,
+          actorId: input.actorId,
+          tableId: input.table.id,
+          roundId: row.preparedFromRoundId,
+          transactionType: "BET_RETRACTED",
+          amountMillis: row.amountMillis,
+          balanceBeforeMillis: before,
+          balanceAfterMillis: after,
+          idempotencyKey: `next-round-refund-leave:${row.id}:${input.roundId}`,
+          description: `Returned next-round ${formatJetons(row.amountMillis)} jetons (player not in round)`,
+        });
+      }
+      await tx.stagedBlackjackBet.delete({ where: { id: row.id } });
+      continue;
+    }
+    if (row.amountMillis <= 0n) {
+      await tx.stagedBlackjackBet.delete({ where: { id: row.id } });
+      continue;
+    }
+    if (row.boxNumber < 1 || row.boxNumber > input.table.maxBoxesPerPlayer) {
+      throw new DomainError("INVALID_BOX", `Next-round box ${row.boxNumber} is outside the table limit.`);
+    }
+    let box = await tx.bettingBox.findFirst({
+      where: {
+        roundId: input.roundId,
+        playerId: row.playerId,
+        boxNumber: row.boxNumber,
+        removedAt: null,
+      },
+    });
+    if (!box) {
+      box = await tx.bettingBox.create({
+        data: {
+          roundId: input.roundId,
+          playerId: row.playerId,
+          boxNumber: row.boxNumber,
+          displayLabel: `YOUR BOX ${row.boxNumber}`,
+          lockedBetMillis: row.amountMillis,
+          originalStakeMillis: row.amountMillis,
+        },
+      });
+    } else if (box.lockedBetMillis === 0n) {
+      box = await tx.bettingBox.update({
+        where: { id: box.id },
+        data: {
+          lockedBetMillis: row.amountMillis,
+          originalStakeMillis: row.amountMillis,
+        },
+      });
+    } else {
+      // Already staked somehow — refund staged to avoid double debit.
+      const member = await lockMember(tx, input.table.id, row.playerId);
+      const { before, after } = await creditTableAvailable(tx, member.id, row.amountMillis);
+      await appendLedger(tx, {
+        playerId: row.playerId,
+        actorId: input.actorId,
+        tableId: input.table.id,
+        roundId: input.roundId,
+        boxId: box.id,
+        transactionType: "BET_RETRACTED",
+        amountMillis: row.amountMillis,
+        balanceBeforeMillis: before,
+        balanceAfterMillis: after,
+        idempotencyKey: `next-round-refund-dup:${row.id}:${input.roundId}`,
+        description: `Returned duplicate next-round ${formatJetons(row.amountMillis)} jetons`,
+      });
+      await tx.stagedBlackjackBet.delete({ where: { id: row.id } });
+      continue;
+    }
+
+    await syncBoxExposure(tx, {
+      table: input.table,
+      actorId: input.actorId,
+      boxId: box.id,
+      currentReserved: box.exposureReservedMillis,
+      nextStake: row.amountMillis,
+      idempotencyKey: `next-round-apply:${row.id}:${input.roundId}`,
+      label: `next-round box ${row.boxNumber}`,
+    });
+
+    await tx.stagedBlackjackBet.update({
+      where: { id: row.id },
+      data: { appliedToRoundId: input.roundId },
+    });
+    await tx.stagedBlackjackBet.delete({ where: { id: row.id } });
+  }
+}
+
+export async function refundStagedBlackjackBets(
+  tx: Tx,
+  input: { tableId: string; playerId: string; actorId: string; reason: string },
+) {
+  const staged = await tx.stagedBlackjackBet.findMany({
+    where: { tableId: input.tableId, playerId: input.playerId, appliedToRoundId: null },
+  });
+  if (staged.length === 0) return;
+  const member = await tx.tableMember.findUnique({
+    where: { tableId_userId: { tableId: input.tableId, userId: input.playerId } },
+  });
+  if (!member || member.leftAt) {
+    await tx.stagedBlackjackBet.deleteMany({
+      where: { tableId: input.tableId, playerId: input.playerId, appliedToRoundId: null },
+    });
+    return;
+  }
+  for (const row of staged) {
+    if (row.amountMillis > 0n) {
+      const { before, after } = await creditTableAvailable(tx, member.id, row.amountMillis);
+      await appendLedger(tx, {
+        playerId: input.playerId,
+        actorId: input.actorId,
+        tableId: input.tableId,
+        roundId: row.preparedFromRoundId,
+        transactionType: "BET_RETRACTED",
+        amountMillis: row.amountMillis,
+        balanceBeforeMillis: before,
+        balanceAfterMillis: after,
+        idempotencyKey: `next-round-refund:${row.id}:${input.reason}`,
+        description: `Returned next-round ${formatJetons(row.amountMillis)} jetons (${input.reason})`,
+      });
+    }
+    await tx.stagedBlackjackBet.delete({ where: { id: row.id } });
   }
 }
 
@@ -261,11 +453,27 @@ export async function startBetting(input: { actorId: string; tableId: string; id
           isBankDealer: false,
         });
       }
-      for (const member of table.members) {
+      // Refresh balances after optional starting credits (local include can be stale).
+      const freshMembers = await tx.tableMember.findMany({
+        where: { tableId: table.id, leftAt: null },
+      });
+      for (const member of freshMembers) {
         if (member.availableMillis < 0n) {
           throw new DomainError("NEGATIVE_BALANCE", "Every player must have a non-negative table balance.");
         }
       }
+      // Between-round only: never top up while current-round stakes remain locked/unsettled.
+      if (table.currentRound && roundHasLockedStake(table.currentRound)) {
+        throw new DomainError("LOCKED_FUNDS", "Finish settling the current round before opening the next.");
+      }
+      const pendingStaged = await tx.stagedBlackjackBet.findMany({
+        where: { tableId: table.id, appliedToRoundId: null },
+      });
+      const stagedByPlayer = new Map<string, bigint>();
+      for (const row of pendingStaged) {
+        stagedByPlayer.set(row.playerId, (stagedByPlayer.get(row.playerId) ?? 0n) + row.amountMillis);
+      }
+      const freshParticipating = freshMembers.filter((member) => member.userId !== table.bankDealerId);
       const roundCount = await tx.round.count({ where: { tableId: table.id } });
       if (table.currentRoundId) {
         await tx.round.update({
@@ -281,7 +489,19 @@ export async function startBetting(input: { actorId: string; tableId: string; id
           phase: "BETTING",
         },
       });
-      for (const member of participating) {
+      await topUpPlayersToMinBet(tx, {
+        tableId: table.id,
+        actorId: input.actorId,
+        roundId: round.id,
+        minBetMillis: table.minBetMillis,
+        members: freshParticipating.map((m) => ({
+          id: m.id,
+          userId: m.userId,
+          availableMillis: m.availableMillis,
+        })),
+        stagedByPlayer,
+      });
+      for (const member of freshParticipating) {
         await tx.bettingBox.create({
           data: {
             roundId: round.id,
@@ -291,6 +511,12 @@ export async function startBetting(input: { actorId: string; tableId: string; id
           },
         });
       }
+      await applyStagedBetsToRound(tx, {
+        table,
+        actorId: input.actorId,
+        roundId: round.id,
+        participatingUserIds: new Set(freshParticipating.map((m) => m.userId)),
+      });
       await tx.table.update({
         where: { id: table.id },
         data: {
@@ -397,12 +623,16 @@ export async function placeOrRetractBet(input: {
     await ensureBettingClosedIfDue(input.tableId);
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
-      if (table.currentPhase !== "BETTING") {
+      const nextRoundPrep =
+        table.currentPhase === "PAYOUT" || table.currentPhase === "ROUND_COMPLETE";
+      if (table.currentPhase !== "BETTING" && !nextRoundPrep) {
         throw new PhaseConflictError("Betting", table.currentPhase, "BETTING");
       }
-      const deadline = table.currentRound?.bettingCloseDeadlineAt;
-      if (deadline && deadline.getTime() <= Date.now()) {
-        throw new ConflictError("Betting is not open yet");
+      if (table.currentPhase === "BETTING") {
+        const deadline = table.currentRound?.bettingCloseDeadlineAt;
+        if (deadline && deadline.getTime() <= Date.now()) {
+          throw new ConflictError("Betting is not open yet");
+        }
       }
       if (table.bankDealerId === input.actorId) {
         throw new ForbiddenError("You are not a Player at this table");
@@ -418,6 +648,76 @@ export async function placeOrRetractBet(input: {
         throw new ForbiddenError("You are not a Player at this table");
       }
       const member = await lockMember(tx, table.id, input.actorId);
+
+      if (nextRoundPrep) {
+        if (box.isSplitOffshoot) {
+          throw new DomainError("CHOOSE_BOX", "Prepare the next round on a primary box.");
+        }
+        const sourceRoundId = table.currentRound!.id;
+        const existing = await tx.stagedBlackjackBet.findUnique({
+          where: {
+            tableId_playerId_boxNumber: {
+              tableId: table.id,
+              playerId: input.actorId,
+              boxNumber: box.boxNumber,
+            },
+          },
+        });
+        const currentStaged = existing && !existing.appliedToRoundId ? existing.amountMillis : 0n;
+        let nextStaged = currentStaged;
+        if (input.mode === "SET") nextStaged = amount;
+        if (input.mode === "ADD") nextStaged = currentStaged + amount;
+        if (input.mode === "RETRACT") {
+          if (amount > currentStaged) {
+            throw new DomainError("RETRACT_TOO_LARGE", "You cannot retract more than this next-round bet holds.");
+          }
+          nextStaged = currentStaged - amount;
+        }
+        const delta = nextStaged - currentStaged;
+        if (delta === 0n) return;
+        const shortStackAllIn =
+          delta > 0n && nextStaged > 0n && nextStaged === member.availableMillis + currentStaged;
+        assertBetLimits(nextStaged, table.minBetMillis, table.maxBetMillis, { shortStackAllIn });
+        const { before, after } = await creditTableAvailable(tx, member.id, -delta);
+        if (nextStaged <= 0n) {
+          if (existing) await tx.stagedBlackjackBet.delete({ where: { id: existing.id } });
+        } else if (existing && !existing.appliedToRoundId) {
+          await tx.stagedBlackjackBet.update({
+            where: { id: existing.id },
+            data: {
+              amountMillis: nextStaged,
+              preparedFromRoundId: sourceRoundId,
+            },
+          });
+        } else {
+          await tx.stagedBlackjackBet.create({
+            data: {
+              tableId: table.id,
+              playerId: input.actorId,
+              boxNumber: box.boxNumber,
+              amountMillis: nextStaged,
+              preparedFromRoundId: sourceRoundId,
+            },
+          });
+        }
+        await appendLedger(tx, {
+          playerId: input.actorId,
+          actorId: input.actorId,
+          tableId: table.id,
+          roundId: sourceRoundId,
+          transactionType: delta > 0n ? "BET_LOCKED" : "BET_RETRACTED",
+          amountMillis: delta > 0n ? delta : -delta,
+          balanceBeforeMillis: before,
+          balanceAfterMillis: after,
+          idempotencyKey: `${input.idempotencyKey}:ledger`,
+          description:
+            delta > 0n
+              ? `Next-round lock ${formatJetons(delta)} jetons on box ${box.boxNumber}`
+              : `Next-round return ${formatJetons(-delta)} jetons from box ${box.boxNumber}`,
+        });
+        return;
+      }
+
       let nextLocked = box.lockedBetMillis;
       if (input.mode === "SET") nextLocked = amount;
       if (input.mode === "ADD") nextLocked = box.lockedBetMillis + amount;
@@ -429,7 +729,9 @@ export async function placeOrRetractBet(input: {
       }
       const delta = nextLocked - box.lockedBetMillis;
       if (delta === 0n) return;
-      assertBetLimits(nextLocked, table.minBetMillis, table.maxBetMillis);
+      const shortStackAllIn =
+        delta > 0n && nextLocked > 0n && nextLocked === member.availableMillis + box.lockedBetMillis;
+      assertBetLimits(nextLocked, table.minBetMillis, table.maxBetMillis, { shortStackAllIn });
       if (delta > 0n) {
         await syncBoxExposure(tx, {
           table,

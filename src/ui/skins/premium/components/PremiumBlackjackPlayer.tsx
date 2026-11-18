@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MemberView, PlayerTableView } from "@/application/queries/views";
 import { blackjackPlayerControls } from "@/ui/core/blackjack-phase-controls";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
@@ -60,12 +60,15 @@ export function PremiumBlackjackPlayer({
   const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
   const playing = view.phase === "PLAYING";
   const betting = view.phase === "BETTING";
+  const nextRoundBetting = Boolean(controls.nextRoundBet);
   /** Keep tray well during payout so dock height matches betting while dealer awards. */
   const showTray = true;
-  const trayInteractive = betting && Boolean(controls.placeBet);
+  const trayInteractive = (betting && Boolean(controls.placeBet)) || nextRoundBetting;
   const [fxActive, setFxActive] = useState(false);
   const [fxTone, setFxTone] = useState<"win" | "loss">("win");
   const [fxSeed, setFxSeed] = useState("");
+  const fxLatchKey = useRef<string | null>(null);
+  const [allInArmed, setAllInArmed] = useState(false);
   const [cardSheetOpen, setCardSheetOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -78,31 +81,59 @@ export function PremiumBlackjackPlayer({
   const ownRanks = selected?.hand?.ranks ?? [];
   const betweenHands = setup || view.phase === "ROUND_COMPLETE";
   const canLeave = Boolean(view.canLeaveTable || view.actions.leaveTable);
+  const availableWhole = Number(view.available.label) || 0;
+  const selectedCommitted = nextRoundBetting
+    ? Number(selected?.nextRoundBet?.label ?? "0") || 0
+    : Number(selected?.bet.label ?? "0") || 0;
+  const allInAmount = availableWhole + (nextRoundBetting || betting ? selectedCommitted : 0);
+  const showAllIn = trayInteractive && Boolean(selected) && allInAmount > 0;
 
   useEffect(() => {
     // Switching boxes clears the compose draft so chips do not bleed across boxes.
     setPendingText("");
     setLocalNotice(null);
+    setAllInArmed(false);
   }, [selected?.id]);
 
   useEffect(() => {
+    setAllInArmed(false);
+  }, [view.phase, view.available.label]);
+
+  useEffect(() => {
     if (!payout) {
+      fxLatchKey.current = null;
       setFxActive(false);
       return;
     }
-    const settled = view.boxes.find((box) => box.outcome);
-    if (!settled?.outcome) {
+    const settled = view.boxes.filter((box) => box.outcome);
+    if (settled.length === 0) {
       setFxActive(false);
       return;
     }
-    const win = settled.outcome === "WON" || settled.outcome === "BLACKJACK";
+    const key = settled
+      .map((box) => `${box.id}:${box.outcome}:${box.settledKey ?? ""}`)
+      .sort()
+      .join("|");
+    if (fxLatchKey.current === key) {
+      setFxActive(true);
+      return;
+    }
+    // Latch on the first settlement snapshot for this set — later polls keep the same seed.
+    if (fxLatchKey.current && fxLatchKey.current.split("|").length <= key.split("|").length) {
+      // Prefer first latch within the round; ignore expansions that would re-seed.
+      setFxActive(true);
+      return;
+    }
+    const win = settled.some((box) => box.outcome === "WON" || box.outcome === "BLACKJACK");
     setFxTone(win ? "win" : "loss");
-    setFxSeed(`${view.phase}-${settled.id}-${settled.outcome}`);
+    setFxSeed(key);
+    fxLatchKey.current = key;
     setFxActive(true);
-  }, [payout, view.boxes, view.phase]);
+  }, [payout, view.boxes]);
 
   async function retractChip(boxId: string, amount: string) {
-    if (retractBusy || view.phase !== "BETTING" || !view.actions.retract) return;
+    if (retractBusy || !view.actions.retract) return;
+    if (view.phase !== "BETTING" && !nextRoundBetting) return;
     setRetractBusy(boxId);
     setLocalNotice(null);
     try {
@@ -115,6 +146,7 @@ export function PremiumBlackjackPlayer({
   function addChip(value: string) {
     if (!trayInteractive || !selected) return;
     setLocalNotice(null);
+    setAllInArmed(false);
     const chip = parseWhole(value);
     if (chip == null) return;
     setPendingText((prev) => {
@@ -125,15 +157,48 @@ export function PremiumBlackjackPlayer({
   }
 
   async function confirmPlaceBet() {
-    if (!controls.placeBet || !selected || placeBusy) return;
+    if ((!controls.placeBet && !controls.nextRoundBet) || !selected || placeBusy) return;
     setLocalNotice(null);
     const amount = parseWhole(pendingText);
-    if (amount == null || amount <= 0) {
-      setLocalNotice("Enter or tap a wager before PLACE BET.");
+    const alreadyLocked = nextRoundBetting
+      ? Number(selected.nextRoundBet?.label ?? "0")
+      : Number(selected.bet.label);
+    if (amount == null || amount < 0) {
+      setLocalNotice(
+        nextRoundBetting
+          ? "Enter or tap a NEXT ROUND wager before confirming."
+          : "Enter or tap a wager before PLACE BET.",
+      );
+      return;
+    }
+    if (amount === 0) {
+      if (!nextRoundBetting || alreadyLocked <= 0) {
+        setLocalNotice(
+          nextRoundBetting
+            ? "Enter or tap a NEXT ROUND wager before confirming."
+            : "Enter or tap a wager before PLACE BET.",
+        );
+        return;
+      }
+      setPlaceBusy(true);
+      try {
+        const ok = await onCommand("placeBet", {
+          boxId: selected.id,
+          amount: String(alreadyLocked),
+          mode: "RETRACT",
+        });
+        if (ok === false) {
+          setLocalNotice("Could not clear the NEXT ROUND bet.");
+          return;
+        }
+        setPendingText("");
+        setAllInArmed(false);
+      } finally {
+        setPlaceBusy(false);
+      }
       return;
     }
     const available = Number(view.available.label);
-    const alreadyLocked = Number(selected.bet.label);
     // SET replaces the box stake; only the delta leaves AVAILABLE.
     const delta = amount - alreadyLocked;
     if (delta > available) {
@@ -148,10 +213,47 @@ export function PremiumBlackjackPlayer({
         mode: "SET",
       });
       if (ok === false) {
-        setLocalNotice("PLACE BET failed — check your wager and try again.");
+        setLocalNotice(
+          nextRoundBetting
+            ? "NEXT ROUND bet failed — check your wager and try again."
+            : "PLACE BET failed — check your wager and try again.",
+        );
         return;
       }
       setPendingText("");
+      setAllInArmed(false);
+    } finally {
+      setPlaceBusy(false);
+    }
+  }
+
+  async function confirmAllIn() {
+    if (!showAllIn || !selected || placeBusy) return;
+    if (!allInArmed) {
+      setPendingText(String(allInAmount));
+      setAllInArmed(true);
+      setLocalNotice(
+        nextRoundBetting
+          ? `Confirm NEXT ROUND ALL IN ${allInAmount}.`
+          : `Confirm ALL IN ${allInAmount}.`,
+      );
+      return;
+    }
+    setPendingText(String(allInAmount));
+    setPlaceBusy(true);
+    setLocalNotice(null);
+    try {
+      const ok = await onCommand("placeBet", {
+        boxId: selected.id,
+        amount: String(allInAmount),
+        mode: "SET",
+      });
+      if (ok === false) {
+        setLocalNotice("ALL IN failed — check available jetons and try again.");
+        return;
+      }
+      setPendingText("");
+      setAllInArmed(false);
     } finally {
       setPlaceBusy(false);
     }
@@ -160,16 +262,27 @@ export function PremiumBlackjackPlayer({
   let primary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
   let secondary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
   let tertiary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
+  let allIn = null as null | { label: string; disabled?: boolean; title?: string; onClick?: () => void };
 
-  if (controls.placeBet) {
+  if (controls.placeBet || controls.nextRoundBet) {
     primary = {
-      label: "PLACE BET",
+      label: nextRoundBetting ? "NEXT ROUND" : "PLACE BET",
       disabled: placeBusy || !selected,
       onClick: () => void confirmPlaceBet(),
     };
     secondary = controls.addBox
       ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
       : null;
+    if (showAllIn) {
+      allIn = {
+        label: allInArmed ? `CONFIRM ALL IN ${allInAmount}` : `ALL IN ${allInAmount}`,
+        title: allInArmed
+          ? `Commit ${allInAmount} jetons (all available)`
+          : `All in ${allInAmount} — tap again to confirm`,
+        disabled: placeBusy,
+        onClick: () => void confirmAllIn(),
+      };
+    }
   } else if (playing) {
     // Canonical command names — API route cases are doubleBox / splitBox.
     primary = controls.double
@@ -242,6 +355,7 @@ export function PremiumBlackjackPlayer({
             trayInteractive
               ? (value) => {
                   setLocalNotice(null);
+                  setAllInArmed(false);
                   setPendingText(value);
                 }
               : undefined
@@ -263,6 +377,7 @@ export function PremiumBlackjackPlayer({
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}
+          allIn={allIn}
         />
       }
     >
@@ -296,18 +411,31 @@ export function PremiumBlackjackPlayer({
               box.coverage?.insurance !== false &&
               (!box.insurance || box.insurance.label === "0");
             const pendingForBox =
-              box.id === selected?.id && pendingText && parseWhole(pendingText) != null
+              !nextRoundBetting &&
+              box.id === selected?.id &&
+              pendingText &&
+              parseWhole(pendingText) != null
                 ? pendingText
                 : null;
+            const nextRoundForBox =
+              nextRoundBetting &&
+              box.id === selected?.id &&
+              pendingText &&
+              parseWhole(pendingText) != null
+                ? pendingText
+                : box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
+                  ? box.nextRoundBet.label
+                  : null;
             return (
               <BlackjackBox
                 key={box.id}
                 box={box}
                 selected={box.id === selected?.id}
                 pendingLabel={pendingForBox}
+                nextRoundLabel={nextRoundForBox}
                 onSelect={() => onSelectBox(box.id)}
                 onRetractChip={
-                  view.phase === "BETTING" && view.actions.retract
+                  (view.phase === "BETTING" || nextRoundBetting) && view.actions.retract
                     ? (amount) => void retractChip(box.id, amount)
                     : undefined
                 }
