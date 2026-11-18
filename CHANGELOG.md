@@ -4,9 +4,10 @@
 
 ### Blackjack fixes + next-round betting (JetBro II Web)
 
-- Commit pending on `fix/blackjack-stable-anatomy-v1` — Blackjack-only: dealer phase button contrast; AVAILABLE once per player on dealer board; BJ tray safe-area/dvh clearance; pirate-skull ALL IN with short-stack exception; Create Table min-bet + dirty numeric fields; min-bet top-up via `BANK_DISTRIBUTION` (OPEN+LIMITED, no LIMITED bank debit); next-round bets during PAYOUT/ROUND_COMPLETE with `StagedBlackjackBet` + carry-once on `startBetting`; outcome FX latched per settlement seed.
+- Commit `d2517e8` on `fix/blackjack-stable-anatomy-v1` — Blackjack-only: dealer phase button contrast; AVAILABLE once per player on dealer board; BJ tray safe-area/dvh clearance; pirate-skull ALL IN with short-stack exception; Create Table min-bet + dirty numeric fields; min-bet top-up via `BANK_DISTRIBUTION` (OPEN+LIMITED, no LIMITED bank debit); next-round bets during PAYOUT/ROUND_COMPLETE with `StagedBlackjackBet` + carry-once on `startBetting`; outcome FX latched per settlement seed.
 - Poker unchanged.
-- Gate: focused Blackjack Vitest (round/ledger/phase/UI); guardrails; production build. Railway deploy + health recorded after push.
+- Target: Railway project `tranquil-unity` / production / **JetBro II Web** only (`13c78fae-7bc8-4340-bede-0275c6c09de5`, SUCCESS). URL https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Blackjack Vitest (round/ledger/phase/UI); guardrails; production build. `/api/health` ok. Not merged or tagged.
 
 ### One-click email invites + dealer blinds (JetBro II Web)
 

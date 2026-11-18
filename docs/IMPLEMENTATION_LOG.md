@@ -1,10 +1,10 @@
 # Blackjack fixes + next-round betting
 
-- Branch `fix/blackjack-stable-anatomy-v1` — Blackjack-only accounting + Premium/tabletop UI.
+- Branch `fix/blackjack-stable-anatomy-v1` at `d2517e8` — Blackjack-only accounting + Premium/tabletop UI.
 - Min-bet top-up: `BANK_VIRTUAL_RESERVE` → player `AVAILABLE` as `BANK_DISTRIBUTION`, idempotent per `{tableId,roundId,userId}`, between-round only.
 - Next-round: `StagedBlackjackBet` reserves with `BET_LOCKED` / `BET_RETRACTED` against the payout round id; applied once into the new round without re-debit; leave refunds staged stakes.
 - UI: ALL IN, AVAILABLE on dealer boxes, next-round tray during PAYOUT, Create Table min bet, outcome FX latch, BJ dock safe-area.
-- Gate: focused Blackjack Vitest + guardrails + production build. Railway JetBro II Web deploy pending in this entry update after release. Not merged. Not tagged.
+- Gate: focused Blackjack Vitest + guardrails + production build. Railway JetBro II Web `13c78fae-7bc8-4340-bede-0275c6c09de5` SUCCESS. `/api/health` ok. Not merged. Not tagged.
 
 # One-click email invites + dealer blinds
 
