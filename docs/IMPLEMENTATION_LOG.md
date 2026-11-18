@@ -1,3 +1,8 @@
+# Blackjack tray stability & phase controls
+
+- Branch `fix/blackjack-stable-anatomy-v1` — fixed BJ/Poker tray heights; dealer START HAND right + phase colours; larger BJ AVAILABLE; next-round bets only in ROUND_COMPLETE.
+- Gate: focused Vitest + guardrails + production build. Railway JetBro II Web deploy pending in follow-up docs line. Not merged. Not tagged.
+
 # Blackjack fixes + next-round betting
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `d2517e8` — Blackjack-only accounting + Premium/tabletop UI.

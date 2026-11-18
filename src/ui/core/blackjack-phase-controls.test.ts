@@ -45,8 +45,8 @@ function player(phase: PlayerTableView["phase"], extra: Partial<PlayerTableView>
     nextRoundDeadlineAt: null,
     actions: {
       bet: phase === "BETTING",
-      retract: phase === "BETTING" || phase === "PAYOUT" || phase === "ROUND_COMPLETE",
-      nextRoundBet: phase === "PAYOUT" || phase === "ROUND_COMPLETE",
+      retract: phase === "BETTING" || phase === "ROUND_COMPLETE",
+      nextRoundBet: phase === "ROUND_COMPLETE",
       addBox: phase === "BETTING",
       removeEmptyBox: false,
       double: phase === "PLAYING",
@@ -89,7 +89,7 @@ function bank(phase: BankTableView["phase"], extra: Partial<BankTableView> = {})
       dealCards: phase === "BETTING",
       scheduleDeal: phase === "BETTING",
       payoutPhase: phase === "PLAYING",
-      nextHand: phase === "PAYOUT",
+      nextHand: phase === "PAYOUT" || phase === "ROUND_COMPLETE",
       scheduleNextRound: false,
       openInsurance: phase === "PLAYING",
       closeInsurance: false,
@@ -140,15 +140,18 @@ test("Dealer Phase 0 / Betting / Playing / Payout labels follow the canonical ma
   expect(insOpen.insurance?.id).toBe("closeInsurance");
   const payout = blackjackDealerControls(bank("PAYOUT"));
   expect(payout.phaseLabel).toBe("PAYOUT");
-  expect(payout.primary?.label).toBe("START BETTING");
+  expect(payout.primary?.label).toBe("START NEXT ROUND");
   expect(payout.primary?.enabled).toBe(false);
   expect(payout.primary?.command).toBe("startNextRound");
+  expect(payout.showPayoutResults).toBe(true);
   const ready = blackjackDealerControls(
-    bank("PAYOUT", { primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: true } }),
+    bank("ROUND_COMPLETE", { primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: true } }),
   );
+  expect(ready.primary?.label).toBe("START NEXT ROUND");
   expect(ready.primary?.enabled).toBe(true);
+  expect(ready.showPayoutResults).toBe(false);
   const setup = blackjackDealerSetupControls(false);
-  expect(setup.primary?.label).toBe("START BETTING");
+  expect(setup.primary?.label).toBe("START HAND");
   expect(setup.primary?.enabled).toBe(false);
   expect(setup.showAddPlayer).toBe(true);
   expect(blackjackDealerSetupControls(true).primary?.enabled).toBe(true);
@@ -181,12 +184,16 @@ test("Player controls are legal-only by phase", () => {
   expect(ins.insurance).toBe(true);
   expect(ins.double).toBe(true);
   const payout = blackjackPlayerControls(player("PAYOUT"), box());
-  expect(payout.payoutIdle).toBe(false);
+  expect(payout.payoutIdle).toBe(true);
   expect(payout.placeBet).toBe(false);
-  expect(payout.nextRoundBet).toBe(true);
+  expect(payout.nextRoundBet).toBe(false);
   expect(payout.double).toBe(false);
   expect(payout.insurance).toBe(false);
-  expect(payout.trayEnabled).toBe(true);
+  expect(payout.trayEnabled).toBe(false);
+  const complete = blackjackPlayerControls(player("ROUND_COMPLETE"), box());
+  expect(complete.nextRoundBet).toBe(true);
+  expect(complete.trayEnabled).toBe(true);
+  expect(complete.payoutIdle).toBe(false);
 });
 
 test("Owner dealer/game chrome is interactive only at safe Blackjack boundaries", () => {

@@ -57,7 +57,8 @@ export function PremiumBlackjackPlayer({
   const [placeBusy, setPlaceBusy] = useState(false);
   const [retractBusy, setRetractBusy] = useState<string | null>(null);
   const setup = view.phase === "TABLE_SETUP";
-  const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const payout = view.phase === "PAYOUT";
+  const roundComplete = view.phase === "ROUND_COMPLETE";
   const playing = view.phase === "PLAYING";
   const betting = view.phase === "BETTING";
   const nextRoundBetting = Boolean(controls.nextRoundBet);
@@ -79,7 +80,7 @@ export function PremiumBlackjackPlayer({
   const [dealerId, setDealerId] = useState(members?.[0]?.userId ?? "");
   const cardsEnabled = playing && Boolean(selected?.hand?.canEdit);
   const ownRanks = selected?.hand?.ranks ?? [];
-  const betweenHands = setup || view.phase === "ROUND_COMPLETE";
+  const betweenHands = setup || roundComplete;
   const canLeave = Boolean(view.canLeaveTable || view.actions.leaveTable);
   const availableWhole = Number(view.available.label) || 0;
   const selectedCommitted = nextRoundBetting
@@ -120,7 +121,6 @@ export function PremiumBlackjackPlayer({
     }
     // Latch on the first settlement snapshot for this set — later polls keep the same seed.
     if (fxLatchKey.current && fxLatchKey.current.split("|").length <= key.split("|").length) {
-      // Prefer first latch within the round; ignore expansions that would re-seed.
       setFxActive(true);
       return;
     }

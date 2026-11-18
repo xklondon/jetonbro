@@ -469,6 +469,19 @@ describeDb("Blackjack table flow", () => {
     });
     await dealCards({ actorId: owner.id, tableId, idempotencyKey: key() });
     await enterPayout({ actorId: owner.id, tableId, idempotencyKey: key() });
+    // Still in PAYOUT until settle — next-round bets must be rejected.
+    expect((await prisma.table.findUniqueOrThrow({ where: { id: tableId } })).currentPhase).toBe("PAYOUT");
+    await expect(
+      placeOrRetractBet({
+        actorId: alex.id,
+        tableId,
+        boxId,
+        amount: "4",
+        mode: "SET",
+        idempotencyKey: key(),
+      }),
+    ).rejects.toBeInstanceOf(DomainError);
+
     await settleBox({
       actorId: owner.id,
       tableId,
@@ -503,6 +516,8 @@ describeDb("Blackjack table flow", () => {
     });
     const stagedSnap = await loadSnapshot(tableId, alex.id);
     expect(stagedSnap.player?.actions.nextRoundBet).toBe(true);
+    expect(stagedSnap.player?.boxes[0]?.bet.label).toBe("0");
+    expect(stagedSnap.player?.boxes[0]?.outcome).toBeNull();
     expect(stagedSnap.player?.boxes[0]?.nextRoundBet?.label).toBe("4");
     alexMember = await prisma.tableMember.findUniqueOrThrow({
       where: { tableId_userId: { tableId, userId: alex.id } },

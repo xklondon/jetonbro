@@ -141,15 +141,15 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
       showInsuranceSettle: false,
     };
   }
-  if (view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE") {
+  if (view.phase === "PAYOUT") {
     return {
       phaseLabel,
       instruction,
       primary: {
         id: "startBetting",
-        label: "START BETTING",
+        label: "START NEXT ROUND",
         command: "startNextRound",
-        enabled: Boolean(view.actions.nextHand && view.primaryAction.enabled),
+        enabled: false,
         kind: "primary",
       },
       secondary: [],
@@ -157,6 +157,24 @@ export function blackjackDealerControls(view: BankTableView): BlackjackDealerPre
       showAddPlayer: false,
       showPayoutResults: view.actions.settleBoxes,
       showInsuranceSettle: view.actions.settleInsurance,
+    };
+  }
+  if (view.phase === "ROUND_COMPLETE") {
+    return {
+      phaseLabel,
+      instruction,
+      primary: {
+        id: "startBetting",
+        label: "START NEXT ROUND",
+        command: "startNextRound",
+        enabled: Boolean(view.actions.nextHand && view.primaryAction.enabled),
+        kind: "primary",
+      },
+      secondary: [],
+      insurance: null,
+      showAddPlayer: false,
+      showPayoutResults: false,
+      showInsuranceSettle: false,
     };
   }
   if (view.phase === "TABLE_SETUP") {
@@ -180,7 +198,7 @@ export function blackjackDealerSetupControls(canStartBetting: boolean): Blackjac
     instruction: blackjackPhaseInstruction({ role: "DEALER", phase: "TABLE_SETUP" }),
     primary: {
       id: "startBetting",
-      label: "START BETTING",
+      label: "START HAND",
       command: "startBetting",
       enabled: canStartBetting,
       kind: "primary",
@@ -196,8 +214,9 @@ export function blackjackDealerSetupControls(canStartBetting: boolean): Blackjac
 export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView | undefined): BlackjackPlayerPresentation {
   const betting = view.phase === "BETTING";
   const playing = view.phase === "PLAYING";
-  const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
-  const nextRound = Boolean(view.actions.nextRoundBet) && payout;
+  const assigningResults = view.phase === "PAYOUT";
+  const betweenRounds = view.phase === "ROUND_COMPLETE";
+  const nextRound = Boolean(view.actions.nextRoundBet) && betweenRounds;
   const owned = Boolean(selected && selected.playerId);
   const nextRoundStake = Boolean(
     selected?.nextRoundBet && selected.nextRoundBet.label !== "0",
@@ -231,7 +250,7 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
       selected?.coverage?.insurance !== false,
     trayEnabled:
       ((betting && view.actions.bet) || nextRound) && selected?.coverage?.bet !== false,
-    payoutIdle: payout && !nextRound,
+    payoutIdle: assigningResults || (betweenRounds && !nextRound),
   };
 }
 

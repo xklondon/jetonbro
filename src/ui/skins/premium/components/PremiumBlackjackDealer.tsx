@@ -79,7 +79,9 @@ export function PremiumBlackjackDealer({
   const boxes = activeBoxes(view);
   const staged = orderBoxesForFelt(boxes);
   const setup = view.phase === "TABLE_SETUP";
-  const payout = view.phase === "PAYOUT" || view.phase === "ROUND_COMPLETE";
+  const payout = view.phase === "PAYOUT";
+  const roundComplete = view.phase === "ROUND_COMPLETE";
+  const betweenHands = payout || roundComplete;
   const betting = view.phase === "BETTING";
   const play = betting || view.phase === "PLAYING";
   const payoutResolved = boxesReady(view);
@@ -99,11 +101,13 @@ export function PremiumBlackjackDealer({
   });
 
   // Owner INVITE stays available between hands / betting / payout — server still enforces owner-only.
-  const showAddPlayer = Boolean(view.isOwner && (setup || betting || payout));
+  const showAddPlayer = Boolean(view.isOwner && (setup || betting || betweenHands));
   const showGiveJetons = Boolean(view.isOwner && view.actions.giveJetons && (setup || betting));
   /** Tray Change Game: Betting/Setup when safe; Payout always visible for owner (may be disabled). */
   const showChangeGame =
-    view.isOwner && (setup || betting || payout) && (ownerMenu.changeGame || payout);
+    view.isOwner &&
+    (setup || betting || betweenHands) &&
+    (ownerMenu.changeGame || payout);
   const changeGameEnabled = ownerMenu.changeGame;
   const changeGameReason =
     !changeGameEnabled && payout
@@ -206,7 +210,7 @@ export function PremiumBlackjackDealer({
         onSettleInsurance={(resolution) => void onCommand("settleInsurance", { resolution })}
       />
     );
-  } else if (play && staged.length > 0) {
+  } else if ((play || roundComplete) && staged.length > 0) {
     const shownAvailable = new Set<string>();
     layer = staged.map((box) => {
       const player = joined.find((item) => item.userId === box.playerId);
@@ -220,7 +224,7 @@ export function PremiumBlackjackDealer({
           bankroll={player?.available ?? null}
           showAvailable={showAvailableOnce}
           nextRoundLabel={
-            box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
+            roundComplete && box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
               ? box.nextRoundBet.label
               : null
           }

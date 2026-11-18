@@ -132,6 +132,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
       : null;
     const nextBet = (box.lockedBetMillis || 0n) + 5000n;
     const stagedMillis = stagedByPlayerBox.get(`${box.playerId}:${box.boxNumber}`) ?? 0n;
+    /** After settlement, clear prior stake/result markers; show next-round stakes only then. */
+    const clearedForNext = table.currentPhase === "ROUND_COMPLETE";
+    const showNextRound = clearedForNext && stagedMillis > 0n;
     return {
       id: box.id,
       playerId: box.playerId,
@@ -142,22 +145,26 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           : `Box ${box.boxNumber}`
         : boxLabelForPlayer(box),
       boxNumber: box.boxNumber,
-      bet: money(box.outcome ? box.originalStakeMillis : box.lockedBetMillis || box.originalStakeMillis),
-      originalStake: money(box.originalStakeMillis),
-      isDoubled: box.isDoubled,
+      bet: clearedForNext
+        ? money(0n)
+        : money(box.outcome ? box.originalStakeMillis : box.lockedBetMillis || box.originalStakeMillis),
+      originalStake: clearedForNext ? money(0n) : money(box.originalStakeMillis),
+      isDoubled: clearedForNext ? false : box.isDoubled,
       isSplit: box.isSplitOffshoot,
       parentBoxId: box.parentBoxId ?? null,
-      insurance: insurance ? money(insurance.amountMillis) : null,
+      insurance: clearedForNext ? null : insurance ? money(insurance.amountMillis) : null,
       insuranceMax: money(insuranceMaxMillis(box.originalStakeMillis || box.lockedBetMillis)),
-      insuranceResult: insurance?.settledAt
-        ? insurance.resolution === "DEALER_BLACKJACK"
-          ? `INSURANCE WON · return ${formatJetons(insurance.returnedMillis ?? 0n)}`
-          : "INSURANCE LOST"
-        : null,
-      outcome: box.outcome,
-      returned: box.returnedMillis !== null ? money(box.returnedMillis) : null,
-      settledKey: box.settledKey,
-      nextRoundBet: stagedMillis > 0n ? money(stagedMillis) : null,
+      insuranceResult: clearedForNext
+        ? null
+        : insurance?.settledAt
+          ? insurance.resolution === "DEALER_BLACKJACK"
+            ? `INSURANCE WON · return ${formatJetons(insurance.returnedMillis ?? 0n)}`
+            : "INSURANCE LOST"
+          : null,
+      outcome: clearedForNext ? null : box.outcome,
+      returned: clearedForNext ? null : box.returnedMillis !== null ? money(box.returnedMillis) : null,
+      settledKey: clearedForNext ? null : box.settledKey,
+      nextRoundBet: showNextRound ? money(stagedMillis) : null,
       payoutActions: payoutActions(box.lockedBetMillis || box.originalStakeMillis, table.blackjackPayout),
       hand: showHand
         ? {
@@ -425,11 +432,8 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
           minBet: table.minBetMillis !== null ? money(table.minBetMillis) : null,
           actions: {
             bet: table.currentPhase === "BETTING",
-            retract:
-              table.currentPhase === "BETTING" ||
-              table.currentPhase === "PAYOUT" ||
-              table.currentPhase === "ROUND_COMPLETE",
-            nextRoundBet: table.currentPhase === "PAYOUT" || table.currentPhase === "ROUND_COMPLETE",
+            retract: table.currentPhase === "BETTING" || table.currentPhase === "ROUND_COMPLETE",
+            nextRoundBet: table.currentPhase === "ROUND_COMPLETE",
             addBox:
               table.currentPhase === "BETTING" &&
               ownBoxes.filter((box) => !box.isSplit).length < table.maxBoxesPerPlayer,

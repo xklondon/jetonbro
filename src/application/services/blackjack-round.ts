@@ -623,8 +623,8 @@ export async function placeOrRetractBet(input: {
     await ensureBettingClosedIfDue(input.tableId);
     await prisma.$transaction(async (tx) => {
       const table = await loadTableForUpdate(tx, input.tableId);
-      const nextRoundPrep =
-        table.currentPhase === "PAYOUT" || table.currentPhase === "ROUND_COMPLETE";
+      // Next-round staging only after PAYOUT is fully settled (ROUND_COMPLETE).
+      const nextRoundPrep = table.currentPhase === "ROUND_COMPLETE";
       if (table.currentPhase !== "BETTING" && !nextRoundPrep) {
         throw new PhaseConflictError("Betting", table.currentPhase, "BETTING");
       }

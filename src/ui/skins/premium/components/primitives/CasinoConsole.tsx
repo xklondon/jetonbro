@@ -17,6 +17,19 @@ function pokerActionTone(label: string): string {
   return "";
 }
 
+/** Blackjack dealer progression colour key — mirrors existing action labels. */
+function blackjackPhaseAction(label: string): string | undefined {
+  const upper = label.toUpperCase();
+  if (upper === "START HAND") return "start-hand";
+  if (upper.includes("START BETTING") || upper.includes("OPEN BETTING")) return "start-betting";
+  if (upper.includes("DEAL CARDS") || upper.startsWith("START CARDS")) return "deal-cards";
+  if (upper.includes("ENTER PAYOUT") || upper.includes("START PAYOUT") || upper === "SETTLE") {
+    return "enter-payout";
+  }
+  if (upper.includes("NEXT ROUND") || upper.includes("START NEXT")) return "next-round";
+  return undefined;
+}
+
 function ActionButton({
   action,
   kind,
@@ -28,6 +41,7 @@ function ActionButton({
 }) {
   const tone = pokerActionTone(action.label);
   const isAllIn = allIn || tone === " is-allin";
+  const phaseAction = blackjackPhaseAction(action.label);
   return (
     <button
       type="button"
@@ -36,7 +50,8 @@ function ActionButton({
       title={action.title}
       onClick={action.onClick}
       aria-label={action.title && action.disabled ? `${action.label}. ${action.title}` : action.label}
-      data-start-hand={action.label === "START HAND" ? "true" : undefined}
+      data-start-hand={action.label === "START HAND" || action.label === "START BETTING" ? "true" : undefined}
+      data-bj-phase-action={phaseAction}
       data-add-player-dock={action.label === "ADD PLAYER" ? "true" : undefined}
       data-change-game={action.label === "CHANGE GAME" ? "true" : undefined}
       data-poker-confirm={action.label.toUpperCase().startsWith("CONFIRM") ? "true" : undefined}
@@ -207,45 +222,29 @@ export function CasinoConsole({
         {compact ? (
           <>
             <div
-              className={`pm-console-action-row${variant === "setup" ? " is-setup-order" : ""}${
-                actionCount <= 1 ? " is-single" : ""
-              }${actionCount >= 3 ? " is-triple" : ""}`}
+              className={`pm-console-action-row${actionCount <= 1 ? " is-single" : ""}${
+                actionCount >= 3 ? " is-triple" : ""
+              }`}
               data-console-actions="true"
             >
-              {variant === "setup" ? (
-                <>
-                  <div className="pm-console-slot is-primary">
-                    {primary ? <ActionButton action={primary} kind="primary" /> : null}
+              <>
+                {tertiary ? (
+                  <div className="pm-console-slot is-tertiary">
+                    <ActionButton action={tertiary} kind="ghost" />
                   </div>
-                  <div className="pm-console-slot is-secondary">
-                    {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
+                ) : null}
+                <div className="pm-console-slot is-secondary">
+                  {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
+                </div>
+                <div className="pm-console-slot is-primary">
+                  {primary ? <ActionButton action={primary} kind="primary" /> : null}
+                </div>
+                {allIn ? (
+                  <div className="pm-console-slot is-allin">
+                    <ActionButton action={allIn} kind="ghost" allIn />
                   </div>
-                  {tertiary ? (
-                    <div className="pm-console-slot is-tertiary">
-                      <ActionButton action={tertiary} kind="ghost" />
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  {tertiary ? (
-                    <div className="pm-console-slot is-tertiary">
-                      <ActionButton action={tertiary} kind="ghost" />
-                    </div>
-                  ) : null}
-                  <div className="pm-console-slot is-secondary">
-                    {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
-                  </div>
-                  <div className="pm-console-slot is-primary">
-                    {primary ? <ActionButton action={primary} kind="primary" /> : null}
-                  </div>
-                  {allIn ? (
-                    <div className="pm-console-slot is-allin">
-                      <ActionButton action={allIn} kind="ghost" allIn />
-                    </div>
-                  ) : null}
-                </>
-              )}
+                ) : null}
+              </>
             </div>
             {variant === "blackjack" && onComposeAmount ? (
               <label className="pm-bj-pending-wager" data-bj-pending-wager="true">
