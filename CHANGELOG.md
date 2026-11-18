@@ -4,8 +4,9 @@
 
 ### Blackjack tray stability & phase controls (JetBro II Web)
 
-- Commit pending on `fix/blackjack-stable-anatomy-v1` — fixed BJ (248px) + Poker (226px) tray heights; START HAND right-aligned with per-phase dealer colours; larger BJ player AVAILABLE type; next-round betting gated to `ROUND_COMPLETE` only (server + UI), prior results cleared in snapshot.
-- Gate: focused Vitest + guardrails + production build. Railway deploy recorded after push.
+- Commit `38c9804` on `fix/blackjack-stable-anatomy-v1` — fixed BJ (248px) + Poker (226px) tray heights; START HAND right-aligned with per-phase dealer colours; larger BJ player AVAILABLE type; next-round betting gated to `ROUND_COMPLETE` only (server + UI), prior results cleared in snapshot.
+- Target: Railway production / **JetBro II Web** (`4b0769a3-13c5-4c2b-9ee1-cb7c14329e1e`, SUCCESS). https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Vitest + guardrails + production build. `/api/health` ok. Not merged or tagged.
 
 ### Blackjack fixes + next-round betting (JetBro II Web)
 
