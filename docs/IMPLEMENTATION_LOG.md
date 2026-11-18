@@ -1,3 +1,8 @@
+# Blackjack compact dealer dock + player waiting tray
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `c7aceae` — dealer `--premium-console-height: 68px` (≈78px with safe); player remains 248px (≈258px); waiting banner on Waiting + Player TABLE_SETUP; SetupTable/PhaseZero still mount BankTable/WaitingTable.
+- Gate: focused Vitest + guardrails + production build. Railway JetBro II Web `5cea53fe-cde8-44ef-8f45-5df16821a504` SUCCESS. `/api/health` ok. Live prod measures: dealer 78 / player 258; banner on PHASE_ZERO_PLAYER. Screenshots `docs/screenshots/premium/bj-tray-prod-c7aceae/`. Not merged. Not tagged.
+
 # Blackjack tray stability & phase controls
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `38c9804` — fixed BJ/Poker tray heights; dealer START HAND right + phase colours; larger BJ AVAILABLE; next-round bets only in ROUND_COMPLETE.

@@ -1,0 +1,14 @@
+{
+  "metrics": [
+    {
+      "shot": "03-player-blackjack-player-board-390.png",
+      "role": "player-blackjack-board",
+      "board": "BLACKJACK_PLAYER",
+      "consoleVar": "248px",
+      "consoleH": 258,
+      "trayTop": 760,
+      "banner": false,
+      "bannerText": null
+    }
+  ]
+}

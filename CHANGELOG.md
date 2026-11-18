@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Blackjack compact dealer dock + player waiting tray (JetBro II Web)
+
+- Commit `c7aceae` on `fix/blackjack-stable-anatomy-v1` — separate BJ dealer dock (`68px` + 10px safe ≈ **78px**) from player dock (`248px` + 10px safe ≈ **258px`); waiting banner on `PHASE_ZERO_PLAYER` and `BLACKJACK_PLAYER` TABLE_SETUP; dealer cards inline; player jetons bottom-pinned. Poker unchanged.
+- Target: Railway production / **JetBro II Web** (`5cea53fe-cde8-44ef-8f45-5df16821a504`, SUCCESS). https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Vitest + guardrails + production build. `/api/health` ok. Live measured docks: dealer 78px, player 258px with waiting banner. Not merged or tagged.
+
 ### Blackjack tray stability & phase controls (JetBro II Web)
 
 - Commit `38c9804` on `fix/blackjack-stable-anatomy-v1` — fixed BJ (248px) + Poker (226px) tray heights; START HAND right-aligned with per-phase dealer colours; larger BJ player AVAILABLE type; next-round betting gated to `ROUND_COMPLETE` only (server + UI), prior results cleared in snapshot.
