@@ -20,6 +20,7 @@ export function PremiumBlackjackWaiting({ view }: { view: WaitingTableView }) {
           showTray
           trayEnabled={false}
           selectedChip={null}
+          statusMessage="WAITING FOR DEALER TO START THE GAME"
         />
       }
     >

@@ -308,6 +308,7 @@ export function PremiumBlackjackDealer({
               cards={dealerRanks}
               enabled={dealerCardEnabled}
               label="DEALER CARDS"
+              layout="inline"
               onAdd={() => setDealerCardsOpen(true)}
               onRemoveLast={
                 dealerCardEnabled && dealerRanks.length

@@ -97,6 +97,9 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-tray-available="true"');
+    expect(html).toContain('data-bj-waiting-banner="true"');
+    expect(html).toContain("WAITING FOR DEALER TO START THE GAME");
+    expect(html).not.toContain('data-tray-cards="true"');
     expect(html).not.toContain("Waiting for betting to open");
   });
 
@@ -119,5 +122,109 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(source).toContain("orderBoxesForFelt");
     expect(source).not.toContain('mode: "ADD"');
     expect(source).toContain("Enter or tap a wager before PLACE BET");
+  });
+
+  it("JETON VIEW shows only own boxes with hero wager and keeps the tray", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumBlackjackPlayer, {
+        view: playerView({
+          phase: "PLAYING",
+          boxes: [
+            {
+              id: "b1",
+              playerId: "p1",
+              playerName: "Casey",
+              label: "Box 1",
+              boxNumber: 1,
+              bet: money("75"),
+              originalStake: money("75"),
+              isDoubled: false,
+              isSplit: false,
+              insurance: null,
+              insuranceMax: money("0"),
+              insuranceResult: null,
+              outcome: null,
+              returned: null,
+              payoutActions: [],
+              hand: { ranks: ["K", "7"], complete: false, label: "17", suggestedOutcome: null, canEdit: true },
+            },
+            {
+              id: "b2",
+              playerId: "p1",
+              playerName: "Casey",
+              label: "Box 2",
+              boxNumber: 2,
+              bet: money("25"),
+              originalStake: money("25"),
+              isDoubled: false,
+              isSplit: false,
+              insurance: null,
+              insuranceMax: money("0"),
+              insuranceResult: null,
+              outcome: null,
+              returned: null,
+              payoutActions: [],
+            },
+          ],
+          actions: {
+            bet: false,
+            retract: false,
+            addBox: false,
+            removeEmptyBox: false,
+            double: true,
+            split: true,
+            insurance: false,
+          },
+        }),
+        selectedBoxId: "b1",
+        onSelectBox: () => undefined,
+        onCommand: () => undefined,
+        initialBoardView: "jeton",
+      }),
+    );
+    expect(html).toContain('data-bj-view-toggle="true"');
+    expect(html).toContain('data-bj-view="jeton"');
+    expect(html).toContain('data-bj-jeton-view="true"');
+    expect(html).toContain('data-bj-jeton-hero="true"');
+    expect(html).toContain(">75<");
+    expect(html).toContain('data-bj-jeton-cards="true"');
+    expect(html).toContain(">K<");
+    expect(html).toContain(">7<");
+    expect(html).toContain('data-jeton-tray="true"');
+    expect(html).not.toContain("pm-bj-frame");
+  });
+
+  it("empty wager in JETON VIEW shows a vacant spot instead of a fake chip", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumBlackjackPlayer, {
+        view: playerView({
+          boxes: [
+            {
+              id: "b1",
+              playerId: "p1",
+              playerName: "Casey",
+              label: "Box 1",
+              boxNumber: 1,
+              bet: money("0"),
+              originalStake: money("0"),
+              isDoubled: false,
+              isSplit: false,
+              insurance: null,
+              insuranceMax: money("0"),
+              insuranceResult: null,
+              outcome: null,
+              returned: null,
+              payoutActions: [],
+            },
+          ],
+        }),
+        selectedBoxId: "b1",
+        onSelectBox: () => undefined,
+        onCommand: () => undefined,
+        initialBoardView: "jeton",
+      }),
+    );
+    expect(html).toContain("pm-bj-jeton-empty-spot");
+    expect(html).not.toContain('data-bj-jeton-hero="true"');
   });
 });

@@ -266,17 +266,30 @@ export const PREMIUM_FIXTURE_IDS = [
   "13-poker-setup-starting-stack",
   "14-bj-player-betting-no-stake",
   "15-poker-six-player-flop",
+  "16-bj-player-jeton-one-box",
+  "17-bj-player-jeton-two-boxes",
+  "18-bj-dealer-round-complete",
+  "19-bj-player-table-setup",
+  "20-bj-player-round-complete",
+  "21-bj-player-waiting-join",
 ] as const;
 
 export type PremiumFixtureId = (typeof PREMIUM_FIXTURE_IDS)[number];
 
-function PlayerFixture({ view }: { view: PlayerTableView }) {
+function PlayerFixture({
+  view,
+  initialBoardView,
+}: {
+  view: PlayerTableView;
+  initialBoardView?: "table" | "jeton";
+}) {
   const [selected, setSelected] = useState(view.boxes[0]?.id ?? null);
   return createElement(PremiumBlackjackPlayer, {
     view,
     selectedBoxId: selected,
     onSelectBox: setSelected,
     onCommand: noop,
+    initialBoardView,
   });
 }
 
@@ -317,6 +330,25 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
         members,
         onCommand: noop,
       });
+    case "18-bj-dealer-round-complete":
+      return createElement(PremiumBlackjackDealer, {
+        view: bank("ROUND_COMPLETE", {
+          boxes: [
+            box(1, { bet: money("0"), originalStake: money("0"), outcome: null }),
+            box(2, {
+              id: "b2",
+              playerId: "p2",
+              playerName: "Alex",
+              bet: money("0"),
+              originalStake: money("0"),
+              outcome: null,
+            }),
+          ],
+          lockedOrdinary: money("0"),
+        }),
+        members,
+        onCommand: noop,
+      });
     case "14-bj-player-betting-no-stake":
       return createElement(PlayerFixture, {
         view: player("BETTING", [box(1, { bet: money("0"), originalStake: money("0") })]),
@@ -326,6 +358,23 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
     case "07-bj-player-betting-two-boxes":
       return createElement(PlayerFixture, {
         view: player("BETTING", [box(2, { id: "b2", bet: money("0") }), box(1)]),
+      });
+    case "16-bj-player-jeton-one-box":
+      return createElement(PlayerFixture, {
+        view: player("PLAYING", [
+          box(1, {
+            hand: { ranks: ["K", "7"], complete: false, label: "17", suggestedOutcome: null, canEdit: true },
+          }),
+        ]),
+        initialBoardView: "jeton",
+      });
+    case "17-bj-player-jeton-two-boxes":
+      return createElement(PlayerFixture, {
+        view: player("BETTING", [
+          box(1),
+          box(2, { id: "b2", bet: money("25"), originalStake: money("25") }),
+        ]),
+        initialBoardView: "jeton",
       });
     case "08-bj-player-playing":
       return createElement(PlayerFixture, {
@@ -337,6 +386,34 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
       return createElement(PlayerFixture, {
         view: player("PAYOUT", [box(1, { outcome: "WON", returned: money("50") })]),
       });
+    case "19-bj-player-table-setup":
+      return createElement(PlayerFixture, {
+        view: {
+          ...player("TABLE_SETUP", []),
+          canLeaveTable: true,
+          actions: {
+            ...player("TABLE_SETUP", []).actions,
+            leaveTable: true,
+          },
+        },
+      });
+    case "20-bj-player-round-complete":
+      return createElement(PlayerFixture, {
+        view: {
+          ...player("ROUND_COMPLETE", [
+            box(1, { bet: money("0"), originalStake: money("0"), outcome: null }),
+          ]),
+          canLeaveTable: true,
+          actions: {
+            ...player("ROUND_COMPLETE", [
+              box(1, { bet: money("0"), originalStake: money("0"), outcome: null }),
+            ]).actions,
+            leaveTable: true,
+          },
+        },
+      });
+    case "21-bj-player-waiting-join":
+      return createElement(PremiumBlackjackWaiting, { view: waitingFixture() });
     case "10-poker-heads-up-preflop":
       return createElement(PremiumPokerPlayer, { view: poker(), onCommand: noop });
     case "11-poker-three-player-flop":

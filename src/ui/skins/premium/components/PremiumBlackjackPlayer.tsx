@@ -6,6 +6,13 @@ import { blackjackPlayerControls } from "@/ui/core/blackjack-phase-controls";
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
 import { orderBoxesForFelt } from "./blackjackBoxOrder";
+import {
+  BlackjackBoardViewToggle,
+  type BlackjackPlayerBoardView,
+  PremiumBlackjackJetonView,
+  readBlackjackPlayerBoardView,
+  writeBlackjackPlayerBoardView,
+} from "./PremiumBlackjackJetonView";
 import { PremiumBlackjackCardSheet } from "./PremiumBlackjackCardSheet";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
@@ -32,6 +39,7 @@ export function PremiumBlackjackPlayer({
   onCommand,
   notice,
   members = [],
+  initialBoardView,
 }: {
   view: PlayerTableView;
   selectedBoxId: string | null;
@@ -39,6 +47,8 @@ export function PremiumBlackjackPlayer({
   onCommand: CommandHandler;
   notice?: string | null;
   members?: MemberView[];
+  /** Dev/fixture override — production uses localStorage after mount. */
+  initialBoardView?: BlackjackPlayerBoardView;
 }) {
   const staged = orderBoxesForFelt(view.boxes);
   const selected = useMemo(
@@ -51,6 +61,9 @@ export function PremiumBlackjackPlayer({
     phase: view.phase,
     insuranceOpen: view.insuranceWindowOpen,
   });
+  const [boardView, setBoardView] = useState<BlackjackPlayerBoardView>(
+    () => initialBoardView ?? "table",
+  );
   /** Pending (uncommitted) wager text — chips accumulate locally; PLACE BET commits SET once. */
   const [pendingText, setPendingText] = useState("");
   const [localNotice, setLocalNotice] = useState<string | null>(null);
@@ -90,11 +103,24 @@ export function PremiumBlackjackPlayer({
   const showAllIn = trayInteractive && Boolean(selected) && allInAmount > 0;
 
   useEffect(() => {
+    if (initialBoardView) {
+      setBoardView(initialBoardView);
+      return;
+    }
+    setBoardView(readBlackjackPlayerBoardView());
+  }, [initialBoardView]);
+
+  useEffect(() => {
     // Switching boxes clears the compose draft so chips do not bleed across boxes.
     setPendingText("");
     setLocalNotice(null);
     setAllInArmed(false);
   }, [selected?.id]);
+
+  function changeBoardView(mode: BlackjackPlayerBoardView) {
+    setBoardView(mode);
+    writeBlackjackPlayerBoardView(mode);
+  }
 
   useEffect(() => {
     setAllInArmed(false);
@@ -315,27 +341,52 @@ export function PremiumBlackjackPlayer({
   }
 
   const dockNotice = localNotice || notice;
-  const badges = view.isOwner ? (
+  const pendingByBoxId =
+    !nextRoundBetting && selected && pendingText && parseWhole(pendingText) != null
+      ? { [selected.id]: pendingText }
+      : undefined;
+  const nextRoundByBoxId = (() => {
+    const map: Record<string, string | null | undefined> = {};
+    for (const box of staged) {
+      if (
+        nextRoundBetting &&
+        box.id === selected?.id &&
+        pendingText &&
+        parseWhole(pendingText) != null
+      ) {
+        map[box.id] = pendingText;
+      } else if (box.nextRoundBet?.label && box.nextRoundBet.label !== "0") {
+        map[box.id] = box.nextRoundBet.label;
+      }
+    }
+    return Object.keys(map).length ? map : undefined;
+  })();
+  const badges = (
     <>
-      <span className="pm-badge" data-owner-badge="true">
-        OWNER
-      </span>
-      {view.actions.changeBank ? (
-        <button
-          type="button"
-          className="pm-badge is-action"
-          data-owner-change-dealer="true"
-          aria-label="Assign dealer"
-          onClick={() => {
-            setDealerId(members.find((m) => m.isBankDealer)?.userId ?? members[0]?.userId ?? "");
-            setDealerPickOpen(true);
-          }}
-        >
-          DEALER
-        </button>
+      <BlackjackBoardViewToggle mode={boardView} onChange={changeBoardView} />
+      {view.isOwner ? (
+        <>
+          <span className="pm-badge" data-owner-badge="true">
+            OWNER
+          </span>
+          {view.actions.changeBank ? (
+            <button
+              type="button"
+              className="pm-badge is-action"
+              data-owner-change-dealer="true"
+              aria-label="Assign dealer"
+              onClick={() => {
+                setDealerId(members.find((m) => m.isBankDealer)?.userId ?? members[0]?.userId ?? "");
+                setDealerPickOpen(true);
+              }}
+            >
+              DEALER
+            </button>
+          ) : null}
+        </>
       ) : null}
     </>
-  ) : null;
+  );
 
   return (
     <PremiumShell
@@ -361,18 +412,21 @@ export function PremiumBlackjackPlayer({
               : undefined
           }
           onChip={trayInteractive ? addChip : undefined}
+          statusMessage={setup ? "WAITING FOR DEALER TO START THE GAME" : null}
           trayCards={
-            <PremiumTrayCards
-              cards={ownRanks}
-              enabled={cardsEnabled}
-              label={selected?.isSplit ? `BOX ${selected.boxNumber} CARDS` : "YOUR CARDS"}
-              onAdd={() => setCardSheetOpen(true)}
-              onRemoveLast={
-                cardsEnabled && ownRanks.length && selected
-                  ? () => void onCommand("removeCard", { boxId: selected.id })
-                  : undefined
-              }
-            />
+            setup ? null : (
+              <PremiumTrayCards
+                cards={ownRanks}
+                enabled={cardsEnabled}
+                label={selected?.isSplit ? `BOX ${selected.boxNumber} CARDS` : "YOUR CARDS"}
+                onAdd={() => setCardSheetOpen(true)}
+                onRemoveLast={
+                  cardsEnabled && ownRanks.length && selected
+                    ? () => void onCommand("removeCard", { boxId: selected.id })
+                    : undefined
+                }
+              />
+            )
           }
           primary={primary}
           secondary={secondary}
@@ -381,83 +435,103 @@ export function PremiumBlackjackPlayer({
         />
       }
     >
-      <BlackjackTable
-        tableName={view.tableName}
-        phaseLabel={phaseCopy.primary}
-        phaseInstruction={phaseCopy.instruction}
-        dealerName="Dealer"
-        dealerRanks={view.dealerHand?.ranks}
-        setup={setup}
-      >
-        {setup && staged.length === 0 ? (
-          view.available.label !== "0" ? (
-            <BlackjackBox
-              box={setupSeatBox(
-                { userId: "viewer", name: "You", available: view.available },
-                1,
-              )}
-              showPlayerName
-              bankroll={view.available}
-              showAvailable
-            />
-          ) : (
-            <p className="pm-bj-empty">Waiting for betting to open</p>
-          )
-        ) : staged.length > 0 ? (
-          staged.map((box) => {
-            const canInsure =
-              playing &&
-              view.insuranceWindowOpen &&
-              view.actions.insurance &&
-              box.coverage?.insurance !== false &&
-              (!box.insurance || box.insurance.label === "0");
-            const pendingForBox =
-              !nextRoundBetting &&
-              box.id === selected?.id &&
-              pendingText &&
-              parseWhole(pendingText) != null
-                ? pendingText
-                : null;
-            const nextRoundForBox =
-              nextRoundBetting &&
-              box.id === selected?.id &&
-              pendingText &&
-              parseWhole(pendingText) != null
-                ? pendingText
-                : box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
-                  ? box.nextRoundBet.label
-                  : null;
-            return (
+      {boardView === "jeton" ? (
+        <PremiumBlackjackJetonView
+          boxes={
+            setup && staged.length === 0 && view.available.label !== "0"
+              ? [
+                  setupSeatBox(
+                    { userId: "viewer", name: "You", available: view.available },
+                    1,
+                  ),
+                ]
+              : staged
+          }
+          selectedBoxId={selected?.id ?? selectedBoxId}
+          pendingByBoxId={pendingByBoxId}
+          nextRoundByBoxId={nextRoundByBoxId}
+          onSelectBox={onSelectBox}
+          phaseLabel="Your boxes only."
+        />
+      ) : (
+        <BlackjackTable
+          tableName={view.tableName}
+          phaseLabel={phaseCopy.primary}
+          phaseInstruction={phaseCopy.instruction}
+          dealerName="Dealer"
+          dealerRanks={view.dealerHand?.ranks}
+          setup={setup}
+        >
+          {setup && staged.length === 0 ? (
+            view.available.label !== "0" ? (
               <BlackjackBox
-                key={box.id}
-                box={box}
-                selected={box.id === selected?.id}
-                pendingLabel={pendingForBox}
-                nextRoundLabel={nextRoundForBox}
-                onSelect={() => onSelectBox(box.id)}
-                onRetractChip={
-                  (view.phase === "BETTING" || nextRoundBetting) && view.actions.retract
-                    ? (amount) => void retractChip(box.id, amount)
-                    : undefined
-                }
-                retractBusy={retractBusy === box.id}
-                onInsurance={
-                  playing && view.insuranceWindowOpen
-                    ? () =>
-                        void onCommand("buyInsurance", {
-                          boxId: box.id,
-                          amount: box.insuranceMax.label,
-                        })
-                    : undefined
-                }
-                insuranceEnabled={canInsure}
+                box={setupSeatBox(
+                  { userId: "viewer", name: "You", available: view.available },
+                  1,
+                )}
+                showPlayerName
+                bankroll={view.available}
+                showAvailable
               />
-            );
-          })
-        ) : (
-          <p className="pm-bj-empty">Waiting for a box</p>
-        )}
-      </BlackjackTable>
+            ) : (
+              <p className="pm-bj-empty">Waiting for betting to open</p>
+            )
+          ) : staged.length > 0 ? (
+            staged.map((box) => {
+              const canInsure =
+                playing &&
+                view.insuranceWindowOpen &&
+                view.actions.insurance &&
+                box.coverage?.insurance !== false &&
+                (!box.insurance || box.insurance.label === "0");
+              const pendingForBox =
+                !nextRoundBetting &&
+                box.id === selected?.id &&
+                pendingText &&
+                parseWhole(pendingText) != null
+                  ? pendingText
+                  : null;
+              const nextRoundForBox =
+                nextRoundBetting &&
+                box.id === selected?.id &&
+                pendingText &&
+                parseWhole(pendingText) != null
+                  ? pendingText
+                  : box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
+                    ? box.nextRoundBet.label
+                    : null;
+              return (
+                <BlackjackBox
+                  key={box.id}
+                  box={box}
+                  selected={box.id === selected?.id}
+                  pendingLabel={pendingForBox}
+                  nextRoundLabel={nextRoundForBox}
+                  onSelect={() => onSelectBox(box.id)}
+                  onRetractChip={
+                    (view.phase === "BETTING" || nextRoundBetting) && view.actions.retract
+                      ? (amount) => void retractChip(box.id, amount)
+                      : undefined
+                  }
+                  retractBusy={retractBusy === box.id}
+                  onInsurance={
+                    playing && view.insuranceWindowOpen
+                      ? () =>
+                          void onCommand("buyInsurance", {
+                            boxId: box.id,
+                            amount: box.insuranceMax.label,
+                          })
+                      : undefined
+                  }
+                  insuranceEnabled={canInsure}
+                />
+              );
+            })
+          ) : (
+            <p className="pm-bj-empty">Waiting for a box</p>
+          )}
+        </BlackjackTable>
+      )}
       <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
       {cardSheetOpen && selected ? (
         <PremiumBlackjackCardSheet

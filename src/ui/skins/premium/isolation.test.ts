@@ -77,6 +77,21 @@ describe("premium skin isolation", () => {
     expect(css).toContain("--premium-safe-area");
   });
 
+  it("keeps Blackjack dealer and player tray heights separate", () => {
+    const css = readFileSync(join(ROOT, "premium.css"), "utf8");
+    const playerBlock = css.match(
+      /\.pm-shell\[data-table-board="BLACKJACK_PLAYER"\][\s\S]*?--premium-console-height:\s*([^;]+);/,
+    );
+    const dealerBlock = css.match(
+      /\.pm-shell\[data-table-board="BLACKJACK_DEALER"\][\s\S]*?--premium-console-height:\s*([^;]+);/,
+    );
+    expect(playerBlock?.[1]?.trim()).toBe("248px");
+    expect(dealerBlock?.[1]?.trim()).toBe("68px");
+    expect(css).not.toMatch(
+      /BLACKJACK_PLAYER[\s\S]{0,120}BLACKJACK_DEALER[\s\S]{0,80}--premium-console-height:\s*248px/,
+    );
+  });
+
   it("Blackjack setup does not mount betting-box stage", () => {
     const table = readFileSync(join(ROOT, "components/primitives/BlackjackTable.tsx"), "utf8");
     expect(table).toMatch(/data-table-zone=\{setup \? "setup" : "payout"\}/);

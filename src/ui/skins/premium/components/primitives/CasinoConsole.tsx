@@ -148,6 +148,7 @@ export function CasinoConsole({
   variant = "default",
   trayCards = null,
   statusAction = null,
+  statusMessage = null,
   children,
 }: {
   primary?: DockAction | null;
@@ -182,6 +183,8 @@ export function CasinoConsole({
   trayCards?: ReactNode;
   /** Dealer DEAL HAND — compact control in the status row (not a second tray row). */
   statusAction?: DockAction | null;
+  /** BJ player TABLE_SETUP waiting copy — upper tray, jetons stay pinned. */
+  statusMessage?: string | null;
   children?: ReactNode;
 }) {
   const trayVisible = showTray;
@@ -221,31 +224,38 @@ export function CasinoConsole({
         {notice}
         {compact ? (
           <>
-            <div
-              className={`pm-console-action-row${actionCount <= 1 ? " is-single" : ""}${
-                actionCount >= 3 ? " is-triple" : ""
-              }`}
-              data-console-actions="true"
-            >
-              <>
-                {tertiary ? (
-                  <div className="pm-console-slot is-tertiary">
-                    <ActionButton action={tertiary} kind="ghost" />
+            {statusMessage ? (
+              <div className="pm-bj-waiting-banner" data-bj-waiting-banner="true">
+                {statusMessage}
+              </div>
+            ) : null}
+            {actionCount > 0 ? (
+              <div
+                className={`pm-console-action-row${actionCount <= 1 ? " is-single" : ""}${
+                  actionCount >= 3 ? " is-triple" : ""
+                }`}
+                data-console-actions="true"
+              >
+                <>
+                  {tertiary ? (
+                    <div className="pm-console-slot is-tertiary">
+                      <ActionButton action={tertiary} kind="ghost" />
+                    </div>
+                  ) : null}
+                  <div className="pm-console-slot is-secondary">
+                    {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
                   </div>
-                ) : null}
-                <div className="pm-console-slot is-secondary">
-                  {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
-                </div>
-                <div className="pm-console-slot is-primary">
-                  {primary ? <ActionButton action={primary} kind="primary" /> : null}
-                </div>
-                {allIn ? (
-                  <div className="pm-console-slot is-allin">
-                    <ActionButton action={allIn} kind="ghost" allIn />
+                  <div className="pm-console-slot is-primary">
+                    {primary ? <ActionButton action={primary} kind="primary" /> : null}
                   </div>
-                ) : null}
-              </>
-            </div>
+                  {allIn ? (
+                    <div className="pm-console-slot is-allin">
+                      <ActionButton action={allIn} kind="ghost" allIn />
+                    </div>
+                  ) : null}
+                </>
+              </div>
+            ) : null}
             {variant === "blackjack" && onComposeAmount ? (
               <label className="pm-bj-pending-wager" data-bj-pending-wager="true">
                 <span>{primary?.label === "NEXT ROUND" ? "NEXT ROUND" : "WAGER"}</span>

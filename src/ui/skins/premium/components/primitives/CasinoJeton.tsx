@@ -2,7 +2,7 @@
 
 import { chipCompositionFromMillis } from "@/domain/jetons/chips";
 
-export type CasinoJetonSize = "sm" | "md" | "lg" | "xl";
+export type CasinoJetonSize = "sm" | "md" | "lg" | "xl" | "hero";
 
 const TONE: Record<string, string> = {
   "5": "is-5",
