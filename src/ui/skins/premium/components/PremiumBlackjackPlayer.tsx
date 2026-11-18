@@ -398,6 +398,7 @@ export function PremiumBlackjackPlayer({
               )}
               showPlayerName
               bankroll={view.available}
+              showAvailable
             />
           ) : (
             <p className="pm-bj-empty">Waiting for betting to open</p>

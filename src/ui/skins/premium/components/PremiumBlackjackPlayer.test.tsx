@@ -91,8 +91,9 @@ describe("PremiumBlackjackPlayer betting dock", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html).toContain('data-seat-bankroll="true"');
-    expect(html).toContain('data-chip-stack-total="100"');
+    expect(html).toContain('data-box-available="true"');
+    expect(html).toContain("AVAILABLE");
+    expect(html).not.toContain('data-seat-bankroll="true"');
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-tray-available="true"');

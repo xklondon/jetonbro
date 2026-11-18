@@ -79,11 +79,7 @@ export function BlackjackBox({
   const nextRound = nextRoundLabel && nextRoundLabel !== "0" ? nextRoundLabel : null;
   const stake = pending ?? committed;
   const hasStake = stake !== "0";
-  /** Empty-box stack chip only when no stake; AVAILABLE caption can still show beside a bet. */
-  const seatBankroll =
-    !hasStake && bankroll && bankroll.label !== "0"
-      ? bankroll
-      : null;
+  /** AVAILABLE is caption-only — never render bankroll as a MAIN/STACK chip stake. */
   const availableCaption =
     showAvailable && bankroll && bankroll.label !== "0" ? bankroll : null;
   const result = box.outcome;
@@ -134,18 +130,12 @@ export function BlackjackBox({
             ) : null}
           </div>
         </div>
-      ) : seatBankroll ? (
-        <div className="pm-bj-box-stakes" data-seat-bankroll="true">
-          <div className="pm-bj-main-stack">
-            <CasinoChipStack millis={seatBankroll.millis} label={seatBankroll.label} size="lg" max={4} />
-          </div>
-        </div>
       ) : (
         <span className="pm-bj-spot" aria-hidden="true" />
       )}
       <span className="pm-bj-main">
-        <small>{seatBankroll ? "STACK" : pending ? "PENDING" : "MAIN"}</small>
-        <strong>{result ? result : seatBankroll ? seatBankroll.label : stake}</strong>
+        <small>{pending ? "PENDING" : "MAIN"}</small>
+        <strong>{result ? result : stake}</strong>
       </span>
       {availableCaption ? (
         <span className="pm-bj-available" data-box-available="true">

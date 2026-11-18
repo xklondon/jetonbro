@@ -97,13 +97,15 @@ describe("Premium BlackjackBox chip breakdown", () => {
         },
         showPlayerName: true,
         bankroll: money("100"),
+        showAvailable: true,
       }),
     );
-    expect(html).toContain('data-seat-bankroll="true"');
-    expect(html).toContain('data-chip-stack-total="100"');
-    expect(html).toContain("STACK");
+    expect(html).toContain('data-box-available="true"');
+    expect(html).toContain("AVAILABLE");
     expect(html).toContain("Casey");
-    expect(html).not.toContain("pm-bj-spot");
+    expect(html).toContain("pm-bj-spot");
+    expect(html).not.toContain('data-seat-bankroll="true"');
+    expect(html).not.toContain("STACK");
   });
 
   it("marks placed insurance as pending without implying it was paid", () => {

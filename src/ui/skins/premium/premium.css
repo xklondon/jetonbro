@@ -1886,7 +1886,8 @@
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body {
-  grid-template-rows: auto auto auto;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   padding: 10px 12px 8px;
   border-radius: 20px 20px 14px 14px;
@@ -1899,11 +1900,14 @@
     inset 0 1px 0 rgba(243, 220, 154, 0.16),
     inset 0 -2px 8px rgba(0, 0, 0, 0.35),
     0 8px 20px rgba(0, 0, 0, 0.35);
-  align-content: start;
+  align-content: stretch;
+  justify-content: flex-start;
 }
 
-[data-skin="premium"] .pm-console.is-bj.has-visible-tray .pm-console-body {
-  grid-template-rows: auto auto auto;
+/* Pin AVAILABLE + jetons to the bottom of the fixed 248px dock across all phases. */
+[data-skin="premium"] .pm-console.is-bj.has-visible-tray .pm-console-tray {
+  margin-top: auto;
+  flex: 0 0 auto;
 }
 
 /* Notice overlays the top edge; it must not consume a grid row and crush AVAILABLE into the tray. */

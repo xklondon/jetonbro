@@ -182,16 +182,20 @@ export function PremiumBlackjackDealer({
   let layer: ReactNode = null;
   if (setup) {
     const seats = setupDisplayBoxes(view);
+    const shownAvailable = new Set<string>();
     layer =
       seats.length > 0 ? (
         seats.map((box) => {
           const player = joined.find((item) => item.userId === box.playerId);
+          const showAvailableOnce = Boolean(player?.userId) && !shownAvailable.has(player!.userId);
+          if (showAvailableOnce && player?.userId) shownAvailable.add(player.userId);
           return (
             <BlackjackBox
               key={box.id}
               box={box}
               showPlayerName
               bankroll={player?.available ?? null}
+              showAvailable={showAvailableOnce}
             />
           );
         })
