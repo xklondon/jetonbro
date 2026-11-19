@@ -13,7 +13,7 @@ import {
   startBetting,
   startNextRound,
 } from "@/application/services/blackjack-round";
-import { DomainError, PhaseConflictError } from "@/domain/errors";
+import { DomainError, ForbiddenError, PhaseConflictError } from "@/domain/errors";
 
 let hasDb = Boolean(process.env.DATABASE_URL);
 if (hasDb) {
@@ -261,6 +261,77 @@ describeDb("production Blackjack phase sequence", () => {
     ).rejects.toMatchObject({ code: "PHASE_CONFLICT" });
     expect((await loadSnapshot(tableId, player.id)).phase).toBe("PLAYING");
   });
+
+  test("PLACE BET locks wager without advancing phase; only dealer owns phase commands", async () => {
+    const { owner, player, tableId } = await productionTable();
+
+    await expect(
+      startBetting({ actorId: player.id, tableId, idempotencyKey: randomUUID() }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+
+    await startBetting({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+
+    const boxId = await bet25(player.id, tableId);
+    const afterPlace = await loadSnapshot(tableId, player.id);
+    expect(afterPlace.phase).toBe("BETTING");
+    expect(afterPlace.player?.boxes[0]?.bet.label).toBe("25");
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
+
+    await expect(
+      placeOrRetractBet({
+        actorId: player.id,
+        tableId,
+        boxId,
+        amount: "10",
+        mode: "SET",
+        idempotencyKey: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+
+    await expect(
+      dealCards({ actorId: player.id, tableId, idempotencyKey: randomUUID() }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      enterPayout({ actorId: player.id, tableId, idempotencyKey: randomUUID() }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      startNextRound({ actorId: player.id, tableId, idempotencyKey: randomUUID() }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+
+    await dealCards({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("PLAYING");
+
+    await enterPayout({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    await settleAllPush(owner.id, tableId);
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("ROUND_COMPLETE");
+
+    await placeOrRetractBet({
+      actorId: player.id,
+      tableId,
+      boxId: (await loadSnapshot(tableId, player.id)).player!.boxes[0]!.id,
+      amount: "25",
+      mode: "SET",
+      idempotencyKey: randomUUID(),
+    });
+    const staged = await loadSnapshot(tableId, player.id);
+    expect(staged.phase).toBe("ROUND_COMPLETE");
+    expect(staged.player?.boxes[0]?.nextRoundBet?.label).toBe("25");
+
+    // Refresh / reconnect must not open the next hand from staged bets alone.
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("ROUND_COMPLETE");
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("ROUND_COMPLETE");
+
+    await expect(
+      startNextRound({ actorId: player.id, tableId, idempotencyKey: randomUUID() }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("ROUND_COMPLETE");
+
+    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+  }, 30_000);
 });
 
 describe("phase errors", () => {

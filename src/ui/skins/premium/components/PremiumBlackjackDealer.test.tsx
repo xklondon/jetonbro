@@ -285,4 +285,29 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(source).toContain('onCommand("settleInsurance"');
     expect(source).toContain("resolution");
   });
+
+  it("DEAL CARDS readiness is advisory green/orange and stays actionable when unconfirmed", () => {
+    const ready = renderToStaticMarkup(
+      createElement(PremiumBlackjackDealer, {
+        view: bank({ allBetsConfirmed: true }),
+        members,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(ready).toContain("DEAL CARDS");
+    expect(ready).toContain('data-bj-phase-action="deal-cards"');
+    expect(ready).toContain('data-bj-bets-ready="true"');
+    expect(ready).not.toMatch(/data-bj-phase-action="deal-cards"[^>]*disabled/);
+
+    const pending = renderToStaticMarkup(
+      createElement(PremiumBlackjackDealer, {
+        view: bank({ allBetsConfirmed: false }),
+        members,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(pending).toContain("DEAL CARDS");
+    expect(pending).toContain('data-bj-bets-ready="false"');
+    expect(pending).not.toMatch(/data-bj-phase-action="deal-cards"[^>]*disabled/);
+  });
 });

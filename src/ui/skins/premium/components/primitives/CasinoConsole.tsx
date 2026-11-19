@@ -157,6 +157,7 @@ export function CasinoConsole({
   showTray = false,
   reserveTray = false,
   variant = "default",
+  playerSlots = false,
   trayCards = null,
   statusAction = null,
   statusMessage = null,
@@ -179,7 +180,7 @@ export function CasinoConsole({
   composeAmount?: string;
   /** Confirmed box stake — composer is read-only until the next betting round. */
   composeLocked?: boolean;
-  /** Blackjack pending label (YOUR BET / NEXT ROUND). */
+  /** Blackjack pending label (YOUR BET). */
   composeLabel?: string | null;
   /** Pending chip faces before PLACE BET — each may expose × removal. */
   pendingChips?: string[] | null;
@@ -197,7 +198,12 @@ export function CasinoConsole({
   showTray?: boolean;
   reserveTray?: boolean;
   variant?: "default" | "blackjack" | "setup";
-  /** Compact YOUR CARDS / ADD CARDS strip (BJ: inline beside ALL IN). */
+  /**
+   * Blackjack player only — permanent LEFT / CENTRE / RIGHT action slots;
+   * Card Assist sits on the YOUR BET row (never overlaps amount).
+   */
+  playerSlots?: boolean;
+  /** Compact YOUR CARDS / ADD CARDS strip (BJ player: bet row; dealer: action row). */
   trayCards?: ReactNode;
   /** Dealer DEAL HAND — compact control in the status row (not a second tray row). */
   statusAction?: DockAction | null;
@@ -247,7 +253,73 @@ export function CasinoConsole({
                 {statusMessage}
               </div>
             ) : null}
-            {actionCount > 0 || trayCards ? (
+            {playerSlots && !statusMessage ? (
+              <>
+                <div
+                  className="pm-console-action-row is-bj-player-trio"
+                  data-console-actions="true"
+                  data-bj-player-slots="true"
+                >
+                  <div className="pm-console-slot is-secondary" data-bj-slot="left">
+                    {secondary ? (
+                      <ActionButton action={secondary} kind="ghost" />
+                    ) : tertiary ? (
+                      <ActionButton action={tertiary} kind="ghost" />
+                    ) : null}
+                  </div>
+                  <div className="pm-console-slot is-primary" data-bj-slot="centre">
+                    {primary ? <ActionButton action={primary} kind="primary" /> : null}
+                  </div>
+                  <div className="pm-console-slot is-allin" data-bj-slot="right">
+                    {allIn ? <ActionButton action={allIn} kind="ghost" allIn /> : null}
+                  </div>
+                </div>
+                <div className="pm-bj-bet-cards-row" data-bj-bet-cards-row="true">
+                  <div
+                    className={`pm-bj-pending-bet${composeLocked ? " is-locked" : ""}${
+                      !(onComposeAmount || composeLocked) ? " is-placeholder" : ""
+                    }`}
+                    data-bj-pending-bet="true"
+                    data-bj-pending-wager="true"
+                  >
+                    <span className="pm-bj-pending-bet-label">{composeLabel ?? "YOUR BET"}</span>
+                    {pendingChips && pendingChips.length > 0 ? (
+                      <div className="pm-bj-pending-bet-chips" data-bj-pending-chips="true">
+                        {pendingChips.map((face, index) => (
+                          <span key={`${face}-${index}`} className="pm-bj-pending-bet-chip">
+                            <CasinoJeton denomination={face} size="sm" label={face} />
+                            {onRemovePendingChip && !composeLocked ? (
+                              <button
+                                type="button"
+                                className="pm-bj-pending-bet-remove"
+                                aria-label={`Remove ${face} from your bet`}
+                                data-bj-pending-remove="true"
+                                onClick={() => onRemovePendingChip(index)}
+                              >
+                                ×
+                              </button>
+                            ) : null}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      aria-label={composeLocked ? "Confirmed bet" : "Your bet"}
+                      value={onComposeAmount || composeLocked ? composeAmount : ""}
+                      placeholder="0"
+                      disabled={!trayEnabled || composeLocked || !onComposeAmount}
+                      readOnly={composeLocked || !onComposeAmount}
+                      onChange={(event) => onComposeAmount?.(event.target.value)}
+                    />
+                  </div>
+                  <div className="pm-bj-inline-cards" data-bj-inline-cards="true">
+                    {trayCards}
+                  </div>
+                </div>
+              </>
+            ) : actionCount > 0 || trayCards ? (
               <div
                 className={`pm-console-action-row${actionCount <= 1 ? " is-single" : ""}${
                   actionCount >= 3 ? " is-triple" : ""
@@ -279,15 +351,13 @@ export function CasinoConsole({
                 </>
               </div>
             ) : null}
-            {variant === "blackjack" && (onComposeAmount || composeLocked) ? (
+            {!playerSlots && variant === "blackjack" && (onComposeAmount || composeLocked) ? (
               <div
                 className={`pm-bj-pending-bet${composeLocked ? " is-locked" : ""}`}
                 data-bj-pending-bet="true"
                 data-bj-pending-wager="true"
               >
-                <span className="pm-bj-pending-bet-label">
-                  {composeLabel ?? (primary?.label === "NEXT ROUND" ? "NEXT ROUND" : "YOUR BET")}
-                </span>
+                <span className="pm-bj-pending-bet-label">{composeLabel ?? "YOUR BET"}</span>
                 {pendingChips && pendingChips.length > 0 ? (
                   <div className="pm-bj-pending-bet-chips" data-bj-pending-chips="true">
                     {pendingChips.map((face, index) => (
@@ -311,13 +381,7 @@ export function CasinoConsole({
                 <input
                   type="text"
                   inputMode="decimal"
-                  aria-label={
-                    composeLocked
-                      ? "Confirmed bet"
-                      : composeLabel === "NEXT ROUND"
-                        ? "Next-round bet"
-                        : "Your bet"
-                  }
+                  aria-label={composeLocked ? "Confirmed bet" : "Your bet"}
                   value={composeAmount}
                   placeholder="0"
                   disabled={!trayEnabled || composeLocked}

@@ -294,9 +294,22 @@
   overflow: hidden;
 }
 
+/*
+ * Felt composition frame — artwork is 864×1152 (3:4).
+ * When the stage grows (compact 165px tray), keep width-scaled 3:4 proportions
+ * and pin the frame to the tray so cover does not zoom/distort the table.
+ * Extra stage height sits above as night letterbox; overlays share this frame.
+ * Width is capped with --premium-table-height so tall dealer stages never widen past the viewport.
+ */
 [data-skin="premium"] .pm-bj-frame {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, calc(var(--premium-table-height) * 3 / 4));
+  aspect-ratio: 3 / 4;
+  max-height: 100%;
+  height: auto;
   overflow: hidden;
 }
 
@@ -3165,9 +3178,10 @@
 
 [data-skin="premium"] .pm-bj-pending-bet input,
 [data-skin="premium"] .pm-bj-pending-wager input {
-  flex: 0 1 72px;
-  min-width: 56px;
-  max-width: 88px;
+  flex: 0 0 64px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
   border: 1px solid rgba(212, 184, 130, 0.4);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.28);
@@ -3177,14 +3191,86 @@
   padding: 5px 8px;
 }
 
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-bj-pending-bet input {
+  margin-right: 4px;
+}
+
 [data-skin="premium"] .pm-bj-pending-bet.is-locked input {
   opacity: 0.85;
   border-color: rgba(143, 217, 164, 0.45);
 }
 
-/* Compact Card Assist — inline beside ALL IN in the action row. */
-[data-skin="premium"] .pm-console.is-bj .pm-console-action-row.has-inline-cards {
-  flex-wrap: wrap;
+[data-skin="premium"] .pm-bj-pending-bet.is-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* BJ player — permanent 3 action slots; cards live on the YOUR BET row. */
+[data-skin="premium"] .pm-console.is-bj .pm-console-action-row.is-bj-player-trio {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-action-row.is-bj-player-trio .pm-console-slot {
+  min-height: 32px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 36%);
+  column-gap: 10px;
+  align-items: center;
+  min-height: 28px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-bj-pending-bet {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-bj-inline-cards {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-tray-cards.is-inline {
+  border-top: 0;
+  padding: 0;
+  gap: 4px;
+  width: auto;
+  max-width: 100%;
+  justify-content: flex-end;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-tray-cards-label:empty {
+  display: none;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-tray-cards-btn {
+  min-height: 26px;
+  min-width: 0;
+  padding: 0 7px;
+  font-size: 8px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-playing-card.is-mini {
+  min-width: 1rem;
+  min-height: 1.3rem;
+  font-size: 8px;
+  padding: 0 2px;
+}
+
+/* Dealer keeps cards in the action row (tray geometry unchanged). */
+[data-skin="premium"] .pm-console.is-bj .pm-console-action-row.has-inline-cards:not(.is-bj-player-trio) {
+  display: flex;
+  flex-wrap: nowrap;
   gap: 4px 6px;
 }
 
@@ -3205,20 +3291,6 @@
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-tray-cards-label:empty {
   display: none;
-}
-
-[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-tray-cards-btn {
-  min-height: 26px;
-  min-width: 0;
-  padding: 0 7px;
-  font-size: 8px;
-}
-
-[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-playing-card.is-mini {
-  min-width: 1rem;
-  min-height: 1.3rem;
-  font-size: 8px;
-  padding: 0 2px;
 }
 
 [data-skin="premium"] .pm-link {
@@ -3786,7 +3858,7 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-[data-skin="premium"] .pm-console.is-bj .pm-console-action-row:has(.is-allin) {
+[data-skin="premium"] .pm-console.is-bj .pm-console-action-row:has(.is-allin):not(.is-bj-player-trio) {
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
 }
 [data-skin="premium"] .pm-console-allin-label {

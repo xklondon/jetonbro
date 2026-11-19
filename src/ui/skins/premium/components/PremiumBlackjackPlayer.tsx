@@ -211,11 +211,7 @@ export function PremiumBlackjackPlayer({
     setLocalNotice(null);
     const amount = parseWhole(pendingText);
     if (amount == null || amount <= 0) {
-      setLocalNotice(
-        nextRoundBetting
-          ? "Enter or tap a NEXT ROUND bet before confirming."
-          : "Enter or tap your bet before PLACE BET.",
-      );
+      setLocalNotice("Enter or tap your bet before PLACE BET.");
       return;
     }
     const available = Number(view.available.label);
@@ -231,11 +227,7 @@ export function PremiumBlackjackPlayer({
         mode: "SET",
       });
       if (ok === false) {
-        setLocalNotice(
-          nextRoundBetting
-            ? "NEXT ROUND bet failed — check your bet and try again."
-            : "PLACE BET failed — check your bet and try again.",
-        );
+        setLocalNotice("PLACE BET failed — check your bet and try again.");
         return;
       }
       setPendingChips([]);
@@ -251,11 +243,7 @@ export function PremiumBlackjackPlayer({
       setPendingText(String(allInAmount));
       setPendingChips([]);
       setAllInArmed(true);
-      setLocalNotice(
-        nextRoundBetting
-          ? `Confirm NEXT ROUND ALL IN ${allInAmount}.`
-          : `Confirm ALL IN ${allInAmount}.`,
-      );
+      setLocalNotice(`Confirm ALL IN ${allInAmount}.`);
       return;
     }
     setPendingText(String(allInAmount));
@@ -283,29 +271,29 @@ export function PremiumBlackjackPlayer({
   let tertiary = null as null | { label: string; disabled?: boolean; onClick?: () => void };
   let allIn = null as null | { label: string; disabled?: boolean; title?: string; onClick?: () => void };
 
-  if (controls.placeBet || controls.nextRoundBet) {
-    primary = {
-      label: nextRoundBetting ? "NEXT ROUND" : "PLACE BET",
-      disabled: placeBusy || !selected || boxLocked,
-      onClick: () => void confirmPlaceBet(),
-    };
+  // Player never owns phase progression (START HAND / DEAL / NEXT ROUND).
+  // Betting + next-round staging both use PLACE BET in the permanent centre slot.
+  if (betting || nextRoundBetting) {
     secondary = controls.addBox
       ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
       : null;
-    if (showAllIn) {
-      allIn = {
-        label: allInArmed ? `CONFIRM ALL IN ${allInAmount}` : `ALL IN ${allInAmount}`,
-        title: allInArmed
-          ? `Commit ${allInAmount} jetons (all available)`
-          : `All in ${allInAmount} — tap again to confirm`,
-        disabled: placeBusy || boxLocked,
-        onClick: () => void confirmAllIn(),
+    if (controls.placeBet || controls.nextRoundBet) {
+      primary = {
+        label: "PLACE BET",
+        disabled: placeBusy || !selected || boxLocked,
+        onClick: () => void confirmPlaceBet(),
       };
+      if (showAllIn) {
+        allIn = {
+          label: allInArmed ? `CONFIRM ALL IN ${allInAmount}` : `ALL IN ${allInAmount}`,
+          title: allInArmed
+            ? `Commit ${allInAmount} jetons (all available)`
+            : `All in ${allInAmount} — tap again to confirm`,
+          disabled: placeBusy || boxLocked,
+          onClick: () => void confirmAllIn(),
+        };
+      }
     }
-  } else if ((betting || roundComplete) && boxLocked) {
-    secondary = controls.addBox
-      ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
-      : null;
   } else if (playing) {
     // Canonical command names — API route cases are doubleBox / splitBox.
     primary = controls.double
@@ -316,7 +304,7 @@ export function PremiumBlackjackPlayer({
       : null;
   }
 
-  if (view.isOwner && view.actions.addPlayer && !secondary) {
+  if (view.isOwner && view.actions.addPlayer && !secondary && !betting && !nextRoundBetting) {
     secondary = { label: "ADD PLAYER", onClick: () => setInviteOpen(true) };
   }
   if (view.isOwner && view.actions.giveJetons && !tertiary) {
@@ -331,7 +319,7 @@ export function PremiumBlackjackPlayer({
       },
     };
   }
-  if (betweenHands && canLeave && !secondary) {
+  if (betweenHands && canLeave && !secondary && !betting && !nextRoundBetting) {
     secondary = { label: "EXIT TABLE", onClick: () => setExitOpen(true) };
   } else if (betweenHands && canLeave && !tertiary) {
     tertiary = { label: "EXIT TABLE", onClick: () => setExitOpen(true) };
@@ -398,21 +386,22 @@ export function PremiumBlackjackPlayer({
       dock={
         <CasinoConsole
           variant="blackjack"
+          playerSlots
           notice={dockNotice ? <div className="pm-console-notice">{dockNotice}</div> : null}
           available={view.available.label}
           showTray={showTray}
           reserveTray
           trayEnabled={Boolean(trayInteractive && controls.trayEnabled)}
           composeAmount={
-            boxLocked
+            boxLocked || playing
               ? nextRoundBetting
                 ? selected?.nextRoundBet?.label ?? "0"
                 : selected?.bet.label ?? "0"
               : pendingText
           }
-          composeLocked={boxLocked}
-          composeLabel={nextRoundBetting ? "NEXT ROUND" : "YOUR BET"}
-          pendingChips={boxLocked ? null : pendingChips}
+          composeLocked={boxLocked || playing}
+          composeLabel="YOUR BET"
+          pendingChips={boxLocked || playing ? null : pendingChips}
           onRemovePendingChip={trayInteractive ? removePendingChip : undefined}
           onComposeAmount={
             trayInteractive
@@ -422,7 +411,7 @@ export function PremiumBlackjackPlayer({
                   setPendingChips([]);
                   setPendingText(value);
                 }
-              : boxLocked
+              : boxLocked || playing
                 ? () => undefined
                 : undefined
           }

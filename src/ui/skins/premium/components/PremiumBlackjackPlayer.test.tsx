@@ -50,7 +50,7 @@ function playerView(overrides: Partial<PlayerTableView> = {}): PlayerTableView {
 }
 
 describe("PremiumBlackjackPlayer betting dock", () => {
-  it("keeps ADD BOX available after a stake is placed and locks further betting", () => {
+  it("keeps ADD BOX in the left slot after a stake is locked and never shows NEXT ROUND", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumBlackjackPlayer, {
         view: playerView(),
@@ -60,11 +60,19 @@ describe("PremiumBlackjackPlayer betting dock", () => {
       }),
     );
     expect(html).toContain("ADD BOX");
+    expect(html).toContain('data-bj-player-slots="true"');
+    expect(html).toContain('data-bj-slot="left"');
+    expect(html).toContain('data-bj-slot="centre"');
+    expect(html).toContain('data-bj-slot="right"');
     expect(html).not.toContain(">RETRACT<");
     expect(html).not.toContain('data-retract-chip="');
     expect(html).not.toContain(">PLACE BET<");
+    expect(html).not.toContain("NEXT ROUND");
+    expect(html).not.toContain("START HAND");
+    expect(html).not.toContain("DEAL CARDS");
     expect(html).toContain("YOUR BET");
     expect(html).toContain('data-bj-pending-bet="true"');
+    expect(html).toContain('data-bj-bet-cards-row="true"');
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-tray-available="true"');
@@ -125,6 +133,62 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(source).toContain("orderBoxesForFelt");
     expect(source).not.toContain('mode: "ADD"');
     expect(source).toContain("Enter or tap your bet before PLACE BET");
+    expect(source).not.toMatch(/onCommand\("startBetting"/);
+    expect(source).not.toMatch(/onCommand\("dealCards"/);
+    expect(source).not.toMatch(/onCommand\("enterPayout"/);
+    expect(source).not.toMatch(/onCommand\("startNextRound"/);
+    expect(source).not.toMatch(/onCommand\("scheduleDeal"/);
+    expect(source).not.toMatch(/onCommand\("scheduleNextRound"/);
+  });
+
+  it("ROUND_COMPLETE staging uses PLACE BET only — never NEXT ROUND / phase commands", () => {
+    const html = renderToStaticMarkup(
+      createElement(PremiumBlackjackPlayer, {
+        view: playerView({
+          phase: "ROUND_COMPLETE",
+          boxes: [
+            {
+              id: "b1",
+              playerId: "p1",
+              playerName: "Casey",
+              label: "Box 1",
+              boxNumber: 1,
+              bet: money("0"),
+              originalStake: money("0"),
+              nextRoundBet: money("0"),
+              isDoubled: false,
+              isSplit: false,
+              insurance: null,
+              insuranceMax: money("0"),
+              insuranceResult: null,
+              outcome: null,
+              returned: null,
+              payoutActions: [],
+            },
+          ],
+          actions: {
+            bet: false,
+            retract: false,
+            addBox: false,
+            removeEmptyBox: false,
+            double: false,
+            split: false,
+            insurance: false,
+            nextRoundBet: true,
+          },
+        }),
+        selectedBoxId: "b1",
+        onSelectBox: () => undefined,
+        onCommand: () => undefined,
+      }),
+    );
+    expect(html).toContain(">PLACE BET<");
+    expect(html).toContain("YOUR BET");
+    expect(html).not.toContain("NEXT ROUND");
+    expect(html).not.toContain("START HAND");
+    expect(html).not.toContain("DEAL CARDS");
+    expect(html).not.toContain("ENTER PAYOUT");
+    expect(html).not.toContain("START NEXT ROUND");
   });
 
   it("JETON VIEW shows only own boxes with hero wager and keeps the tray", () => {
