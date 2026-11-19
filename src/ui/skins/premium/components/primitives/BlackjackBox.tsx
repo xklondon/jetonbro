@@ -54,6 +54,8 @@ export function BlackjackBox({
   onInsurance,
   insuranceEnabled,
   pendingLabel,
+  pendingChips,
+  onRemovePendingChip,
   nextRoundLabel,
 }: {
   box: BoxView;
@@ -71,6 +73,9 @@ export function BlackjackBox({
   insuranceEnabled?: boolean;
   /** Local pending wager (not yet committed / escrowed). */
   pendingLabel?: string | null;
+  /** Individual pending tray taps shown on the felt with × until PLACE BET. */
+  pendingChips?: string[] | null;
+  onRemovePendingChip?: (index: number) => void;
   /** Confirmed next-round stake prepared during PAYOUT. */
   nextRoundLabel?: string | null;
 }) {
@@ -79,6 +84,7 @@ export function BlackjackBox({
   const nextRound = nextRoundLabel && nextRoundLabel !== "0" ? nextRoundLabel : null;
   const stake = pending ?? committed;
   const hasStake = stake !== "0";
+  const showPendingChips = Boolean(pending && pendingChips && pendingChips.length > 0);
   /** AVAILABLE is caption-only — never render bankroll as a MAIN/STACK chip stake. */
   const availableCaption =
     showAvailable && bankroll && bankroll.label !== "0" ? bankroll : null;
@@ -117,14 +123,39 @@ export function BlackjackBox({
       {hasStake ? (
         <div className="pm-bj-box-stakes">
           <div className="pm-bj-main-stack">
-            <CasinoChipStack
-              millis={pending ? String(Math.round(Number(pending) * 1000)) : box.bet.millis}
-              label={stake}
-              size="lg"
-              max={4}
-              onRetractChip={result || pending ? undefined : onRetractChip}
-              retractBusy={retractBusy}
-            />
+            {showPendingChips ? (
+              <div className="pm-bj-pending-felt" data-bj-pending-felt="true">
+                {pendingChips!.map((face, index) => (
+                  <span key={`${face}-${index}`} className="pm-bj-pending-felt-chip">
+                    <CasinoJeton denomination={face} size="lg" label={face} />
+                    {onRemovePendingChip ? (
+                      <button
+                        type="button"
+                        className="pm-jeton-retract"
+                        data-retract-chip={face}
+                        data-bj-pending-remove="true"
+                        aria-label={`Remove ${face} from your bet`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRemovePendingChip(index);
+                        }}
+                      >
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    ) : null}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <CasinoChipStack
+                millis={pending ? String(Math.round(Number(pending) * 1000)) : box.bet.millis}
+                label={stake}
+                size="lg"
+                max={4}
+                onRetractChip={result || pending ? undefined : onRetractChip}
+                retractBusy={retractBusy}
+              />
+            )}
             {insurance || box.insuranceResult ? (
               <InsuranceMarker label={insurance?.label ?? "0"} result={box.insuranceResult} />
             ) : null}

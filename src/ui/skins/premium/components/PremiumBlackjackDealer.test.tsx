@@ -286,7 +286,7 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(source).toContain("resolution");
   });
 
-  it("DEAL CARDS readiness is advisory green/orange and stays actionable when unconfirmed", () => {
+  it("DEAL CARDS readiness is advisory blue/orange and stays actionable when unconfirmed", () => {
     const ready = renderToStaticMarkup(
       createElement(PremiumBlackjackDealer, {
         view: bank({ allBetsConfirmed: true }),
@@ -298,6 +298,8 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(ready).toContain('data-bj-phase-action="deal-cards"');
     expect(ready).toContain('data-bj-bets-ready="true"');
     expect(ready).not.toMatch(/data-bj-phase-action="deal-cards"[^>]*disabled/);
+    expect(ready).not.toContain("DEALER CARDS");
+    expect(ready).not.toContain('data-bj-inline-cards="true"');
 
     const pending = renderToStaticMarkup(
       createElement(PremiumBlackjackDealer, {
@@ -309,5 +311,6 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(pending).toContain("DEAL CARDS");
     expect(pending).toContain('data-bj-bets-ready="false"');
     expect(pending).not.toMatch(/data-bj-phase-action="deal-cards"[^>]*disabled/);
+    expect(pending).not.toContain("DEALER CARDS");
   });
 });
