@@ -145,8 +145,8 @@ export function CasinoConsole({
   composeAmount = "",
   composeLocked = false,
   composeLabel = null,
-  pendingChips: _pendingChips = null,
-  onRemovePendingChip: _onRemovePendingChip,
+  pendingChips = null,
+  onRemovePendingChip,
   raiseToPreview = null,
   additionalPreview = null,
   committedPreview = null,
@@ -283,6 +283,26 @@ export function CasinoConsole({
                     data-bj-pending-wager="true"
                   >
                     <span className="pm-bj-pending-bet-label">{composeLabel ?? "YOUR BET"}</span>
+                    {pendingChips && pendingChips.length > 0 ? (
+                      <div className="pm-bj-pending-bet-chips" data-bj-pending-chips="true">
+                        {pendingChips.map((face, index) => (
+                          <span key={`${face}-${index}`} className="pm-bj-pending-bet-chip">
+                            <CasinoJeton denomination={face} size="sm" label={face} />
+                            {onRemovePendingChip && !composeLocked ? (
+                              <button
+                                type="button"
+                                className="pm-bj-pending-bet-remove"
+                                aria-label={`Remove ${face} from your bet`}
+                                data-bj-pending-remove="true"
+                                onClick={() => onRemovePendingChip(index)}
+                              >
+                                ×
+                              </button>
+                            ) : null}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                     <input
                       type="text"
                       inputMode="decimal"
@@ -338,6 +358,26 @@ export function CasinoConsole({
                 data-bj-pending-wager="true"
               >
                 <span className="pm-bj-pending-bet-label">{composeLabel ?? "YOUR BET"}</span>
+                {pendingChips && pendingChips.length > 0 ? (
+                  <div className="pm-bj-pending-bet-chips" data-bj-pending-chips="true">
+                    {pendingChips.map((face, index) => (
+                      <span key={`${face}-${index}`} className="pm-bj-pending-bet-chip">
+                        <CasinoJeton denomination={face} size="sm" label={face} />
+                        {onRemovePendingChip && !composeLocked ? (
+                          <button
+                            type="button"
+                            className="pm-bj-pending-bet-remove"
+                            aria-label={`Remove ${face} from your bet`}
+                            data-bj-pending-remove="true"
+                            onClick={() => onRemovePendingChip(index)}
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 <input
                   type="text"
                   inputMode="decimal"
