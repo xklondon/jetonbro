@@ -293,24 +293,14 @@ describeDb("dealer list, next round and table close", () => {
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[0]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[1]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: joBox.id, outcome: "PUSH", idempotencyKey: randomUUID() });
+    // Final settle already opened BETTING (and cleared pause) exactly once.
     expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
     await saveTable({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect((await prisma.table.findUniqueOrThrow({ where: { id: tableId } })).pausedAt).not.toBeNull();
-    // DEAL CARDS path reuses startBetting-cleared pause via a fresh open — deal after a bet.
-    const boxId = (await loadSnapshot(tableId, sam.id)).player!.boxes[0]!.id;
-    await placeOrRetractBet({
-      actorId: sam.id,
-      tableId,
-      boxId,
-      amount: "25",
-      mode: "SET",
-      idempotencyKey: randomUUID(),
-    });
-    await dealCards({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
-    const table = await prisma.table.findUniqueOrThrow({ where: { id: tableId }, include: { currentRound: true } });
-    expect(table.currentPhase).toBe("PLAYING");
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("SAVED");
+    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect(await prisma.round.count({ where: { tableId } })).toBe(2);
-    const samNext = await loadSnapshot(tableId, sam.id);
-    expect(samNext.phase).toBe("PLAYING");
   });
 });
