@@ -1760,7 +1760,10 @@ function roundBlockers(round: {
   return { unresolvedBoxes, unresolvedInsurance };
 }
 
+/** PAYOUT → ROUND_COMPLETE when settled; then open BETTING via existing startBetting. */
 async function maybeCompleteRound(tableId: string) {
+  let completedRoundId: string | null = null;
+  let bankDealerId: string | null = null;
   await prisma.$transaction(async (tx) => {
     const table = await loadTableForUpdate(tx, tableId);
     if (table.currentPhase !== "PAYOUT" || !table.currentRound) return;
@@ -1786,6 +1789,8 @@ async function maybeCompleteRound(tableId: string) {
       where: { id: table.id },
       data: { currentPhase: "ROUND_COMPLETE" },
     });
+    completedRoundId = table.currentRound.id;
+    bankDealerId = table.bankDealerId;
     logRoundEvent({
       event: "maybeCompleteRound.completed",
       tableId,
@@ -1796,6 +1801,19 @@ async function maybeCompleteRound(tableId: string) {
       code: "ROUND_COMPLETE",
     });
   });
+  // Same path as ensureNextRoundIfDue — idempotent; clears prior boxes via a new BETTING round.
+  if (!completedRoundId || !bankDealerId) return;
+  try {
+    await startBetting({
+      actorId: bankDealerId,
+      tableId,
+      idempotencyKey: `auto-next-betting:${tableId}:${completedRoundId}`,
+    });
+  } catch (error) {
+    // Settlement already committed; dealer can still use startNextRound if open fails.
+    if (error instanceof DomainError) return;
+    throw error;
+  }
 }
 
 export async function assertCanComplete(tableId: string) {

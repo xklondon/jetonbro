@@ -364,7 +364,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
     !pokerOpen &&
     (table.game === "POKER"
       ? activeGame.phase === "POKER_SETUP" || activeGame.phase === "HAND_COMPLETE"
-      : table.currentPhase === "TABLE_SETUP" || table.currentPhase === "ROUND_COMPLETE");
+      : table.currentPhase === "TABLE_SETUP" ||
+        table.currentPhase === "ROUND_COMPLETE" ||
+        table.currentPhase === "BETTING");
   const fundingLocked = roundHasLockedStake(table.currentRound) || table.bankLockedExposureMillis > 0n;
   const bankroll = {
     mode: table.bankFundingMode,
@@ -643,7 +645,9 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             (table.currentPhase === "BETTING" ||
               table.currentPhase === "ROUND_COMPLETE" ||
               (table.currentPhase === "PAYOUT" && canNextHand)),
-          saveTable: isOwner && !tableClosed && !pokerOpen && !anyLocked,
+          // BETTING may have locked stakes; save only pauses — do not block archive during PLACE YOUR BETS.
+          saveTable:
+            isOwner && !tableClosed && !pokerOpen && (table.currentPhase === "BETTING" || !anyLocked),
           closeTable: canCloseTable,
           switchGame:
             isOwner &&

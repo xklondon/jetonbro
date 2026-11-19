@@ -300,6 +300,8 @@
   inset: 0;
   overflow: hidden;
   background: var(--pm-felt);
+  container-type: size;
+  container-name: bj-stage;
 }
 
 /*
@@ -314,13 +316,37 @@
   bottom: 0;
   width: 100%;
   height: auto;
+  aspect-ratio: 3 / 4;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
   pointer-events: none;
   user-select: none;
 }
 
-[data-skin="premium"] .pm-bj-layer {
+/*
+ * Stage chrome (phase + dealer): full stage, so copy lives in the letterbox
+ * above the bottom-aligned photo — never on JPG rail / pays curves.
+ * Photo layer (felt name + boxes): matches the 3:4 artwork for identical
+ * dealer/player proportions.
+ */
+[data-skin="premium"] .pm-bj-chrome {
   position: absolute;
   inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-bj-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  max-height: 100%;
   z-index: 1;
   pointer-events: none;
 }
@@ -328,7 +354,11 @@
 [data-skin="premium"] .pm-bj-phase {
   position: absolute;
   left: 50%;
-  top: 3.2%;
+  /*
+   * Sit in the letterbox above the bottom-aligned 3:4 photo.
+   * Photo height = min(100cqh, 100cqw * 4/3); chrome stacks just above that.
+   */
+  top: max(0.25rem, calc(100cqh - min(100cqh, 100cqw * 4 / 3) - 3.45rem));
   transform: translateX(-50%);
   width: min(72%, 16rem);
   height: 2.4rem;
@@ -356,7 +386,7 @@
 [data-skin="premium"] .pm-bj-dealer {
   position: absolute;
   left: 50%;
-  top: 10%;
+  top: max(2.45rem, calc(100cqh - min(100cqh, 100cqw * 4 / 3) - 1.2rem));
   width: min(88%, 16rem);
   min-height: 2.4rem;
   transform: translateX(-50%);

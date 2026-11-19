@@ -12,7 +12,6 @@ import {
   enterPayout,
   openInsurance,
   placeOrRetractBet,
-  scheduleNextRound,
   settleBox,
   settleInsurance,
   startBetting,
@@ -121,42 +120,39 @@ describeDb("dealer list, next round and table close", () => {
     expect(afterWin.returnedMillis).toBe(50000n);
     const stillOpen = await prisma.bettingBox.findUniqueOrThrow({ where: { id: second.id } });
     expect(stillOpen.outcome).toBeNull();
+    // Partial payout — BETTING must stay closed.
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("PAYOUT");
     await settleBox({ actorId: owner.id, tableId, boxId: second.id, outcome: "LOST", idempotencyKey: randomUUID() });
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("PAYOUT");
     await settleBox({ actorId: owner.id, tableId, boxId: joBox.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     const ready = await loadSnapshot(tableId, owner.id);
-    expect(ready.phase).toBe("ROUND_COMPLETE");
-    expect(ready.bank?.actions.nextHand).toBe(true);
-    expect(ready.bank?.players.every((player) => player.boxes.every((box) => box.outcome))).toBe(true);
+    expect(ready.phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
+    expect(ready.bank?.players.every((player) => player.boxes.every((box) => box.outcome === null))).toBe(true);
   });
 
-  test("next round now and seven-second countdown open exactly one BETTING round", async () => {
+  test("final settlement auto-opens BETTING exactly once", async () => {
     const { owner, sam, jo, tableId } = await fundedTable();
     const { samBoxes, joBox } = await playToPayout(owner.id, sam.id, jo.id, tableId);
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[0]!.id, outcome: "WON", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[1]!.id, outcome: "LOST", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: joBox.id, outcome: "PUSH", idempotencyKey: randomUUID() });
-    const scheduled = await scheduleNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
-    const bankMid = await loadSnapshot(tableId, owner.id);
-    const playerMid = await loadSnapshot(tableId, sam.id);
-    expect(bankMid.bank?.nextRoundDeadlineAt).toBe(scheduled.deadline);
-    expect(playerMid.player?.nextRoundDeadlineAt).toBe(scheduled.deadline);
-    await prisma.round.update({
-      where: { id: (await prisma.table.findUniqueOrThrow({ where: { id: tableId } })).currentRoundId! },
-      data: { nextRoundDeadlineAt: new Date(Date.now() - 50) },
-    });
-    await ensureNextRoundIfDue(tableId);
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
+    expect((await loadSnapshot(tableId, sam.id)).phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
+    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     await ensureNextRoundIfDue(tableId);
     expect(await prisma.round.count({ where: { tableId } })).toBe(2);
     expect((await prisma.table.findUniqueOrThrow({ where: { id: tableId } })).currentPhase).toBe("BETTING");
   });
 
-  test("NEXT ROUND NOW during a countdown still creates only one next round", async () => {
+  test("START NEXT ROUND after auto-betting stays idempotent", async () => {
     const { owner, sam, jo, tableId } = await fundedTable();
     const { samBoxes, joBox } = await playToPayout(owner.id, sam.id, jo.id, tableId);
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[0]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[1]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: joBox.id, outcome: "PUSH", idempotencyKey: randomUUID() });
-    await scheduleNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect(await prisma.round.count({ where: { tableId } })).toBe(2);
@@ -266,8 +262,7 @@ describeDb("dealer list, next round and table close", () => {
       idempotencyKey: randomUUID(),
     });
     const done = await loadSnapshot(tableId, owner.id);
-    expect(done.phase).toBe("ROUND_COMPLETE");
-    expect(done.bank?.actions.nextHand).toBe(true);
+    expect(done.phase).toBe("BETTING");
     expect((await prisma.insuranceBet.findUniqueOrThrow({ where: { id: openInsuranceBet.id } })).settledKey).not.toBeNull();
     expect((await prisma.bettingBox.findUniqueOrThrow({ where: { id: boxes[0]!.id } })).outcome).toBe("PUSH");
   });
@@ -279,8 +274,8 @@ describeDb("dealer list, next round and table close", () => {
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[1]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: joBox.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     const done = await loadSnapshot(tableId, owner.id);
-    expect(done.phase).toBe("ROUND_COMPLETE");
-    expect(done.bank?.actions.nextHand).toBe(true);
+    expect(done.phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
   });
 
   test("startNextRound names unresolved boxes instead of staying silent", async () => {
@@ -298,16 +293,24 @@ describeDb("dealer list, next round and table close", () => {
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[0]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: samBoxes[1]!.id, outcome: "PUSH", idempotencyKey: randomUUID() });
     await settleBox({ actorId: owner.id, tableId, boxId: joBox.id, outcome: "PUSH", idempotencyKey: randomUUID() });
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
     await saveTable({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
-    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
-    await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    expect((await prisma.table.findUniqueOrThrow({ where: { id: tableId } })).pausedAt).not.toBeNull();
+    // DEAL CARDS path reuses startBetting-cleared pause via a fresh open — deal after a bet.
+    const boxId = (await loadSnapshot(tableId, sam.id)).player!.boxes[0]!.id;
+    await placeOrRetractBet({
+      actorId: sam.id,
+      tableId,
+      boxId,
+      amount: "25",
+      mode: "SET",
+      idempotencyKey: randomUUID(),
+    });
+    await dealCards({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     const table = await prisma.table.findUniqueOrThrow({ where: { id: tableId }, include: { currentRound: true } });
-    expect(table.currentPhase).toBe("BETTING");
-    expect(table.pausedAt).toBeNull();
-    expect(table.currentRound?.nextRoundDeadlineAt).toBeNull();
+    expect(table.currentPhase).toBe("PLAYING");
     expect(await prisma.round.count({ where: { tableId } })).toBe(2);
     const samNext = await loadSnapshot(tableId, sam.id);
-    expect(samNext.phase).toBe("BETTING");
-    expect(samNext.player?.boxes.every((box) => box.outcome === null)).toBe(true);
+    expect(samNext.phase).toBe("PLAYING");
   });
 });

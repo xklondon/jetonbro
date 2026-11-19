@@ -636,10 +636,15 @@ export async function closeTable(input: { actorId: string; tableId: string; idem
       if (pokerPhase !== "POKER_SETUP" && pokerPhase !== "HAND_COMPLETE") {
         throw new DomainError("LOCKED_FUNDS", "Finish or clear the current hand before closing.");
       }
-    } else if (table.currentPhase !== "TABLE_SETUP" && table.currentPhase !== "ROUND_COMPLETE") {
+    } else if (
+      table.currentPhase !== "TABLE_SETUP" &&
+      table.currentPhase !== "ROUND_COMPLETE" &&
+      // Fresh BETTING after auto-advance has no locks (already checked above) — still closable.
+      table.currentPhase !== "BETTING"
+    ) {
       throw new DomainError(
         "CLOSE_BLOCKED",
-        "Close the table only during TABLE SETUP or after the round is complete, with no locked funds.",
+        "Close the table only during TABLE SETUP, BETTING with no locked funds, or after the round is complete.",
       );
     }
     try {

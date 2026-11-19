@@ -138,7 +138,7 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(html).not.toContain("STACK");
   });
 
-  it("shows Change Game in Betting tray and interactive Owner/Dealer badges", () => {
+  it("BETTING tray exposes ADD PLAYER / TOP UP with SAVE badge; primary DEAL stays", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumBlackjackDealer, {
         view: bank(),
@@ -146,13 +146,18 @@ describe("PremiumBlackjackDealer owner chrome", () => {
         onCommand: () => undefined,
       }),
     );
-    expect(html).toContain('data-change-game="true"');
-    expect(html).toContain("CHANGE GAME");
+    expect(html).toContain("ADD PLAYER");
+    expect(html).toContain("TOP UP");
+    expect(html).toContain('data-save-table-badge="true"');
+    expect(html).toContain("SAVE");
+    expect(html).toContain("DEAL CARDS");
+    expect(html.indexOf("ADD PLAYER")).toBeLessThan(html.indexOf("TOP UP"));
+    expect(html.indexOf("TOP UP")).toBeLessThan(html.indexOf("DEAL CARDS"));
+    expect(html).not.toContain("CHANGE GAME");
     expect(html).toContain('data-owner-badge="true"');
     expect(html).toContain('data-dealer-badge="true"');
     expect(html).toContain('data-owner-change-dealer="true"');
     expect(html).toContain('data-owner-change-game="true"');
-    expect(html).toContain("ADD PLAYER");
   });
 
   it("keeps Change Game visible but blocked until payout boxes are settled", () => {

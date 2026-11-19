@@ -67,7 +67,12 @@ export function BlackjackTable({
           alt=""
           draggable={false}
         />
-        <div className="pm-bj-layer">
+        {/*
+          Phase + dealer sit on the full stage (letterbox above the bottom-aligned
+          photo) so they never collide with JPG rail / pays lettering.
+          Felt name + boxes stay on the photo-aligned layer.
+        */}
+        <div className="pm-bj-chrome" data-bj-chrome="true">
           <div className="pm-bj-phase" data-phase-stack="true">
             <strong data-phase-heading>{phaseLabel}</strong>
             <em data-phase-instruction={phaseInstruction ? "true" : "false"}>
@@ -77,6 +82,8 @@ export function BlackjackTable({
           <div className="pm-bj-dealer" data-dealer-anchor="true">
             <BlackjackDealerPosition name={dealerName} ranks={dealerRanks} />
           </div>
+        </div>
+        <div className="pm-bj-layer">
           <div className="pm-bj-felt-name" data-felt-name="true" data-table-name-anchor="true">
             <strong data-table-name>{tableName}</strong>
             <i aria-hidden="true" />

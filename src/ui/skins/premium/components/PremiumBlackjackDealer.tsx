@@ -100,10 +100,11 @@ export function PremiumBlackjackDealer({
   // Owner INVITE stays available between hands / betting / payout — server still enforces owner-only.
   const showAddPlayer = Boolean(view.isOwner && (setup || betting || betweenHands));
   const showGiveJetons = Boolean(view.isOwner && view.actions.giveJetons && (setup || betting));
-  /** Tray Change Game: Betting/Setup when safe; Payout always visible for owner (may be disabled). */
+  const showSaveTable = Boolean(view.isOwner && view.actions.saveTable && (setup || betting));
+  /** Tray Change Game: Setup / between hands; during BETTING the trio is ADD / TOP UP / SAVE — Change Game stays on badge + owner menu. */
   const showChangeGame =
     view.isOwner &&
-    (setup || betting || betweenHands) &&
+    (setup || betweenHands) &&
     (ownerMenu.changeGame || payout);
   const changeGameEnabled = ownerMenu.changeGame;
   const changeGameReason =
@@ -169,6 +170,17 @@ export function PremiumBlackjackDealer({
           onClick={openChangeGame}
         >
           {changeGameEnabled ? "POKER" : "GAME"}
+        </button>
+      ) : null}
+      {showSaveTable && betting ? (
+        <button
+          type="button"
+          className="pm-badge is-action"
+          data-save-table-badge="true"
+          aria-label="Save table"
+          onClick={() => void onCommand("saveTable")}
+        >
+          SAVE
         </button>
       ) : null}
     </>
@@ -238,6 +250,11 @@ export function PremiumBlackjackDealer({
     );
   }
 
+  /*
+   * Compact dealer trio — CasinoConsole dealerSlots paints tertiary|secondary|primary
+   * as left|centre|right. BETTING target: ADD PLAYER | TOP UP | DEAL.
+   * SAVE TABLE via SAVE badge + owner menu (no 4th slot / no tray growth).
+   */
   const tertiary = showChangeGame
     ? {
         label: "CHANGE GAME",
@@ -245,7 +262,15 @@ export function PremiumBlackjackDealer({
         title: changeGameReason ?? undefined,
         onClick: openChangeGame,
       }
-    : null;
+    : showAddPlayer
+      ? { label: "ADD PLAYER", onClick: () => setInviteOpen(true) }
+      : showGiveJetons
+        ? { label: "TOP UP", onClick: () => setGiveOpen(true) }
+        : showSaveTable
+          ? { label: "SAVE TABLE", onClick: () => void onCommand("saveTable") }
+          : showExit
+            ? { label: "EXIT TABLE", onClick: () => setSheet("exit") }
+            : null;
 
   const dockBanner =
     changeGameReason && showChangeGame && !changeGameEnabled ? (
@@ -277,26 +302,24 @@ export function PremiumBlackjackDealer({
               : null
           }
           secondary={
-            showAddPlayer
+            // When Change Game occupies left (tertiary), keep ADD PLAYER in centre.
+            showChangeGame && showAddPlayer
               ? { label: "ADD PLAYER", onClick: () => setInviteOpen(true) }
-              : controls.insurance
-                ? {
-                    label: controls.insurance.label,
-                    disabled: !controls.insurance.enabled,
-                    onClick: () => void onCommand(controls.insurance!.command),
-                  }
-                : showGiveJetons
-                  ? { label: "GIVE JETONS", onClick: () => setGiveOpen(true) }
-                  : null
+              : showGiveJetons && showAddPlayer
+                ? { label: "TOP UP", onClick: () => setGiveOpen(true) }
+                : controls.insurance
+                  ? {
+                      label: controls.insurance.label,
+                      disabled: !controls.insurance.enabled,
+                      onClick: () => void onCommand(controls.insurance!.command),
+                    }
+                  : showGiveJetons
+                    ? { label: "TOP UP", onClick: () => setGiveOpen(true) }
+                    : showSaveTable && !showAddPlayer
+                      ? { label: "SAVE TABLE", onClick: () => void onCommand("saveTable") }
+                      : null
           }
-          tertiary={
-            tertiary ??
-            (showGiveJetons && showAddPlayer
-              ? { label: "GIVE JETONS", onClick: () => setGiveOpen(true) }
-              : showExit
-                ? { label: "EXIT TABLE", onClick: () => setSheet("exit") }
-                : null)
-          }
+          tertiary={tertiary}
         />
       }
     >
@@ -334,7 +357,7 @@ export function PremiumBlackjackDealer({
         onClose={() => setGiveOpen(false)}
         members={members}
         onCommand={onCommand}
-        title="GIVE JETONS"
+        title="TOP UP"
         notice={notice}
       />
       <PremiumCelebrationSettings
@@ -367,6 +390,19 @@ export function PremiumBlackjackDealer({
                   <p className="pm-sheet-hint" data-change-game-blocked="true">
                     {changeGameReason}
                   </p>
+                ) : null}
+                {showSaveTable ? (
+                  <button
+                    type="button"
+                    className="pm-console-btn is-ghost"
+                    data-save-table="true"
+                    onClick={() => {
+                      void onCommand("saveTable");
+                      setSheet("closed");
+                    }}
+                  >
+                    Save Table
+                  </button>
                 ) : null}
                 <button
                   type="button"

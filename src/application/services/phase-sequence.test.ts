@@ -120,11 +120,13 @@ describeDb("production Blackjack phase sequence", () => {
     await enterPayout({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect((await loadSnapshot(tableId, owner.id)).phase).toBe("PAYOUT");
     await settleAllPush(owner.id, tableId);
-    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("ROUND_COMPLETE");
+    // Final settlement auto-opens BETTING — no START NEXT ROUND click required.
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
 
     await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
-    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
     expect(await prisma.round.count({ where: { tableId } })).toBe(2);
 
     await bet25(player.id, tableId);
@@ -306,7 +308,7 @@ describeDb("production Blackjack phase sequence", () => {
 
     await enterPayout({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     await settleAllPush(owner.id, tableId);
-    expect((await loadSnapshot(tableId, player.id)).phase).toBe("ROUND_COMPLETE");
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
 
     await placeOrRetractBet({
       actorId: player.id,
@@ -316,21 +318,23 @@ describeDb("production Blackjack phase sequence", () => {
       mode: "SET",
       idempotencyKey: randomUUID(),
     });
-    const staged = await loadSnapshot(tableId, player.id);
-    expect(staged.phase).toBe("ROUND_COMPLETE");
-    expect(staged.player?.boxes[0]?.nextRoundBet?.label).toBe("25");
+    const nextHand = await loadSnapshot(tableId, player.id);
+    expect(nextHand.phase).toBe("BETTING");
+    expect(nextHand.player?.boxes[0]?.bet.label).toBe("25");
 
-    // Refresh / reconnect must not open the next hand from staged bets alone.
-    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("ROUND_COMPLETE");
-    expect((await loadSnapshot(tableId, player.id)).phase).toBe("ROUND_COMPLETE");
+    // Refresh / reconnect must not open a second BETTING round.
+    expect((await loadSnapshot(tableId, owner.id)).phase).toBe("BETTING");
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
 
     await expect(
       startNextRound({ actorId: player.id, tableId, idempotencyKey: randomUUID() }),
     ).rejects.toBeInstanceOf(ForbiddenError);
-    expect((await loadSnapshot(tableId, player.id)).phase).toBe("ROUND_COMPLETE");
+    expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
 
     await startNextRound({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     expect((await loadSnapshot(tableId, player.id)).phase).toBe("BETTING");
+    expect(await prisma.round.count({ where: { tableId } })).toBe(2);
   }, 30_000);
 });
 
