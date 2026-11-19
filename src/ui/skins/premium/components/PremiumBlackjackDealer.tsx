@@ -278,6 +278,8 @@ export function PremiumBlackjackDealer({
               ? {
                   label: controls.primary.label,
                   disabled: !controls.primary.enabled,
+                  betsReady:
+                    controls.primary.id === "dealCards" ? Boolean(view.allBetsConfirmed) : undefined,
                   onClick: () => void onCommand(controls.primary!.command),
                 }
               : null

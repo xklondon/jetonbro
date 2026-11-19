@@ -67,26 +67,22 @@ describeDb("deal countdown", () => {
       mode: "ADD",
       idempotencyKey: randomUUID(),
     });
-    await placeOrRetractBet({
-      actorId: player.id,
-      tableId,
-      boxId,
-      amount: "25",
-      mode: "RETRACT",
-      idempotencyKey: randomUUID(),
-    });
-    const afterRetract = await loadSnapshot(tableId, player.id);
-    expect(afterRetract.player?.available.label).toBe("100");
-    expect(afterRetract.player?.boxes[0]?.bet.label).toBe("0");
+    await expect(
+      placeOrRetractBet({
+        actorId: player.id,
+        tableId,
+        boxId,
+        amount: "25",
+        mode: "RETRACT",
+        idempotencyKey: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
+    const afterLock = await loadSnapshot(tableId, player.id);
+    expect(afterLock.player?.available.label).toBe("75");
+    expect(afterLock.player?.boxes[0]?.bet.label).toBe("25");
+    const dealerLock = await loadSnapshot(tableId, owner.id);
+    expect(dealerLock.bank?.allBetsConfirmed).toBe(true);
 
-    await placeOrRetractBet({
-      actorId: player.id,
-      tableId,
-      boxId,
-      amount: "25",
-      mode: "ADD",
-      idempotencyKey: randomUUID(),
-    });
     await dealCards({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
     const playing = await loadSnapshot(tableId, owner.id);
     expect(playing.phase).toBe("PLAYING");
@@ -132,5 +128,92 @@ describeDb("deal countdown", () => {
     const still = await loadSnapshot(tableId, owner.id);
     expect(still.phase).toBe("PLAYING");
     expect(still.bank?.bettingCloseDeadlineAt).toBeNull();
+  });
+
+  test("confirmed PLACE BET stays locked after snapshot reload (reconnect)", async () => {
+    const { owner, player, tableId, boxId } = await seatedTable();
+    await placeOrRetractBet({
+      actorId: player.id,
+      tableId,
+      boxId,
+      amount: "25",
+      mode: "SET",
+      idempotencyKey: randomUUID(),
+    });
+    const reloaded = await loadSnapshot(tableId, player.id);
+    expect(reloaded.player?.boxes[0]?.bet.label).toBe("25");
+    expect(reloaded.bank).toBeNull();
+    await expect(
+      placeOrRetractBet({
+        actorId: player.id,
+        tableId,
+        boxId,
+        amount: "10",
+        mode: "ADD",
+        idempotencyKey: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
+    await expect(
+      placeOrRetractBet({
+        actorId: player.id,
+        tableId,
+        boxId,
+        amount: "40",
+        mode: "SET",
+        idempotencyKey: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
+    const after = await loadSnapshot(tableId, player.id);
+    expect(after.player?.boxes[0]?.bet.label).toBe("25");
+    expect(after.player?.available.label).toBe("75");
+    const dealer = await loadSnapshot(tableId, owner.id);
+    expect(dealer.bank?.allBetsConfirmed).toBe(true);
+  });
+
+  test("orange DEAL CARDS advances with unbet seats and keeps confirmed stakes", async () => {
+    const owner = await user(`owner-${randomUUID()}@jetonbro.test`, "Owner");
+    const sam = await user(`sam-${randomUUID()}@jetonbro.test`, "Sam");
+    const alex = await user(`alex-${randomUUID()}@jetonbro.test`, "Alex");
+    const created = await createTable({
+      actorId: owner.id,
+      idempotencyKey: randomUUID(),
+      name: "Partial deal",
+      startingJetonsPerPlayer: "100",
+    });
+    const tableId = created.tableId;
+    const qr = await prisma.invitation.findFirstOrThrow({
+      where: { tableId, kind: "QR", revokedAt: null },
+    });
+    await joinWithToken({ userId: sam.id, token: qr.token, userEmail: sam.email });
+    await joinWithToken({ userId: alex.id, token: qr.token, userEmail: alex.email });
+    await startBetting({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    const samBox = (await loadSnapshot(tableId, sam.id)).player!.boxes[0]!;
+    const alexBox = (await loadSnapshot(tableId, alex.id)).player!.boxes[0]!;
+    await placeOrRetractBet({
+      actorId: sam.id,
+      tableId,
+      boxId: samBox.id,
+      amount: "25",
+      mode: "SET",
+      idempotencyKey: randomUUID(),
+    });
+    const beforeDeal = await loadSnapshot(tableId, owner.id);
+    expect(beforeDeal.bank?.hasValidBet).toBe(true);
+    expect(beforeDeal.bank?.allBetsConfirmed).toBe(false);
+    await dealCards({ actorId: owner.id, tableId, idempotencyKey: randomUUID() });
+    const playing = await loadSnapshot(tableId, owner.id);
+    expect(playing.phase).toBe("PLAYING");
+    const live = await prisma.bettingBox.findMany({
+      where: { round: { tableId }, removedAt: null },
+    });
+    expect(live).toHaveLength(1);
+    expect(live[0]!.id).toBe(samBox.id);
+    expect(live[0]!.lockedBetMillis).toBe(25000n);
+    const removed = await prisma.bettingBox.findUniqueOrThrow({ where: { id: alexBox.id } });
+    expect(removed.removedAt).not.toBeNull();
+    expect(removed.lockedBetMillis).toBe(0n);
+    const samAfter = await loadSnapshot(tableId, sam.id);
+    expect(samAfter.player?.boxes[0]?.bet.label).toBe("25");
+    expect(samAfter.player?.available.label).toBe("75");
   });
 });

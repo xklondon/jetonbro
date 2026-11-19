@@ -104,6 +104,11 @@ function bank(phase: BankTableView["phase"], extra: Partial<BankTableView> = {})
     bettingCloseDeadlineAt: null,
     nextRoundDeadlineAt: null,
     hasValidBet: phase !== "TABLE_SETUP",
+    allBetsConfirmed:
+      phase === "BETTING" &&
+      (extra.boxes ?? [box(1), box(2, { id: "b2", playerId: "p2", playerName: "Alex", bet: money("50") })]).every(
+        (item) => Number(item.bet?.label ?? "0") > 0,
+      ),
     isOwner: true,
     tableStatus: phase === "TABLE_SETUP" ? "SETUP" : "ACTIVE",
     paused: false,
@@ -272,6 +277,7 @@ export const PREMIUM_FIXTURE_IDS = [
   "19-bj-player-table-setup",
   "20-bj-player-round-complete",
   "21-bj-player-waiting-join",
+  "22-bj-dealer-betting-partial",
 ] as const;
 
 export type PremiumFixtureId = (typeof PREMIUM_FIXTURE_IDS)[number];
@@ -310,6 +316,19 @@ export function renderPremiumFixture(id: PremiumFixtureId) {
     case "03-bj-dealer-betting-two-boxes":
       return createElement(PremiumBlackjackDealer, {
         view: bank("BETTING"),
+        members,
+        onCommand: noop,
+      });
+    case "22-bj-dealer-betting-partial":
+      return createElement(PremiumBlackjackDealer, {
+        view: bank("BETTING", {
+          boxes: [
+            box(1),
+            box(2, { id: "b2", playerId: "p2", playerName: "Alex", bet: money("0", "0"), originalStake: money("0", "0") }),
+          ],
+          lockedOrdinary: money("25"),
+          allBetsConfirmed: false,
+        }),
         members,
         onCommand: noop,
       });

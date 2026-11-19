@@ -50,7 +50,7 @@ function playerView(overrides: Partial<PlayerTableView> = {}): PlayerTableView {
 }
 
 describe("PremiumBlackjackPlayer betting dock", () => {
-  it("keeps ADD BOX available after a stake is placed and exposes chip retract", () => {
+  it("keeps ADD BOX available after a stake is placed and locks further betting", () => {
     const html = renderToStaticMarkup(
       createElement(PremiumBlackjackPlayer, {
         view: playerView(),
@@ -61,11 +61,14 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     );
     expect(html).toContain("ADD BOX");
     expect(html).not.toContain(">RETRACT<");
-    expect(html).toContain('data-retract-chip="25"');
-    expect(html).toContain("PLACE BET");
+    expect(html).not.toContain('data-retract-chip="');
+    expect(html).not.toContain(">PLACE BET<");
+    expect(html).toContain("YOUR BET");
+    expect(html).toContain('data-bj-pending-bet="true"');
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-tray-available="true"');
+    expect(html).toContain('data-bj-inline-cards="true"');
     expect(html).not.toContain('aria-hidden="true" data-jeton-tray');
   });
 
@@ -121,7 +124,7 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(source).toContain('mode: "SET"');
     expect(source).toContain("orderBoxesForFelt");
     expect(source).not.toContain('mode: "ADD"');
-    expect(source).toContain("Enter or tap a wager before PLACE BET");
+    expect(source).toContain("Enter or tap your bet before PLACE BET");
   });
 
   it("JETON VIEW shows only own boxes with hero wager and keeps the tray", () => {

@@ -52,6 +52,13 @@ function ActionButton({
       aria-label={action.title && action.disabled ? `${action.label}. ${action.title}` : action.label}
       data-start-hand={action.label === "START HAND" || action.label === "START BETTING" ? "true" : undefined}
       data-bj-phase-action={phaseAction}
+      data-bj-bets-ready={
+        phaseAction === "deal-cards" && action.betsReady != null
+          ? action.betsReady
+            ? "true"
+            : "false"
+          : undefined
+      }
       data-add-player-dock={action.label === "ADD PLAYER" ? "true" : undefined}
       data-change-game={action.label === "CHANGE GAME" ? "true" : undefined}
       data-poker-confirm={action.label.toUpperCase().startsWith("CONFIRM") ? "true" : undefined}
@@ -136,6 +143,10 @@ export function CasinoConsole({
   composeOpen = false,
   composeKind = null,
   composeAmount = "",
+  composeLocked = false,
+  composeLabel = null,
+  pendingChips = null,
+  onRemovePendingChip,
   raiseToPreview = null,
   additionalPreview = null,
   committedPreview = null,
@@ -166,6 +177,13 @@ export function CasinoConsole({
   composeOpen?: boolean;
   composeKind?: "RAISE" | "BET" | null;
   composeAmount?: string;
+  /** Confirmed box stake — composer is read-only until the next betting round. */
+  composeLocked?: boolean;
+  /** Blackjack pending label (YOUR BET / NEXT ROUND). */
+  composeLabel?: string | null;
+  /** Pending chip faces before PLACE BET — each may expose × removal. */
+  pendingChips?: string[] | null;
+  onRemovePendingChip?: (index: number) => void;
   /** Target street wager total (raise-to / bet). */
   raiseToPreview?: string | null;
   /** Extra jetons leaving AVAILABLE this action (target − streetContribution). */
@@ -179,7 +197,7 @@ export function CasinoConsole({
   showTray?: boolean;
   reserveTray?: boolean;
   variant?: "default" | "blackjack" | "setup";
-  /** Compact YOUR CARDS / ADD CARDS strip above the jeton tray. */
+  /** Compact YOUR CARDS / ADD CARDS strip (BJ: inline beside ALL IN). */
   trayCards?: ReactNode;
   /** Dealer DEAL HAND — compact control in the status row (not a second tray row). */
   statusAction?: DockAction | null;
@@ -229,11 +247,11 @@ export function CasinoConsole({
                 {statusMessage}
               </div>
             ) : null}
-            {actionCount > 0 ? (
+            {actionCount > 0 || trayCards ? (
               <div
                 className={`pm-console-action-row${actionCount <= 1 ? " is-single" : ""}${
                   actionCount >= 3 ? " is-triple" : ""
-                }`}
+                }${trayCards ? " has-inline-cards" : ""}`}
                 data-console-actions="true"
               >
                 <>
@@ -253,22 +271,60 @@ export function CasinoConsole({
                       <ActionButton action={allIn} kind="ghost" allIn />
                     </div>
                   ) : null}
+                  {trayCards ? (
+                    <div className="pm-console-slot is-cards" data-bj-inline-cards="true">
+                      {trayCards}
+                    </div>
+                  ) : null}
                 </>
               </div>
             ) : null}
-            {variant === "blackjack" && onComposeAmount ? (
-              <label className="pm-bj-pending-wager" data-bj-pending-wager="true">
-                <span>{primary?.label === "NEXT ROUND" ? "NEXT ROUND" : "WAGER"}</span>
+            {variant === "blackjack" && (onComposeAmount || composeLocked) ? (
+              <div
+                className={`pm-bj-pending-bet${composeLocked ? " is-locked" : ""}`}
+                data-bj-pending-bet="true"
+                data-bj-pending-wager="true"
+              >
+                <span className="pm-bj-pending-bet-label">
+                  {composeLabel ?? (primary?.label === "NEXT ROUND" ? "NEXT ROUND" : "YOUR BET")}
+                </span>
+                {pendingChips && pendingChips.length > 0 ? (
+                  <div className="pm-bj-pending-bet-chips" data-bj-pending-chips="true">
+                    {pendingChips.map((face, index) => (
+                      <span key={`${face}-${index}`} className="pm-bj-pending-bet-chip">
+                        <CasinoJeton denomination={face} size="sm" label={face} />
+                        {onRemovePendingChip && !composeLocked ? (
+                          <button
+                            type="button"
+                            className="pm-bj-pending-bet-remove"
+                            aria-label={`Remove ${face} from your bet`}
+                            data-bj-pending-remove="true"
+                            onClick={() => onRemovePendingChip(index)}
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 <input
                   type="text"
                   inputMode="decimal"
-                  aria-label={primary?.label === "NEXT ROUND" ? "Next-round wager" : "Pending wager"}
+                  aria-label={
+                    composeLocked
+                      ? "Confirmed bet"
+                      : composeLabel === "NEXT ROUND"
+                        ? "Next-round bet"
+                        : "Your bet"
+                  }
                   value={composeAmount}
                   placeholder="0"
-                  disabled={!trayEnabled}
-                  onChange={(event) => onComposeAmount(event.target.value)}
+                  disabled={!trayEnabled || composeLocked}
+                  readOnly={composeLocked || !onComposeAmount}
+                  onChange={(event) => onComposeAmount?.(event.target.value)}
                 />
-              </label>
+              </div>
             ) : null}
             {walletAboveTray ? (
               <div className="pm-console-available" data-player-wallet="true">
@@ -280,7 +336,6 @@ export function CasinoConsole({
                 <span className="pm-console-available-rule" aria-hidden="true" />
               </div>
             ) : null}
-            {trayCards}
             {trayVisible ? (
               <div
                 className={`pm-console-tray${walletInTray ? " has-available" : ""}`}

@@ -89,6 +89,7 @@ function bank(overrides: Partial<BankTableView> = {}): BankTableView {
     bettingCloseDeadlineAt: null,
     nextRoundDeadlineAt: null,
     hasValidBet: true,
+    allBetsConfirmed: true,
     isOwner: true,
     tableStatus: "ACTIVE",
     paused: false,

@@ -159,14 +159,16 @@ test("Dealer Phase 0 / Betting / Playing / Payout labels follow the canonical ma
 
 test("Player controls are legal-only by phase", () => {
   const betting = blackjackPlayerControls(player("BETTING"), box());
-  expect(betting.placeBet).toBe(true);
-  expect(betting.retract).toBe(true);
+  expect(betting.placeBet).toBe(false);
+  expect(betting.retract).toBe(false);
   expect(betting.addBox).toBe(true);
   expect(betting.double).toBe(false);
   expect(betting.insurance).toBe(false);
-  expect(betting.trayEnabled).toBe(true);
+  expect(betting.trayEnabled).toBe(false);
   const empty = blackjackPlayerControls(player("BETTING"), box({ bet: money("0", "0") }));
+  expect(empty.placeBet).toBe(true);
   expect(empty.retract).toBe(false);
+  expect(empty.trayEnabled).toBe(true);
   const noBox = blackjackPlayerControls(player("BETTING", { actions: { ...player("BETTING").actions, addBox: false } }), box());
   expect(noBox.addBox).toBe(false);
   const playing = blackjackPlayerControls(player("PLAYING"), box());

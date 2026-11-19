@@ -234,11 +234,10 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
       insuranceOpen: view.insuranceWindowOpen,
       hasStake: stakePresent(selected) || view.boxes.some((box) => stakePresent(box)),
     }),
-    placeBet: betting && view.actions.bet,
-    nextRoundBet: nextRound && owned && !selected?.isSplit,
-    retract:
-      (betting && view.actions.retract && stakePresent(selected)) ||
-      (nextRound && view.actions.retract && nextRoundStake),
+    // Confirmed stakes lock the box until the next betting round (server enforces too).
+    placeBet: betting && view.actions.bet && !stakePresent(selected),
+    nextRoundBet: nextRound && owned && !selected?.isSplit && !nextRoundStake,
+    retract: false,
     addBox: betting && view.actions.addBox,
     double: playing && view.actions.double && owned && selected?.coverage?.double !== false,
     split: playing && view.actions.split && owned && selected?.coverage?.split !== false,
@@ -249,7 +248,9 @@ export function blackjackPlayerControls(view: PlayerTableView, selected: BoxView
       owned &&
       selected?.coverage?.insurance !== false,
     trayEnabled:
-      ((betting && view.actions.bet) || nextRound) && selected?.coverage?.bet !== false,
+      ((betting && view.actions.bet && !stakePresent(selected)) ||
+        (nextRound && owned && !selected?.isSplit && !nextRoundStake)) &&
+      selected?.coverage?.bet !== false,
     payoutIdle: assigningResults || (betweenRounds && !nextRound),
   };
 }

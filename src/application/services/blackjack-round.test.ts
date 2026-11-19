@@ -139,26 +139,30 @@ describeDb("Blackjack table flow", () => {
     });
     expect(alexMember.availableMillis).toBe(65000n);
 
-    await placeOrRetractBet({
-      actorId: alex.id,
-      tableId,
-      boxId: alexBox2.id,
-      amount: "10",
-      mode: "RETRACT",
-      idempotencyKey: key(),
-    });
+    await expect(
+      placeOrRetractBet({
+        actorId: alex.id,
+        tableId,
+        boxId: alexBox2.id,
+        amount: "10",
+        mode: "RETRACT",
+        idempotencyKey: key(),
+      }),
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
+    await expect(
+      placeOrRetractBet({
+        actorId: alex.id,
+        tableId,
+        boxId: alexBox1.id,
+        amount: "5",
+        mode: "ADD",
+        idempotencyKey: key(),
+      }),
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
     alexMember = await prisma.tableMember.findUniqueOrThrow({
       where: { tableId_userId: { tableId, userId: alex.id } },
     });
-    expect(alexMember.availableMillis).toBe(75000n);
-    await placeOrRetractBet({
-      actorId: alex.id,
-      tableId,
-      boxId: alexBox2.id,
-      amount: "10",
-      mode: "SET",
-      idempotencyKey: key(),
-    });
+    expect(alexMember.availableMillis).toBe(65000n);
 
     await dealCards({ actorId: owner.id, tableId, idempotencyKey: key() });
     await expect(

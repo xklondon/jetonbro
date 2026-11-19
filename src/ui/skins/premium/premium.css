@@ -37,13 +37,14 @@
 }
 
 /*
- * BJ PLAYER — fixed 248px dock (actions + wager + cards + jetons).
+ * BJ PLAYER — compact fixed dock (actions + inline cards + YOUR BET + jetons).
+ * Target ~155–175px content + safe area; same height every phase.
  * Dealer must NOT inherit this; it has no chip tray and was left with a hollow well.
  */
 [data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"],
 [data-skin="premium"] .pm-shell[data-table-board="PHASE_ZERO_PLAYER"] {
   --premium-header-height: 7dvh;
-  --premium-console-height: 248px;
+  --premium-console-height: 165px;
   --premium-safe-area: max(10px, env(safe-area-inset-bottom, 0px));
   --premium-table-height: calc(
     100dvh - var(--premium-header-height) - var(--premium-console-height) - env(safe-area-inset-top, 0px) -
@@ -53,7 +54,7 @@
 
 /*
  * BJ DEALER — compact fixed dock (actions + DEALER CARDS only).
- * Never shares the player 248px chip-tray reservation.
+ * Never shares the player chip-tray reservation.
  * Target ~70–80px including bottom safety; verified by tray anatomy shots.
  */
 [data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] {
@@ -108,11 +109,18 @@
   gap: 6px;
 }
 
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-console-slot.is-cards {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 [data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-tray-cards.is-inline {
   gap: 4px;
-  padding: 1px 2px 0;
-  border-top-color: rgba(212, 184, 130, 0.12);
+  padding: 0;
+  border-top: 0;
   min-height: 26px;
+  width: 100%;
+  justify-content: flex-end;
 }
 
 [data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-tray-cards.is-inline .pm-tray-cards-btn {
@@ -1957,9 +1965,9 @@
 [data-skin="premium"] .pm-console.is-bj .pm-console-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px 8px;
-  border-radius: 20px 20px 14px 14px;
+  gap: 4px;
+  padding: 6px 10px 4px;
+  border-radius: 16px 16px 12px 12px;
   border-color: rgba(212, 184, 130, 0.62);
   background:
     radial-gradient(ellipse 95% 40% at 50% -8%, rgba(18, 72, 48, 0.55), transparent 55%),
@@ -1973,7 +1981,14 @@
   justify-content: flex-start;
 }
 
-/* Pin AVAILABLE + jetons to the bottom of the fixed 248px dock across all phases. */
+/* Player compact tray — slightly denser than dealer so 165px fits all phases. */
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"] .pm-console.is-bj .pm-console-body,
+[data-skin="premium"] .pm-shell[data-table-board="PHASE_ZERO_PLAYER"] .pm-console.is-bj .pm-console-body {
+  gap: 3px;
+  padding: 5px 8px 3px;
+}
+
+/* Pin AVAILABLE + jetons to the bottom of the fixed compact dock across all phases. */
 [data-skin="premium"] .pm-console.is-bj.has-visible-tray .pm-console-tray {
   margin-top: auto;
   flex: 0 0 auto;
@@ -2328,10 +2343,16 @@
   border-color: rgba(24, 56, 100, 0.55);
 }
 
-/* DEAL CARDS / PLAYING — gold */
-[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"]:not(:disabled) {
-  background: linear-gradient(180deg, #ffe7a8 0%, #e8c46a 45%, #c49a3c 100%);
-  border-color: rgba(70, 48, 12, 0.55);
+/* DEAL CARDS — green when all confirmed, orange when any seat still open (both actionable). */
+[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"][data-bj-bets-ready="true"]:not(:disabled) {
+  background: linear-gradient(180deg, #8fd9a4 0%, #3faf6a 48%, #1e7a42 100%);
+  border-color: rgba(20, 70, 36, 0.55);
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"][data-bj-bets-ready="false"]:not(:disabled),
+[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"]:not([data-bj-bets-ready]):not(:disabled) {
+  background: linear-gradient(180deg, #ffc078 0%, #e0893a 48%, #b85c18 100%);
+  border-color: rgba(90, 48, 12, 0.55);
 }
 
 /* ENTER PAYOUT / SETTLE — purple */
@@ -3088,27 +3109,116 @@
   opacity: 0.35;
 }
 
+[data-skin="premium"] .pm-bj-pending-bet,
 [data-skin="premium"] .pm-bj-pending-wager {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   padding: 0 2px;
-  font: 700 11px/1 var(--pm-sans);
+  min-height: 28px;
+  font: 700 10px/1 var(--pm-sans);
   letter-spacing: 0.06em;
   color: rgba(243, 220, 154, 0.85);
 }
 
-[data-skin="premium"] .pm-bj-pending-wager input {
-  flex: 1;
+[data-skin="premium"] .pm-bj-pending-bet-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow-x: auto;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet-chip .pm-jeton {
+  width: 22px;
+  height: 22px;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 184, 130, 0.55);
+  background: rgba(20, 14, 8, 0.92);
+  color: #f6e7c2;
+  font: 700 11px/1 var(--pm-sans);
+  padding: 0;
+  cursor: pointer;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet input,
+[data-skin="premium"] .pm-bj-pending-wager input {
+  flex: 0 1 72px;
+  min-width: 56px;
+  max-width: 88px;
   border: 1px solid rgba(212, 184, 130, 0.4);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.28);
   color: #f6e7c2;
-  font: 700 16px/1.1 var(--pm-sans);
+  font: 700 14px/1.1 var(--pm-sans);
   text-align: right;
-  padding: 8px 10px;
+  padding: 5px 8px;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet.is-locked input {
+  opacity: 0.85;
+  border-color: rgba(143, 217, 164, 0.45);
+}
+
+/* Compact Card Assist — inline beside ALL IN in the action row. */
+[data-skin="premium"] .pm-console.is-bj .pm-console-action-row.has-inline-cards {
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-tray-cards.is-inline {
+  border-top: 0;
+  padding: 0;
+  gap: 4px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-tray-cards-label:empty {
+  display: none;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-tray-cards-btn {
+  min-height: 26px;
+  min-width: 0;
+  padding: 0 7px;
+  font-size: 8px;
+}
+
+[data-skin="premium"] .pm-console.is-bj .pm-console-slot.is-cards .pm-playing-card.is-mini {
+  min-width: 1rem;
+  min-height: 1.3rem;
+  font-size: 8px;
+  padding: 0 2px;
 }
 
 [data-skin="premium"] .pm-link {
@@ -3998,17 +4108,17 @@
 [data-skin="premium"] .pm-bj-waiting-banner {
   display: grid;
   place-items: center;
-  min-height: 52px;
-  margin: 2px 0 4px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  min-height: 40px;
+  margin: 0 0 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px solid rgba(212, 184, 130, 0.38);
   background:
     radial-gradient(ellipse 90% 80% at 50% 0%, rgba(18, 72, 48, 0.45), transparent 70%),
     rgba(8, 12, 10, 0.55);
   color: var(--pm-gold-hi);
-  font: 700 11px/1.25 var(--pm-sans);
-  letter-spacing: 0.1em;
+  font: 700 10px/1.2 var(--pm-sans);
+  letter-spacing: 0.08em;
   text-align: center;
   text-transform: uppercase;
 }

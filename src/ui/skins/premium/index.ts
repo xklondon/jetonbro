@@ -60,6 +60,7 @@ const SetupTable: JetonBroSkin["SetupTable"] = ({ view, onCommand, notice }) =>
       bettingCloseDeadlineAt: null,
       nextRoundDeadlineAt: null,
       hasValidBet: false,
+      allBetsConfirmed: false,
       isOwner: view.isOwner,
       tableStatus: view.tableStatus,
       paused: view.paused,

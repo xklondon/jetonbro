@@ -64,20 +64,30 @@ export function PremiumBlackjackPlayer({
   const [boardView, setBoardView] = useState<BlackjackPlayerBoardView>(
     () => initialBoardView ?? "table",
   );
-  /** Pending (uncommitted) wager text — chips accumulate locally; PLACE BET commits SET once. */
+  /** Pending (uncommitted) bet text — chips accumulate locally; PLACE BET commits SET once. */
   const [pendingText, setPendingText] = useState("");
+  const [pendingChips, setPendingChips] = useState<string[]>([]);
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [placeBusy, setPlaceBusy] = useState(false);
-  const [retractBusy, setRetractBusy] = useState<string | null>(null);
   const setup = view.phase === "TABLE_SETUP";
   const payout = view.phase === "PAYOUT";
   const roundComplete = view.phase === "ROUND_COMPLETE";
   const playing = view.phase === "PLAYING";
   const betting = view.phase === "BETTING";
-  const nextRoundBetting = Boolean(controls.nextRoundBet);
+  /** Next-round compose window (independent of whether the selected box is already locked). */
+  const nextRoundBetting =
+    view.phase === "ROUND_COMPLETE" && Boolean(view.actions.nextRoundBet);
+  const boxLocked =
+    Boolean(selected) &&
+    (nextRoundBetting
+      ? Number(selected?.nextRoundBet?.label ?? "0") > 0
+      : betting && Number(selected?.bet.label ?? "0") > 0);
   /** Keep tray well during payout so dock height matches betting while dealer awards. */
   const showTray = true;
-  const trayInteractive = (betting && Boolean(controls.placeBet)) || nextRoundBetting;
+  const trayInteractive =
+    ((betting && Boolean(controls.placeBet)) ||
+      (nextRoundBetting && Boolean(controls.nextRoundBet))) &&
+    !boxLocked;
   const [fxActive, setFxActive] = useState(false);
   const [fxTone, setFxTone] = useState<"win" | "loss">("win");
   const [fxSeed, setFxSeed] = useState("");
@@ -113,6 +123,7 @@ export function PremiumBlackjackPlayer({
   useEffect(() => {
     // Switching boxes clears the compose draft so chips do not bleed across boxes.
     setPendingText("");
+    setPendingChips([]);
     setLocalNotice(null);
     setAllInArmed(false);
   }, [selected?.id]);
@@ -125,6 +136,18 @@ export function PremiumBlackjackPlayer({
   useEffect(() => {
     setAllInArmed(false);
   }, [view.phase, view.available.label]);
+
+  useEffect(() => {
+    if (boxLocked) {
+      setPendingText(
+        nextRoundBetting
+          ? selected?.nextRoundBet?.label ?? "0"
+          : selected?.bet.label ?? "0",
+      );
+      setPendingChips([]);
+      setAllInArmed(false);
+    }
+  }, [boxLocked, nextRoundBetting, selected?.bet.label, selected?.nextRoundBet?.label]);
 
   useEffect(() => {
     if (!payout) {
@@ -157,78 +180,47 @@ export function PremiumBlackjackPlayer({
     setFxActive(true);
   }, [payout, view.boxes]);
 
-  async function retractChip(boxId: string, amount: string) {
-    if (retractBusy || !view.actions.retract) return;
-    if (view.phase !== "BETTING" && !nextRoundBetting) return;
-    setRetractBusy(boxId);
-    setLocalNotice(null);
-    try {
-      await onCommand("placeBet", { boxId, amount, mode: "RETRACT" });
-    } finally {
-      setRetractBusy(null);
-    }
-  }
-
   function addChip(value: string) {
-    if (!trayInteractive || !selected) return;
+    if (!trayInteractive || !selected || boxLocked) return;
     setLocalNotice(null);
     setAllInArmed(false);
     const chip = parseWhole(value);
     if (chip == null) return;
+    setPendingChips((prev) => [...prev, value]);
     setPendingText((prev) => {
       const current = parseWhole(prev) ?? 0;
-      // First chip tap sets the wager; subsequent taps add to it.
+      // First chip tap sets the bet; subsequent taps add to it.
       return String(current + chip);
     });
   }
 
+  function removePendingChip(index: number) {
+    if (!trayInteractive || boxLocked) return;
+    setLocalNotice(null);
+    setAllInArmed(false);
+    setPendingChips((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      const sum = next.reduce((total, face) => total + (parseWhole(face) ?? 0), 0);
+      setPendingText(sum > 0 ? String(sum) : "");
+      return next;
+    });
+  }
+
   async function confirmPlaceBet() {
-    if ((!controls.placeBet && !controls.nextRoundBet) || !selected || placeBusy) return;
+    if ((!controls.placeBet && !controls.nextRoundBet) || !selected || placeBusy || boxLocked) return;
     setLocalNotice(null);
     const amount = parseWhole(pendingText);
-    const alreadyLocked = nextRoundBetting
-      ? Number(selected.nextRoundBet?.label ?? "0")
-      : Number(selected.bet.label);
-    if (amount == null || amount < 0) {
+    if (amount == null || amount <= 0) {
       setLocalNotice(
         nextRoundBetting
-          ? "Enter or tap a NEXT ROUND wager before confirming."
-          : "Enter or tap a wager before PLACE BET.",
+          ? "Enter or tap a NEXT ROUND bet before confirming."
+          : "Enter or tap your bet before PLACE BET.",
       );
       return;
     }
-    if (amount === 0) {
-      if (!nextRoundBetting || alreadyLocked <= 0) {
-        setLocalNotice(
-          nextRoundBetting
-            ? "Enter or tap a NEXT ROUND wager before confirming."
-            : "Enter or tap a wager before PLACE BET.",
-        );
-        return;
-      }
-      setPlaceBusy(true);
-      try {
-        const ok = await onCommand("placeBet", {
-          boxId: selected.id,
-          amount: String(alreadyLocked),
-          mode: "RETRACT",
-        });
-        if (ok === false) {
-          setLocalNotice("Could not clear the NEXT ROUND bet.");
-          return;
-        }
-        setPendingText("");
-        setAllInArmed(false);
-      } finally {
-        setPlaceBusy(false);
-      }
-      return;
-    }
     const available = Number(view.available.label);
-    // SET replaces the box stake; only the delta leaves AVAILABLE.
-    const delta = amount - alreadyLocked;
-    if (delta > available) {
-      setLocalNotice(`Need ${delta} jetons; AVAILABLE is ${view.available.label}.`);
+    if (amount > available) {
+      setLocalNotice(`Need ${amount} jetons; AVAILABLE is ${view.available.label}.`);
       return;
     }
     setPlaceBusy(true);
@@ -241,12 +233,12 @@ export function PremiumBlackjackPlayer({
       if (ok === false) {
         setLocalNotice(
           nextRoundBetting
-            ? "NEXT ROUND bet failed — check your wager and try again."
-            : "PLACE BET failed — check your wager and try again.",
+            ? "NEXT ROUND bet failed — check your bet and try again."
+            : "PLACE BET failed — check your bet and try again.",
         );
         return;
       }
-      setPendingText("");
+      setPendingChips([]);
       setAllInArmed(false);
     } finally {
       setPlaceBusy(false);
@@ -254,9 +246,10 @@ export function PremiumBlackjackPlayer({
   }
 
   async function confirmAllIn() {
-    if (!showAllIn || !selected || placeBusy) return;
+    if (!showAllIn || !selected || placeBusy || boxLocked) return;
     if (!allInArmed) {
       setPendingText(String(allInAmount));
+      setPendingChips([]);
       setAllInArmed(true);
       setLocalNotice(
         nextRoundBetting
@@ -278,7 +271,7 @@ export function PremiumBlackjackPlayer({
         setLocalNotice("ALL IN failed — check available jetons and try again.");
         return;
       }
-      setPendingText("");
+      setPendingChips([]);
       setAllInArmed(false);
     } finally {
       setPlaceBusy(false);
@@ -293,7 +286,7 @@ export function PremiumBlackjackPlayer({
   if (controls.placeBet || controls.nextRoundBet) {
     primary = {
       label: nextRoundBetting ? "NEXT ROUND" : "PLACE BET",
-      disabled: placeBusy || !selected,
+      disabled: placeBusy || !selected || boxLocked,
       onClick: () => void confirmPlaceBet(),
     };
     secondary = controls.addBox
@@ -305,10 +298,14 @@ export function PremiumBlackjackPlayer({
         title: allInArmed
           ? `Commit ${allInAmount} jetons (all available)`
           : `All in ${allInAmount} — tap again to confirm`,
-        disabled: placeBusy,
+        disabled: placeBusy || boxLocked,
         onClick: () => void confirmAllIn(),
       };
     }
+  } else if ((betting || roundComplete) && boxLocked) {
+    secondary = controls.addBox
+      ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
+      : null;
   } else if (playing) {
     // Canonical command names — API route cases are doubleBox / splitBox.
     primary = controls.double
@@ -342,7 +339,11 @@ export function PremiumBlackjackPlayer({
 
   const dockNotice = localNotice || notice;
   const pendingByBoxId =
-    !nextRoundBetting && selected && pendingText && parseWhole(pendingText) != null
+    !boxLocked &&
+    !nextRoundBetting &&
+    selected &&
+    pendingText &&
+    parseWhole(pendingText) != null
       ? { [selected.id]: pendingText }
       : undefined;
   const nextRoundByBoxId = (() => {
@@ -351,6 +352,7 @@ export function PremiumBlackjackPlayer({
       if (
         nextRoundBetting &&
         box.id === selected?.id &&
+        !boxLocked &&
         pendingText &&
         parseWhole(pendingText) != null
       ) {
@@ -401,15 +403,28 @@ export function PremiumBlackjackPlayer({
           showTray={showTray}
           reserveTray
           trayEnabled={Boolean(trayInteractive && controls.trayEnabled)}
-          composeAmount={pendingText}
+          composeAmount={
+            boxLocked
+              ? nextRoundBetting
+                ? selected?.nextRoundBet?.label ?? "0"
+                : selected?.bet.label ?? "0"
+              : pendingText
+          }
+          composeLocked={boxLocked}
+          composeLabel={nextRoundBetting ? "NEXT ROUND" : "YOUR BET"}
+          pendingChips={boxLocked ? null : pendingChips}
+          onRemovePendingChip={trayInteractive ? removePendingChip : undefined}
           onComposeAmount={
             trayInteractive
               ? (value) => {
                   setLocalNotice(null);
                   setAllInArmed(false);
+                  setPendingChips([]);
                   setPendingText(value);
                 }
-              : undefined
+              : boxLocked
+                ? () => undefined
+                : undefined
           }
           onChip={trayInteractive ? addChip : undefined}
           statusMessage={setup ? "WAITING FOR DEALER TO START THE GAME" : null}
@@ -418,7 +433,8 @@ export function PremiumBlackjackPlayer({
               <PremiumTrayCards
                 cards={ownRanks}
                 enabled={cardsEnabled}
-                label={selected?.isSplit ? `BOX ${selected.boxNumber} CARDS` : "YOUR CARDS"}
+                label=""
+                layout="inline"
                 onAdd={() => setCardSheetOpen(true)}
                 onRemoveLast={
                   cardsEnabled && ownRanks.length && selected
@@ -485,6 +501,7 @@ export function PremiumBlackjackPlayer({
                 box.coverage?.insurance !== false &&
                 (!box.insurance || box.insurance.label === "0");
               const pendingForBox =
+                !boxLocked &&
                 !nextRoundBetting &&
                 box.id === selected?.id &&
                 pendingText &&
@@ -494,6 +511,7 @@ export function PremiumBlackjackPlayer({
               const nextRoundForBox =
                 nextRoundBetting &&
                 box.id === selected?.id &&
+                !boxLocked &&
                 pendingText &&
                 parseWhole(pendingText) != null
                   ? pendingText
@@ -508,12 +526,6 @@ export function PremiumBlackjackPlayer({
                   pendingLabel={pendingForBox}
                   nextRoundLabel={nextRoundForBox}
                   onSelect={() => onSelectBox(box.id)}
-                  onRetractChip={
-                    (view.phase === "BETTING" || nextRoundBetting) && view.actions.retract
-                      ? (amount) => void retractChip(box.id, amount)
-                      : undefined
-                  }
-                  retractBusy={retractBusy === box.id}
                   onInsurance={
                     playing && view.insuranceWindowOpen
                       ? () =>

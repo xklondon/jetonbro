@@ -189,7 +189,7 @@ describeDb("create table home journey", () => {
         mode: "ADD",
         idempotencyKey: randomUUID(),
       }),
-    ).rejects.toMatchObject({ code: "INSUFFICIENT_FUNDS" });
+    ).rejects.toMatchObject({ code: "BOX_BET_LOCKED" });
 
     await expect(
       distributeJetons({

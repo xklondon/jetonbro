@@ -206,6 +206,8 @@ export type BankTableView = {
   bettingCloseDeadlineAt: string | null;
   nextRoundDeadlineAt: string | null;
   hasValidBet: boolean;
+  /** BETTING: every live box has a confirmed locked stake (> 0). */
+  allBetsConfirmed?: boolean;
   isOwner: boolean;
   tableStatus: "SETUP" | "ACTIVE" | "ARCHIVED";
   paused: boolean;

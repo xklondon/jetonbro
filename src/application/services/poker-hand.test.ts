@@ -3,7 +3,15 @@ import { describe, expect, test } from "vitest";
 import { prisma } from "@/application/db";
 import { createTable, distributeJetons } from "@/application/services/tables";
 import { joinWithToken } from "@/application/services/invitations";
-import { placeOrRetractBet, setBankFunding, startBetting, ensureBettingClosedIfDue } from "@/application/services/blackjack-round";
+import {
+  dealCards,
+  enterPayout,
+  ensureBettingClosedIfDue,
+  placeOrRetractBet,
+  setBankFunding,
+  settleBox,
+  startBetting,
+} from "@/application/services/blackjack-round";
 import { switchGame } from "@/application/services/switch-game";
 import {
   advancePokerStreet,
@@ -112,12 +120,13 @@ describeDb("Texas Hold’em and game switching", () => {
     await expect(
       setBankFunding({ actorId: owner.id, tableId, bankFundingMode: "OPEN", idempotencyKey: key() }),
     ).rejects.toMatchObject({ code: "FUNDING_LOCKED" });
-    await placeOrRetractBet({
-      actorId: sam.id,
+    await dealCards({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await enterPayout({ actorId: owner.id, tableId, idempotencyKey: key() });
+    await settleBox({
+      actorId: owner.id,
       tableId,
       boxId: box.id,
-      amount: "25",
-      mode: "RETRACT",
+      outcome: "PUSH",
       idempotencyKey: key(),
     });
     const before = await tableValue(tableId);

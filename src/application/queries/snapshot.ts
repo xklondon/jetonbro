@@ -499,9 +499,10 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
   const insuranceTotal =
     table.currentRound?.insuranceBets.reduce((sum, bet) => sum + bet.amountMillis, 0n) ?? 0n;
 
-  const hasValidBet = (table.currentRound?.boxes ?? []).some(
-    (box) => !box.removedAt && box.lockedBetMillis > 0n,
-  );
+  const liveRoundBoxes = (table.currentRound?.boxes ?? []).filter((box) => !box.removedAt);
+  const hasValidBet = liveRoundBoxes.some((box) => box.lockedBetMillis > 0n);
+  const allBetsConfirmed =
+    liveRoundBoxes.length > 0 && liveRoundBoxes.every((box) => box.lockedBetMillis > 0n);
   const deadline = table.currentRound?.bettingCloseDeadlineAt?.toISOString() ?? null;
   const countdownActive = Boolean(
     table.currentPhase === "BETTING" &&
@@ -562,6 +563,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
             bettingCloseDeadlineAt: null,
             nextRoundDeadlineAt: null,
             hasValidBet: false,
+            allBetsConfirmed: false,
             isOwner,
             tableStatus: table.status,
             paused: table.pausedAt !== null,
@@ -660,6 +662,7 @@ export async function loadSnapshot(tableId: string, viewerId: string): Promise<C
         bettingCloseDeadlineAt: deadline,
         nextRoundDeadlineAt: nextRoundDeadline,
         hasValidBet,
+        allBetsConfirmed: table.currentPhase === "BETTING" ? allBetsConfirmed : false,
         isOwner,
         tableStatus: table.status,
         paused: table.pausedAt !== null,

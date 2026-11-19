@@ -664,6 +664,13 @@ export async function placeOrRetractBet(input: {
           },
         });
         const currentStaged = existing && !existing.appliedToRoundId ? existing.amountMillis : 0n;
+        // Confirmed next-round bets are final until the next betting round opens.
+        if (currentStaged > 0n) {
+          throw new DomainError(
+            "BOX_BET_LOCKED",
+            "This box already has a confirmed next-round bet.",
+          );
+        }
         let nextStaged = currentStaged;
         if (input.mode === "SET") nextStaged = amount;
         if (input.mode === "ADD") nextStaged = currentStaged + amount;
@@ -718,6 +725,13 @@ export async function placeOrRetractBet(input: {
         return;
       }
 
+      // Confirmed BETTING stakes are final for this hand (PLACE BET / ALL IN lock).
+      if (box.lockedBetMillis > 0n) {
+        throw new DomainError(
+          "BOX_BET_LOCKED",
+          "This box already has a confirmed bet for this round.",
+        );
+      }
       let nextLocked = box.lockedBetMillis;
       if (input.mode === "SET") nextLocked = amount;
       if (input.mode === "ADD") nextLocked = box.lockedBetMillis + amount;

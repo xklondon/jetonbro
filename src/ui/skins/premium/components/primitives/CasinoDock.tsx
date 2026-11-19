@@ -8,6 +8,8 @@ export type DockAction = {
   /** Native tooltip / disabled explanation (e.g. Change Game while payout unsettled). */
   title?: string;
   onClick?: () => void;
+  /** Blackjack DEAL CARDS readiness — green when all seats confirmed, orange otherwise. */
+  betsReady?: boolean;
 };
 
 export function CasinoDock({

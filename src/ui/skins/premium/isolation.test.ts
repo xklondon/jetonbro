@@ -85,10 +85,10 @@ describe("premium skin isolation", () => {
     const dealerBlock = css.match(
       /\.pm-shell\[data-table-board="BLACKJACK_DEALER"\][\s\S]*?--premium-console-height:\s*([^;]+);/,
     );
-    expect(playerBlock?.[1]?.trim()).toBe("248px");
+    expect(playerBlock?.[1]?.trim()).toBe("165px");
     expect(dealerBlock?.[1]?.trim()).toBe("68px");
     expect(css).not.toMatch(
-      /BLACKJACK_PLAYER[\s\S]{0,120}BLACKJACK_DEALER[\s\S]{0,80}--premium-console-height:\s*248px/,
+      /BLACKJACK_PLAYER[\s\S]{0,120}BLACKJACK_DEALER[\s\S]{0,80}--premium-console-height:\s*165px/,
     );
   });
 
