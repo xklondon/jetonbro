@@ -1,3 +1,8 @@
+# Blackjack regression restore + dealer-only phase freeze
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `eba4772` — restore 3:4 felt composition; fixed player action slots + non-overlapping Card Assist; player PLACE BET label (not NEXT ROUND); trays 175/78; dealer readiness colours preserved. No phase-machine or Poker changes. Dealer-only phase tests added.
+- Gate: focused Vitest 35/35 + guardrails + production build. Railway JetBro II Web `c2f0c5ad-d257-4aac-a3dd-19f00104c8ed` SUCCESS. `/api/health` `{"ok":true,"database":"connected"}`. **Freeze: no further Blackjack UI/phase changes unless a specific regression is demonstrated.** Not merged. Not tagged.
+
 # Blackjack compact player tray + bet lock + dealer readiness
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `1603248` — player `--premium-console-height: 165px` (≈175px with safe); dealer remains 68px (≈78px); server `BOX_BET_LOCKED` after confirmed bet; `allBetsConfirmed` drives DEAL CARDS green/orange; unbet boxes removed on deal without charging.

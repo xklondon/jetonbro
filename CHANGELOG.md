@@ -2,7 +2,14 @@
 
 ## Unreleased
 
+### Blackjack regression restore + dealer-only phase freeze (JetBro II Web)
+
+- Commit `eba4772` on `fix/blackjack-stable-anatomy-v1` — 3:4 felt frame; fixed 3 player action slots + YOUR BET / Card Assist row (no overlap); player **PLACE BET** (never NEXT ROUND); trays stay **175px / 78px**; dealer DEAL CARDS green/orange readiness unchanged. Server phase machine untouched; dealer-only transitions enforced in tests.
+- Target: Railway production / **JetBro II Web** (`c2f0c5ad-d257-4aac-a3dd-19f00104c8ed`, SUCCESS). https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Vitest 35/35; guardrails; production build. `/api/health` `{"ok":true,"database":"connected"}`. **Blackjack UI + phase behaviour frozen** after this deploy. Not merged or tagged.
+
 ### Blackjack compact player tray + bet lock + dealer readiness (JetBro II Web)
+
 
 - Commit `1603248` on `fix/blackjack-stable-anatomy-v1` — player dock **165px + 10px safe = 175px** (fixed every phase); YOUR BET composer with pending chip ×; PLACE BET / ALL IN lock via `BOX_BET_LOCKED`; DEAL CARDS green/orange from `allBetsConfirmed`; Card Assist inline beside ALL IN. Dealer dock unchanged at **78px**.
 - Target: Railway production / **JetBro II Web** (`68654b75-5211-44f8-b628-f27105a138a5`, SUCCESS). https://jetbro-ii-web-production.up.railway.app
