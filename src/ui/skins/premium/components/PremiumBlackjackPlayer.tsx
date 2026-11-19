@@ -273,12 +273,10 @@ export function PremiumBlackjackPlayer({
 
   // Player never owns phase progression (START HAND / DEAL / NEXT ROUND).
   // Betting + next-round staging both use PLACE BET in the permanent centre slot.
-  // ADD BOX is BETTING-only; left slot stays reserved via playerSlots grid.
   if (betting || nextRoundBetting) {
-    secondary =
-      betting && controls.addBox
-        ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
-        : null;
+    secondary = controls.addBox
+      ? { label: "ADD BOX", onClick: () => void onCommand("addBox") }
+      : null;
     if (controls.placeBet || controls.nextRoundBet) {
       primary = {
         label: "PLACE BET",
@@ -403,6 +401,8 @@ export function PremiumBlackjackPlayer({
           }
           composeLocked={boxLocked || playing}
           composeLabel="YOUR BET"
+          pendingChips={boxLocked || playing ? null : pendingChips}
+          onRemovePendingChip={trayInteractive ? removePendingChip : undefined}
           onComposeAmount={
             trayInteractive
               ? (value) => {
@@ -491,27 +491,28 @@ export function PremiumBlackjackPlayer({
                 (!box.insurance || box.insurance.label === "0");
               const pendingForBox =
                 !boxLocked &&
+                !nextRoundBetting &&
                 box.id === selected?.id &&
                 pendingText &&
                 parseWhole(pendingText) != null
                   ? pendingText
                   : null;
-              const pendingChipsForBox =
-                pendingForBox && pendingChips.length > 0 ? pendingChips : null;
               const nextRoundForBox =
-                box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
-                  ? box.nextRoundBet.label
-                  : null;
+                nextRoundBetting &&
+                box.id === selected?.id &&
+                !boxLocked &&
+                pendingText &&
+                parseWhole(pendingText) != null
+                  ? pendingText
+                  : box.nextRoundBet?.label && box.nextRoundBet.label !== "0"
+                    ? box.nextRoundBet.label
+                    : null;
               return (
                 <BlackjackBox
                   key={box.id}
                   box={box}
                   selected={box.id === selected?.id}
                   pendingLabel={pendingForBox}
-                  pendingChips={pendingChipsForBox}
-                  onRemovePendingChip={
-                    pendingChipsForBox && trayInteractive ? removePendingChip : undefined
-                  }
                   nextRoundLabel={nextRoundForBox}
                   onSelect={() => onSelectBox(box.id)}
                   onInsurance={

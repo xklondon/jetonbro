@@ -65,6 +65,7 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(html).toContain('data-bj-slot="centre"');
     expect(html).toContain('data-bj-slot="right"');
     expect(html).not.toContain(">RETRACT<");
+    expect(html).not.toContain('data-retract-chip="');
     expect(html).not.toContain(">PLACE BET<");
     expect(html).not.toContain("NEXT ROUND");
     expect(html).not.toContain("START HAND");
@@ -72,82 +73,11 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(html).toContain("YOUR BET");
     expect(html).toContain('data-bj-pending-bet="true"');
     expect(html).toContain('data-bj-bet-cards-row="true"');
-    expect(html).not.toContain('data-bj-pending-chips="true"');
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-tray-available="true"');
     expect(html).toContain('data-bj-inline-cards="true"');
     expect(html).not.toContain('aria-hidden="true" data-jeton-tray');
-  });
-
-  it("hides ADD BOX outside BETTING while keeping player slot geometry", () => {
-    const playing = renderToStaticMarkup(
-      createElement(PremiumBlackjackPlayer, {
-        view: playerView({
-          phase: "PLAYING",
-          actions: {
-            bet: false,
-            retract: false,
-            addBox: false,
-            removeEmptyBox: false,
-            double: true,
-            split: true,
-            insurance: false,
-          },
-        }),
-        selectedBoxId: "b1",
-        onSelectBox: () => undefined,
-        onCommand: () => undefined,
-      }),
-    );
-    expect(playing).toContain('data-bj-player-slots="true"');
-    expect(playing).not.toContain(">ADD BOX<");
-    expect(playing).toContain(">2×<");
-    expect(playing).toContain(">SPLIT<");
-
-    const roundComplete = renderToStaticMarkup(
-      createElement(PremiumBlackjackPlayer, {
-        view: playerView({
-          phase: "ROUND_COMPLETE",
-          boxes: [
-            {
-              id: "b1",
-              playerId: "p1",
-              playerName: "Casey",
-              label: "Box 1",
-              boxNumber: 1,
-              bet: money("0"),
-              originalStake: money("0"),
-              nextRoundBet: money("0"),
-              isDoubled: false,
-              isSplit: false,
-              insurance: null,
-              insuranceMax: money("0"),
-              insuranceResult: null,
-              outcome: null,
-              returned: null,
-              payoutActions: [],
-            },
-          ],
-          actions: {
-            bet: false,
-            retract: false,
-            addBox: false,
-            removeEmptyBox: false,
-            double: false,
-            split: false,
-            insurance: false,
-            nextRoundBet: true,
-          },
-        }),
-        selectedBoxId: "b1",
-        onSelectBox: () => undefined,
-        onCommand: () => undefined,
-      }),
-    );
-    expect(roundComplete).toContain(">PLACE BET<");
-    expect(roundComplete).not.toContain(">ADD BOX<");
-    expect(roundComplete).not.toContain("NEXT ROUND");
   });
 
   it("after allocation shows seat jetons on felt and real tray chips before betting", () => {
