@@ -294,22 +294,10 @@
   overflow: hidden;
 }
 
-/*
- * Felt composition frame — artwork is 864×1152 (3:4).
- * When the stage grows (compact 165px tray), keep width-scaled 3:4 proportions
- * and pin the frame to the tray so cover does not zoom/distort the table.
- * Extra stage height sits above as night letterbox; overlays share this frame.
- * Width is capped with --premium-table-height so tall dealer stages never widen past the viewport.
- */
+/* Full-bleed felt frame — fill the stage (pre-eba4772 / 1603248 geometry). */
 [data-skin="premium"] .pm-bj-frame {
   position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: min(100%, calc(var(--premium-table-height) * 3 / 4));
-  aspect-ratio: 3 / 4;
-  max-height: 100%;
-  height: auto;
+  inset: 0;
   overflow: hidden;
 }
 
@@ -779,19 +767,28 @@
   --pm-jeton-lo: #0a4a32;
 }
 
+/* Gold/cream 50 — restore bright face + warm rim (bc9de0f / clay tones). */
 [data-skin="premium"] .pm-jeton.is-50 {
-  --pm-jeton-hi: #f6e4ad;
-  --pm-jeton-mid: #d4b882;
-  --pm-jeton-lo: #9a7a2e;
+  --pm-jeton-hi: #fff6d0;
+  --pm-jeton-mid: #f0d78a;
+  --pm-jeton-lo: #c9a43a;
   color: #1a1208;
 }
 
 [data-skin="premium"] .pm-jeton.is-50 .pm-jeton-face {
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 [data-skin="premium"] .pm-jeton.is-50 .pm-jeton-ring {
-  border-color: rgba(26, 18, 8, 0.35);
+  border-color: rgba(168, 134, 46, 0.55);
+}
+
+[data-skin="premium"] .pm-jeton.is-50 .pm-jeton-edge {
+  background: repeating-conic-gradient(
+    from 6deg,
+    rgba(255, 248, 220, 0.98) 0deg 11deg,
+    transparent 11deg 22deg
+  );
 }
 
 [data-skin="premium"] .pm-jeton.is-100 {
@@ -2343,23 +2340,18 @@
     0 3px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* START HAND / first open — green */
+/* START HAND / OPEN BETTING — green (one green family for open-betting actions only). */
 [data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="start-hand"]:not(:disabled),
-[data-skin="premium"] .pm-console.is-setup .pm-console-btn.is-primary[data-bj-phase-action="start-hand"]:not(:disabled) {
+[data-skin="premium"] .pm-console.is-setup .pm-console-btn.is-primary[data-bj-phase-action="start-hand"]:not(:disabled),
+[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="start-betting"]:not(:disabled) {
   background: linear-gradient(180deg, #8fd9a4 0%, #3faf6a 48%, #1e7a42 100%);
   border-color: rgba(20, 70, 36, 0.55);
 }
 
-/* START BETTING / OPEN BETTING — blue */
-[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="start-betting"]:not(:disabled) {
+/* DEAL CARDS — blue when all confirmed, orange when incomplete (both actionable). */
+[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"][data-bj-bets-ready="true"]:not(:disabled) {
   background: linear-gradient(180deg, #9ec8f5 0%, #4a8fd4 48%, #2462a8 100%);
   border-color: rgba(24, 56, 100, 0.55);
-}
-
-/* DEAL CARDS — green when all confirmed, orange when any seat still open (both actionable). */
-[data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"][data-bj-bets-ready="true"]:not(:disabled) {
-  background: linear-gradient(180deg, #8fd9a4 0%, #3faf6a 48%, #1e7a42 100%);
-  border-color: rgba(20, 70, 36, 0.55);
 }
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-btn.is-primary[data-bj-phase-action="deal-cards"][data-bj-bets-ready="false"]:not(:disabled),
@@ -3182,6 +3174,8 @@
   width: 64px;
   min-width: 64px;
   max-width: 64px;
+  appearance: textfield;
+  -moz-appearance: textfield;
   border: 1px solid rgba(212, 184, 130, 0.4);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.28);
@@ -3193,6 +3187,30 @@
 
 [data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row .pm-bj-pending-bet input {
   margin-right: 4px;
+}
+
+[data-skin="premium"] .pm-bj-pending-bet input::-webkit-outer-spin-button,
+[data-skin="premium"] .pm-bj-pending-bet input::-webkit-inner-spin-button,
+[data-skin="premium"] .pm-bj-pending-wager input::-webkit-outer-spin-button,
+[data-skin="premium"] .pm-bj-pending-wager input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Pending jetons on the felt box — each chip removable via × before PLACE BET. */
+[data-skin="premium"] .pm-bj-pending-felt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  align-items: flex-end;
+  max-width: 100%;
+}
+
+[data-skin="premium"] .pm-bj-pending-felt-chip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
 }
 
 [data-skin="premium"] .pm-bj-pending-bet.is-locked input {
