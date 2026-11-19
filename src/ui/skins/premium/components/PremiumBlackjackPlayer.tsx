@@ -13,12 +13,10 @@ import {
   readBlackjackPlayerBoardView,
   writeBlackjackPlayerBoardView,
 } from "./PremiumBlackjackJetonView";
-import { PremiumBlackjackCardSheet } from "./PremiumBlackjackCardSheet";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
 import { PremiumOutcomeFx } from "./PremiumOutcomeFx";
 import { PremiumShell } from "./PremiumShell";
-import { PremiumTrayCards } from "./PremiumTrayCards";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
 import { BlackjackBox, setupSeatBox } from "./primitives/BlackjackBox";
@@ -93,7 +91,6 @@ export function PremiumBlackjackPlayer({
   const [fxSeed, setFxSeed] = useState("");
   const fxLatchKey = useRef<string | null>(null);
   const [allInArmed, setAllInArmed] = useState(false);
-  const [cardSheetOpen, setCardSheetOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [giveOpen, setGiveOpen] = useState(false);
@@ -101,8 +98,6 @@ export function PremiumBlackjackPlayer({
   const [resetBalances, setResetBalances] = useState(false);
   const [dealerPickOpen, setDealerPickOpen] = useState(false);
   const [dealerId, setDealerId] = useState(members?.[0]?.userId ?? "");
-  const cardsEnabled = playing && Boolean(selected?.hand?.canEdit);
-  const ownRanks = selected?.hand?.ranks ?? [];
   const betweenHands = setup || roundComplete;
   const canLeave = Boolean(view.canLeaveTable || view.actions.leaveTable);
   const availableWhole = Number(view.available.label) || 0;
@@ -417,22 +412,6 @@ export function PremiumBlackjackPlayer({
           }
           onChip={trayInteractive ? addChip : undefined}
           statusMessage={setup ? "WAITING FOR DEALER TO START THE GAME" : null}
-          trayCards={
-            setup ? null : (
-              <PremiumTrayCards
-                cards={ownRanks}
-                enabled={cardsEnabled}
-                label=""
-                layout="inline"
-                onAdd={() => setCardSheetOpen(true)}
-                onRemoveLast={
-                  cardsEnabled && ownRanks.length && selected
-                    ? () => void onCommand("removeCard", { boxId: selected.id })
-                    : undefined
-                }
-              />
-            )
-          }
           primary={primary}
           secondary={secondary}
           tertiary={tertiary}
@@ -464,7 +443,6 @@ export function PremiumBlackjackPlayer({
           phaseLabel={phaseCopy.primary}
           phaseInstruction={phaseCopy.instruction}
           dealerName="Dealer"
-          dealerRanks={view.dealerHand?.ranks}
           setup={setup}
         >
           {setup && staged.length === 0 ? (
@@ -533,16 +511,6 @@ export function PremiumBlackjackPlayer({
         </BlackjackTable>
       )}
       <PremiumOutcomeFx active={fxActive} tone={fxTone} seed={fxSeed} prefs={view.outcomeFx} />
-      {cardSheetOpen && selected ? (
-        <PremiumBlackjackCardSheet
-          title={selected.isSplit ? `Box ${selected.boxNumber} cards` : "Your cards"}
-          ranks={ownRanks}
-          enabled={cardsEnabled}
-          onAdd={(rank) => void onCommand("addCard", { boxId: selected.id, rank })}
-          onRemoveLast={() => void onCommand("removeCard", { boxId: selected.id })}
-          onClose={() => setCardSheetOpen(false)}
-        />
-      ) : null}
       {exitOpen ? (
         <div className="pm-sheet-mask" role="dialog" aria-modal="true" aria-label="Exit table">
           <div className="pm-sheet">

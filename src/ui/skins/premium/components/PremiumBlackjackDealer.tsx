@@ -247,16 +247,12 @@ export function PremiumBlackjackDealer({
       }
     : null;
 
-  const dockNotice = (
-    <>
-      {notice ? <div className="pm-console-notice">{notice}</div> : null}
-      {changeGameReason && showChangeGame && !changeGameEnabled ? (
-        <div className="pm-console-notice is-hint" data-change-game-blocked="true">
-          {changeGameReason}
-        </div>
-      ) : null}
-    </>
-  );
+  const dockBanner =
+    changeGameReason && showChangeGame && !changeGameEnabled ? (
+      <div className="pm-bj-dock-banner" data-change-game-blocked="true">
+        {changeGameReason}
+      </div>
+    ) : null;
 
   return (
     <PremiumShell
@@ -267,7 +263,8 @@ export function PremiumBlackjackDealer({
       dock={
         <CasinoConsole
           variant={setup ? "setup" : "blackjack"}
-          notice={dockNotice}
+          dealerSlots
+          notice={notice ? <div className="pm-console-notice">{notice}</div> : null}
           primary={
             controls.primary
               ? {
@@ -303,6 +300,7 @@ export function PremiumBlackjackDealer({
         />
       }
     >
+      {dockBanner}
       <div
         hidden
         data-owner-menu="true"
@@ -315,7 +313,6 @@ export function PremiumBlackjackDealer({
         phaseLabel={phaseCopy.primary}
         phaseInstruction={phaseCopy.instruction}
         dealerName={view.dealerName || "Dealer"}
-        dealerRanks={view.dealerHand?.ranks}
         setup={setup}
         layout={payout ? "payout" : "play"}
       >

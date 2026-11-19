@@ -299,15 +299,21 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  background: var(--pm-felt);
 }
 
+/*
+ * Width-first table photo — both roles scale by stage WIDTH only.
+ * Do not use height:100% + object-fit:cover: a shorter player stage then
+ * zooms the art and crops the sides (narrower felt vs dealer).
+ * Frame clips any overflow below the stage.
+ */
 [data-skin="premium"] .pm-bj-photo {
   position: absolute;
-  inset: 0;
+  left: 0;
+  bottom: 0;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 40%;
+  height: auto;
   pointer-events: none;
   user-select: none;
 }
@@ -978,8 +984,8 @@
   position: absolute;
   left: 4%;
   right: 4%;
-  top: 34%;
-  bottom: 4%;
+  top: 30%;
+  bottom: 10%;
   display: flex;
   align-items: stretch;
   pointer-events: auto;
@@ -2017,6 +2023,70 @@
 
 [data-skin="premium"] .pm-console.is-bj .pm-console-body:has(> .pm-console-notice) {
   padding-top: 26px;
+}
+
+/*
+ * Dealer blocked/status copy lives in the stage (not the 68px tray) so shell
+ * overflow cannot clip it onto CHANGE GAME / ADD PLAYER / phase controls.
+ */
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-stage {
+  position: relative;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-bj-dock-banner {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 20px;
+  z-index: 12;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(12, 10, 8, 0.92);
+  border: 1px solid rgba(212, 184, 130, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  color: rgba(244, 234, 213, 0.92);
+  pointer-events: none;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-console.is-bj .pm-console-body:has(> .pm-console-notice),
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-console.is-setup .pm-console-body:has(> .pm-console-notice) {
+  padding-top: 4px;
+}
+
+/* Permanent dealer progression slot — right column, fixed width across phases. */
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-console-action-row.is-bj-dealer-trio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(7.5rem, 1.2fr);
+  gap: 6px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-height: 30px;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-console-action-row.is-bj-dealer-trio .pm-console-slot.is-primary {
+  justify-content: stretch;
+}
+
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-console-action-row.is-bj-dealer-trio .pm-console-slot.is-primary .pm-console-btn {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+/* Temporarily hide Blackjack Card Assist surfaces (commands/data retained). */
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"] .pm-bj-cards,
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-bj-cards,
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"] .pm-bj-inline-cards,
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-bj-inline-cards,
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_DEALER"] .pm-tray-cards,
+[data-skin="premium"] .pm-shell[data-table-board="BLACKJACK_PLAYER"] .pm-tray-cards {
+  display: none;
 }
 
 [data-skin="premium"] .pm-console.is-bj.no-visible-tray .pm-console-body {
@@ -3238,7 +3308,7 @@
 
 [data-skin="premium"] .pm-console.is-bj .pm-bj-bet-cards-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(72px, 36%);
+  grid-template-columns: minmax(0, 1fr);
   column-gap: 10px;
   align-items: center;
   min-height: 28px;

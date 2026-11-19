@@ -76,7 +76,9 @@ describe("PremiumBlackjackPlayer betting dock", () => {
     expect(html).toContain('data-jeton-tray="true"');
     expect(html).toContain('data-casino-jeton="true"');
     expect(html).toContain('data-tray-available="true"');
-    expect(html).toContain('data-bj-inline-cards="true"');
+    expect(html).not.toContain('data-bj-inline-cards="true"');
+    expect(html).not.toContain("+ CARDS");
+    expect(html).not.toContain("ADD CARDS");
     expect(html).not.toContain('aria-hidden="true" data-jeton-tray');
   });
 

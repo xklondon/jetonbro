@@ -158,6 +158,7 @@ export function CasinoConsole({
   reserveTray = false,
   variant = "default",
   playerSlots = false,
+  dealerSlots = false,
   trayCards = null,
   statusAction = null,
   statusMessage = null,
@@ -203,6 +204,8 @@ export function CasinoConsole({
    * Card Assist sits on the YOUR BET row (never overlaps amount).
    */
   playerSlots?: boolean;
+  /** Blackjack dealer — permanent LEFT / CENTRE / RIGHT slots; progression pinned right. */
+  dealerSlots?: boolean;
   /** Compact YOUR CARDS / ADD CARDS strip (BJ player: bet row; dealer: action row). */
   trayCards?: ReactNode;
   /** Dealer DEAL HAND — compact control in the status row (not a second tray row). */
@@ -294,11 +297,24 @@ export function CasinoConsole({
                       onChange={(event) => onComposeAmount?.(event.target.value)}
                     />
                   </div>
-                  <div className="pm-bj-inline-cards" data-bj-inline-cards="true">
-                    {trayCards}
-                  </div>
                 </div>
               </>
+            ) : dealerSlots ? (
+              <div
+                className="pm-console-action-row is-bj-dealer-trio"
+                data-console-actions="true"
+                data-bj-dealer-slots="true"
+              >
+                <div className="pm-console-slot is-tertiary" data-bj-slot="left">
+                  {tertiary ? <ActionButton action={tertiary} kind="ghost" /> : null}
+                </div>
+                <div className="pm-console-slot is-secondary" data-bj-slot="centre">
+                  {secondary ? <ActionButton action={secondary} kind="ghost" /> : null}
+                </div>
+                <div className="pm-console-slot is-primary" data-bj-slot="right">
+                  {primary ? <ActionButton action={primary} kind="primary" /> : null}
+                </div>
+              </div>
             ) : actionCount > 0 || trayCards ? (
               <div
                 className={`pm-console-action-row${actionCount <= 1 ? " is-single" : ""}${

@@ -297,9 +297,12 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     expect(ready).toContain("DEAL CARDS");
     expect(ready).toContain('data-bj-phase-action="deal-cards"');
     expect(ready).toContain('data-bj-bets-ready="true"');
+    expect(ready).toContain('data-bj-dealer-slots="true"');
+    expect(ready).toContain('data-bj-slot="right"');
     expect(ready).not.toMatch(/data-bj-phase-action="deal-cards"[^>]*disabled/);
     expect(ready).not.toContain("DEALER CARDS");
     expect(ready).not.toContain('data-bj-inline-cards="true"');
+    expect(ready).not.toContain("ADD CARDS");
 
     const pending = renderToStaticMarkup(
       createElement(PremiumBlackjackDealer, {
@@ -310,7 +313,43 @@ describe("PremiumBlackjackDealer owner chrome", () => {
     );
     expect(pending).toContain("DEAL CARDS");
     expect(pending).toContain('data-bj-bets-ready="false"');
+    expect(pending).toContain('data-bj-dealer-slots="true"');
     expect(pending).not.toMatch(/data-bj-phase-action="deal-cards"[^>]*disabled/);
     expect(pending).not.toContain("DEALER CARDS");
+  });
+
+  it("keeps the progression button in the fixed right slot across phases", () => {
+    const phases: Array<Partial<BankTableView>> = [
+      {
+        phase: "TABLE_SETUP",
+        primaryAction: { id: "openBetting", label: "START HAND", enabled: true },
+        actions: { ...bank().actions, dealCards: false },
+        boxes: [],
+        hasValidBet: false,
+      },
+      { phase: "BETTING", allBetsConfirmed: true },
+      {
+        phase: "PLAYING",
+        primaryAction: { id: "enterPayout", label: "ENTER PAYOUT", enabled: true },
+        actions: { ...bank().actions, dealCards: false, payoutPhase: true },
+      },
+      {
+        phase: "ROUND_COMPLETE",
+        primaryAction: { id: "nextHand", label: "START NEXT ROUND", enabled: true },
+        actions: { ...bank().actions, dealCards: false, nextHand: true },
+      },
+    ];
+    for (const overrides of phases) {
+      const html = renderToStaticMarkup(
+        createElement(PremiumBlackjackDealer, {
+          view: bank(overrides),
+          members,
+          onCommand: () => undefined,
+        }),
+      );
+      expect(html).toContain('data-bj-dealer-slots="true"');
+      expect(html).toContain('data-bj-slot="right"');
+      expect(html).toMatch(/data-bj-slot="right"[^>]*>[\s\S]*?data-bj-phase-action=/);
+    }
   });
 });
