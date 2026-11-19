@@ -1,3 +1,8 @@
+# Blackjack compact player tray + bet lock + dealer readiness
+
+- Branch `fix/blackjack-stable-anatomy-v1` at `1603248` — player `--premium-console-height: 165px` (≈175px with safe); dealer remains 68px (≈78px); server `BOX_BET_LOCKED` after confirmed bet; `allBetsConfirmed` drives DEAL CARDS green/orange; unbet boxes removed on deal without charging.
+- Gate: focused Vitest + viewport 360/390/430 + guardrails + production build. Railway JetBro II Web `68654b75-5211-44f8-b628-f27105a138a5` SUCCESS. `/api/health` `{"ok":true,"database":"connected"}`. Screenshots `docs/screenshots/premium/bj-compact-tray/`. Isolation `!important` fail pre-exists on base. Not merged. Not tagged.
+
 # Blackjack compact dealer dock + player waiting tray
 
 - Branch `fix/blackjack-stable-anatomy-v1` at `c7aceae` — dealer `--premium-console-height: 68px` (≈78px with safe); player remains 248px (≈258px); waiting banner on Waiting + Player TABLE_SETUP; SetupTable/PhaseZero still mount BankTable/WaitingTable.

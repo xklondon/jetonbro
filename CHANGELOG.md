@@ -2,7 +2,14 @@
 
 ## Unreleased
 
+### Blackjack compact player tray + bet lock + dealer readiness (JetBro II Web)
+
+- Commit `1603248` on `fix/blackjack-stable-anatomy-v1` — player dock **165px + 10px safe = 175px** (fixed every phase); YOUR BET composer with pending chip ×; PLACE BET / ALL IN lock via `BOX_BET_LOCKED`; DEAL CARDS green/orange from `allBetsConfirmed`; Card Assist inline beside ALL IN. Dealer dock unchanged at **78px**.
+- Target: Railway production / **JetBro II Web** (`68654b75-5211-44f8-b628-f27105a138a5`, SUCCESS). https://jetbro-ii-web-production.up.railway.app
+- Gate: focused Vitest (lock after reload, orange partial deal, UI/phase); viewport 360/390/430; guardrails; production build. `/api/health` ok. Isolation `!important` assertion fails on base commit too (unrelated). Not merged or tagged.
+
 ### Blackjack compact dealer dock + player waiting tray (JetBro II Web)
+
 
 - Commit `c7aceae` on `fix/blackjack-stable-anatomy-v1` — separate BJ dealer dock (`68px` + 10px safe ≈ **78px**) from player dock (`248px` + 10px safe ≈ **258px`); waiting banner on `PHASE_ZERO_PLAYER` and `BLACKJACK_PLAYER` TABLE_SETUP; dealer cards inline; player jetons bottom-pinned. Poker unchanged.
 - Target: Railway production / **JetBro II Web** (`5cea53fe-cde8-44ef-8f45-5df16821a504`, SUCCESS). https://jetbro-ii-web-production.up.railway.app
