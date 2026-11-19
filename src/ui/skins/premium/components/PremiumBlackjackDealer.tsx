@@ -7,12 +7,10 @@ import { blackjackDealerControls, blackjackOwnerMenu } from "@/ui/core/blackjack
 import { blackjackPhaseCopy } from "@/ui/core/phase-copy";
 import type { CommandHandler } from "@/ui/skins/types";
 import { orderBoxesForFelt } from "./blackjackBoxOrder";
-import { PremiumBlackjackCardSheet } from "./PremiumBlackjackCardSheet";
 import { PremiumCelebrationSettings } from "./PremiumCelebrationSettings";
 import { PremiumGiveJetonsMask } from "./PremiumGiveJetonsMask";
 import { PremiumInviteMask } from "./PremiumInviteMask";
 import { PremiumShell } from "./PremiumShell";
-import { PremiumTrayCards } from "./PremiumTrayCards";
 import { CasinoConsole } from "./primitives/CasinoConsole";
 import { BlackjackTable } from "./primitives/BlackjackTable";
 import { BlackjackBox, setupSeatBox } from "./primitives/BlackjackBox";
@@ -70,7 +68,6 @@ export function PremiumBlackjackDealer({
   const [smallBlind, setSmallBlind] = useState("1");
   const [bigBlind, setBigBlind] = useState("2");
   const [resetBalances, setResetBalances] = useState(false);
-  const [dealerCardsOpen, setDealerCardsOpen] = useState(false);
   const [dealerId, setDealerId] = useState(
     () => members.find((member) => member.isBankDealer)?.userId ?? members[0]?.userId ?? "",
   );
@@ -120,8 +117,6 @@ export function PremiumBlackjackDealer({
     setSheet("pick");
   }
 
-  const dealerCardEnabled = Boolean(view.dealerHand?.canEdit);
-  const dealerRanks = view.dealerHand?.ranks ?? [];
   const showExit = Boolean(view.actions.leaveTable && (setup || view.phase === "ROUND_COMPLETE"));
 
   function openDealer() {
@@ -304,20 +299,6 @@ export function PremiumBlackjackDealer({
               : showExit
                 ? { label: "EXIT TABLE", onClick: () => setSheet("exit") }
                 : null)
-          }
-          trayCards={
-            <PremiumTrayCards
-              cards={dealerRanks}
-              enabled={dealerCardEnabled}
-              label="DEALER CARDS"
-              layout="inline"
-              onAdd={() => setDealerCardsOpen(true)}
-              onRemoveLast={
-                dealerCardEnabled && dealerRanks.length
-                  ? () => void onCommand("removeCard", { dealer: "true" })
-                  : undefined
-              }
-            />
           }
         />
       }
@@ -536,16 +517,6 @@ export function PremiumBlackjackDealer({
             ) : null}
           </div>
         </div>
-      ) : null}
-      {dealerCardsOpen ? (
-        <PremiumBlackjackCardSheet
-          title="Dealer cards"
-          ranks={dealerRanks}
-          enabled={dealerCardEnabled}
-          onAdd={(rank) => void onCommand("addCard", { dealer: "true", rank })}
-          onRemoveLast={() => void onCommand("removeCard", { dealer: "true" })}
-          onClose={() => setDealerCardsOpen(false)}
-        />
       ) : null}
     </PremiumShell>
   );
